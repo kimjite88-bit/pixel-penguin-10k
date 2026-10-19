@@ -1029,7 +1029,7 @@ function drawPixelScanHudPill(ctx, cx, y, pct) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(
-    pct < 100 ? `48×48 BLUE PIXEL SCAN · ${pct}%` : '48×48 PIXEL PENGUIN COMPLETE!',
+    pct < 100 ? `BLUE PIXEL SCAN · ${pct}%` : 'PIXEL PENGUIN COMPLETE!',
     cx,
     topY + 12
   );
@@ -1656,17 +1656,17 @@ function initPixelMotionStudio() {
           Math.max(104, topEdge - 6),
           CURRENT_LANG === 'ko'
             ? '어어어?! 내 몸이 파란 도트로 변하고 있어!!'
-            : 'Whoa?! I am turning into 48×48 blue pixels!!',
+            : 'Whoa?! I am turning into blue pixels!!',
           '#38bdf8',
           now
         );
 
         drawRetroDialogueBar(
           ctx,
-          'SCENE 1 · 48×48 도트 변환',
+          'SCENE 1 · 도트 변환',
           CURRENT_LANG === 'ko'
-            ? `삐리릭—! 차원 균열의 도트 광선을 맞고 매끈했던 파란 펭귄이 48×48 파란 도트 펭귄으로 변신 완료! (${pct}%)`
-            : `BEEP—! Scanned by the dimensional pixel beam, our smooth blue penguin transforms into a 48×48 Blue Pixel Penguin! (${pct}%)`
+            ? `삐리릭—! 차원 균열의 도트 광선을 맞고 매끈했던 파란 펭귄이 파란 도트 펭귄으로 변신 완료! (${pct}%)`
+            : `BEEP—! Scanned by the dimensional pixel beam, our smooth blue penguin transforms into a Blue Pixel Penguin! (${pct}%)`
         );
       }
     }
@@ -1731,8 +1731,8 @@ function initPixelMotionStudio() {
           heroX + spriteSize / 2 + 24,
           heroY - 4,
           CURRENT_LANG === 'ko'
-            ? '헐 내 몸이 48×48 파란 도트가 됐잖아?! 너네도 빠졌냐?!'
-            : 'Whoa, I am 48×48 blue pixels now?! Did you guys fall in too?!',
+            ? '헐 내 몸이 파란 도트가 됐잖아?! 너네도 빠졌냐?!'
+            : 'Whoa, I am blue pixels now?! Did you guys fall in too?!',
           '#38bdf8',
           now
         );
@@ -1740,8 +1740,8 @@ function initPixelMotionStudio() {
           ctx,
           'SCENE 2 · 픽셀월드 도착',
           CURRENT_LANG === 'ko'
-            ? '"헐?! 내 몸이 48×48 네모난 파란 도트가 됐잖아?!" 벚꽃 날리는 16비트 픽셀 월드에 무사히 착지한 파란 펭귄!'
-            : '"Whoa?! I turned into a 48×48 Blue Pixel Penguin?!" Safely landed in the 16-bit Cherry Blossom Pixel World!'
+            ? '"헐?! 내 몸이 네모난 파란 도트가 됐잖아?!" 벚꽃 날리는 16비트 픽셀 월드에 무사히 착지한 파란 펭귄!'
+            : '"Whoa?! I turned into a Blue Pixel Penguin?!" Safely landed in the 16-bit Cherry Blossom Pixel World!'
         );
       } else if (p < 0.68) {
         const speaker1 = renderedFriends[0] || { fx: 356, fy: 338 };
