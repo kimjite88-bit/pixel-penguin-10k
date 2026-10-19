@@ -452,10 +452,10 @@ body {
   background: rgba(251, 191, 36, 0.24);
 }
 
-/* 4-Button Intro Control Bar */
+/* 3-Button Intro Control Bar (Zero Orphan Cells) */
 .retro-controls-bar {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -1720,7 +1720,7 @@ body {
     margin-left: auto;
   }
   .retro-controls-bar {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
   }
   .hero-kpis {
