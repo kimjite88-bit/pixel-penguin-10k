@@ -328,13 +328,39 @@ const PARADE_ROW_2_ITEMS = [
 ];
 
 function scrollToSection(id) {
-  const el = document.getElementById(id);
-  if (el) {
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  let tabKey = 'tab-intro';
+  if (id === 'tab-codex' || id === 'sec-explorer' || id === 'sec-traits' || id === 'sec-provenance') {
+    tabKey = 'tab-codex';
+  } else if (id === 'tab-notices' || id === 'sec-notices') {
+    tabKey = 'tab-notices';
   }
-  document.querySelectorAll('.market-tab').forEach((btn) => {
-    btn.classList.toggle('active', btn.dataset.target === id);
+
+  const pageMap = {
+    'tab-intro': 'tab-page-intro',
+    'tab-codex': 'tab-page-codex',
+    'tab-notices': 'tab-page-notices',
+  };
+
+  Object.entries(pageMap).forEach(([k, pageId]) => {
+    const pageEl = document.getElementById(pageId);
+    if (pageEl) {
+      pageEl.style.display = k === tabKey ? 'block' : 'none';
+      pageEl.classList.toggle('active', k === tabKey);
+    }
   });
+
+  document.querySelectorAll('.market-tab').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.target === tabKey);
+  });
+
+  if (id === 'tab-intro' || id === 'tab-codex' || id === 'tab-notices' || id === 'top') {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  } else {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
 }
 
 function escapeHtml(str) {

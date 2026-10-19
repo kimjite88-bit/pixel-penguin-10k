@@ -12,7 +12,7 @@
   <meta property="og:image" content="https://ppeng.verycloud.io/assets/logo_4442_1024.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" type="image/png" href="/img/P04442.png" />
-  <link rel="stylesheet" href="/styles.css?v=3.5.0" />
+  <link rel="stylesheet" href="/styles.css?v=3.6.0" />
 </head>
 <body>
   <!-- Full-Viewport Stepped Pixel Ambient Particle Canvas -->
@@ -21,7 +21,7 @@
   <!-- Sticky Header -->
   <header class="site-header">
     <div class="header-inner">
-      <a href="#top" class="brand-wrap">
+      <a href="#top" class="brand-wrap" onclick="scrollToSection('tab-intro'); return false;">
         <div class="brand-avatar-box" title="Official Collection Logo — Pixel Penguin #4442 (P04442)">
           <img src="/img/P04442.png" alt="PIXEL PENGUIN Official Logo #4442" class="pixelated" />
           <span class="brand-verified-dot" title="Verified PFP Collection on VeryChat">✓</span>
@@ -48,20 +48,20 @@
       </div>
     </div>
 
-    <!-- VeryChat NFT Market Style Navigation Tabs -->
+    <!-- 3 Main Navigation Menus: 컬렉션 소개 / 도감도 / 공지사항 -->
     <nav class="market-tabs-bar" aria-label="Collection Sections">
       <div class="market-tabs-inner">
-        <button type="button" class="market-tab active" data-target="sec-motion" data-ko="도트 모션 놀이터 (대표 로고 #4442)" data-en="Pixel Motion Playground (Logo #4442)">도트 모션 놀이터 (대표 로고 #4442)</button>
-        <button type="button" class="market-tab" data-target="sec-info" data-ko="정보 (프로젝트 소개 · 마켓 명세)" data-en="Info (Story & On-Chain Specs)">정보 (프로젝트 소개 · 마켓 명세)</button>
-        <button type="button" class="market-tab" data-target="sec-explorer" data-ko="10,000마리 전체 자식들 도감" data-en="All 10,000 Penguins Explorer">10,000마리 전체 자식들 도감</button>
-        <button type="button" class="market-tab" data-target="sec-traits" data-ko="나누라길래 나눈 등급 & 파츠" data-en="Tiers & 210 Traits (No Perks)">나누라길래 나눈 등급 & 파츠</button>
-        <button type="button" class="market-tab" data-target="sec-provenance" data-ko="쌍둥이 0건 증명 (SHA-256)" data-en="Zero Duplicates Proof (SHA-256)">쌍둥이 0건 증명 (SHA-256)</button>
+        <button type="button" class="market-tab active" data-target="tab-intro" data-ko="컬렉션 소개" data-en="Collection Info">컬렉션 소개</button>
+        <button type="button" class="market-tab" data-target="tab-codex" data-ko="도감도" data-en="10,000 Codex">도감도</button>
+        <button type="button" class="market-tab" data-target="tab-notices" data-ko="공지사항" data-en="Notices">공지사항</button>
       </div>
     </nav>
   </header>
 
   <main class="main-container" id="top">
 
+    <!-- TAB PAGE 1: 컬렉션 소개 (COLLECTION INTRO) -->
+    <div id="tab-page-intro" class="tab-page active">
     <!-- HERO SECTION -->
     <section class="hero-section">
       <div class="hero-left pixel-frame-glow">
@@ -141,13 +141,13 @@
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
               <span data-ko="48×48 도트 모션 놀이터" data-en="48×48 Pixel Motion Playground">48×48 도트 모션 놀이터</span>
             </button>
-            <button type="button" class="btn-secondary" onclick="scrollToSection('sec-explorer')">
+            <button type="button" class="btn-secondary" onclick="scrollToSection('tab-codex')">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-              <span data-ko="10,000마리 자식들 도감 구경" data-en="Browse All 10,000 Penguins">10,000마리 자식들 도감 구경</span>
+              <span data-ko="도감도 구경하기 (10,000마리)" data-en="Open 10,000 Codex">도감도 구경하기 (10,000마리)</span>
             </button>
-            <button type="button" class="btn-secondary" onclick="scrollToSection('sec-info')">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-              <span data-ko="마켓 온체인 명세 (정보 탭)" data-en="Market On-Chain Specs">마켓 온체인 명세 (정보 탭)</span>
+            <button type="button" class="btn-secondary" onclick="scrollToSection('tab-notices')">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+              <span data-ko="공지사항 확인" data-en="Read Notices">공지사항 확인</span>
             </button>
           </div>
         </div>
@@ -472,13 +472,16 @@
         </div>
       </div>
     </section>
+    </div><!-- /#tab-page-intro -->
 
+    <!-- TAB PAGE 2: 도감도 (10,000 CODEX & 210 TRAITS) -->
+    <div id="tab-page-codex" class="tab-page" style="display:none;">
     <!-- SECTION 3: FULL 10,000 COLLECTION EXPLORER & RARITY RANKER -->
-    <section class="section-block" id="sec-explorer">
+    <section class="section-block" id="sec-explorer" style="margin-top:20px;">
       <div class="section-header">
         <div>
           <span class="pill-tag" style="margin-bottom:8px; display:inline-block;">ALL 10,000 PRECIOUS PENGUINS (P00001 – P10000)</span>
-          <h2 class="section-title" data-ko="10,000마리 전체 자식들 도감 (P00001 ~ P10000)" data-en="All 10,000 Precious Penguins Explorer (P00001 – P10000)">10,000마리 전체 자식들 도감 (P00001 ~ P10000)</h2>
+          <h2 class="section-title" data-ko="도감도 — 10,000마리 전체 자식들 도감 (P00001 ~ P10000)" data-en="10,000 Codex — All Precious Penguins Explorer (P00001 – P10000)">도감도 — 10,000마리 전체 자식들 도감 (P00001 ~ P10000)</h2>
           <p class="section-sub" data-ko="1번부터 10,000번까지 똑같이 생긴 놈 하나 없이 다 제각각 이쁘게 뽑힌 자식들입니다. 등급이나 순위 높다고 밥 먹여주는 거 아니니, 그냥 번호나 파츠로 검색해서 내 눈에 제일 이쁜 프사용 펭귄을 찾아보세요." data-en="All 10,000 penguins (#1–#10,000) with zero duplicates. Higher ranks don't pay the bills, so just filter by traits and find whichever penguin looks cutest for your PFP.">1번부터 10,000번까지 똑같이 생긴 놈 하나 없이 다 제각각 이쁘게 뽑힌 자식들입니다. 등급이나 순위 높다고 밥 먹여주는 거 아니니, 그냥 번호나 파츠로 검색해서 내 눈에 제일 이쁜 프사용 펭귄을 찾아보세요.</p>
         </div>
       </div>
@@ -536,7 +539,7 @@
       <div class="section-header">
         <div>
           <span class="pill-tag gold" style="margin-bottom:8px; display:inline-block;">9 CATEGORIES · 210 TRAITS · NO PERKS FOR HIGH TIERS</span>
-          <h2 class="section-title" data-ko="나누라길래 나눈 등급 & 210종 파츠 목록" data-en="Tiers (Only Split Because Asked) & 210 Traits">나누라길래 나눈 등급 & 210종 파츠 목록</h2>
+          <h2 class="section-title" data-ko="나누라길래 나눈 등급 & 210종 파츠 도감" data-en="Tiers (Only Split Because Asked) & 210 Traits Codex">나누라길래 나눈 등급 & 210종 파츠 도감</h2>
           <p class="section-sub" data-ko="NFT는 원래 등급을 나누는 거라길래 랜덤 파츠 조합 9,989마리는 마켓 규격에 맞춰 6단계로 나눠놨고, 따로 뺀 11마리는 아예 등급없음으로 뒀습니다. 등급 다르다고 뭐 더 챙겨드리는 거 일절 없으니 제 눈엔 다 똑같이 이쁘고 귀한 자식들입니다." data-en="We split the 9,989 random generative penguins into 6 tiers only because NFT collections are supposed to have tiers, and set the 11 separate ones to Unranked (등급없음). Different tiers grant zero extra perks—every single one is our precious child.">NFT는 원래 등급을 나누는 거라길래 랜덤 파츠 조합 9,989마리는 마켓 규격에 맞춰 6단계로 나눠놨고, 따로 뺀 11마리는 아예 등급없음으로 뒀습니다. 등급 다르다고 뭐 더 챙겨드리는 거 일절 없으니 제 눈엔 다 똑같이 이쁘고 귀한 자식들입니다.</p>
         </div>
       </div>
@@ -620,20 +623,12 @@
               <span class="spec-value" style="color:var(--accent-emerald);">0건 (10,000마리 전부 다르게 생김)</span>
             </div>
             <div class="spec-row">
-              <span class="spec-label" data-ko="불투명 선글라스 꼈는데 눈 속성 잘못 적힌 건" data-en="Occluded Eyes Metadata Mismatch">불투명 선글라스 꼈는데 눈 속성 잘못 적힌 건</span>
-              <span class="spec-value" style="color:var(--accent-emerald);">0건 (전수 교정 완료)</span>
+              <span class="spec-label" data-ko="베리챗 세로 꼭짓점 6각형 마스킹 위반" data-en="VeryChat Pointy-Top Hexagon Violations">베리챗 세로 꼭짓점 6각형 마스킹 위반</span>
+              <span class="spec-value" style="color:var(--accent-emerald);">0건 (10,000마리 전체 정중앙 리마스터 완료)</span>
             </div>
             <div class="spec-row">
               <span class="spec-label" data-ko="모자·옷 안 입은 자연인 비율 (Hat / Clothes / Eyewear / Prop / Aura)" data-en="Exact None Slot Quotas">모자·옷 안 입은 자연인 비율 (Hat / Clothes / Eyewear / Prop / Aura)</span>
-              <span class="spec-value" style="font-size:12.5px;">2,500 / 1,500 / 7,000 / 6,000 / 9,000</span>
-            </div>
-            <div class="spec-row">
-              <span class="spec-label">Archive SHA-256 (20,018 Files)</span>
-              <span class="spec-value" style="font-family:monospace; font-size:11.5px; word-break:break-all;">e2fc5748c80c2dc49f8d54f2ceab078eb76533d94ec0969c1da3d5c9814feee2</span>
-            </div>
-            <div class="spec-row">
-              <span class="spec-label">Generation Config SHA-256</span>
-              <span class="spec-value" style="font-family:monospace; font-size:11.5px; word-break:break-all;">49dab487d9d8bbe361d523b2221f07b45f59692fcfdd9420f59e04abfe85147a</span>
+              <span class="spec-value" style="font-size:12.5px;">2,501 / 1,500 / 7,000 / 6,000 / 9,000</span>
             </div>
           </div>
         </div>
@@ -646,6 +641,64 @@
         </div>
       </div>
     </section>
+    </div><!-- /#tab-page-codex -->
+
+    <!-- TAB PAGE 3: 공지사항 (OFFICIAL NOTICES) -->
+    <div id="tab-page-notices" class="tab-page" style="display:none;">
+      <section class="section-block" id="sec-notices" style="margin-top:20px;">
+        <div class="section-header">
+          <div>
+            <span class="pill-tag very" style="margin-bottom:8px; display:inline-block;">OFFICIAL NOTICES · BY @happy Ahndoge</span>
+            <h2 class="section-title" data-ko="공지사항 — PIXEL PENGUIN (PPENG) 공식 알림판" data-en="Notices — PIXEL PENGUIN (PPENG) Official Board">공지사항 — PIXEL PENGUIN (PPENG) 공식 알림판</h2>
+            <p class="section-sub" data-ko="트위터나 텔레그램 방 귀찮아서 따로 안 만듭니다. 민팅 일정이나 컬렉션 관련 모든 공지는 여기 한 군데에만 솔직하게 적어둡니다." data-en="We don't run separate Twitter or Telegram channels. Every official announcement is posted right here without fluff.">트위터나 텔레그램 방 귀찮아서 따로 안 만듭니다. 민팅 일정이나 컬렉션 관련 모든 공지는 여기 한 군데에만 솔직하게 적어둡니다.</p>
+          </div>
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:16px;">
+          <!-- Notice 1 -->
+          <div class="verychat-panel">
+            <div class="verychat-panel-header">
+              <div class="verychat-panel-title" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <span class="pill-tag very">중요 공지 #1</span>
+                <span data-ko="2026년 10월 23일(금) PIXEL PENGUIN (PPENG) 10,000마리 민팅 안내" data-en="Friday, Oct 23, 2026 — PIXEL PENGUIN (PPENG) 10,000 Mint Notice">2026년 10월 23일(금) PIXEL PENGUIN (PPENG) 10,000마리 민팅 안내</span>
+              </div>
+              <span style="font-size:12px; color:var(--text-muted);">2026. 10. 19</span>
+            </div>
+            <p style="font-size:14px; color:var(--text-secondary); line-height:1.75; margin:0;" data-ko="VERY CHAT 고인물 @happy Ahndoge가 발행하는 10,000마리 48×48 도트 펭귄 NFT(심볼: PPENG)가 2026년 10월 23일(금) VERY Mainnet(4613)에서 민팅(민팅가: 100 VERY)됩니다. 미리 분명하게 말씀드리지만, 민팅 많이 팔아보겠다고 거창한 로드맵이나 영업 멘트 적지 않습니다. 사신다고 돈 드리거나 에어드랍·스테이킹 같은 혜택 해드리는 거 일절 없으니, 순수하게 베리챗에서 내 마음에 드는 펭귄 프사(Verified PFP) 달고 노실 분들만 구경해 주세요." data-en="Issued by VeryChat OG @happy Ahndoge, the 10,000-piece 48×48 pixel penguin NFT collection (Symbol: PPENG) launches on Friday, Oct 23, 2026 on VERY Mainnet (4613) at 100 VERY. To be completely clear: there is no sales pitch, roadmap, staking, or financial return. Buy one only if you want a cute Verified PFP on VeryChat.">
+              VERY CHAT 고인물 @happy Ahndoge가 발행하는 10,000마리 48×48 도트 펭귄 NFT(심볼: PPENG)가 2026년 10월 23일(금) VERY Mainnet(4613)에서 민팅(민팅가: 100 VERY)됩니다. 미리 분명하게 말씀드리지만, 민팅 많이 팔아보겠다고 거창한 로드맵이나 영업 멘트 적지 않습니다. 사신다고 돈 드리거나 에어드랍·스테이킹 같은 혜택 해드리는 거 일절 없으니, 순수하게 베리챗에서 내 마음에 드는 펭귄 프사(Verified PFP) 달고 노실 분들만 구경해 주세요.
+            </p>
+          </div>
+
+          <!-- Notice 2 -->
+          <div class="verychat-panel">
+            <div class="verychat-panel-header">
+              <div class="verychat-panel-title" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <span class="pill-tag gold">필독 공지 #2</span>
+                <span data-ko="등급(Common ~ Mythic / 등급없음) 나누라길래 나눴을 뿐 차등 혜택은 0입니다" data-en="Rarity Tiers Exist Only Because Required — Zero Perks by Tier">등급(Common ~ Mythic / 등급없음) 나누라길래 나눴을 뿐 차등 혜택은 0입니다</span>
+              </div>
+              <span style="font-size:12px; color:var(--text-muted);">2026. 10. 19</span>
+            </div>
+            <p style="font-size:14px; color:var(--text-secondary); line-height:1.75; margin:0;" data-ko="NFT 마켓 규격상 등급을 나누라길래 일반 랜덤 파츠 조합 9,989마리는 Common(5,500) · Uncommon(2,500) · Rare(1,300) · Epic(450) · Legendary(200) · Mythic(39) 6단계로 나누고, 별도로 작업한 11마리(#1 ~ #11)는 일반 랜덤 파츠들과 구분해서 아예 '등급없음'으로 처리해 두었습니다. 등급이 높거나 희귀도 점수가 높다고 해서 뭐 더 챙겨드리는 거 전혀 없습니다. 공식 대표 로고로 뽑힌 #4442번도 9,811등짜리 Common입니다. 다 똑같이 이쁘고 귀한 자식들이니 숫자에 연연하지 마시고 내 눈에 이쁜 펭귄 고르시면 됩니다." data-en="Because NFT markets expect rarity tiers, the 9,989 random generative penguins are split into 6 tiers (Common 5,500 to Mythic 39), while the 11 separate animated pieces (#1–#11) are categorized as 'Unranked (등급없음)'. Higher tiers or scores grant zero extra perks—even our Official Collection Logo (#4442) is a Rank #9,811 Common. Every penguin is equally precious.">
+              NFT 마켓 규격상 등급을 나누라길래 일반 랜덤 파츠 조합 9,989마리는 Common(5,500) · Uncommon(2,500) · Rare(1,300) · Epic(450) · Legendary(200) · Mythic(39) 6단계로 나누고, 별도로 작업한 11마리(#1 ~ #11)는 일반 랜덤 파츠들과 구분해서 아예 '등급없음'으로 처리해 두었습니다. 등급이 높거나 희귀도 점수가 높다고 해서 뭐 더 챙겨드리는 거 전혀 없습니다. 공식 대표 로고로 뽑힌 #4442번도 9,811등짜리 Common입니다. 다 똑같이 이쁘고 귀한 자식들이니 숫자에 연연하지 마시고 내 눈에 이쁜 펭귄 고르시면 됩니다.
+            </p>
+          </div>
+
+          <!-- Notice 3 -->
+          <div class="verychat-panel">
+            <div class="verychat-panel-header">
+              <div class="verychat-panel-title" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">
+                <span class="pill-tag">업데이트 #3</span>
+                <span data-ko="베리챗(VeryChat) 세로 꼭짓점 6각형 프사 프레임 맞춤 10,000마리 전수 리마스터 완료" data-en="Full 10,000 Collection Remastered for VeryChat Pointy-Top Hexagon PFP">베리챗(VeryChat) 세로 꼭짓점 6각형 프사 프레임 맞춤 10,000마리 전수 리마스터 완료</span>
+              </div>
+              <span style="font-size:12px; color:var(--text-muted);">2026. 10. 19</span>
+            </div>
+            <p style="font-size:14px; color:var(--text-secondary); line-height:1.75; margin:0;" data-ko="베리챗 실제 NFT 프로필 프레임(위·아래가 뾰족한 세로 꼭짓점 6각형)에 달았을 때 펭귄이 아래쪽이나 왼쪽으로 치우쳐 보이지 않고 모자·소품 끝단이 잘리지 않도록, 210종 전체 파츠와 10,000마리 전체 원본(3072×3072 PNG 및 GIF)을 정중앙으로 재정렬하여 전수 검수(6각형 외곽 잘림 0건, 쌍둥이 중복 0건)를 완료했습니다. '컬렉션 소개' 탭 우측의 베리챗 PFP 프리뷰어에서 번호를 입력해 직접 프사 핏을 확인해 보실 수 있습니다." data-en="All 210 traits and all 10,000 high-resolution originals (3072×3072 PNGs & GIFs) have been re-centered so that every penguin sits squarely inside VeryChat's pointy-top/pointy-bottom hexagonal PFP frame with zero clipping and zero duplicates.">
+              베리챗 실제 NFT 프로필 프레임(위·아래가 뾰족한 세로 꼭짓점 6각형)에 달았을 때 펭귄이 아래쪽이나 왼쪽으로 치우쳐 보이지 않고 모자·소품 끝단이 잘리지 않도록, 210종 전체 파츠와 10,000마리 전체 원본(3072×3072 PNG 및 GIF)을 정중앙으로 재정렬하여 전수 검수(6각형 외곽 잘림 0건, 쌍둥이 중복 0건)를 완료했습니다. '컬렉션 소개' 탭 우측의 베리챗 PFP 프리뷰어에서 번호를 입력해 직접 프사 핏을 확인해 보실 수 있습니다.
+            </p>
+          </div>
+        </div>
+      </section>
+    </div><!-- /#tab-page-notices -->
 
   </main>
 
@@ -688,6 +741,6 @@
     </div>
   </footer>
 
-  <script src="/app.js?v=3.5.0"></script>
+  <script src="/app.js?v=3.6.0"></script>
 </body>
 </html>
