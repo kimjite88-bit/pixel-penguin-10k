@@ -392,12 +392,19 @@ app.get('/api/metadata/:id', (req, res) => {
 
 app.use(
   express.static(PUBLIC_DIR, {
-    maxAge: '1h',
     etag: true,
+    setHeaders: (res, filePath) => {
+      if (/\.(html|js|css)$/i.test(filePath)) {
+        res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+      } else {
+        res.setHeader('Cache-Control', 'public, max-age=86400');
+      }
+    },
   })
 );
 
 app.get('*', (req, res) => {
+  res.setHeader('Cache-Control', 'no-cache, must-revalidate');
   res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
