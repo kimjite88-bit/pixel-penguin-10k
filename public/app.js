@@ -974,7 +974,7 @@ function buildPixelParadeMarquee() {
             <span class="parade-card-rank">${escapeHtml(item.sub)}</span>
           </div>
           <div class="parade-card-name" data-ko="${escapeHtml(item.labelKo)}" data-en="${escapeHtml(item.labelEn)}">${escapeHtml(name)}</div>
-          <div class="parade-card-sub">1 VERY · Verified PFP</div>
+          <div class="parade-card-sub">100 VERY · Verified PFP</div>
         </div>
       </button>
     `;
@@ -1036,8 +1036,8 @@ function applyLanguage(lang) {
   if (topbar) {
     topbar.textContent =
       lang === 'ko'
-        ? '이번 주 금요일 (2026. 10. 23) VERY Mainnet (4613) 공식 민팅 오픈 · 민팅가 1 VERY · 총 10,000개 (심볼: PPENG)'
-        : 'THIS FRIDAY (OCT 23, 2026) OFFICIAL MINT ON VERY MAINNET (4613) · MINT PRICE: 1 VERY · SUPPLY: 10,000 (SYMBOL: PPENG)';
+        ? '이번 주 금요일 (2026. 10. 23) VERY Mainnet (4613) 공식 민팅 오픈 · 민팅가 100 VERY · 총 10,000개 (심볼: PPENG)'
+        : 'THIS FRIDAY (OCT 23, 2026) OFFICIAL MINT ON VERY MAINNET (4613) · MINT PRICE: 100 VERY · SUPPLY: 10,000 (SYMBOL: PPENG)';
   }
 
   // Refresh active curated spotlight text in new language
@@ -1164,7 +1164,7 @@ function renderSpecialsGrid(specials) {
       </div>
       <div class="nft-card-title">${escapeHtml(sp.archetype)}</div>
       <div class="nft-card-footer">
-        <span class="price-tag">1 VERY</span>
+        <span class="price-tag">100 VERY</span>
         <span class="score-tag">${Number(sp.rarity_score).toLocaleString()} pts</span>
       </div>
     </button>
@@ -1277,7 +1277,7 @@ async function fetchExplorerTokens() {
           </div>
           <div class="nft-card-title">${escapeHtml(subtitle)}</div>
           <div class="nft-card-footer">
-            <span class="price-tag">1 VERY</span>
+            <span class="price-tag">100 VERY</span>
             <span class="score-tag">${Number(item.rarity_score).toLocaleString()} pts</span>
           </div>
         </button>
@@ -1433,7 +1433,7 @@ async function openTokenModal(tokenNum) {
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
           <span class="tier-pill tier-${tok.tier}">${tok.tier}</span>
           <span class="pill-tag">rarity.tools Rank #${tok.rarity_rank.toLocaleString()} / 10,000</span>
-          <span class="pill-tag gold">Mint Price: 1 VERY</span>
+          <span class="pill-tag gold">Mint Price: 100 VERY</span>
         </div>
 
         <h2 id="modal-token-title" style="font-size:24px; font-weight:900; margin-bottom:6px;">${escapeHtml(tok.name)}</h2>
@@ -1498,7 +1498,7 @@ function buildSubmissionModal() {
     { label: '7. 프로젝트 설명 / 취지 — 국문', value: storyKo },
     {
       label: '8. 민팅 및 마켓 스펙 요약',
-      value: '체인: VERY Mainnet (4613) | 토큰 표준: ERC-721 | 공급량: 10,000 (1/1 GIF 11종 + 48×48 제너레이티브 9,989종) | 대표 로고: #4442 (P04442) | 민팅 일정: 2026년 10월 23일 (금) | 민팅가: 1 VERY | VERY 소각: 거래 금액의 5% (0x0000...dEaD) | 컬렉션 수수료: 0%',
+      value: '체인: VERY Mainnet (4613) | 토큰 표준: ERC-721 | 공급량: 10,000 (1/1 GIF 11종 + 48×48 제너레이티브 9,989종) | 대표 로고: #4442 (P04442) | 민팅 일정: 2026년 10월 23일 (금) | 민팅가: 100 VERY | VERY 소각: 거래 금액의 5% (0x0000...dEaD) | 컬렉션 수수료: 0%',
     },
   ];
 
@@ -1539,7 +1539,7 @@ function buildSubmissionModal() {
         `• 공식 대표 로고: #4442 (P04442) — ${siteUrl}/assets/logo_4442_1024.png`,
         `• 체인 / 표준: VERY Mainnet (4613) / ERC-721`,
         `• 총 공급량: 10,000 (1-of-1 Animated GIF 11종 + 48×48 Generative PNG 9,989종)`,
-        `• 민팅 일정 / 가격: 2026년 10월 23일(금) / 1 VERY`,
+        `• 민팅 일정 / 가격: 2026년 10월 23일(금) / 100 VERY`,
         `• VERY 소각 / 컬렉션 수수료: 거래 금액의 5% (0x0000...dEaD) / 0%`,
         `• 공식 홈페이지(🌐 단독 링크): ${siteUrl}`,
         ``,
