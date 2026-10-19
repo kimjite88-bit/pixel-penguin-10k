@@ -209,7 +209,6 @@ app.get('/api/config', (req, res) => {
       ...collection.project,
       official_website: process.env.PUBLIC_URL || host,
       contract_address: process.env.CONTRACT_ADDRESS || 'TBA (2026. 10. 23 민팅 시 온체인 컨트랙트 자동 연동)',
-      fee_address: process.env.FEE_ADDRESS || '0% (컬렉션 거래 수수료 없음)',
     },
     provenance: collection.provenance,
     specials: collection.specials,
