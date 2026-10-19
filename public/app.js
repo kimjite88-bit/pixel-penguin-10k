@@ -35,7 +35,7 @@ const CAT_LABELS_KO = {
   Prop: '종합 소품 (Prop)',
 };
 
-// Official Logo (#4442) + 14 Featured Tokens from our 10,000 Collection
+// Official Logo (#4442) + 14 Featured Generative Penguins from our 10,000 Collection
 const CURATED_BEAUTY_14 = [
   {
     edition: 4442,
@@ -55,78 +55,6 @@ const CURATED_BEAUTY_14 = [
       '희귀도 순위는 10,000마리 중 9,811등짜리 Common이지만, 파란 하늘에 도트 선글라스 낀 게 제일 정감 가서 당당히 공식 대표 로고로 뽑힌 귀한 자식입니다. 등급 낮아도 이렇게 이쁩니다.',
     noteEn:
       'Ranked #9,811 out of 10,000 (Common tier), yet chosen as our official collection logo simply because the blue sky and pixel shades look great. Proof that tier means nothing here.',
-  },
-  {
-    edition: 2,
-    id: 'P00002',
-    isSpecial: true,
-    tier: 'Mythic',
-    rank: 1,
-    score: '60,012.23',
-    shortKo: '천상의 대천사',
-    shortEn: 'Archangel',
-    titleKo: '#2 천상의 대천사 (Celestial Archangel)',
-    titleEn: '#2 Celestial Archangel (Mythic)',
-    themeKo: 'Rank #1 · Seraphim Wings & Halo',
-    themeEn: 'Rank #1 · Seraphim Wings & Halo',
-    noteKo:
-      '나누라길래 나눈 순위표에서 1등 먹은 자식입니다. 날개 달고 윙크까지 하지만, 1등이라고 해서 돈 드리거나 뭐 더 챙겨드리는 거 일절 없습니다. 그냥 눈이 호강하는 프사용입니다.',
-    noteEn:
-      'Ranked #1 on the rarity chart with wings and a wink—though being #1 still gives you zero extra money or perks. Strictly a cute PFP.',
-  },
-  {
-    edition: 5,
-    id: 'P00005',
-    isSpecial: true,
-    tier: 'Mythic',
-    rank: 3,
-    score: '60,007.14',
-    shortKo: '빙하의 제왕',
-    shortEn: 'Glacier King',
-    titleKo: '#5 빙하의 제왕 (Glacier Emperor)',
-    titleEn: '#5 Glacier Emperor (Mythic)',
-    themeKo: 'Rank #3 · Ice Crystal Crown',
-    themeEn: 'Rank #3 · Ice Crystal Crown',
-    noteKo:
-      '얼음 왕관에 털망토까지 두른 겨울 컨셉 자식입니다. 이름은 거창하게 빙하의 제왕인데, 사신다고 얼음 한 조각 드리는 거 없습니다. 순수 프사용입니다.',
-    noteEn:
-      'Dressed like an ice king with a crystal crown and fur cape. Despite the grand name, owning it grants zero perks—just a cool winter PFP.',
-  },
-  {
-    edition: 6,
-    id: 'P00006',
-    isSpecial: true,
-    tier: 'Mythic',
-    rank: 4,
-    score: '60,007.14',
-    shortKo: '심해의 지배자',
-    shortEn: 'Abyssal Ruler',
-    titleKo: '#6 심해의 지배자 (Abyssal Sea Ruler)',
-    titleEn: '#6 Abyssal Sea Ruler (Mythic)',
-    themeKo: 'Rank #4 · Jellyfish & Coral Crown',
-    themeEn: 'Rank #4 · Jellyfish & Coral Crown',
-    noteKo:
-      '바닷속에서 해파리랑 물방울 띄워놓고 노는 자식입니다. 색감이 이뻐서 베리챗 어두운 배경에 프사로 걸어두면 꽤 잘 보입니다.',
-    noteEn:
-      'Hanging out underwater with glowing jellyfish and bubbles. Pops nicely against VeryChat dark mode as a profile picture.',
-  },
-  {
-    edition: 43,
-    id: 'P00043',
-    isSpecial: false,
-    tier: 'Epic',
-    rank: 187,
-    score: '517.67',
-    shortKo: '꽃화관 빙어 낚시',
-    shortEn: 'Floral Angler',
-    titleKo: '#43 꽃화관 쓰고 빙어 낚는 자식 (Floral Wreath Angler)',
-    titleEn: '#43 Floral Wreath Ice Angler (Epic)',
-    themeKo: 'Epic · Floral Wreath & Arctic Smelt',
-    themeEn: 'Epic · Floral Wreath & Arctic Smelt',
-    noteKo:
-      '머리에 꽃화관 얹고 낚싯대에 빙어까지 물고 있는 알짜배기 자식입니다. 꼭 1등짜리 아니어도 이렇게 조합 이쁘게 뽑힌 애들이 수두룩합니다.',
-    noteEn:
-      'Wearing a floral wreath while catching an arctic smelt. Proof that you do not need a #1 rank to get an adorable combination.',
   },
   {
     edition: 963,
@@ -165,58 +93,22 @@ const CURATED_BEAUTY_14 = [
       'Labeled Uncommon tier but scored high thanks to its Dreamglow skin and Gecko Onesie hood. Smiling eyes make it a great PFP.',
   },
   {
-    edition: 1,
-    id: 'P00001',
-    isSpecial: true,
-    tier: 'Mythic',
-    rank: 7,
-    score: '55,010.33',
-    shortKo: 'GO 제우스',
-    shortEn: 'GO Zeus',
-    titleKo: '#1 GO 제우스 (Olympian Thunder God)',
-    titleEn: '#1 GO Zeus (Mythic)',
-    themeKo: 'Token #1 · Lightning Laurel Crown',
-    themeEn: 'Token #1 · Lightning Laurel Crown',
+    edition: 43,
+    id: 'P00043',
+    isSpecial: false,
+    tier: 'Epic',
+    rank: 187,
+    score: '517.67',
+    shortKo: '꽃화관 빙어 낚시',
+    shortEn: 'Floral Angler',
+    titleKo: '#43 꽃화관 쓰고 빙어 낚는 자식 (Floral Wreath Angler)',
+    titleEn: '#43 Floral Wreath Ice Angler (Epic)',
+    themeKo: 'Epic · Floral Wreath & Arctic Smelt',
+    themeEn: 'Epic · Floral Wreath & Arctic Smelt',
     noteKo:
-      '기념비적인 1번 자식(P00001)입니다. 뒤에 번개 치고 금테 안경에 월계관까지 썼지만, 1번이라고 해서 에어드랍 같은 거 기대하시면 곤란합니다.',
+      '머리에 꽃화관 얹고 낚싯대에 빙어까지 물고 있는 알짜배기 자식입니다. 꼭 1등짜리 아니어도 이렇게 조합 이쁘게 뽑힌 애들이 수두룩합니다.',
     noteEn:
-      'Token #1 of the collection with lightning and gold-rim glasses. Being #1 still means zero airdrops or financial promises.',
-  },
-  {
-    edition: 7,
-    id: 'P00007',
-    isSpecial: true,
-    tier: 'Mythic',
-    rank: 5,
-    score: '60,007.14',
-    shortKo: '시공간의 지배자',
-    shortEn: 'Chronos Ruler',
-    titleKo: '#7 시공간의 지배자 (Chronos Time-Space Ruler)',
-    titleEn: '#7 Chronos Time-Space Ruler (Mythic)',
-    themeKo: 'Rank #5 · Clockwork & Heterochromia',
-    themeEn: 'Rank #5 · Clockwork & Heterochromia',
-    noteKo:
-      '양쪽 눈 색깔 다른 오드아이에 시계 태엽 돌아가는 자식입니다. 중2병 감성 좋아하는 분들이 베리챗 프사로 달면 딱입니다.',
-    noteEn:
-      'Features heterochromia eyes and spinning clockwork gears. Ideal if you enjoy a dramatic chuni-style VeryChat PFP.',
-  },
-  {
-    edition: 9,
-    id: 'P00009',
-    isSpecial: true,
-    tier: 'Mythic',
-    rank: 2,
-    score: '60,010.33',
-    shortKo: '사이버 네온 군주',
-    shortEn: 'Cyber Overlord',
-    titleKo: '#9 사이버 네온 군주 (Cyber Neon Overlord)',
-    titleEn: '#9 Cyber Neon Overlord (Mythic)',
-    themeKo: 'Rank #2 · Holo-Spectrum Visor',
-    themeEn: 'Rank #2 · Holo-Spectrum Visor',
-    noteKo:
-      '네온사인 번쩍거리는 사이버펑크 바이저 낀 자식입니다. 밤에 채팅방에서 눈에 잘 띄라고 형광색 도트 아낌없이 찍었습니다.',
-    noteEn:
-      'Sporting a holo-spectrum visor in a neon city so your profile picture stands out clearly in late-night chat rooms.',
+      'Wearing a floral wreath while catching an arctic smelt. Proof that you do not need a #1 rank to get an adorable combination.',
   },
   {
     edition: 500,
@@ -290,39 +182,147 @@ const CURATED_BEAUTY_14 = [
     noteEn:
       'Pink penguin in a green beanie holding a freshly caught smelt in its beak—guaranteed to brighten up your profile.',
   },
+  {
+    edition: 25,
+    id: 'P00025',
+    isSpecial: false,
+    tier: 'Epic',
+    rank: 2785,
+    score: '252.41',
+    shortKo: '안전모 세일러',
+    shortEn: 'Hardhat Sailor',
+    titleKo: '#25 박쥐 날개 달고 노란 안전모 쓴 자식 (Hardhat Sailor)',
+    titleEn: '#25 Bat Wings & Sailor Collar Hardhat (Epic)',
+    themeKo: 'Epic · Bat Wings & Hardhat',
+    themeEn: 'Epic · Bat Wings & Hardhat',
+    noteKo:
+      '세일러 카라에 박쥐 날개 달고 머리엔 공사장 노란 안전모에 밀짚까지 물고 있는 종잡을 수 없는 귀한 자식입니다.',
+    noteEn:
+      'Rocking a sailor collar, bat wings, a yellow construction hardhat, and a wheat straw—chaotic B-grade charm.',
+  },
+  {
+    edition: 4276,
+    id: 'P04276',
+    isSpecial: false,
+    tier: 'Common',
+    rank: 310,
+    score: '455.85',
+    shortKo: '매화 로브 윙크',
+    shortEn: 'Plum Robe Wink',
+    titleKo: '#4276 프리즘 후광에 비눗방울 부는 자식 (Plum Robe)',
+    titleEn: '#4276 Glacier Prism & Bubble Pipe Wink (Common)',
+    themeKo: 'Common · Glacier Prism & Wink',
+    themeEn: 'Common · Glacier Prism & Wink',
+    noteKo:
+      '등급표 이름은 Common인데 프리즘 후광이랑 매화 로브가 겹쳐서 순위는 310등으로 껑충 뛴 자식입니다. 어차피 등급 달라도 주는 건 똑같이 없습니다.',
+    noteEn:
+      'Tagged Common tier yet ranked #310 thanks to its Glacier Prism aura and Plum Blossom robe. Tier labels really do not matter here.',
+  },
+  {
+    edition: 88,
+    id: 'P00088',
+    isSpecial: false,
+    tier: 'Common',
+    rank: 6044,
+    score: '177.49',
+    shortKo: '초록 비니 과잠',
+    shortEn: 'Beanie Varsity',
+    titleKo: '#88 초록 비니에 파이프 물고 과잠 입은 자식',
+    titleEn: '#88 Green Beanie & Blue Varsity Jacket',
+    themeKo: 'Common · Blue Varsity & Briar Pipe',
+    themeEn: 'Common · Blue Varsity & Briar Pipe',
+    noteKo:
+      '핑크색 배경에 파란 과잠 입고 초록 비니 쓴 복학생 느낌의 정감 가는 자식입니다. 프사로 달아두기 아주 무난하고 이쁩니다.',
+    noteEn:
+      'Midnight penguin in a blue varsity jacket and green beanie with a briar pipe—chill campus vibe for your PFP.',
+  },
+  {
+    edition: 108,
+    id: 'P00108',
+    isSpecial: false,
+    tier: 'Common',
+    rank: 7545,
+    score: '150.71',
+    shortKo: '파란 캡모자 후드',
+    shortEn: 'Blue Cap Hoodie',
+    titleKo: '#108 회색 후드티에 파란 캡모자 쓴 자식',
+    titleEn: '#108 Grey Hoodie & Blue Cap Penguin',
+    themeKo: 'Common · Grey Hoodie & Blue Cap',
+    themeEn: 'Common · Grey Hoodie & Blue Cap',
+    noteKo:
+      '살구색 깃털에 회색 후드티 입고 파란 모자 눌러쓴 뒤 입에 밀짚 하나 물고 있는 꾸안꾸 스타일 자식입니다.',
+    noteEn:
+      'Apricot penguin in a casual grey hoodie and blue cap chewing on a wheat straw. Effortlessly clean PFP.',
+  },
+  {
+    edition: 312,
+    id: 'P00312',
+    isSpecial: false,
+    tier: 'Common',
+    rank: 5671,
+    score: '184.47',
+    shortKo: '하와이안 헤드폰',
+    shortEn: 'Hawaiian Beats',
+    titleKo: '#312 빨간 하와이안 셔츠에 헤드폰 낀 자식',
+    titleEn: '#312 Red Hawaiian Shirt & Purple Headphones',
+    themeKo: 'Common · Hawaiian Shirt & Headphones',
+    themeEn: 'Common · Hawaiian Shirt & Headphones',
+    noteKo:
+      '추운 남극 출신이면서 빨간 하와이안 셔츠 입고 선글라스에 보라색 헤드폰까지 낀 흥 넘치는 자식입니다.',
+    noteEn:
+      'An Antarctic penguin wearing a red Hawaiian shirt, blue wayfarer sunglasses, and purple headphones.',
+  },
+  {
+    edition: 777,
+    id: 'P00777',
+    isSpecial: false,
+    tier: 'Common',
+    rank: 4419,
+    score: '209.51',
+    shortKo: '보안관 모자 777',
+    shortEn: 'Sheriff #777',
+    titleKo: '#777 민트 폴로셔츠에 보안관 모자 쓴 럭키 자식',
+    titleEn: '#777 Sheriff Hat & Mint Polo Penguin',
+    themeKo: 'Common · Token #777 · Sheriff Hat',
+    themeEn: 'Common · Token #777 · Sheriff Hat',
+    noteKo:
+      '번호가 무려 777번인 초코 펭귄입니다. 보안관 모자 쓰고 민트색 폴로셔츠 입었는데, 777번이라고 잭팟 터지는 기능 같은 건 없습니다.',
+    noteEn:
+      'Lucky edition #777 wearing a sheriff hat and mint polo shirt—though hitting #777 still pays out zero jackpot.',
+  },
 ];
 
-// Additional Penguins for the 28-Token Dual-Row Infinite Pixel Parade
+// Additional Penguins for the 28-Token Dual-Row Infinite Pixel Parade (All 48x48 Generative Penguins)
 const PARADE_ROW_1_ITEMS = [
   { edition: 4442, labelKo: '공식 대표 로고', labelEn: 'Official Logo', sub: 'Pixel Shades · #4442' },
-  { edition: 2, labelKo: '천상의 대천사', labelEn: 'Celestial Archangel', sub: 'Mythic 1/1 · Rank #1' },
-  { edition: 43, labelKo: '꽃화관 빙어 낚시', labelEn: 'Floral Wreath Angler', sub: 'Epic · Rank #187' },
-  { edition: 5, labelKo: '빙하의 제왕', labelEn: 'Glacier Emperor', sub: 'Mythic 1/1 · Rank #3' },
-  { edition: 963, labelKo: '여우 후드 원지', labelEn: 'Solar Fox Onesie', sub: 'Legendary · Rank #12' },
-  { edition: 6, labelKo: '심해의 지배자', labelEn: 'Abyssal Sea Ruler', sub: 'Mythic 1/1 · Rank #4' },
-  { edition: 6522, labelKo: '드림글로우 게코 원지', labelEn: 'Dreamglow Gecko Onesie', sub: 'Uncommon · Rank #15' },
-  { edition: 1, labelKo: 'GO 제우스', labelEn: 'GO Zeus', sub: 'Mythic 1/1 · Rank #7' },
-  { edition: 500, labelKo: '크리스탈 나이트', labelEn: 'Crystal Knight Mage', sub: 'Mythic · Rank #46' },
-  { edition: 7, labelKo: '시공간의 지배자', labelEn: 'Chronos Time Ruler', sub: 'Mythic 1/1 · Rank #5' },
-  { edition: 75, labelKo: '썬더볼트 빙하 왕관', labelEn: 'Thunderbolt Glacier Crown', sub: 'Legendary · Rank #162' },
-  { edition: 9, labelKo: '사이버 네온 군주', labelEn: 'Cyber Neon Overlord', sub: 'Mythic 1/1 · Rank #2' },
-  { edition: 192, labelKo: '극지 탐험가 우샨카', labelEn: 'Polar Explorer Ushanka', sub: 'Rare · Kelp Mint' },
-  { edition: 21, labelKo: '핑크 비니 빙어 캐처', labelEn: 'Pink Smelt Catcher', sub: 'Rare · Arctic Smelt' },
+  { edition: 963, labelKo: '여우 잠옷 펭귄', labelEn: 'Fox Onesie Penguin', sub: 'Legendary · #963' },
+  { edition: 6522, labelKo: '도마뱀 후드 펭귄', labelEn: 'Gecko Onesie Penguin', sub: 'Uncommon · #6522' },
+  { edition: 43, labelKo: '꽃화관 빙어 낚시', labelEn: 'Floral Wreath Angler', sub: 'Epic · #43' },
+  { edition: 500, labelKo: '크리스탈 나이트', labelEn: 'Crystal Knight', sub: 'Mythic · #500' },
+  { edition: 75, labelKo: '빙하 왕관 과잠', labelEn: 'Glacier Varsity', sub: 'Legendary · #75' },
+  { edition: 192, labelKo: '군밤장수 털모자', labelEn: 'Polar Ushanka', sub: 'Rare · #192' },
+  { edition: 21, labelKo: '핑크 비니 빙어', labelEn: 'Pink Smelt Catcher', sub: 'Rare · #21' },
+  { edition: 25, labelKo: '안전모 세일러', labelEn: 'Hardhat Sailor', sub: 'Epic · #25' },
+  { edition: 4276, labelKo: '매화 로브 윙크', labelEn: 'Plum Robe Wink', sub: 'Common · #4276' },
+  { edition: 88, labelKo: '초록 비니 과잠', labelEn: 'Beanie Varsity', sub: 'Common · #88' },
+  { edition: 108, labelKo: '파란 캡모자 후드', labelEn: 'Blue Cap Hoodie', sub: 'Common · #108' },
+  { edition: 312, labelKo: '하와이안 헤드폰', labelEn: 'Hawaiian Headphones', sub: 'Common · #312' },
+  { edition: 777, labelKo: '보안관 모자 777', labelEn: 'Sheriff Hat #777', sub: 'Common · #777' },
 ];
 
 const PARADE_ROW_2_ITEMS = [
-  { edition: 3, labelKo: '크립토 불 황제', labelEn: 'Crypto Bull Emperor', sub: 'Mythic 1/1 · Rank #8' },
-  { edition: 10, labelKo: '다크 히어로', labelEn: 'Dark Hero Vigilante', sub: 'Mythic 1/1 · Rank #10' },
-  { edition: 25, labelKo: '하버 세일러 카라', labelEn: 'Harbor Sailor Collar', sub: 'Epic · Bat Wings' },
-  { edition: 4, labelKo: '네온 디제이 마에스트로', labelEn: 'Neon DJ Maestro', sub: 'Mythic 1/1 · Rank #6' },
-  { edition: 8, labelKo: '태양의 파라오', labelEn: 'Solar Pharaoh', sub: 'Mythic 1/1 · Rank #11' },
-  { edition: 11, labelKo: '밤의 신사 탐정', labelEn: 'Noir Gentleman Detective', sub: 'Mythic 1/1 · Rank #9' },
-  { edition: 4276, labelKo: '글래시어 프리즘 윙크', labelEn: 'Glacier Prism Wink', sub: 'Common · Rank #310' },
   { edition: 12, labelKo: '픽셀 펭귄 #12', labelEn: 'Pixel Penguin #12', sub: 'Generative · #12' },
+  { edition: 33, labelKo: '픽셀 펭귄 #33', labelEn: 'Pixel Penguin #33', sub: 'Generative · #33' },
+  { edition: 55, labelKo: '픽셀 펭귄 #55', labelEn: 'Pixel Penguin #55', sub: 'Generative · #55' },
   { edition: 100, labelKo: '픽셀 펭귄 #100', labelEn: 'Pixel Penguin #100', sub: 'Generative · #100' },
-  { edition: 777, labelKo: '픽셀 펭귄 #777', labelEn: 'Pixel Penguin #777', sub: 'Generative · #777' },
+  { edition: 256, labelKo: '픽셀 펭귄 #256', labelEn: 'Pixel Penguin #256', sub: 'Generative · #256' },
+  { edition: 365, labelKo: '픽셀 펭귄 #365', labelEn: 'Pixel Penguin #365', sub: 'Generative · #365' },
+  { edition: 512, labelKo: '픽셀 펭귄 #512', labelEn: 'Pixel Penguin #512', sub: 'Generative · #512' },
   { edition: 1000, labelKo: '픽셀 펭귄 #1000', labelEn: 'Pixel Penguin #1000', sub: 'Generative · #1000' },
+  { edition: 1024, labelKo: '픽셀 펭귄 #1024', labelEn: 'Pixel Penguin #1024', sub: 'Generative · #1024' },
   { edition: 2026, labelKo: '픽셀 펭귄 #2026', labelEn: 'Pixel Penguin #2026', sub: 'Generative · #2026' },
+  { edition: 3333, labelKo: '픽셀 펭귄 #3333', labelEn: 'Pixel Penguin #3333', sub: 'Generative · #3333' },
+  { edition: 5555, labelKo: '픽셀 펭귄 #5555', labelEn: 'Pixel Penguin #5555', sub: 'Generative · #5555' },
   { edition: 8888, labelKo: '픽셀 펭귄 #8888', labelEn: 'Pixel Penguin #8888', sub: 'Generative · #8888' },
   { edition: 10000, labelKo: '픽셀 펭귄 #10000', labelEn: 'Pixel Penguin #10000', sub: 'Generative · #10000' },
 ];
@@ -1089,8 +1089,8 @@ function initPfpStudio() {
     });
   });
 
-  // Preset strip: Official Logo #4442 + Featured tokens
-  const presets = [4442, 2, 5, 6, 1, 7, 9, 43, 963, 6522, 500, 75, 192, 21];
+  // Preset strip: Official Logo #4442 + Featured generative penguins
+  const presets = CURATED_BEAUTY_14.map((c) => c.edition);
   const strip = document.getElementById('pfp-preset-strip');
   if (strip) {
     strip.innerHTML = presets
@@ -1137,7 +1137,7 @@ function initPfpStudio() {
   }
 }
 
-// Render 11 Special Originals Section
+// Render 11 Special Originals Section (Only if section element exists)
 function renderSpecialsGrid(specials) {
   const grid = document.getElementById('specials-grid');
   if (!grid || !specials) return;
@@ -1149,7 +1149,7 @@ function renderSpecialsGrid(specials) {
       <div class="nft-thumb-wrap">
         <img src="${sp.fast_gif_url}" alt="${escapeHtml(sp.title)}" class="pixelated" loading="lazy" />
         <div class="card-top-badges">
-          <span class="tier-pill tier-Mythic">MYTHIC 1/1</span>
+          <span class="tier-pill tier-Mythic">MYTHIC</span>
           <span class="rank-pill">Rank #${sp.rarity_rank}</span>
         </div>
       </div>
@@ -1297,9 +1297,12 @@ function filterExplorerByTrait(cat, val) {
   document.querySelectorAll('.exp-cat-select').forEach((sel) => {
     sel.value = sel.dataset.cat === cat ? val : '';
   });
-  document.getElementById('exp-tier').value = '';
-  document.getElementById('exp-edition').value = '';
-  document.getElementById('exp-search').value = '';
+  const tierEl = document.getElementById('exp-tier');
+  if (tierEl) tierEl.value = '';
+  const edEl = document.getElementById('exp-edition');
+  if (edEl) edEl.value = '';
+  const searchEl = document.getElementById('exp-search');
+  if (searchEl) searchEl.value = '';
   CURRENT_PAGE = 1;
   fetchExplorerTokens();
   scrollToSection('sec-explorer');
@@ -1400,7 +1403,7 @@ async function openTokenModal(tokenNum) {
     const downloadBtnHtml = isSpecial
       ? `<a href="${tok.full_image_url}" download="${tok.id}.gif" class="btn-primary" style="text-decoration:none; width:100%; justify-content:center;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          <span>1254×1254 원본 애니메이션 GIF 다운로드</span>
+          <span>1254×1254 원본 이미지 다운로드</span>
          </a>`
       : `<button type="button" class="btn-primary" style="width:100%; justify-content:center;" onclick="downloadHighRes3072('${tok.id}', '${tok.pixel_48_url}')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
@@ -1496,7 +1499,7 @@ function buildSubmissionModal() {
     { label: '7. 프로젝트 설명 / 취지 — 국문', value: storyKo },
     {
       label: '8. 민팅 및 마켓 스펙 요약',
-      value: '체인: VERY Mainnet (4613) | 토큰 표준: ERC-721 | 공급량: 10,000 (1/1 GIF 11종 + 48×48 제너레이티브 9,989종) | 대표 로고: #4442 (P04442) | 민팅 일정: 2026년 10월 23일 (금) | 민팅가: 100 VERY | VERY 소각: 거래 금액의 5% (0x0000...dEaD) | 컬렉션 수수료: 0%',
+      value: '체인: VERY Mainnet (4613) | 토큰 표준: ERC-721 | 공급량: 10,000 | 대표 로고: #4442 (P04442) | 민팅 일정: 2026년 10월 23일 (금) | 민팅가: 100 VERY | VERY 소각: 거래 금액의 5% (0x0000...dEaD) | 컬렉션 수수료: 0%',
     },
   ];
 
@@ -1536,7 +1539,7 @@ function buildSubmissionModal() {
         `• 심볼(Symbol): PPENG`,
         `• 공식 대표 로고: #4442 (P04442) — ${siteUrl}/assets/logo_4442_1024.png`,
         `• 체인 / 표준: VERY Mainnet (4613) / ERC-721`,
-        `• 총 공급량: 10,000 (1-of-1 Animated GIF 11종 + 48×48 Generative PNG 9,989종)`,
+        `• 총 공급량: 10,000`,
         `• 민팅 일정 / 가격: 2026년 10월 23일(금) / 100 VERY`,
         `• VERY 소각 / 컬렉션 수수료: 거래 금액의 5% (0x0000...dEaD) / 0%`,
         `• 공식 홈페이지(단독 링크): ${siteUrl}`,
@@ -1627,10 +1630,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   document.getElementById('exp-reset-btn')?.addEventListener('click', () => {
-    document.getElementById('exp-search').value = '';
-    document.getElementById('exp-tier').value = '';
-    document.getElementById('exp-edition').value = '';
-    document.getElementById('exp-sort').value = 'rank_asc';
+    const searchEl = document.getElementById('exp-search');
+    if (searchEl) searchEl.value = '';
+    const tierEl = document.getElementById('exp-tier');
+    if (tierEl) tierEl.value = '';
+    const edEl = document.getElementById('exp-edition');
+    if (edEl) edEl.value = '';
+    const sortEl = document.getElementById('exp-sort');
+    if (sortEl) sortEl.value = 'rank_asc';
     document.querySelectorAll('.exp-cat-select').forEach((s) => {
       s.value = '';
     });

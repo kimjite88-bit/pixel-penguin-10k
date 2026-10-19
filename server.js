@@ -305,6 +305,12 @@ app.get('/api/tokens', (req, res) => {
 
   // Sort matched token numbers
   matchedNums.sort((a, b) => {
+    // Keep #1~#11 low-profile in the unfiltered explorer; surface them normally when filtering by tier
+    if (!tierFilter && !q) {
+      const aIsGif = a <= 11 ? 1 : 0;
+      const bIsGif = b <= 11 ? 1 : 0;
+      if (aIsGif !== bIsGif) return aIsGif - bIsGif;
+    }
     const rowA = collection.tokens[a - 1];
     const rowB = collection.tokens[b - 1];
     if (sort === 'id_asc') return a - b;
