@@ -70,9 +70,9 @@ const CURATED_BEAUTY_14 = [
     themeKo: '1-of-1 GIF · Rank #1 · Seraphim Wings & Halo',
     themeEn: '1-of-1 GIF · Rank #1 · Seraphim Wings & Halo',
     noteKo:
-      '전체 10,000개 중 희귀도 1위(Rank #1 · 60,012.23 pts)인 4프레임 애니메이션 GIF 토큰입니다. 골드 배경, 헤일로, 세라핌 날개, 윙크 모션으로 구성되어 있습니다.',
+      '전체 10,000개 중 희귀도 1위(Rank #1 · 60,012.23 pts) 토큰입니다. 골드 배경, 헤일로, 세라핌 날개, 윙크 모션으로 구성되어 있습니다.',
     noteEn:
-      'Ranked #1 out of 10,000 tokens (60,012.23 pts). 4-frame animated 1-of-1 GIF featuring Celestial Azure skin, Radiant Golden Halo, and Seraphim White Wings.',
+      'Ranked #1 out of 10,000 tokens (60,012.23 pts). 1-of-1 GIF featuring Celestial Azure skin, Radiant Golden Halo, and Seraphim White Wings.',
   },
   {
     edition: 5,
@@ -88,9 +88,9 @@ const CURATED_BEAUTY_14 = [
     themeKo: '1-of-1 GIF · Rank #3 · Ice Crystal Crown',
     themeEn: '1-of-1 GIF · Rank #3 · Ice Crystal Crown',
     noteKo:
-      '희귀도 3위(Rank #3 · 60,007.14 pts) 4프레임 애니메이션 GIF 토큰입니다. 오로라 빙하 배경, 얼음 결정 왕관, 모피 망토, 눈보라 파티클로 구성되어 있습니다.',
+      '희귀도 3위(Rank #3 · 60,007.14 pts) 토큰입니다. 오로라 빙하 배경, 얼음 결정 왕관, 모피 망토, 눈보라 파티클로 구성되어 있습니다.',
     noteEn:
-      'Ranked #3 overall (60,007.14 pts). 4-frame animated 1-of-1 GIF with Aurora Glacier Palace background, Glacier Ice Crystal Crown, and Frost Flurry.',
+      'Ranked #3 overall (60,007.14 pts). 1-of-1 GIF with Aurora Glacier Palace background, Glacier Ice Crystal Crown, and Frost Flurry.',
   },
   {
     edition: 6,
@@ -106,9 +106,9 @@ const CURATED_BEAUTY_14 = [
     themeKo: '1-of-1 GIF · Rank #4 · Jellyfish & Coral Crown',
     themeEn: '1-of-1 GIF · Rank #4 · Jellyfish & Coral Crown',
     noteKo:
-      '희귀도 4위(Rank #4 · 60,007.14 pts) 4프레임 애니메이션 GIF 토큰입니다. 심해 배경, 해파리 및 물방울 애니메이션, 산호 왕관으로 구성되어 있습니다.',
+      '희귀도 4위(Rank #4 · 60,007.14 pts) 토큰입니다. 심해 배경, 해파리 및 물방울 애니메이션, 산호 왕관으로 구성되어 있습니다.',
     noteEn:
-      'Ranked #4 overall (60,007.14 pts). 4-frame animated 1-of-1 GIF featuring Bioluminescent Jellyfish & Bubble Tide and Golden Coral Sea Crown.',
+      'Ranked #4 overall (60,007.14 pts). 1-of-1 GIF featuring Bioluminescent Jellyfish & Bubble Tide and Golden Coral Sea Crown.',
   },
   {
     edition: 43,
@@ -178,9 +178,9 @@ const CURATED_BEAUTY_14 = [
     themeKo: '1-of-1 GIF · Rank #7 · Lightning Laurel Crown',
     themeEn: '1-of-1 GIF · Rank #7 · Lightning Laurel Crown',
     noteKo:
-      '컬렉션 1번 토큰(P00001 · Rank #7) 4프레임 애니메이션 GIF입니다. 번개 이펙트 배경, 월계관, 골드림 스퀘어 안경, GO 망토 파츠로 구성되어 있습니다.',
+      '컬렉션 1번 토큰(P00001 · Rank #7)입니다. 번개 이펙트 배경, 월계관, 골드림 스퀘어 안경, GO 망토 파츠로 구성되어 있습니다.',
     noteEn:
-      'Token #1 of PIXEL PENGUIN 10K (Rank #7). 4-frame animated 1-of-1 GIF with Olympian Thunderbolt Storm, Golden Laurel Crown, and Gold-Rim Glasses.',
+      'Token #1 of PIXEL PENGUIN 10K (Rank #7). 1-of-1 GIF with Olympian Thunderbolt Storm, Golden Laurel Crown, and Gold-Rim Glasses.',
   },
   {
     edition: 7,
@@ -196,9 +196,9 @@ const CURATED_BEAUTY_14 = [
     themeKo: '1-of-1 GIF · Rank #5 · Clockwork & Heterochromia',
     themeEn: '1-of-1 GIF · Rank #5 · Clockwork & Heterochromia',
     noteKo:
-      '희귀도 5위(Rank #5 · 60,007.14 pts) 4프레임 애니메이션 GIF 토큰입니다. 시계탑 기어 배경, 에메랄드/골드 오드아이(Heterochromia), 모래시계 망토 조합입니다.',
+      '희귀도 5위(Rank #5 · 60,007.14 pts) 토큰입니다. 시계탑 기어 배경, 에메랄드/골드 오드아이(Heterochromia), 모래시계 망토 조합입니다.',
     noteEn:
-      'Ranked #5 overall (60,007.14 pts). 4-frame animated 1-of-1 GIF featuring Clockwork Sanctum gears and Emerald/Gold Heterochromia eyes.',
+      'Ranked #5 overall (60,007.14 pts). 1-of-1 GIF featuring Clockwork Sanctum gears and Emerald/Gold Heterochromia eyes.',
   },
   {
     edition: 9,
@@ -214,9 +214,9 @@ const CURATED_BEAUTY_14 = [
     themeKo: '1-of-1 GIF · Rank #2 · Holo-Spectrum Visor',
     themeEn: '1-of-1 GIF · Rank #2 · Holo-Spectrum Visor',
     noteKo:
-      '희귀도 2위(Rank #2 · 60,010.33 pts) 4프레임 애니메이션 GIF 토큰입니다. 사이버펑크 네온 시티 배경, 홀로그램 바이저, 네온 크리스탈 크라운 조합입니다.',
+      '희귀도 2위(Rank #2 · 60,010.33 pts) 토큰입니다. 사이버펑크 네온 시티 배경, 홀로그램 바이저, 네온 크리스탈 크라운 조합입니다.',
     noteEn:
-      'Ranked #2 overall (60,010.33 pts). 4-frame animated 1-of-1 GIF with Cyberpunk Neon Metropolis, Holo-Spectrum Visor, and Neon Crystal Crown.',
+      'Ranked #2 overall (60,010.33 pts). 1-of-1 GIF with Cyberpunk Neon Metropolis, Holo-Spectrum Visor, and Neon Crystal Crown.',
   },
   {
     edition: 500,
@@ -626,7 +626,7 @@ async function selectMotionPenguin(editionOrItem, userInitiated = true) {
   if (pipWrap && pipImg && pipLabel) {
     if (item.isSpecial) {
       pipImg.src = `/assets/specials/${item.edition}_fast.gif`;
-      pipLabel.textContent = '1/1 4-FRAME GIF';
+      pipLabel.textContent = '1/1 GIF';
     } else {
       pipImg.src = `/img/${item.id}.png`;
       pipLabel.textContent = item.isLogo ? 'OFFICIAL LOGO' : 'NATIVE 48×48 PNG';
@@ -1154,7 +1154,6 @@ function renderSpecialsGrid(specials) {
           <span class="tier-pill tier-Mythic">MYTHIC 1/1</span>
           <span class="rank-pill">Rank #${sp.rarity_rank}</span>
         </div>
-        <span class="gif-badge">4-FRAME GIF</span>
       </div>
       <div class="nft-card-meta">
         <span>${sp.id}</span>
@@ -1267,7 +1266,6 @@ async function fetchExplorerTokens() {
               <span class="tier-pill tier-${item.tier}">${item.tier}</span>
               <span class="rank-pill">#${item.rarity_rank}</span>
             </div>
-            ${isSpecial ? '<span class="gif-badge">1/1 GIF</span>' : ''}
           </div>
           <div class="nft-card-meta">
             <span>${item.id}</span>
