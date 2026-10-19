@@ -45,8 +45,8 @@ const CURATED_BEAUTY_14 = [
     tier: 'Mythic',
     rank: 9811,
     score: '87.1',
-    shortKo: '★ 대표 로고',
-    shortEn: '★ Official Logo',
+    shortKo: '대표 로고',
+    shortEn: 'Official Logo',
     titleKo: '#4442 공식 대표 로고 — Pixel Penguin #4442 (P04442)',
     titleEn: '#4442 Official Collection Logo — Pixel Penguin #4442',
     themeKo: 'Glacier Sky (Blue) · Classic Blue (A-3) & Pixel Shades',
@@ -294,7 +294,7 @@ const CURATED_BEAUTY_14 = [
 
 // Additional Penguins for the 28-Token Dual-Row Infinite Pixel Parade
 const PARADE_ROW_1_ITEMS = [
-  { edition: 4442, labelKo: '★ 공식 대표 로고', labelEn: '★ Official Logo', sub: 'Pixel Shades · #4442' },
+  { edition: 4442, labelKo: '공식 대표 로고', labelEn: 'Official Logo', sub: 'Pixel Shades · #4442' },
   { edition: 2, labelKo: '천상의 대천사', labelEn: 'Celestial Archangel', sub: 'Mythic 1/1 · Rank #1' },
   { edition: 43, labelKo: '꽃화관 빙어 낚시', labelEn: 'Floral Wreath Angler', sub: 'Epic · Rank #187' },
   { edition: 5, labelKo: '빙하의 제왕', labelEn: 'Glacier Emperor', sub: 'Mythic 1/1 · Rank #3' },
@@ -629,7 +629,7 @@ async function selectMotionPenguin(editionOrItem, userInitiated = true) {
       pipLabel.textContent = '1/1 4-FRAME GIF';
     } else {
       pipImg.src = `/img/${item.id}.png`;
-      pipLabel.textContent = item.isLogo ? '★ OFFICIAL LOGO' : 'NATIVE 48×48 PNG';
+      pipLabel.textContent = item.isLogo ? 'OFFICIAL LOGO' : 'NATIVE 48×48 PNG';
     }
   }
 
@@ -637,7 +637,7 @@ async function selectMotionPenguin(editionOrItem, userInitiated = true) {
   const tierPill = document.getElementById('spot-tier-pill');
   if (tierPill) {
     tierPill.textContent = item.isLogo
-      ? '★ OFFICIAL LOGO'
+      ? 'OFFICIAL LOGO'
       : item.isSpecial
       ? 'MYTHIC 1/1 GIF'
       : item.tier.toUpperCase();
@@ -775,9 +775,7 @@ function initPixelMotionStudio() {
     MOTION_STATE.autoPlay = !MOTION_STATE.autoPlay;
     MOTION_STATE.lastSwitchTime = performance.now();
     autoBtn.classList.toggle('active-toggle', MOTION_STATE.autoPlay);
-    const iconEl = document.getElementById('autoplay-icon');
     const lblEl = document.getElementById('autoplay-label');
-    if (iconEl) iconEl.textContent = MOTION_STATE.autoPlay ? '⏸' : '▶';
     if (lblEl) {
       lblEl.textContent =
         CURRENT_LANG === 'ko'
@@ -1064,7 +1062,7 @@ async function loadPfpPreview(tokenNum) {
     document.getElementById('pfp-preview-img').src = imgUrl;
     document.getElementById('pfp-mini-img').src = imgUrl;
     document.getElementById('pfp-sim-title').textContent =
-      tok.edition === 4442 ? `${tok.name} (★ 공식 대표 로고)` : tok.name;
+      tok.edition === 4442 ? `${tok.name} (공식 대표 로고)` : tok.name;
     document.getElementById('pfp-sim-id').textContent = tok.id;
 
     const tierEl = document.getElementById('pfp-sim-tier');
@@ -1405,10 +1403,12 @@ async function openTokenModal(tokenNum) {
 
     const downloadBtnHtml = isSpecial
       ? `<a href="${tok.full_image_url}" download="${tok.id}.gif" class="btn-primary" style="text-decoration:none; width:100%; justify-content:center;">
-          ⚡ 1254×1254 원본 애니메이션 GIF 다운로드
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <span>1254×1254 원본 애니메이션 GIF 다운로드</span>
          </a>`
       : `<button type="button" class="btn-primary" style="width:100%; justify-content:center;" onclick="downloadHighRes3072('${tok.id}', '${tok.pixel_48_url}')">
-          🖼️ 3072×3072 초고해상도 PNG 다운로드 (64× NEAREST)
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          <span>3072×3072 고해상도 PNG 다운로드 (64× NEAREST)</span>
          </button>`;
 
     body.innerHTML = `
@@ -1420,7 +1420,7 @@ async function openTokenModal(tokenNum) {
           ${downloadBtnHtml}
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
             <button type="button" class="btn-secondary" style="justify-content:center; padding:9px;" onclick="loadPfpPreview(${tok.edition}); closeTokenModal(); scrollToSection('top');">
-              ✓ PFP 시뮬레이터 장착
+              PFP 시뮬레이터 장착
             </button>
             <a href="/api/metadata/${tok.id}.json" target="_blank" rel="noopener" class="btn-secondary" style="text-decoration:none; justify-content:center; padding:9px;">
               { } 온체인 JSON 보기
@@ -1541,7 +1541,7 @@ function buildSubmissionModal() {
         `• 총 공급량: 10,000 (1-of-1 Animated GIF 11종 + 48×48 Generative PNG 9,989종)`,
         `• 민팅 일정 / 가격: 2026년 10월 23일(금) / 100 VERY`,
         `• VERY 소각 / 컬렉션 수수료: 거래 금액의 5% (0x0000...dEaD) / 0%`,
-        `• 공식 홈페이지(🌐 단독 링크): ${siteUrl}`,
+        `• 공식 홈페이지(단독 링크): ${siteUrl}`,
         ``,
         `[컬렉션 소개 (EN - VERY PUNKS Reference Style)]`,
         storyEn,
