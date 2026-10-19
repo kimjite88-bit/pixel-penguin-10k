@@ -100,6 +100,8 @@ function expandTokenSummary(num) {
   });
 
   const tier = traits.Rarity;
+  const vTag = `v322_${nativeSha16.slice(0, 8)}`;
+  const addVer = (u) => (u.includes('?') ? `${u}&v=${vTag}` : `${u}?v=${vTag}`);
   return {
     id,
     edition: num,
@@ -111,9 +113,9 @@ function expandTokenSummary(num) {
     rarity_score: rarityScore,
     rarity_rank: rarityRank,
     active_traits_count: activeK,
-    image_url: isSpecial ? sp.fast_gif_url : `/img/${id}.png`,
-    full_image_url: isSpecial ? sp.gif_url : `/img/${id}.png`,
-    pixel_48_url: `/img/${id}.png`,
+    image_url: isSpecial ? addVer(sp.fast_gif_url) : `/img/${id}.png?v=${vTag}`,
+    full_image_url: isSpecial ? addVer(sp.gif_url) : `/img/${id}.png?v=${vTag}`,
+    pixel_48_url: `/img/${id}.png?v=${vTag}`,
     traits,
     hashes: {
       native_sha16: nativeSha16,
@@ -193,7 +195,7 @@ app.get('/img/:tokenFile', (req, res) => {
   const [offset, length] = collection.offsets[num - 1];
   const slice = packBuffer.subarray(offset, offset + length);
   res.setHeader('Content-Type', 'image/png');
-  res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+  res.setHeader('Cache-Control', 'public, max-age=86400, must-revalidate');
   return res.end(slice);
 });
 
