@@ -69,7 +69,7 @@ const CURATED_BEAUTY_14 = [
     noteKo:
       '펭귄인데 여우 후드 잠옷(Fox Onesie) 뒤집어쓰고 윙크하는 귀여운 자식입니다. 일반 도트 펭귄들 중 희귀도 점수 1등(전체 #12, Mythic)으로 뽑혔는데, 역시나 뭐 주는 건 없습니다.',
     noteEn:
-      'A penguin wearing a fox onesie and winking. Highest rarity.tools score among static 48×48 penguins (Rank #12, Mythic), though it still gives zero perks.',
+      'A penguin wearing a fox onesie and winking. Highest rarity.tools score among static pixel penguins (Rank #12, Mythic), though it still gives zero perks.',
   },
   {
     edition: 6522,
