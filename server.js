@@ -108,7 +108,6 @@ function expandTokenSummary(num) {
     archetype: isSpecial ? sp.archetype : null,
     kind: isSpecial ? 'SPECIAL_ORIGINAL_GIF' : 'GENERATIVE_48X48_NEAREST_3072',
     tier,
-    mint_price: '100 VERY',
     rarity_score: rarityScore,
     rarity_rank: rarityRank,
     active_traits_count: activeK,
@@ -160,7 +159,7 @@ function expandTokenFull(num) {
     ...base,
     description: isSpecial
       ? sp.description
-      : `Pixel Penguin 10K Official Collection on VeryChain (Very NFT). Created by @happy Ahndoge. Mint Price: 100 VERY.`,
+      : `Pixel Penguin 10K Official Collection on VeryChain (Very NFT). Created by @happy Ahndoge.`,
     n_frames: isSpecial ? sp.n_frames : 1,
     trait_breakdown: breakdown,
     active_trait_stat: {
@@ -376,7 +375,6 @@ app.get('/api/metadata/:id', (req, res) => {
     value:
       num <= 11 ? '1-of-1 Animated Special Original (GIF)' : 'Generative 48x48 Pixel Art',
   });
-  attributes.push({ trait_type: 'Mint Price', value: '100 VERY' });
 
   res.json({
     token_id: full.id,
@@ -389,7 +387,6 @@ app.get('/api/metadata/:id', (req, res) => {
     rarity_tier: full.tier,
     rarity_rank: full.rarity_rank,
     rarity_score: full.rarity_score,
-    mint_price: '100 VERY',
     kind: full.kind,
     image: `${host}${full.full_image_url}`,
     attributes,

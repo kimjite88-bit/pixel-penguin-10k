@@ -57,51 +57,51 @@ const CURATED_BEAUTY_14 = [
     edition: 963,
     id: 'P00963',
     isSpecial: false,
-    tier: 'Legendary',
+    tier: 'Mythic',
     rank: 12,
     score: '1,914.93',
     shortKo: '여우 잠옷 펭귄',
     shortEn: 'Fox Onesie',
     titleKo: '#963 여우 잠옷 입고 윙크하는 자식 (Fox Onesie)',
-    titleEn: '#963 Fox Onesie Penguin (Legendary)',
-    themeKo: 'Legendary · Fox Onesie & Wink',
-    themeEn: 'Legendary · Fox Onesie & Wink',
+    titleEn: '#963 Fox Onesie Penguin (Mythic)',
+    themeKo: 'Mythic · Rank #12 · Fox Onesie & Wink',
+    themeEn: 'Mythic · Rank #12 · Fox Onesie & Wink',
     noteKo:
-      '펭귄인데 여우 후드 잠옷(Fox Onesie) 뒤집어쓰고 윙크하는 귀여운 자식입니다. 기본 도트 펭귄들 중에서는 희귀도 점수가 제일 높게 나왔는데, 역시나 뭐 주는 건 없습니다.',
+      '펭귄인데 여우 후드 잠옷(Fox Onesie) 뒤집어쓰고 윙크하는 귀여운 자식입니다. 일반 도트 펭귄들 중 희귀도 점수 1등(전체 #12, Mythic)으로 뽑혔는데, 역시나 뭐 주는 건 없습니다.',
     noteEn:
-      'A penguin wearing a fox onesie and winking. Highest rarity score among the static 48×48 penguins, though it still gives zero perks.',
+      'A penguin wearing a fox onesie and winking. Highest rarity.tools score among static 48×48 penguins (Rank #12, Mythic), though it still gives zero perks.',
   },
   {
     edition: 6522,
     id: 'P06522',
     isSpecial: false,
-    tier: 'Uncommon',
+    tier: 'Mythic',
     rank: 15,
     score: '1,839.98',
     shortKo: '게코 후드 펭귄',
     shortEn: 'Gecko Onesie',
     titleKo: '#6522 도마뱀 후드 뒤집어쓴 자식 (Gecko Onesie)',
-    titleEn: '#6522 Dreamglow Gecko Onesie (Uncommon)',
-    themeKo: 'Uncommon · Dreamglow & Gecko Onesie',
-    themeEn: 'Uncommon · Dreamglow & Gecko Onesie',
+    titleEn: '#6522 Dreamglow Gecko Onesie (Mythic)',
+    themeKo: 'Mythic · Rank #15 · Dreamglow & Gecko Onesie',
+    themeEn: 'Mythic · Rank #15 · Dreamglow & Gecko Onesie',
     noteKo:
-      '등급은 Uncommon인데 희귀한 스킨이랑 초록 도마뱀 후드가 겹쳐서 점수가 높게 나온 특이한 자식입니다. 눈웃음 짓고 있어서 프사로 쓰기 딱 좋습니다.',
+      '희귀한 드림글로우 스킨이랑 초록 도마뱀 후드가 겹쳐서 전체 15등(Mythic)에 오른 귀한 자식입니다. 눈웃음 짓고 있어서 프사로 쓰기 딱 좋습니다.',
     noteEn:
-      'Labeled Uncommon tier but scored high thanks to its Dreamglow skin and Gecko Onesie hood. Smiling eyes make it a great PFP.',
+      'Ranked #15 (Mythic) thanks to its rare Dreamglow skin and Gecko Onesie hood. Smiling eyes make it a great PFP.',
   },
   {
     edition: 43,
     id: 'P00043',
     isSpecial: false,
-    tier: 'Epic',
+    tier: 'Legendary',
     rank: 187,
     score: '517.67',
     shortKo: '꽃화관 빙어 낚시',
     shortEn: 'Floral Angler',
     titleKo: '#43 꽃화관 쓰고 빙어 낚는 자식 (Floral Wreath Angler)',
-    titleEn: '#43 Floral Wreath Ice Angler (Epic)',
-    themeKo: 'Epic · Floral Wreath & Arctic Smelt',
-    themeEn: 'Epic · Floral Wreath & Arctic Smelt',
+    titleEn: '#43 Floral Wreath Ice Angler (Legendary)',
+    themeKo: 'Legendary · Rank #187 · Floral Wreath & Arctic Smelt',
+    themeEn: 'Legendary · Rank #187 · Floral Wreath & Arctic Smelt',
     noteKo:
       '머리에 꽃화관 얹고 낚싯대에 빙어까지 물고 있는 알짜배기 자식입니다. 꼭 1등짜리 아니어도 이렇게 조합 이쁘게 뽑힌 애들이 수두룩합니다.',
     noteEn:
@@ -118,8 +118,8 @@ const CURATED_BEAUTY_14 = [
     shortEn: 'Crystal Knight',
     titleKo: '#500 투구 쓰고 비눗방울 부는 자식 (Crystal Knight)',
     titleEn: '#500 Crystal Knight Helmet & Bubble Pipe',
-    themeKo: 'Mythic · Crystal Helmet & Bubble Pipe',
-    themeEn: 'Mythic · Crystal Helmet & Bubble Pipe',
+    themeKo: 'Mythic · Rank #46 · Crystal Helmet & Bubble Pipe',
+    themeEn: 'Mythic · Rank #46 · Crystal Helmet & Bubble Pipe',
     noteKo:
       '비장하게 기사 투구랑 지팡이 들어놓고 입에는 조개 비눗방울 파이프 물고 있는 하찮고 귀여운 자식입니다.',
     noteEn:
@@ -136,8 +136,8 @@ const CURATED_BEAUTY_14 = [
     shortEn: 'Glacier Varsity',
     titleKo: '#75 용암 동굴에서 과잠 입은 자식 (Glacier Crown)',
     titleEn: '#75 Glacier Crown & Varsity Jacket',
-    themeKo: 'Legendary · Glacier Crown & Varsity Jacket',
-    themeEn: 'Legendary · Glacier Crown & Varsity Jacket',
+    themeKo: 'Legendary · Rank #162 · Glacier Crown & Varsity Jacket',
+    themeEn: 'Legendary · Rank #162 · Glacier Crown & Varsity Jacket',
     noteKo:
       '뜨거운 용암 동굴 배경에 얼음 왕관 쓰고 파란 과잠(Varsity Jacket) 입은 청개구리 같은 자식입니다.',
     noteEn:
@@ -147,33 +147,33 @@ const CURATED_BEAUTY_14 = [
     edition: 192,
     id: 'P00192',
     isSpecial: false,
-    tier: 'Rare',
+    tier: 'Common',
     rank: 7788,
     score: '146.63',
     shortKo: '군밤장수 털모자',
     shortEn: 'Polar Ushanka',
     titleKo: '#192 민트 배경에 털모자 쓴 초코 펭귄 (Polar Ushanka)',
-    titleEn: '#192 Polar Ushanka & Cocoa Penguin (Rare)',
-    themeKo: 'Rare · Kelp Mint · Polar Ushanka',
-    themeEn: 'Rare · Kelp Mint · Polar Ushanka',
+    titleEn: '#192 Polar Ushanka & Cocoa Penguin (Common)',
+    themeKo: 'Common · Rank #7,788 · Kelp Mint · Polar Ushanka',
+    themeEn: 'Common · Rank #7,788 · Kelp Mint · Polar Ushanka',
     noteKo:
-      '희귀도 순위는 7,788등이지만 민트색 배경에 코코아 색 깃털이랑 털모자 조합이 아주 기가 막히게 귀여운 자식입니다.',
+      '희귀도 순위는 7,788등(Common)이지만 민트색 배경에 코코아 색 깃털이랑 털모자 조합이 아주 기가 막히게 귀여운 자식입니다.',
     noteEn:
-      'Ranked #7,788, but the mint background, cocoa feathers, and plush ushanka hat make it ridiculously cute.',
+      'Ranked #7,788 (Common), but the mint background, cocoa feathers, and plush ushanka hat make it ridiculously cute.',
   },
   {
     edition: 21,
     id: 'P00021',
     isSpecial: false,
-    tier: 'Rare',
+    tier: 'Common',
     rank: 6885,
     score: '162.54',
     shortKo: '핑크 비니 빙어',
     shortEn: 'Pink Smelt Catch',
     titleKo: '#21 핑크 배경에 초록 비니 쓰고 빙어 문 자식',
     titleEn: '#21 Orchid Pink & Green Beanie Smelt Catcher',
-    themeKo: 'Rare · Orchid Pink · Green Beanie',
-    themeEn: 'Rare · Orchid Pink · Green Beanie',
+    themeKo: 'Common · Rank #6,885 · Orchid Pink · Green Beanie',
+    themeEn: 'Common · Rank #6,885 · Orchid Pink · Green Beanie',
     noteKo:
       '분홍색 배경에 초록 비니 쓰고 입에 빙어 한 마리 야무지게 물고 있는 귀한 자식입니다. 프사로 해두면 볼 때마다 기분 좋아집니다.',
     noteEn:
@@ -183,15 +183,15 @@ const CURATED_BEAUTY_14 = [
     edition: 25,
     id: 'P00025',
     isSpecial: false,
-    tier: 'Epic',
+    tier: 'Uncommon',
     rank: 2785,
     score: '252.41',
     shortKo: '안전모 세일러',
     shortEn: 'Hardhat Sailor',
     titleKo: '#25 박쥐 날개 달고 노란 안전모 쓴 자식 (Hardhat Sailor)',
-    titleEn: '#25 Bat Wings & Sailor Collar Hardhat (Epic)',
-    themeKo: 'Epic · Bat Wings & Hardhat',
-    themeEn: 'Epic · Bat Wings & Hardhat',
+    titleEn: '#25 Bat Wings & Sailor Collar Hardhat (Uncommon)',
+    themeKo: 'Uncommon · Rank #2,785 · Bat Wings & Hardhat',
+    themeEn: 'Uncommon · Rank #2,785 · Bat Wings & Hardhat',
     noteKo:
       '세일러 카라에 박쥐 날개 달고 머리엔 공사장 노란 안전모에 밀짚까지 물고 있는 종잡을 수 없는 귀한 자식입니다.',
     noteEn:
@@ -201,19 +201,19 @@ const CURATED_BEAUTY_14 = [
     edition: 4276,
     id: 'P04276',
     isSpecial: false,
-    tier: 'Common',
+    tier: 'Epic',
     rank: 310,
     score: '455.85',
     shortKo: '매화 로브 윙크',
     shortEn: 'Plum Robe Wink',
     titleKo: '#4276 프리즘 후광에 비눗방울 부는 자식 (Plum Robe)',
-    titleEn: '#4276 Glacier Prism & Bubble Pipe Wink (Common)',
-    themeKo: 'Common · Glacier Prism & Wink',
-    themeEn: 'Common · Glacier Prism & Wink',
+    titleEn: '#4276 Glacier Prism & Bubble Pipe Wink (Epic)',
+    themeKo: 'Epic · Rank #310 · Glacier Prism & Wink',
+    themeEn: 'Epic · Rank #310 · Glacier Prism & Wink',
     noteKo:
-      '등급표 이름은 Common인데 프리즘 후광이랑 매화 로브가 겹쳐서 순위는 310등으로 껑충 뛴 자식입니다. 어차피 등급 달라도 주는 건 똑같이 없습니다.',
+      '프리즘 후광이랑 매화 로브가 겹쳐서 전체 310등(Epic)에 오른 자식입니다. 어차피 등급 높아도 주는 건 똑같이 없습니다.',
     noteEn:
-      'Tagged Common tier yet ranked #310 thanks to its Glacier Prism aura and Plum Blossom robe. Tier labels really do not matter here.',
+      'Ranked #310 (Epic) thanks to its Glacier Prism aura and Plum Blossom robe. Higher tier still means zero utility.',
   },
   {
     edition: 88,
@@ -226,8 +226,8 @@ const CURATED_BEAUTY_14 = [
     shortEn: 'Beanie Varsity',
     titleKo: '#88 초록 비니에 파이프 물고 과잠 입은 자식',
     titleEn: '#88 Green Beanie & Blue Varsity Jacket',
-    themeKo: 'Common · Blue Varsity & Briar Pipe',
-    themeEn: 'Common · Blue Varsity & Briar Pipe',
+    themeKo: 'Common · Rank #6,044 · Blue Varsity & Briar Pipe',
+    themeEn: 'Common · Rank #6,044 · Blue Varsity & Briar Pipe',
     noteKo:
       '핑크색 배경에 파란 과잠 입고 초록 비니 쓴 복학생 느낌의 정감 가는 자식입니다. 프사로 달아두기 아주 무난하고 이쁩니다.',
     noteEn:
@@ -244,8 +244,8 @@ const CURATED_BEAUTY_14 = [
     shortEn: 'Blue Cap Hoodie',
     titleKo: '#108 회색 후드티에 파란 캡모자 쓴 자식',
     titleEn: '#108 Grey Hoodie & Blue Cap Penguin',
-    themeKo: 'Common · Grey Hoodie & Blue Cap',
-    themeEn: 'Common · Grey Hoodie & Blue Cap',
+    themeKo: 'Common · Rank #7,545 · Grey Hoodie & Blue Cap',
+    themeEn: 'Common · Rank #7,545 · Grey Hoodie & Blue Cap',
     noteKo:
       '살구색 깃털에 회색 후드티 입고 파란 모자 눌러쓴 뒤 입에 밀짚 하나 물고 있는 꾸안꾸 스타일 자식입니다.',
     noteEn:
@@ -262,8 +262,8 @@ const CURATED_BEAUTY_14 = [
     shortEn: 'Hawaiian Beats',
     titleKo: '#312 빨간 하와이안 셔츠에 헤드폰 낀 자식',
     titleEn: '#312 Red Hawaiian Shirt & Purple Headphones',
-    themeKo: 'Common · Hawaiian Shirt & Headphones',
-    themeEn: 'Common · Hawaiian Shirt & Headphones',
+    themeKo: 'Common · Rank #5,671 · Hawaiian Shirt & Headphones',
+    themeEn: 'Common · Rank #5,671 · Hawaiian Shirt & Headphones',
     noteKo:
       '추운 남극 출신이면서 빨간 하와이안 셔츠 입고 선글라스에 보라색 헤드폰까지 낀 흥 넘치는 자식입니다.',
     noteEn:
@@ -273,15 +273,15 @@ const CURATED_BEAUTY_14 = [
     edition: 777,
     id: 'P00777',
     isSpecial: false,
-    tier: 'Common',
+    tier: 'Uncommon',
     rank: 4419,
     score: '209.51',
     shortKo: '보안관 모자 777',
     shortEn: 'Sheriff #777',
     titleKo: '#777 민트 폴로셔츠에 보안관 모자 쓴 럭키 자식',
     titleEn: '#777 Sheriff Hat & Mint Polo Penguin',
-    themeKo: 'Common · Token #777 · Sheriff Hat',
-    themeEn: 'Common · Token #777 · Sheriff Hat',
+    themeKo: 'Uncommon · Rank #4,419 · Token #777 · Sheriff Hat',
+    themeEn: 'Uncommon · Rank #4,419 · Token #777 · Sheriff Hat',
     noteKo:
       '번호가 무려 777번인 초코 펭귄입니다. 보안관 모자 쓰고 민트색 폴로셔츠 입었는데, 777번이라고 잭팟 터지는 기능 같은 건 없습니다.',
     noteEn:
@@ -291,20 +291,20 @@ const CURATED_BEAUTY_14 = [
 
 // Additional Penguins for the 28-Token Dual-Row Infinite Pixel Parade (All 48x48 Generative Penguins)
 const PARADE_ROW_1_ITEMS = [
-  { edition: 4442, labelKo: '선글라스 펭귄', labelEn: 'Pixel Shades Penguin', sub: 'Pixel Shades · #4442' },
-  { edition: 963, labelKo: '여우 잠옷 펭귄', labelEn: 'Fox Onesie Penguin', sub: 'Legendary · #963' },
-  { edition: 6522, labelKo: '도마뱀 후드 펭귄', labelEn: 'Gecko Onesie Penguin', sub: 'Uncommon · #6522' },
-  { edition: 43, labelKo: '꽃화관 빙어 낚시', labelEn: 'Floral Wreath Angler', sub: 'Epic · #43' },
+  { edition: 4442, labelKo: '선글라스 펭귄', labelEn: 'Pixel Shades Penguin', sub: 'Common · #4442' },
+  { edition: 963, labelKo: '여우 잠옷 펭귄', labelEn: 'Fox Onesie Penguin', sub: 'Mythic · #963' },
+  { edition: 6522, labelKo: '도마뱀 후드 펭귄', labelEn: 'Gecko Onesie Penguin', sub: 'Mythic · #6522' },
+  { edition: 43, labelKo: '꽃화관 빙어 낚시', labelEn: 'Floral Wreath Angler', sub: 'Legendary · #43' },
   { edition: 500, labelKo: '크리스탈 나이트', labelEn: 'Crystal Knight', sub: 'Mythic · #500' },
   { edition: 75, labelKo: '빙하 왕관 과잠', labelEn: 'Glacier Varsity', sub: 'Legendary · #75' },
-  { edition: 192, labelKo: '군밤장수 털모자', labelEn: 'Polar Ushanka', sub: 'Rare · #192' },
-  { edition: 21, labelKo: '핑크 비니 빙어', labelEn: 'Pink Smelt Catcher', sub: 'Rare · #21' },
-  { edition: 25, labelKo: '안전모 세일러', labelEn: 'Hardhat Sailor', sub: 'Epic · #25' },
-  { edition: 4276, labelKo: '매화 로브 윙크', labelEn: 'Plum Robe Wink', sub: 'Common · #4276' },
+  { edition: 192, labelKo: '군밤장수 털모자', labelEn: 'Polar Ushanka', sub: 'Common · #192' },
+  { edition: 21, labelKo: '핑크 비니 빙어', labelEn: 'Pink Smelt Catcher', sub: 'Common · #21' },
+  { edition: 25, labelKo: '안전모 세일러', labelEn: 'Hardhat Sailor', sub: 'Uncommon · #25' },
+  { edition: 4276, labelKo: '매화 로브 윙크', labelEn: 'Plum Robe Wink', sub: 'Epic · #4276' },
   { edition: 88, labelKo: '초록 비니 과잠', labelEn: 'Beanie Varsity', sub: 'Common · #88' },
   { edition: 108, labelKo: '파란 캡모자 후드', labelEn: 'Blue Cap Hoodie', sub: 'Common · #108' },
   { edition: 312, labelKo: '하와이안 헤드폰', labelEn: 'Hawaiian Headphones', sub: 'Common · #312' },
-  { edition: 777, labelKo: '보안관 모자 777', labelEn: 'Sheriff Hat #777', sub: 'Common · #777' },
+  { edition: 777, labelKo: '보안관 모자 777', labelEn: 'Sheriff Hat #777', sub: 'Uncommon · #777' },
 ];
 
 const PARADE_ROW_2_ITEMS = [
@@ -1558,7 +1558,7 @@ function buildPixelParadeMarquee() {
             <span class="parade-card-rank">${escapeHtml(item.sub)}</span>
           </div>
           <div class="parade-card-name" data-ko="${escapeHtml(item.labelKo)}" data-en="${escapeHtml(item.labelEn)}">${escapeHtml(name)}</div>
-          <div class="parade-card-sub">100 VERY · Verified PFP</div>
+          <div class="parade-card-sub">Verified PFP</div>
         </div>
       </button>
     `;
@@ -1628,7 +1628,7 @@ function applyLanguage(lang) {
   setIntroScene(MOTION_STATE.sceneIdx, false);
 }
 
-// PFP Simulator (No Rarity Rank / Score)
+// PFP Simulator
 async function loadPfpPreview(tokenNum) {
   try {
     const res = await fetch(`/api/token/${tokenNum}`);
@@ -1727,17 +1727,17 @@ function renderSpecialsGrid(specials) {
         <img src="${sp.fast_gif_url}" alt="${escapeHtml(sp.title)}" class="pixelated" loading="lazy" />
         <div class="card-top-badges">
           <span class="tier-pill tier-등급없음">등급없음</span>
-          <span class="rank-pill">#${sp.edition}</span>
+          <span class="rank-pill">#${sp.rarity_rank}</span>
         </div>
       </div>
       <div class="nft-card-meta">
         <span>${sp.id}</span>
-        <span>Edition #${sp.edition} / 10,000</span>
+        <span>#${sp.edition}</span>
       </div>
       <div class="nft-card-title">${escapeHtml(sp.archetype)}</div>
       <div class="nft-card-footer">
-        <span class="price-tag">100 VERY</span>
-        <span class="score-tag">Verified PFP</span>
+        <span class="score-tag">Rank #${sp.rarity_rank}</span>
+        <span class="score-tag">${Number(sp.rarity_score).toLocaleString()} pts</span>
       </div>
     </button>
   `
@@ -1777,7 +1777,7 @@ function buildExplorerTraitDropdowns() {
   });
 }
 
-// Fetch & Render 10K Explorer Grid (Default sort: id_asc, no rarity rank/score badges)
+// Fetch & Render 10K Explorer Grid (VeryPunks rarity.tools Reference)
 async function fetchExplorerTokens() {
   const grid = document.getElementById('explorer-grid');
   const countEl = document.getElementById('exp-result-count');
@@ -1787,7 +1787,7 @@ async function fetchExplorerTokens() {
   const q = document.getElementById('exp-search')?.value.trim() || '';
   const tier = document.getElementById('exp-tier')?.value || '';
   const edition = document.getElementById('exp-edition')?.value || '';
-  const sort = document.getElementById('exp-sort')?.value || 'id_asc';
+  const sort = document.getElementById('exp-sort')?.value || 'rank_asc';
 
   if (q) params.set('q', q);
   if (tier) params.set('tier', tier);
@@ -1839,17 +1839,17 @@ async function fetchExplorerTokens() {
             <img src="${item.image_url}" alt="${escapeHtml(item.name)}" class="pixelated" loading="lazy" />
             <div class="card-top-badges">
               <span class="tier-pill tier-${item.tier}">${item.tier}</span>
-              <span class="rank-pill">#${item.edition}</span>
+              <span class="rank-pill">#${item.rarity_rank}</span>
             </div>
           </div>
           <div class="nft-card-meta">
             <span>${item.id}</span>
-            <span>#${item.edition} / 10,000</span>
+            <span>#${item.edition}</span>
           </div>
           <div class="nft-card-title">${escapeHtml(subtitle)}</div>
           <div class="nft-card-footer">
-            <span class="price-tag">100 VERY</span>
-            <span class="score-tag">Verified PFP</span>
+            <span class="score-tag">Rank #${item.rarity_rank}</span>
+            <span class="score-tag" style="color:var(--accent-cyan); font-weight:800;">${Number(item.rarity_score).toLocaleString()} pts</span>
           </div>
         </button>
       `;
@@ -1885,7 +1885,7 @@ function filterExplorerByTrait(cat, val) {
   scrollToSection('sec-explorer');
 }
 
-// Build 210 Trait Directory Section (Without +pts score)
+// Build 210 Trait Directory Section (With rarity.tools +pts score)
 function renderTraitDirectory() {
   const tabsWrap = document.getElementById('trait-cat-tabs');
   const gridWrap = document.getElementById('trait-catalog-grid');
@@ -1913,8 +1913,9 @@ function renderTraitDirectory() {
     <div class="trait-b-item" style="cursor:pointer;" onclick="filterExplorerByTrait('${escapeHtml(ACTIVE_TRAIT_TAB)}', '${escapeHtml(r.value).replace(/'/g, "\\'")}')">
       <div class="trait-b-cat">${escapeHtml(ACTIVE_TRAIT_TAB)}</div>
       <div class="trait-b-val">${escapeHtml(r.value)}</div>
-      <div class="trait-b-score">
-        <span>보유 펭귄: ${r.count.toLocaleString()}마리 (${r.pct}%)</span>
+      <div class="trait-b-score" style="display:flex; justify-content:space-between; align-items:center;">
+        <span>${r.count.toLocaleString()}마리 (${r.pct}%)</span>
+        <strong style="color:var(--accent-cyan);">+${Number(r.score).toLocaleString()} pts</strong>
       </div>
     </div>
   `
@@ -1947,7 +1948,7 @@ function downloadHighRes3072(tokenId, pixel48Url) {
   img.src = pixel48Url;
 }
 
-// Token Detail Inspector Modal (Without Rarity Rank / Rarity Score)
+// Token Detail Inspector Modal (VeryPunks rarity.tools Reference)
 async function openTokenModal(tokenNum) {
   const modal = document.getElementById('token-modal');
   const body = document.getElementById('modal-detail-body');
@@ -1967,8 +1968,9 @@ async function openTokenModal(tokenNum) {
       <div class="trait-b-item" style="cursor:pointer;" onclick="closeTokenModal(); filterExplorerByTrait('${escapeHtml(b.trait_type)}', '${escapeHtml(b.value).replace(/'/g, "\\'")}')">
         <div class="trait-b-cat">${escapeHtml(b.trait_type)}</div>
         <div class="trait-b-val">${escapeHtml(b.value)}</div>
-        <div class="trait-b-score">
-          <span>${b.count.toLocaleString()}마리 보유 (${b.pct}%)</span>
+        <div class="trait-b-score" style="display:flex; justify-content:space-between; align-items:center;">
+          <span>${b.count.toLocaleString()}마리 (${b.pct}%)</span>
+          <strong style="color:var(--accent-cyan);">+${Number(b.score).toLocaleString()} pts</strong>
         </div>
       </div>
     `
@@ -2006,8 +2008,8 @@ async function openTokenModal(tokenNum) {
       <div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
           <span class="tier-pill tier-${tok.tier}">${tok.tier}</span>
-          <span class="pill-tag">#${tok.edition} / 10,000</span>
-          <span class="pill-tag gold">100 VERY</span>
+          <span class="pill-tag">Rank #${tok.rarity_rank} / 10,000</span>
+          <span class="pill-tag gold">${Number(tok.rarity_score).toLocaleString()} pts</span>
         </div>
 
         <h2 id="modal-token-title" style="font-size:24px; font-weight:900; margin-bottom:12px;">${escapeHtml(tok.name)}</h2>
@@ -2018,12 +2020,16 @@ async function openTokenModal(tokenNum) {
             <span class="spec-value">${tok.id} (#${tok.edition})</span>
           </div>
           <div class="spec-row" style="padding:10px 14px;">
-            <span class="spec-label">장착 파츠 수</span>
-            <span class="spec-value">${tok.active_trait_stat.active_count}개 (${tok.active_trait_stat.pct}%)</span>
+            <span class="spec-label">희귀도 순위 · 점수 (rarity.tools)</span>
+            <span class="spec-value" style="color:var(--accent-cyan);">Rank #${tok.rarity_rank} (${Number(tok.rarity_score).toLocaleString()} pts)</span>
+          </div>
+          <div class="spec-row" style="padding:10px 14px;">
+            <span class="spec-label">장착 파츠 수 (특성 개수 점수)</span>
+            <span class="spec-value">${tok.active_trait_stat.active_count}개 (${tok.active_trait_stat.pct}% · +${Number(tok.active_trait_stat.score).toLocaleString()} pts)</span>
           </div>
         </div>
 
-        <h4 style="font-size:14px; font-weight:800; margin-bottom:6px;">파츠 구성 (누르면 같은 파츠 낀 펭귄 검색)</h4>
+        <h4 style="font-size:14px; font-weight:800; margin-bottom:6px;">파츠별 rarity.tools 점수 (전체 수 10,000 ÷ 보유 수)</h4>
         <div class="trait-breakdown-list">
           ${traitsHtml}
         </div>
@@ -2100,7 +2106,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const edEl = document.getElementById('exp-edition');
     if (edEl) edEl.value = '';
     const sortEl = document.getElementById('exp-sort');
-    if (sortEl) sortEl.value = 'id_asc';
+    if (sortEl) sortEl.value = 'rank_asc';
     document.querySelectorAll('.exp-cat-select').forEach((s) => {
       s.value = '';
     });

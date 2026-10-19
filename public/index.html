@@ -147,8 +147,8 @@
                 <div class="kpi-val highlight">PPENG</div>
               </div>
               <div class="kpi-box">
-                <div class="kpi-label" data-ko="민팅가" data-en="Mint Price">민팅가</div>
-                <div class="kpi-val gold">100 VERY</div>
+                <div class="kpi-label" data-ko="희귀도 알고리즘" data-en="Rarity Model">희귀도 알고리즘</div>
+                <div class="kpi-val gold" style="font-size:15px;">rarity.tools</div>
               </div>
               <div class="kpi-box">
                 <div class="kpi-label" data-ko="로드맵 / 혜택" data-en="Perks">로드맵 / 혜택</div>
@@ -174,7 +174,7 @@
             <div class="shape-toggles" role="group" aria-label="PFP Frame Shape">
               <button type="button" class="shape-btn active" data-shape="hex" data-ko="6각형" data-en="Hex">6각형</button>
               <button type="button" class="shape-btn" data-shape="circle" data-ko="원형" data-en="Circle">원형</button>
-              <button type="button" class="shape-btn" data-shape="square" data-ko="사각형" data-en="Square">사각형</button>
+              <button type="button" class="shape-btn" data-shape="square" data-ko="사각형" data-ko="사각형" data-en="Square">사각형</button>
             </div>
           </div>
 
@@ -217,7 +217,7 @@
               </div>
 
               <div class="pfp-quick-Metadata" id="pfp-sim-meta">
-                <div><strong data-ko="번호:" data-en="ID:">번호:</strong> <span id="pfp-sim-id">P04442</span> · <strong data-ko="구분:" data-en="Tier:">구분:</strong> <span id="pfp-sim-tier" class="tier-Common">Common</span></div>
+                <div><strong data-ko="번호:" data-en="ID:">번호:</strong> <span id="pfp-sim-id">P04442</span> · <strong data-ko="등급:" data-en="Tier:">등급:</strong> <span id="pfp-sim-tier" class="tier-Common">Common</span></div>
               </div>
 
               <div style="display:flex; gap:6px;">
@@ -242,7 +242,7 @@
         <div class="section-header" style="margin-bottom:12px;">
           <div>
             <h2 class="section-title" data-ko="📖 10,000마리 도감도 (P00001 ~ P10000)" data-en="📖 10,000 Penguins Codex (P00001 – P10000)">📖 10,000마리 도감도 (P00001 ~ P10000)</h2>
-            <p class="section-sub" data-ko="번호나 파츠로 검색해서 내 마음에 드는 프사용 펭귄을 골라보세요." data-en="Search by number or filter by traits to find your favorite PFP.">번호나 파츠로 검색해서 내 마음에 드는 프사용 펭귄을 골라보세요.</p>
+            <p class="section-sub" data-ko="희귀도 순위는 rarity.tools 희귀도 알고리즘(Rarity Score)으로 매깁니다 — 특성마다 '전체 수 ÷ 그 특성을 가진 수'를 더하고, 특성이 없는 것과 특성 개수도 함께 셉니다. 특성 정보는 온체인 메타데이터를 그대로 따릅니다." data-en="Rarity Rank is calculated via the rarity.tools Rarity Score algorithm — summing (Total Supply ÷ Trait Count) across all traits including 'None' and active trait count.">희귀도 순위는 rarity.tools 희귀도 알고리즘(Rarity Score)으로 매깁니다 — 특성마다 '전체 수 ÷ 그 특성을 가진 수'를 더하고, 특성이 없는 것과 특성 개수도 함께 셉니다. 특성 정보는 온체인 메타데이터를 그대로 따릅니다.</p>
           </div>
         </div>
 
@@ -253,20 +253,22 @@
             </div>
 
             <select id="exp-tier" class="filter-select" aria-label="Filter by Rarity Tier">
-              <option value="">전체 구분 (10,000)</option>
-              <option value="Mythic">Mythic (39)</option>
-              <option value="Legendary">Legendary (200)</option>
-              <option value="Epic">Epic (450)</option>
-              <option value="Rare">Rare (1,300)</option>
-              <option value="Uncommon">Uncommon (2,500)</option>
-              <option value="Common">Common (5,500)</option>
-              <option value="등급없음">등급없음 (11)</option>
+              <option value="">전체 등급 (10,000)</option>
+              <option value="Mythic">Mythic (39 · Rank #12~#50)</option>
+              <option value="Legendary">Legendary (200 · Rank #51~#250)</option>
+              <option value="Epic">Epic (450 · Rank #251~#700)</option>
+              <option value="Rare">Rare (1,300 · Rank #701~#2,000)</option>
+              <option value="Uncommon">Uncommon (2,500 · Rank #2,001~#4,500)</option>
+              <option value="Common">Common (5,500 · Rank #4,501~#10,000)</option>
+              <option value="등급없음">등급없음 (11 · #1~#11 GIF)</option>
             </select>
 
             <select id="exp-sort" class="filter-select" aria-label="Sort Order">
+              <option value="rank_asc">희귀도 순위 (Rank #1 → #10,000)</option>
+              <option value="rank_desc">희귀도 낮은순 (#10,000 → #1)</option>
               <option value="id_asc">번호순 (#1 → #10,000)</option>
               <option value="id_desc">역순 (#10,000 → #1)</option>
-              <option value="tier_desc">구분별 모아보기</option>
+              <option value="tier_desc">등급별 모아보기</option>
             </select>
 
             <button type="button" class="btn-secondary" style="padding:9px 14px; font-size:13px;" id="exp-reset-btn" data-ko="초기화" data-en="Reset">초기화</button>
@@ -277,7 +279,7 @@
 
           <div class="explorer-status-bar">
             <div id="exp-result-count">총 <strong>10,000</strong>마리</div>
-            <div style="font-size:12px;" data-ko="클릭하면 프사 착용 및 고해상도 PNG 저장이 가능합니다." data-en="Click any card to preview PFP or download high-res PNG.">클릭하면 프사 착용 및 고해상도 PNG 저장이 가능합니다.</div>
+            <div style="font-size:12px;" data-ko="희귀도 알고리즘: rarity.tools 희귀도 알고리즘 · 클릭하면 프사 착용 및 고해상도 PNG 저장이 가능합니다." data-en="Rarity Algorithm: rarity.tools Rarity Score · Click any card to preview PFP or download high-res PNG.">희귀도 알고리즘: rarity.tools 희귀도 알고리즘 · 클릭하면 프사 착용 및 고해상도 PNG 저장이 가능합니다.</div>
           </div>
         </div>
 
@@ -296,7 +298,7 @@
       <section class="section-block" id="sec-traits">
         <div class="verychat-panel">
           <div class="verychat-panel-header">
-            <div class="verychat-panel-title" data-ko="🎨 210종 파츠 목록 (누르면 해당 파츠 낀 펭귄만 검색)" data-en="🎨 210 Traits List (Click to filter)">🎨 210종 파츠 목록 (누르면 해당 파츠 낀 펭귄만 검색)</div>
+            <div class="verychat-panel-title" data-ko="🎨 210종 파츠 목록 · rarity.tools 점수 (누르면 해당 파츠 낀 펭귄만 검색)" data-en="🎨 210 Traits List · rarity.tools Score (Click to filter)">🎨 210종 파츠 목록 · rarity.tools 점수 (누르면 해당 파츠 낀 펭귄만 검색)</div>
             <div style="display:flex; gap:6px; flex-wrap:wrap;" id="trait-cat-tabs"></div>
           </div>
           <div class="trait-breakdown-list" style="grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));" id="trait-catalog-grid"></div>
@@ -319,7 +321,7 @@
             <div class="verychat-panel-header" style="margin-bottom:8px;">
               <div class="verychat-panel-title" style="display:flex; align-items:center; gap:8px;">
                 <span class="pill-tag very">민팅</span>
-                <span data-ko="10월 23일(금) PIXEL PENGUIN 10,000마리 민팅 (100 VERY)" data-en="Oct 23 (Fri) — PIXEL PENGUIN 10K Mint (100 VERY)">10월 23일(금) PIXEL PENGUIN 10,000마리 민팅 (100 VERY)</span>
+                <span data-ko="10월 23일(금) PIXEL PENGUIN 10,000마리 민팅" data-en="Oct 23 (Fri) — PIXEL PENGUIN 10K Mint">10월 23일(금) PIXEL PENGUIN 10,000마리 민팅</span>
               </div>
               <span style="font-size:12px; color:var(--text-muted);">2026.10.19</span>
             </div>
@@ -331,13 +333,13 @@
           <div class="verychat-panel" style="padding:18px 20px;">
             <div class="verychat-panel-header" style="margin-bottom:8px;">
               <div class="verychat-panel-title" style="display:flex; align-items:center; gap:8px;">
-                <span class="pill-tag gold">등급</span>
-                <span data-ko="등급 나누라길래 나눴을 뿐 혜택은 0입니다" data-en="Tiers Exist Only Because Asked — Zero Perks">등급 나누라길래 나눴을 뿐 혜택은 0입니다</span>
+                <span class="pill-tag gold">희귀도</span>
+                <span data-ko="rarity.tools 희귀도 알고리즘 적용 (혜택은 0입니다)" data-en="rarity.tools Rarity Score Algorithm Applied (Zero Perks)">rarity.tools 희귀도 알고리즘 적용 (혜택은 0입니다)</span>
               </div>
               <span style="font-size:12px; color:var(--text-muted);">2026.10.19</span>
             </div>
-            <p style="font-size:13.5px; color:var(--text-secondary); line-height:1.6; margin:0;" data-ko="마켓에 등급 칸이 있길래 랜덤 조합 9,989마리는 6단계(Common ~ Mythic)로 나누고, 별도로 작업한 움짤 11마리(#1 ~ #11)는 '등급없음'으로 빼뒀습니다. 등급 높다고 더 챙겨드리는 거 전혀 없습니다." data-en="9,989 random penguins are split into 6 tiers and 11 animated GIFs (#1–#11) are set to Unranked (등급없음). Higher tiers grant nothing extra.">
-              마켓에 등급 칸이 있길래 랜덤 조합 9,989마리는 6단계(Common ~ Mythic)로 나누고, 별도로 작업한 움짤 11마리(#1 ~ #11)는 '등급없음'으로 빼뒀습니다. 등급 높다고 더 챙겨드리는 거 전혀 없습니다.
+            <p style="font-size:13.5px; color:var(--text-secondary); line-height:1.6; margin:0;" data-ko="희귀도 순위는 rarity.tools 희귀도 알고리즘(Rarity Score)으로 매깁니다 — 특성마다 '전체 수 ÷ 그 특성을 가진 수'를 더하고, 특성이 없는 것과 특성 개수도 함께 셉니다. 특성 정보는 온체인 메타데이터를 그대로 따르며, 점수 순위대로 Mythic(39) ~ Common(5,500) 등급이 매겨집니다(움짤 11마리는 '등급없음'). 물론 등급 높다고 더 챙겨드리는 건 전혀 없습니다." data-en="Rarity Rank uses the rarity.tools Rarity Score algorithm — summing (Total Supply ÷ Trait Count) across all traits including 'None' and active trait count. Tiers (Mythic 39 – Common 5,500) strictly follow the rarity.tools score rank (11 GIFs are Unranked). Higher tiers still grant nothing extra.">
+              희귀도 순위는 rarity.tools 희귀도 알고리즘(Rarity Score)으로 매깁니다 — 특성마다 '전체 수 ÷ 그 특성을 가진 수'를 더하고, 특성이 없는 것과 특성 개수도 함께 셉니다. 특성 정보는 온체인 메타데이터를 그대로 따르며, 점수 순위대로 Mythic(39) ~ Common(5,500) 등급이 매겨집니다(움짤 11마리는 '등급없음'). 물론 등급 높다고 더 챙겨드리는 건 전혀 없습니다.
             </p>
           </div>
 
@@ -376,11 +378,11 @@
         <strong style="color:#fff;">PIXEL PENGUIN (PPENG)</strong> · <span>by <strong>@happy Ahndoge</strong></span>
       </div>
       <div style="text-align:right;">
-        <span>10,000 PFP Penguins · 100 VERY · 사신다고 뭐 안 드립니다</span>
+        <span>10,000 PFP Penguins · rarity.tools · 사신다고 뭐 안 드립니다</span>
       </div>
     </div>
   </footer>
 
-  <script src="/app.js?v=3.9.0"></script>
+  <script src="/app.js?v=4.0.0"></script>
 </body>
 </html>
