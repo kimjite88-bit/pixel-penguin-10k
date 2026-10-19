@@ -1,0 +1,17 @@
+{
+  "name": "pixel-penguin-10k",
+  "version": "1.0.0",
+  "description": "PIXEL PENGUIN (Pixel Penguin 10K) — Official Collection Homepage on VERY Mainnet (4613) by Very Penguin Labs",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "compression": "^1.7.5",
+    "express": "^4.21.2"
+  }
+}
