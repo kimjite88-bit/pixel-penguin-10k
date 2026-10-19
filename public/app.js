@@ -619,14 +619,14 @@ async function selectMotionPenguin(editionOrItem, userInitiated = true) {
     btn.classList.toggle('active', Number(btn.dataset.edition) === item.edition);
   });
 
-  // Update PiP GIF badge for 1-of-1 animated originals vs generative
+  // Update PiP badge
   const pipWrap = document.getElementById('motion-gif-pip');
   const pipImg = document.getElementById('motion-pip-img');
   const pipLabel = document.getElementById('motion-pip-label');
   if (pipWrap && pipImg && pipLabel) {
     if (item.isSpecial) {
       pipImg.src = `/assets/specials/${item.edition}_fast.gif`;
-      pipLabel.textContent = '1/1 GIF';
+      pipLabel.textContent = `MYTHIC #${item.edition}`;
     } else {
       pipImg.src = `/img/${item.id}.png`;
       pipLabel.textContent = item.isLogo ? 'OFFICIAL LOGO' : 'NATIVE 48×48 PNG';
@@ -638,8 +638,6 @@ async function selectMotionPenguin(editionOrItem, userInitiated = true) {
   if (tierPill) {
     tierPill.textContent = item.isLogo
       ? 'OFFICIAL LOGO'
-      : item.isSpecial
-      ? 'MYTHIC 1/1 GIF'
       : item.tier.toUpperCase();
     tierPill.className = `tier-pill tier-${item.tier}`;
   }

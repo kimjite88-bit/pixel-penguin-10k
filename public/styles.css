@@ -983,15 +983,7 @@ body {
 }
 
 .gif-badge {
-  position: absolute;
-  bottom: 8px;
-  right: 8px;
-  background: rgba(255, 77, 109, 0.9);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 900;
-  padding: 2px 6px;
-  border-radius: 5px;
+  display: none !important;
 }
 
 .nft-card-meta {
