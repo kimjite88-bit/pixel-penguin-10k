@@ -1752,7 +1752,7 @@ function initPixelMotionStudio() {
       drawAnimatedPixelPenguin(ctx, bluePixelPenguin, heroX, heroY, spriteSize, now, {
         seed: 1,
         isWalking: true,
-        flipX: true, // Faces right toward his colorful friends!
+        flipX: false, // Native sprite faces RIGHT toward his colorful friends!
       });
 
       // 4 Colorful Pixel Penguin Friends Strolling, Stepping & Blinking on the Stone Promenade (ZERO labels under feet!)
@@ -1774,12 +1774,11 @@ function initPixelMotionStudio() {
 
         drawPixelGroundShadow(ctx, fx + spriteSize / 2, fy + spriteSize - 6, 58, 0);
 
-        // Friends face left toward the hero while greeting, or flip naturally while strolling
-        const faceRight = walkInP >= 1 && idx >= 2 && Math.cos(now * fr.speed + idx * 1.4) > 0.55;
+        // Friends on the right use flipX: true so they face LEFT toward the hero on the left!
         drawAnimatedPixelPenguin(ctx, spEntry, fx, fy, spriteSize, now, {
           seed: fr.seed,
           isWalking: true,
-          flipX: faceRight,
+          flipX: true,
         });
 
         renderedFriends.push({ fx, fy });
@@ -1923,7 +1922,8 @@ function initPixelMotionStudio() {
         const strollWave = Math.sin(now * 0.0024 + idx * 1.1) * 14;
         const lx = Math.round(member.baseX + strollWave);
         const ly = baseLineY;
-        const flipX = idx < 2 ? true : idx > 2 ? false : Math.cos(now * 0.0024) > 0;
+        // Left 2 face right (flipX: false), Right 2 face left (flipX: true), Center Hero faces right (flipX: false)
+        const flipX = idx > 2;
 
         drawPixelGroundShadow(ctx, lx + pSize / 2, baseLineY + pSize - 6, 54, 0);
         drawAnimatedPixelPenguin(ctx, spEntry, lx, ly, pSize, now, {
