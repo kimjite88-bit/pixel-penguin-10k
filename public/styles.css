@@ -555,12 +555,12 @@ body {
 }
 
 /* ==========================================================================
-   2. HERO INTRO + VERYCHAT 6각형 PFP STUDIO (BALANCED, ZERO DEAD SPACE)
+   2. HERO INTRO + VERYCHAT 6각형 PFP STUDIO (WIDE LEFT / COMPACT RIGHT, ZERO DEAD SPACE)
    ========================================================================== */
 .hero-section {
   display: grid;
-  grid-template-columns: 1.12fr 0.88fr;
-  gap: 18px;
+  grid-template-columns: minmax(0, 1.38fr) minmax(380px, 0.62fr);
+  gap: 16px;
   align-items: stretch;
 }
 
@@ -569,11 +569,11 @@ body {
   background: linear-gradient(155deg, rgba(28, 26, 42, 0.94) 0%, rgba(18, 17, 28, 0.98) 100%);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-xl);
-  padding: 22px;
+  padding: 20px 22px;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  gap: 14px;
+  justify-content: space-between;
+  gap: 12px;
   position: relative;
   overflow: hidden;
   box-shadow: var(--shadow-lg);
@@ -596,7 +596,7 @@ body {
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .pill-tag {
@@ -623,11 +623,12 @@ body {
 }
 
 .hero-title {
-  font-size: clamp(22px, 3vw, 32px);
+  font-size: clamp(21px, 2.4vw, 29px);
   font-weight: 900;
   letter-spacing: -0.03em;
-  line-height: 1.22;
+  line-height: 1.24;
   margin-bottom: 8px;
+  word-break: keep-all;
 }
 
 .hero-title .grad {
@@ -638,11 +639,12 @@ body {
 
 .hero-desc {
   color: var(--text-secondary);
-  font-size: 13.8px;
-  line-height: 1.62;
+  font-size: 13.5px;
+  line-height: 1.58;
+  word-break: keep-all;
 }
 
-/* 4 KPI Boxes — Clean, Zero Awkward Line Wrapping */
+/* 4 KPI Boxes — Clean 4x1 Grid */
 .hero-kpis {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -653,7 +655,7 @@ body {
   background: rgba(11, 10, 16, 0.68);
   border: 1px solid var(--border-subtle);
   border-radius: 10px;
-  padding: 10px 12px;
+  padding: 9px 10px;
   text-align: center;
 }
 
@@ -666,7 +668,7 @@ body {
 }
 
 .kpi-val {
-  font-size: 15.5px;
+  font-size: 15px;
   font-weight: 900;
   color: #fff;
   white-space: nowrap;
@@ -680,24 +682,24 @@ body {
   color: var(--accent-gold);
 }
 
-/* 2x2 Featured Penguins Quick-Try Grid inside Left Card */
+/* 4x1 Featured Penguins Quick-Try Grid inside Wide Left Card (Matches 4x1 KPIs above!) */
 .hero-featured-block {
   background: rgba(11, 10, 16, 0.5);
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
-  padding: 10px 12px;
+  padding: 9px 11px;
 }
 
 .hero-featured-label {
   font-size: 11.5px;
   font-weight: 800;
   color: var(--accent-ice);
-  margin-bottom: 8px;
+  margin-bottom: 7px;
 }
 
 .hero-beauty-trio {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -705,10 +707,10 @@ body {
   background: rgba(24, 23, 36, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
-  padding: 7px 9px;
+  padding: 6px 8px;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   cursor: pointer;
   text-align: left;
   color: #fff;
@@ -723,8 +725,8 @@ body {
 }
 
 .trio-sprite-card img {
-  width: 40px;
-  height: 40px;
+  width: 38px;
+  height: 38px;
   border-radius: 7px;
   border: 1px solid rgba(255, 255, 255, 0.18);
   flex-shrink: 0;
@@ -737,7 +739,7 @@ body {
 }
 
 .trio-tag {
-  font-size: 9.5px;
+  font-size: 9px;
   font-weight: 900;
   color: var(--accent-gold);
   letter-spacing: 0.02em;
@@ -749,7 +751,7 @@ body {
 }
 
 .trio-meta strong {
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 800;
   white-space: nowrap;
   overflow: hidden;
@@ -760,7 +762,6 @@ body {
   display: grid;
   grid-template-columns: 1.4fr 1fr;
   gap: 8px;
-  margin-top: auto;
 }
 
 .btn-primary {
@@ -812,7 +813,7 @@ body {
   background: rgba(103, 232, 249, 0.1);
 }
 
-/* Right Card: VeryChat 6각형 PFP Simulator */
+/* Right Card: Compact VeryChat 6각형 PFP Simulator (Zero Empty Dead Space) */
 .pfp-studio-header {
   display: flex;
   justify-content: space-between;
@@ -852,34 +853,35 @@ body {
 }
 
 .pfp-stage {
+  flex: 1;
   display: grid;
-  grid-template-columns: 156px minmax(0, 1fr);
-  gap: 14px;
+  grid-template-columns: 136px minmax(0, 1fr);
+  gap: 12px;
   align-items: center;
   background: rgba(11, 10, 16, 0.65);
   border: 1px solid var(--border-subtle);
   border-radius: 14px;
-  padding: 14px;
+  padding: 12px;
 }
 
 .pfp-Frame-wrap {
-  width: 156px;
+  width: 136px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
 }
 
 .pfp-hex-stage-shell {
   position: relative;
-  width: 156px;
-  height: 156px;
+  width: 136px;
+  height: 136px;
 }
 
 .pfp-art-box {
-  width: 156px;
-  height: 156px;
+  width: 136px;
+  height: 136px;
   overflow: hidden;
   border: 2.5px solid var(--accent-very);
   background: #171625;
@@ -988,24 +990,24 @@ body {
 .pfp-mock-chat {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 7px;
   min-width: 0;
 }
 
 .verychat-header-sim {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   background: var(--bg-row);
   border: 1px solid var(--border-subtle);
-  padding: 8px 10px;
+  padding: 7px 9px;
   border-radius: 10px;
 }
 
 .mini-pfp-wrap {
   position: relative;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   flex-shrink: 0;
 }
 
@@ -1047,17 +1049,17 @@ body {
 }
 
 .sim-user-badge {
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--text-secondary);
   font-weight: 700;
 }
 
 .pfp-quick-Metadata {
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--text-secondary);
   background: rgba(255, 255, 255, 0.03);
   border-radius: 9px;
-  padding: 8px 10px;
+  padding: 7px 9px;
   border: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
@@ -1067,7 +1069,7 @@ body {
 .pfp-meta-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
 }
 
@@ -1076,7 +1078,7 @@ body {
 }
 
 .pfp-meta-check {
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--accent-ice);
   font-weight: 700;
 }
@@ -1084,17 +1086,17 @@ body {
 .pfp-jump-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto;
-  gap: 6px;
+  gap: 5px;
 }
 
 .pfp-jump-row .search-input {
-  padding: 7px 10px;
-  font-size: 12.5px;
+  padding: 6px 9px;
+  font-size: 12px;
 }
 
 .pfp-action-btn {
-  padding: 7px 11px !important;
-  font-size: 12px !important;
+  padding: 6px 10px !important;
+  font-size: 11.5px !important;
   white-space: nowrap;
 }
 
@@ -1103,22 +1105,21 @@ body {
   background: rgba(11, 10, 16, 0.5);
   border: 1px solid var(--border-subtle);
   border-radius: 12px;
-  padding: 10px 12px;
-  margin-top: auto;
+  padding: 9px 11px;
 }
 
 .pfp-preset-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 11.5px;
+  font-size: 11px;
   font-weight: 800;
   color: #e2e8f0;
-  margin-bottom: 7px;
+  margin-bottom: 6px;
 }
 
 .pfp-preset-sub {
-  font-size: 10.5px;
+  font-size: 10px;
   color: var(--accent-ice);
   font-weight: 700;
 }
@@ -1126,7 +1127,7 @@ body {
 .pfp-Mini-selector {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 6px;
+  gap: 5px;
 }
 
 .pfp-thumb-btn {
@@ -1723,7 +1724,8 @@ body {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: 6px;
   }
-  .hero-kpis {
+  .hero-kpis,
+  .hero-beauty-trio {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .hero-cta-row {
