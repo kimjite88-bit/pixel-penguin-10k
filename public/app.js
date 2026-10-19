@@ -7,7 +7,7 @@ let APP_CONFIG = null;
 let CURRENT_LANG = 'ko';
 let CURRENT_PAGE = 1;
 let TOTAL_PAGES = 1;
-let CURRENT_PFP_TOKEN = 2;
+let CURRENT_PFP_TOKEN = 4442;
 let ACTIVE_TRAIT_TAB = 'Hat';
 
 const NINE_CATS = [
@@ -35,8 +35,27 @@ const CAT_LABELS_KO = {
   Prop: '종합 소품 (Prop)',
 };
 
-// Curated 14 Prettiest Masterpieces from our 10,000 Collection
+// Official Logo (#4442) + Curated Prettiest Masterpieces from our 10,000 Collection
 const CURATED_BEAUTY_14 = [
+  {
+    edition: 4442,
+    id: 'P04442',
+    isSpecial: false,
+    isLogo: true,
+    tier: 'Mythic',
+    rank: 9811,
+    score: '87.1',
+    shortKo: '★ 대표 로고',
+    shortEn: '★ Official Logo',
+    titleKo: '#4442 공식 대표 로고 — 픽셀 쉐이드 펭귄 (Official Collection Logo)',
+    titleEn: '#4442 Official Collection Logo — Pixel Shades Penguin',
+    themeKo: '컬렉션 공식 대표 마스코트 · 클래식 블루 & 픽셀 쉐이드',
+    themeEn: 'Canonical Collection Mascot · Classic Blue & Pixel Shades',
+    noteKo:
+      'PIXEL PENGUIN 10K 컬렉션의 얼굴이자 공식 대표 로고(P04442)입니다. 청량한 글래시어 스카이(Glacier Sky) 도트 디더링 배경 위에서, 다른 장식 없이 오직 정통 클래식 블루(A-3) 펭귄 본연의 실루엣과 시그니처 도트 선글라스(Pixel Shades · Deal With It) 하나만으로 픽셀아트 PFP의 정수를 보여주는 상징적인 마스코트입니다.',
+    noteEn:
+      'The official emblem and mascot of PIXEL PENGUIN 10K (P04442). Pure Classic Blue (A-3) penguin silhouette on a Glacier Sky dithered canvas wearing nothing but iconic Pixel Shades (Deal With It).',
+  },
   {
     edition: 2,
     id: 'P00002',
@@ -271,28 +290,11 @@ const CURATED_BEAUTY_14 = [
     noteEn:
       'Tone-on-tone Orchid Pink & Rose Penguin topped with a contrasting Green Beanie and a silvery Caught Arctic Smelt held proudly in its beak.',
   },
-  {
-    edition: 4276,
-    id: 'P04276',
-    isSpecial: false,
-    tier: 'Common',
-    rank: 310,
-    score: '454.99',
-    shortKo: '프리즘 매화 리본',
-    shortEn: 'Prism Maehwa Bow',
-    titleKo: '#4276 프리즘 윙크 매화 리본 펭귄 (Prism Wink Maehwa Bow)',
-    titleEn: '#4276 Glacier Prism Wink Maehwa Bow',
-    themeKo: '글래시어 스카이 · 프리즘 오라 & 리본 매화 한복',
-    themeEn: 'Glacier Sky · Prism Aura, Bow & Maehwa Hanbok',
-    noteKo:
-      '살구빛(Apricot) 펭귄이 귀여운 머리 리본(Bow)과 왕실 매화 비단 한복을 입고, 무지개빛 빙하 프리즘 오라(Glacier Prism Aura) 속에서 조개 비눗방울 파이프를 불며 상큼하게 윙크(Wink)하는 고득점(Rank #310) 큐트 픽입니다.',
-    noteEn:
-      'Apricot Penguin wearing a cute Ribbon Bow and Royal Maehwa Silk Hanbok, winking with a Seashell Bubble Pipe inside a shimmering Glacier Prism Aura (Rank #310).',
-  },
 ];
 
 // Additional Iconic Penguins for the 28-Token Dual-Row Infinite Pixel Parade
 const PARADE_ROW_1_ITEMS = [
+  { edition: 4442, labelKo: '★ 공식 대표 로고', labelEn: '★ Official Logo', sub: 'Pixel Shades Mascot' },
   { edition: 2, labelKo: '천상의 대천사', labelEn: 'Celestial Archangel', sub: 'Mythic 1/1 · Rank #1' },
   { edition: 43, labelKo: '매화 꽃바람 낚시꾼', labelEn: 'Maehwa Blossom Angler', sub: 'Epic · Rank #187' },
   { edition: 5, labelKo: '빙하의 제왕', labelEn: 'Glacier Emperor', sub: 'Mythic 1/1 · Rank #3' },
@@ -305,7 +307,6 @@ const PARADE_ROW_1_ITEMS = [
   { edition: 51, labelKo: '빙하 왕관 당상관', labelEn: 'Glacier Court Danryeong', sub: 'Epic · Joseon Royal' },
   { edition: 9, labelKo: '사이버 네온 군주', labelEn: 'Cyber Neon Overlord', sub: 'Mythic 1/1 · Rank #2' },
   { edition: 4276, labelKo: '프리즘 윙크 매화 리본', labelEn: 'Prism Wink Maehwa', sub: 'Rank #310 · Cute Wink' },
-  { edition: 8, labelKo: '황금 파라오', labelEn: 'Golden Pharaoh', sub: 'Mythic 1/1 · Rank #11' },
   { edition: 21, labelKo: '핑크 빙어 먹방', labelEn: 'Pink Smelt Catcher', sub: 'Rare · Arctic Smelt' },
 ];
 
@@ -628,20 +629,26 @@ async function selectMotionPenguin(editionOrItem, userInitiated = true) {
       pipLabel.textContent = '1/1 4-FRAME GIF';
     } else {
       pipImg.src = `/img/${item.id}.png`;
-      pipLabel.textContent = 'NATIVE 48×48 PNG';
+      pipLabel.textContent = item.isLogo ? '★ OFFICIAL LOGO' : 'NATIVE 48×48 PNG';
     }
   }
 
   // Update Right-Side Curator Spotlight Card
   const tierPill = document.getElementById('spot-tier-pill');
   if (tierPill) {
-    tierPill.textContent = item.isSpecial ? 'MYTHIC 1/1 GIF' : item.tier.toUpperCase();
+    tierPill.textContent = item.isLogo
+      ? '★ OFFICIAL LOGO'
+      : item.isSpecial
+      ? 'MYTHIC 1/1 GIF'
+      : item.tier.toUpperCase();
     tierPill.className = `tier-pill tier-${item.tier}`;
   }
 
   const rankPill = document.getElementById('spot-rank-pill');
   if (rankPill) {
-    rankPill.textContent = `rarity.tools Rank #${item.rank.toLocaleString()} / 10,000 (${item.score} pts)`;
+    rankPill.textContent = item.isLogo
+      ? `Official Logo #4442 (P04442) · Rank #${item.rank.toLocaleString()} (${item.score} pts)`
+      : `rarity.tools Rank #${item.rank.toLocaleString()} / 10,000 (${item.score} pts)`;
   }
 
   const themePill = document.getElementById('spot-theme-pill');
@@ -828,8 +835,8 @@ function initPixelMotionStudio() {
     triggerPixelBurst('vortex');
   });
 
-  // Load initial #2 Celestial Archangel
-  selectMotionPenguin(2, false);
+  // Load initial #4442 Official Collection Logo
+  selectMotionPenguin(4442, false);
 
   // Main 60 FPS Render Loop for the 48x48 Pixel Motion Stage
   function renderStage(now) {
@@ -1056,11 +1063,12 @@ async function loadPfpPreview(tokenNum) {
     const imgUrl = tok.edition <= 11 ? tok.image_url : tok.pixel_48_url;
     document.getElementById('pfp-preview-img').src = imgUrl;
     document.getElementById('pfp-mini-img').src = imgUrl;
-    document.getElementById('pfp-sim-title').textContent = tok.name;
+    document.getElementById('pfp-sim-title').textContent =
+      tok.edition === 4442 ? `${tok.name} (★ 공식 대표 로고)` : tok.name;
     document.getElementById('pfp-sim-id').textContent = tok.id;
 
     const tierEl = document.getElementById('pfp-sim-tier');
-    tierEl.textContent = tok.tier;
+    tierEl.textContent = tok.edition === 4442 ? `${tok.tier} (Official Logo)` : tok.tier;
     tierEl.className = `tier-${tok.tier}`;
 
     document.getElementById('pfp-sim-rank').textContent = `#${tok.rarity_rank.toLocaleString()} / 10,000`;
@@ -1085,8 +1093,8 @@ function initPfpStudio() {
     });
   });
 
-  // Preset strip: Prettiest curated Mythic 1/1s & Generative gems
-  const presets = [2, 5, 6, 1, 7, 9, 43, 35, 963, 500, 51, 1433, 21, 4276];
+  // Preset strip: Official Logo #4442 + Prettiest curated Mythic 1/1s & Generative gems
+  const presets = [4442, 2, 5, 6, 1, 7, 9, 43, 35, 963, 500, 51, 1433, 21];
   const strip = document.getElementById('pfp-preset-strip');
   if (strip) {
     strip.innerHTML = presets
@@ -1481,12 +1489,16 @@ function buildSubmissionModal() {
     { label: '1. 프로젝트명 (Project Name)', value: 'PIXEL PENGUIN (Pixel Penguin 10K)' },
     { label: '2. 발행자 명 (Issuer / Creator)', value: 'Very Penguin Labs (베리 펭귄 랩스)' },
     { label: '3. 심볼 (Symbol)', value: 'PPENG' },
-    { label: '4. 공식 홈페이지 링크 (Official Website · 단독 링크)', value: siteUrl },
-    { label: '5. 프로젝트 설명 — 영문 (VERY PUNKS 레퍼런스 스타일)', value: storyEn },
-    { label: '6. 프로젝트 설명 / 취지 — 국문', value: storyKo },
     {
-      label: '7. 민팅 및 마켓 스펙 요약',
-      value: '체인: VERY Mainnet (4613) | 토큰 표준: ERC-721 | 공급량: 10,000 (1/1 GIF 11종 + 48×48 제너레이티브 9,989종) | 민팅 일정: 2026년 10월 23일 (금) | 민팅가: 1 VERY | VERY 소각: 거래 금액의 5% (0x0000...dEaD) | 컬렉션 수수료: 0%',
+      label: '4. 공식 대표 로고 (#4442 · P04442 · 1024×1024 PNG)',
+      value: `${siteUrl}/assets/logo_4442_1024.png`,
+    },
+    { label: '5. 공식 홈페이지 링크 (Official Website · 단독 링크)', value: siteUrl },
+    { label: '6. 프로젝트 설명 — 영문 (VERY PUNKS 레퍼런스 스타일)', value: storyEn },
+    { label: '7. 프로젝트 설명 / 취지 — 국문', value: storyKo },
+    {
+      label: '8. 민팅 및 마켓 스펙 요약',
+      value: '체인: VERY Mainnet (4613) | 토큰 표준: ERC-721 | 공급량: 10,000 (1/1 GIF 11종 + 48×48 제너레이티브 9,989종) | 대표 로고: #4442 (P04442) | 민팅 일정: 2026년 10월 23일 (금) | 민팅가: 1 VERY | VERY 소각: 거래 금액의 5% (0x0000...dEaD) | 컬렉션 수수료: 0%',
     },
   ];
 
@@ -1524,6 +1536,7 @@ function buildSubmissionModal() {
         `• 프로젝트명: PIXEL PENGUIN (Pixel Penguin 10K)`,
         `• 발행자 명: Very Penguin Labs (베리 펭귄 랩스)`,
         `• 심볼(Symbol): PPENG`,
+        `• 공식 대표 로고: #4442 (P04442) — ${siteUrl}/assets/logo_4442_1024.png`,
         `• 체인 / 표준: VERY Mainnet (4613) / ERC-721`,
         `• 총 공급량: 10,000 (1-of-1 Animated GIF 11종 + 48×48 Generative PNG 9,989종)`,
         `• 민팅 일정 / 가격: 2026년 10월 23일(금) / 1 VERY`,
@@ -1656,7 +1669,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderSpecialsGrid(APP_CONFIG.specials);
     buildExplorerTraitDropdowns();
     renderTraitDirectory();
-    loadPfpPreview(2);
+    loadPfpPreview(4442);
     fetchExplorerTokens();
   } catch (err) {
     console.error('Failed to initialize config:', err);
