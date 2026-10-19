@@ -24,7 +24,7 @@ app.use(express.json({ limit: '256kb' }));
 
 const ROOT_DIR = __dirname;
 const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
-const DATA_DIR = path.join(ROOT_DIR, 'data');
+const DATA_DIR = path.join(ROOT_DIR, 'bundle');
 
 // Load 10K collection index and binary 48x48 PNG pack into memory
 const COLLECTION_JSON_PATH = path.join(DATA_DIR, 'collection_10k.json');
