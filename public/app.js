@@ -1078,7 +1078,7 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   ctx.fillStyle = '#991b1b';
   ctx.font = '900 13px "Pretendard", sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('⚠ 위험: 도트 벼랑!', 0, -73);
+  ctx.fillText('위험: 도트 벼랑!', 0, -73);
   ctx.restore();
 
   ctx.save();
@@ -1954,10 +1954,10 @@ function updateMobileTraitFilterBtnLabel() {
   const span = toggleBtn.querySelector('span');
   if (span) {
     if (activeCount > 0) {
-      span.textContent = CURRENT_LANG === 'ko' ? `🎛️ 파츠 필터 (${activeCount}개 적용)` : `🎛️ Filters (${activeCount})`;
+      span.textContent = CURRENT_LANG === 'ko' ? `파츠 필터 (${activeCount}개 적용)` : `Filters (${activeCount})`;
       toggleBtn.classList.add('active-toggle');
     } else {
-      span.textContent = CURRENT_LANG === 'ko' ? '🎛️ 파츠 필터 (9종)' : '🎛️ Trait Filters (9)';
+      span.textContent = CURRENT_LANG === 'ko' ? '파츠 필터 (9종)' : 'Trait Filters (9)';
       toggleBtn.classList.remove('active-toggle');
     }
   }
