@@ -31,11 +31,11 @@ const CAT_LABELS_KO = {
   Eyes: '눈 (Eyes)',
   Mouth: '입 소품 (Mouth)',
   Eyewear: '안경 (Eyewear)',
-  Hat: '모자·관모 (Hat)',
+  Hat: '모자 (Hat)',
   Prop: '종합 소품 (Prop)',
 };
 
-// Official Logo (#4442) + Curated Prettiest Masterpieces from our 10,000 Collection
+// Official Logo (#4442) + 14 Featured Tokens from our 10,000 Collection
 const CURATED_BEAUTY_14 = [
   {
     edition: 4442,
@@ -47,14 +47,14 @@ const CURATED_BEAUTY_14 = [
     score: '87.1',
     shortKo: '★ 대표 로고',
     shortEn: '★ Official Logo',
-    titleKo: '#4442 공식 대표 로고 — 픽셀 쉐이드 펭귄 (Official Collection Logo)',
-    titleEn: '#4442 Official Collection Logo — Pixel Shades Penguin',
-    themeKo: '컬렉션 공식 대표 마스코트 · 클래식 블루 & 픽셀 쉐이드',
-    themeEn: 'Canonical Collection Mascot · Classic Blue & Pixel Shades',
+    titleKo: '#4442 공식 대표 로고 — Pixel Penguin #4442 (P04442)',
+    titleEn: '#4442 Official Collection Logo — Pixel Penguin #4442',
+    themeKo: 'Glacier Sky (Blue) · Classic Blue (A-3) & Pixel Shades',
+    themeEn: 'Glacier Sky (Blue) · Classic Blue (A-3) & Pixel Shades',
     noteKo:
-      'PIXEL PENGUIN 10K 컬렉션의 얼굴이자 공식 대표 로고(P04442)입니다. 청량한 글래시어 스카이(Glacier Sky) 도트 디더링 배경 위에서, 다른 장식 없이 오직 정통 클래식 블루(A-3) 펭귄 본연의 실루엣과 시그니처 도트 선글라스(Pixel Shades · Deal With It) 하나만으로 픽셀아트 PFP의 정수를 보여주는 상징적인 마스코트입니다.',
+      'PIXEL PENGUIN 10K 공식 대표 로고(P04442)입니다. Glacier Sky (Blue) 배경, Classic Blue (A-3) 스킨, Pixel Shades 선글라스로 구성된 토큰입니다.',
     noteEn:
-      'The official emblem and mascot of PIXEL PENGUIN 10K (P04442). Pure Classic Blue (A-3) penguin silhouette on a Glacier Sky dithered canvas wearing nothing but iconic Pixel Shades (Deal With It).',
+      'Official collection logo of PIXEL PENGUIN 10K (P04442). Features a Classic Blue (A-3) penguin with Pixel Shades on a Glacier Sky (Blue) background.',
   },
   {
     edition: 2,
@@ -67,12 +67,12 @@ const CURATED_BEAUTY_14 = [
     shortEn: 'Archangel',
     titleKo: '#2 천상의 대천사 (Celestial Archangel)',
     titleEn: '#2 Celestial Archangel (Mythic 1/1)',
-    themeKo: '천상의 성소 · 세라핌 날개 & 황금 헤일로',
-    themeEn: 'Celestial Sanctuary · Seraphim Wings & Halo',
+    themeKo: '1-of-1 GIF · Rank #1 · Seraphim Wings & Halo',
+    themeEn: '1-of-1 GIF · Rank #1 · Seraphim Wings & Halo',
     noteKo:
-      '전체 10,000점 중 희귀도 1위(Rank #1 · 60,012.23점)에 빛나는 대표 신화 1-of-1 애니메이션 원화입니다. 황금빛 성소 배경 위에서 공중 부양하는 찬란한 황금 헤일로, 세라핌의 순백 날개, 사파이어빛 깃털과 깜찍한 윙크(F2 프레임)가 어우러져 컬렉션 최고의 미학을 자랑합니다.',
+      '전체 10,000개 중 희귀도 1위(Rank #1 · 60,012.23 pts)인 4프레임 애니메이션 GIF 토큰입니다. 골드 배경, 헤일로, 세라핌 날개, 윙크 모션으로 구성되어 있습니다.',
     noteEn:
-      'Ranked #1 out of all 10,000 tokens (60,012.23 pts). A sapphire-blue angel penguin winking beneath a floating golden halo with seraphim white wings and glowing feather particles in a golden sanctuary.',
+      'Ranked #1 out of 10,000 tokens (60,012.23 pts). 4-frame animated 1-of-1 GIF featuring Celestial Azure skin, Radiant Golden Halo, and Seraphim White Wings.',
   },
   {
     edition: 5,
@@ -85,12 +85,12 @@ const CURATED_BEAUTY_14 = [
     shortEn: 'Glacier King',
     titleKo: '#5 빙하의 제왕 (Glacier Emperor)',
     titleEn: '#5 Glacier Emperor (Mythic 1/1)',
-    themeKo: '오로라 빙하 궁전 · 얼음 결정 왕관',
-    themeEn: 'Aurora Glacier Palace · Ice Crystal Crown',
+    themeKo: '1-of-1 GIF · Rank #3 · Ice Crystal Crown',
+    themeEn: '1-of-1 GIF · Rank #3 · Ice Crystal Crown',
     noteKo:
-      '극지방 오로라가 일렁이는 빙하 궁전을 배경으로 눈보라 결정이 흩날리는 1-of-1 신화 원화(Rank #3)입니다. 정교한 얼음 결정 왕관과 황실 모피 망토, 맑은 프로스트 사파이어 눈빛과 귀여운 윙크 모션이 압권입니다.',
+      '희귀도 3위(Rank #3 · 60,007.14 pts) 4프레임 애니메이션 GIF 토큰입니다. 오로라 빙하 배경, 얼음 결정 왕관, 모피 망토, 눈보라 파티클로 구성되어 있습니다.',
     noteEn:
-      'Set in an aurora-lit glacier palace with swirling frost crystals (Rank #3). Features a sparkling ice crystal crown, royal glacier fur mantle, and a charming animated wink.',
+      'Ranked #3 overall (60,007.14 pts). 4-frame animated 1-of-1 GIF with Aurora Glacier Palace background, Glacier Ice Crystal Crown, and Frost Flurry.',
   },
   {
     edition: 6,
@@ -103,12 +103,12 @@ const CURATED_BEAUTY_14 = [
     shortEn: 'Abyssal Ruler',
     titleKo: '#6 심해의 지배자 (Abyssal Sea Ruler)',
     titleEn: '#6 Abyssal Sea Ruler (Mythic 1/1)',
-    themeKo: '발광 심해 신전 · 해파리 & 산호 왕관',
-    themeEn: 'Bioluminescent Palace · Jellyfish & Coral Crown',
+    themeKo: '1-of-1 GIF · Rank #4 · Jellyfish & Coral Crown',
+    themeEn: '1-of-1 GIF · Rank #4 · Jellyfish & Coral Crown',
     noteKo:
-      '신비로운 생체발광 심해 신전에서 빛나는 해파리와 물방울이 피어오르는 1-of-1 신화 원화(Rank #4)입니다. 황금 산호·사파이어 바다 왕관과 진주 비늘 망토의 청록색 도트 그라데이션이 예술적인 작품입니다.',
+      '희귀도 4위(Rank #4 · 60,007.14 pts) 4프레임 애니메이션 GIF 토큰입니다. 심해 배경, 해파리 및 물방울 애니메이션, 산호 왕관으로 구성되어 있습니다.',
     noteEn:
-      'Glowing jellyfish and rising bubbles illuminate a bioluminescent deep-sea palace (Rank #4), crowned with golden coral and an abyssal pearl-scale royal mantle.',
+      'Ranked #4 overall (60,007.14 pts). 4-frame animated 1-of-1 GIF featuring Bioluminescent Jellyfish & Bubble Tide and Golden Coral Sea Crown.',
   },
   {
     edition: 43,
@@ -117,34 +117,16 @@ const CURATED_BEAUTY_14 = [
     tier: 'Epic',
     rank: 187,
     score: '517.67',
-    shortKo: '매화 꽃바람 낚시',
-    shortEn: 'Maehwa Angler',
-    titleKo: '#43 봄 매화 꽃바람 낚시꾼 (Maehwa Blossom Angler)',
-    titleEn: '#43 Spring Maehwa Blossom Angler (Epic)',
-    themeKo: '봄 매화 꽃바람 오라 · 화관 & 북극 빙어',
-    themeEn: 'Spring Maehwa Breeze · Floral Wreath & Smelt',
+    shortKo: '꽃화관 빙어 낚시',
+    shortEn: 'Floral Angler',
+    titleKo: '#43 꽃화관 빙어 낚시꾼 (Floral Wreath Angler)',
+    titleEn: '#43 Floral Wreath Ice Angler (Epic)',
+    themeKo: 'Epic · Rank #187 · Floral Wreath & Arctic Smelt',
+    themeEn: 'Epic · Rank #187 · Floral Wreath & Arctic Smelt',
     noteKo:
-      '제너레이티브 펭귄 중 가장 사랑스러운 조합으로 손꼽히는 Epic 등급 대표작(Rank #187)입니다. 밤하늘 위로 분홍빛 봄 매화 꽃잎(Spring Maehwa Breeze)이 흩날리고, 머리엔 꽃화관(Floral Wreath), 등엔 얼음 낚싯대, 부리엔 방금 낚은 북극 빙어를 문 채 나른한 눈웃음을 짓고 있습니다.',
+      'Epic 등급(Rank #187 · 517.67 pts) 제너레이티브 토큰입니다. 꽃화관(Floral Wreath), 얼음 낚싯대(Fishing Rod & Ice Catch), 북극 빙어(Caught Arctic Smelt) 파츠 조합입니다.',
     noteEn:
-      'One of the cutest generative combinations in the collection (Rank #187): Floral Wreath, Spring Maehwa Breeze petal aura, Fishing Rod & Ice Catch, and a freshly caught Arctic Smelt in its beak.',
-  },
-  {
-    edition: 35,
-    id: 'P00035',
-    isSpecial: false,
-    tier: 'Uncommon',
-    rank: 2263,
-    score: '265.17',
-    shortKo: '설원 매화 한복',
-    shortEn: 'Maehwa Hanbok',
-    titleKo: '#35 설원 다이아몬드 왕실 매화 한복 (Snowfall Maehwa Hanbok)',
-    titleEn: '#35 Snowfall Royal Maehwa Silk Hanbok',
-    themeKo: '블러쉬 로즈 · 왕실 매화 비단 한복 & 눈웃음',
-    themeEn: 'Blush Rose · Royal Maehwa Hanbok & Happy Eyes',
-    noteKo:
-      '따스한 블러쉬 로즈 파스텔 배경 위에 다이아몬드 눈꽃 오라(Polar Diamond Snowfall)가 내리고, 아이스 블루 펭귄이 화사한 왕실 매화 비단 한복(CLO-47)을 차려입은 채 반달 눈웃음(Happy Arches)을 짓는 한국 전통 파스텔 명작입니다.',
-    noteEn:
-      'A pastel Korean heritage gem: Glacier blue feathers dressed in the Royal Maehwa Silk Hanbok with smiling Happy Arches eyes and Polar Diamond Snowfall on a Blush Rose canvas.',
+      'Epic generative token (Rank #187 · 517.67 pts) equipped with Floral Wreath, Fishing Rod & Ice Catch, and Caught Arctic Smelt.',
   },
   {
     edition: 963,
@@ -155,14 +137,32 @@ const CURATED_BEAUTY_14 = [
     score: '1,914.93',
     shortKo: '여우 원지 (#1 Gen)',
     shortEn: 'Fox Onesie #1',
-    titleKo: '#963 태양 불꽃 여우 원지 윙크 (Solar Fox Onesie · 제너레이티브 1위)',
-    titleEn: '#963 Solar Ember Fox Onesie (#1 Generative Rank #12)',
-    themeKo: '제너레이티브 전체 희귀도 1위 (Rank #12) · 여우 후드',
-    themeEn: '#1 Highest-Ranked Generative Penguin · Fox Onesie',
+    titleKo: '#963 여우 원지 펭귄 (Fox Onesie · 제너레이티브 1위)',
+    titleEn: '#963 Fox Onesie Penguin (Rank #12)',
+    themeKo: 'Legendary · Rank #12 · Fox Onesie & Solar Ember',
+    themeEn: 'Legendary · Rank #12 · Fox Onesie & Solar Ember',
     noteKo:
-      '11점의 1/1 원화 바로 다음인 전체 랭킹 12위(제너레이티브 9,989점 중 당당히 1위!)를 차지한 전설(Legendary) 펭귄입니다. 에메랄드 산호초 배경과 태양 불꽃 오라(Solar Ember Aura) 속에서 귀여운 여우 후드 원지(Fox Onesie)를 입고 윙크하는 독보적 존재감을 지녔습니다.',
+      '제너레이티브 9,989개 중 희귀도 1위(전체 Rank #12 · 1,914.93 pts) 토큰입니다. Reef Shallows 배경, Chrome 스킨, Fox Onesie, Solar Ember 오라 조합입니다.',
     noteEn:
-      'The #1 highest-ranked generative penguin in the entire 10,000 collection (Rank #12 overall)! Chrome Penguin wearing a cute Fox Onesie with a Wink and Solar Ember Aura.',
+      'Highest-ranked generative penguin (Rank #12 overall · 1,914.93 pts). Chrome Penguin with Fox Onesie, Wink, and Solar Ember Aura.',
+  },
+  {
+    edition: 6522,
+    id: 'P06522',
+    isSpecial: false,
+    tier: 'Uncommon',
+    rank: 15,
+    score: '1,839.98',
+    shortKo: '게코 후드 원지',
+    shortEn: 'Gecko Onesie',
+    titleKo: '#6522 드림글로우 게코 후드 원지 (Gecko Onesie)',
+    titleEn: '#6522 Dreamglow Gecko Onesie (Rank #15)',
+    themeKo: 'Rank #15 · Dreamglow Penguin & Gecko Onesie',
+    themeEn: 'Rank #15 · Dreamglow Penguin & Gecko Onesie',
+    noteKo:
+      '전체 희귀도 순위 15위(1,839.98 pts) 제너레이티브 토큰입니다. Krill Peach 배경, Dreamglow 스킨, Gecko Onesie(후드 일체형 의상), Happy Arches 눈 파츠로 구성되어 있습니다.',
+    noteEn:
+      'Ranked #15 overall (1,839.98 pts). Features Krill Peach background, Dreamglow Penguin skin, Gecko Onesie (hood up), and Happy Arches eyes.',
   },
   {
     edition: 1,
@@ -175,12 +175,12 @@ const CURATED_BEAUTY_14 = [
     shortEn: 'GO Zeus',
     titleKo: '#1 GO 제우스 (Olympian Thunder God)',
     titleEn: '#1 GO Zeus (Mythic 1/1)',
-    themeKo: '올림포스 폭풍 신전 · 번개 월계관 & GO 망토',
-    themeEn: 'Olympian Storm Temple · Lightning Laurel Crown',
+    themeKo: '1-of-1 GIF · Rank #7 · Lightning Laurel Crown',
+    themeEn: '1-of-1 GIF · Rank #7 · Lightning Laurel Crown',
     noteKo:
-      'PIXEL PENGUIN 10K 컬렉션의 상징적인 1번 토큰(P00001)입니다. 올림포스 폭풍 신전의 뇌전 이펙트, 황금 월계관, 골드림 스퀘어 안경, 그리고 GO 로열 망토가 어우러진 대장주 신화 원화입니다.',
+      '컬렉션 1번 토큰(P00001 · Rank #7) 4프레임 애니메이션 GIF입니다. 번개 이펙트 배경, 월계관, 골드림 스퀘어 안경, GO 망토 파츠로 구성되어 있습니다.',
     noteEn:
-      'Token #1 of PIXEL PENGUIN 10K. Commands an Olympian thunderbolt storm with a golden laurel crown, gold-rim square glasses, and the signature GO royal mantle.',
+      'Token #1 of PIXEL PENGUIN 10K (Rank #7). 4-frame animated 1-of-1 GIF with Olympian Thunderbolt Storm, Golden Laurel Crown, and Gold-Rim Glasses.',
   },
   {
     edition: 7,
@@ -193,12 +193,12 @@ const CURATED_BEAUTY_14 = [
     shortEn: 'Chronos Ruler',
     titleKo: '#7 시공간의 지배자 (Chronos Time-Space Ruler)',
     titleEn: '#7 Chronos Time-Space Ruler (Mythic 1/1)',
-    themeKo: '크로노스 시계탑 성소 · 에메랄드/골드 오드아이',
-    themeEn: 'Clockwork Sanctum · Heterochromia Eyes',
+    themeKo: '1-of-1 GIF · Rank #5 · Clockwork & Heterochromia',
+    themeEn: '1-of-1 GIF · Rank #5 · Clockwork & Heterochromia',
     noteKo:
-      '정교한 황금 태엽 기어와 시공간 궤도 링이 회전하는 1-of-1 신화 원화(Rank #5)입니다. 에메랄드와 황금빛이 공존하는 오드아이(Heterochromia)와 모래시계 메달리온 망토가 돋보입니다.',
+      '희귀도 5위(Rank #5 · 60,007.14 pts) 4프레임 애니메이션 GIF 토큰입니다. 시계탑 기어 배경, 에메랄드/골드 오드아이(Heterochromia), 모래시계 망토 조합입니다.',
     noteEn:
-      'Golden clockwork gears and temporal orbit rings surround a Chronomancer penguin with emerald-and-gold heterochromia eyes (Rank #5).',
+      'Ranked #5 overall (60,007.14 pts). 4-frame animated 1-of-1 GIF featuring Clockwork Sanctum gears and Emerald/Gold Heterochromia eyes.',
   },
   {
     edition: 9,
@@ -211,12 +211,12 @@ const CURATED_BEAUTY_14 = [
     shortEn: 'Cyber Overlord',
     titleKo: '#9 사이버 네온 군주 (Cyber Neon Overlord)',
     titleEn: '#9 Cyber Neon Overlord (Mythic 1/1)',
-    themeKo: '사이버펑크 네온 시티 · 홀로그램 바이저 (Rank #2)',
-    themeEn: 'Cyberpunk Metropolis · Holo-Spectrum Visor',
+    themeKo: '1-of-1 GIF · Rank #2 · Holo-Spectrum Visor',
+    themeEn: '1-of-1 GIF · Rank #2 · Holo-Spectrum Visor',
     noteKo:
-      '전체 희귀도 2위(Rank #2 · 60,010.33점)에 빛나는 사이버펑크 신화 원화입니다. 네온 빗방울과 글리치 파동이 흐르는 미래 도시 위에서 홀로그램 바이저와 네온 크리스탈 크라운이 강렬한 색채 대비를 이룹니다.',
+      '희귀도 2위(Rank #2 · 60,010.33 pts) 4프레임 애니메이션 GIF 토큰입니다. 사이버펑크 네온 시티 배경, 홀로그램 바이저, 네온 크리스탈 크라운 조합입니다.',
     noteEn:
-      'Ranked #2 overall (60,010.33 pts). Cyberpunk neon rain and glitch pulses frame a Holo-Spectrum Cyber Visor and Neon Crystal Crown.',
+      'Ranked #2 overall (60,010.33 pts). 4-frame animated 1-of-1 GIF with Cyberpunk Neon Metropolis, Holo-Spectrum Visor, and Neon Crystal Crown.',
   },
   {
     edition: 500,
@@ -225,52 +225,52 @@ const CURATED_BEAUTY_14 = [
     tier: 'Mythic',
     rank: 46,
     score: '932.31',
-    shortKo: '수정 기사단장',
+    shortKo: '크리스탈 나이트',
     shortEn: 'Crystal Knight',
-    titleKo: '#500 수정 기사단 아크메이지 (Crystal Knight Archmage)',
-    titleEn: '#500 Crystal Knight Archmage (Generative Mythic)',
-    themeKo: '크릴 피치 · 크리스탈 나이트 투구 & 프로스트 스태프',
-    themeEn: 'Krill Peach · Crystal Helmet & Frost Staff',
+    titleKo: '#500 크리스탈 나이트 헬멧 & 프로스트 스태프 (Crystal Knight)',
+    titleEn: '#500 Crystal Knight Helmet & Frost Staff (Mythic)',
+    themeKo: 'Mythic · Rank #46 · Crystal Helmet & Frost Staff',
+    themeEn: 'Mythic · Rank #46 · Crystal Helmet & Frost Staff',
     noteKo:
-      '제너레이티브 39점의 신화(Mythic) 등급 중에서도 색감이 가장 산뜻한 작품(Rank #46)입니다. 따뜻한 피치 배경 위에 엠버 펭귄, 투명하게 빛나는 크리스탈 기사 투구, 얼음 마법 지팡이와 조개 비눗방울 파이프가 완벽한 조화를 이룹니다.',
+      'Mythic 등급(Rank #46 · 932.31 pts) 제너레이티브 토큰입니다. Krill Peach 배경, Ember 스킨, Crystal Knight Helmet, Frost Staff, Seashell Bubble Pipe 조합입니다.',
     noteEn:
-      'A standout Generative Mythic (Rank #46): Ember Penguin on a warm Krill Peach background with a Crystal Knight Helmet, Frost Staff, and Seashell Bubble Pipe.',
+      'Generative Mythic token (Rank #46 · 932.31 pts) featuring Ember Penguin, Crystal Knight Helmet, Frost Staff, and Seashell Bubble Pipe.',
   },
   {
-    edition: 51,
-    id: 'P00051',
-    isSpecial: false,
-    tier: 'Epic',
-    rank: 1250,
-    score: '321.25',
-    shortKo: '빙하 왕관 당상관',
-    shortEn: 'Glacier Danryeong',
-    titleKo: '#51 빙하 왕관 조선 궁중 당상관 (Glacier Crown Court Danryeong)',
-    titleEn: '#51 Glacier Crown Joseon Court Danryeong (Epic)',
-    themeKo: '동서양 왕실 크로스오버 · 빙하 왕관 & 조선 단령',
-    themeEn: 'Royal Crossover · Glacier Crown & Joseon Danryeong',
-    noteKo:
-      '화사한 핑크빛 배경 위에서 미드나잇 펭귄이 조선 궁중 당상관의 붉은 단령(흉배 자수·사모관대 각대)을 입고 머리에는 투명한 빙하 얼음 왕관(Glacier Iceberg Crown)을 쓴 품격 있는 작품입니다.',
-    noteEn:
-      'Midnight Penguin wearing the crimson Joseon Court Danryeong robe with embroidered chest badge, crowned with the translucent Glacier Iceberg Crown on Blush Rose.',
-  },
-  {
-    edition: 1433,
-    id: 'P01433',
+    edition: 75,
+    id: 'P00075',
     isSpecial: false,
     tier: 'Legendary',
-    rank: 93,
-    score: '659.72',
-    shortKo: '도깨비불 대마법사',
-    shortEn: 'Dokkaebi Wizard',
-    titleKo: '#1433 조선 도깨비불 빙하 대마법사 (Dokkaebi Fire Glacier Wizard)',
-    titleEn: '#1433 Joseon Dokkaebi Fire Glacier Wizard (Legendary)',
-    themeKo: '드림 나이트 · 에메랄드 도깨비불 오라 & 빙하 왕관',
-    themeEn: 'Dream Night · Joseon Dokkaebi Fire & Glacier Crown',
+    rank: 162,
+    score: '550.29',
+    shortKo: '썬더볼트 빙하 왕관',
+    shortEn: 'Glacier Crown',
+    titleKo: '#75 썬더볼트 빙하 왕관 & 바시티 자켓 (Glacier Crown)',
+    titleEn: '#75 Thunderbolt Glacier Iceberg Crown (Legendary)',
+    themeKo: 'Legendary · Rank #162 · Glacier Crown & Varsity Jacket',
+    themeEn: 'Legendary · Rank #162 · Glacier Crown & Varsity Jacket',
     noteKo:
-      '전체 TOP 100(Rank #93)에 드는 전설(Legendary) 펭귄입니다. 깊은 밤하늘에 청록빛 조선 도깨비불(Joseon Dokkaebi Fire)이 타오르고, 빙하 왕관과 마법사 로브, 레드 웨이페어 선글라스가 힙한 판타지 무드를 완성합니다.',
+      'Legendary 등급(Rank #162 · 550.29 pts) 토큰입니다. Lava Cave 배경, Dreamglow 스킨, Glacier Iceberg Crown, Blue Varsity Jacket, Thunderbolt Static 오라 조합입니다.',
     noteEn:
-      'Top-100 Legendary (Rank #93): Emerald Joseon Dokkaebi Fire flames dance around a Glacier Penguin in Wizard Robes, Glacier Iceberg Crown, and Red Wayfarers.',
+      'Legendary token (Rank #162 · 550.29 pts) with Dreamglow Penguin, Glacier Iceberg Crown, Blue Varsity Jacket, and Thunderbolt Static Aura.',
+  },
+  {
+    edition: 192,
+    id: 'P00192',
+    isSpecial: false,
+    tier: 'Rare',
+    rank: 7788,
+    score: '146.63',
+    shortKo: '극지 탐험가 우샨카',
+    shortEn: 'Polar Ushanka',
+    titleKo: '#192 극지 탐험가 우샨카 & 민트 코코아 (Polar Ushanka)',
+    titleEn: '#192 Polar Explorer Ushanka & Cocoa Penguin (Rare)',
+    themeKo: 'Rare · Kelp Mint · Polar Explorer Ushanka',
+    themeEn: 'Rare · Kelp Mint · Polar Explorer Ushanka',
+    noteKo:
+      'Rare 등급(146.63 pts) 토큰입니다. Kelp Mint 배경, Cocoa 스킨, Polar Explorer Ushanka 모자, Blue Polo 의상으로 구성된 깔끔한 조합입니다.',
+    noteEn:
+      'Rare token (146.63 pts) featuring Kelp Mint background, Cocoa Penguin skin, Polar Explorer Ushanka hat, and Blue Polo.',
   },
   {
     edition: 21,
@@ -279,52 +279,52 @@ const CURATED_BEAUTY_14 = [
     tier: 'Rare',
     rank: 6885,
     score: '162.54',
-    shortKo: '핑크 빙어 먹방',
+    shortKo: '핑크 빙어 캐처',
     shortEn: 'Pink Smelt Catch',
-    titleKo: '#21 북극 빙어 물고 신난 핑크 펭귄 (Pink Smelt Catcher)',
-    titleEn: '#21 Orchid Pink Arctic Smelt Catcher (Rare)',
-    themeKo: '오키드 핑크 · 그린 니트 비니 & 북극 빙어',
-    themeEn: 'Orchid Pink · Green Beanie & Caught Arctic Smelt',
+    titleKo: '#21 오키드 핑크 & 그린 비니 빙어 캐처 (Pink Smelt Catcher)',
+    titleEn: '#21 Orchid Pink & Green Beanie Smelt Catcher (Rare)',
+    themeKo: 'Rare · Orchid Pink · Green Beanie & Arctic Smelt',
+    themeEn: 'Rare · Orchid Pink · Green Beanie & Arctic Smelt',
     noteKo:
-      '오키드 핑크 배경과 로즈 핑크 깃털의 톤온톤 조합 위에 보색인 초록 니트 비니를 쓰고, 부리에 은빛 북극 빙어(Caught Arctic Smelt)를 앙증맞게 문 채 익살스러운 표정을 짓는 마스코트 같은 펭귄입니다.',
+      'Rare 등급(162.54 pts) 토큰입니다. Orchid Pink 배경, Rose Penguin 스킨, Green Beanie 모자, Caught Arctic Smelt(북극 빙어) 소품 조합입니다.',
     noteEn:
-      'Tone-on-tone Orchid Pink & Rose Penguin topped with a contrasting Green Beanie and a silvery Caught Arctic Smelt held proudly in its beak.',
+      'Rare token (162.54 pts) with Orchid Pink background, Rose Penguin skin, Green Beanie, and Caught Arctic Smelt.',
   },
 ];
 
-// Additional Iconic Penguins for the 28-Token Dual-Row Infinite Pixel Parade
+// Additional Penguins for the 28-Token Dual-Row Infinite Pixel Parade
 const PARADE_ROW_1_ITEMS = [
-  { edition: 4442, labelKo: '★ 공식 대표 로고', labelEn: '★ Official Logo', sub: 'Pixel Shades Mascot' },
+  { edition: 4442, labelKo: '★ 공식 대표 로고', labelEn: '★ Official Logo', sub: 'Pixel Shades · #4442' },
   { edition: 2, labelKo: '천상의 대천사', labelEn: 'Celestial Archangel', sub: 'Mythic 1/1 · Rank #1' },
-  { edition: 43, labelKo: '매화 꽃바람 낚시꾼', labelEn: 'Maehwa Blossom Angler', sub: 'Epic · Rank #187' },
+  { edition: 43, labelKo: '꽃화관 빙어 낚시', labelEn: 'Floral Wreath Angler', sub: 'Epic · Rank #187' },
   { edition: 5, labelKo: '빙하의 제왕', labelEn: 'Glacier Emperor', sub: 'Mythic 1/1 · Rank #3' },
-  { edition: 963, labelKo: '태양 불꽃 여우 원지', labelEn: 'Solar Fox Onesie', sub: 'Legendary · Rank #12' },
+  { edition: 963, labelKo: '여우 후드 원지', labelEn: 'Solar Fox Onesie', sub: 'Legendary · Rank #12' },
   { edition: 6, labelKo: '심해의 지배자', labelEn: 'Abyssal Sea Ruler', sub: 'Mythic 1/1 · Rank #4' },
-  { edition: 35, labelKo: '설원 매화 한복', labelEn: 'Snowfall Maehwa Hanbok', sub: 'Uncommon · Happy Eyes' },
+  { edition: 6522, labelKo: '드림글로우 게코 원지', labelEn: 'Dreamglow Gecko Onesie', sub: 'Uncommon · Rank #15' },
   { edition: 1, labelKo: 'GO 제우스', labelEn: 'GO Zeus', sub: 'Mythic 1/1 · Rank #7' },
-  { edition: 500, labelKo: '수정 기사단장', labelEn: 'Crystal Knight Mage', sub: 'Mythic · Rank #46' },
+  { edition: 500, labelKo: '크리스탈 나이트', labelEn: 'Crystal Knight Mage', sub: 'Mythic · Rank #46' },
   { edition: 7, labelKo: '시공간의 지배자', labelEn: 'Chronos Time Ruler', sub: 'Mythic 1/1 · Rank #5' },
-  { edition: 51, labelKo: '빙하 왕관 당상관', labelEn: 'Glacier Court Danryeong', sub: 'Epic · Joseon Royal' },
+  { edition: 75, labelKo: '썬더볼트 빙하 왕관', labelEn: 'Thunderbolt Glacier Crown', sub: 'Legendary · Rank #162' },
   { edition: 9, labelKo: '사이버 네온 군주', labelEn: 'Cyber Neon Overlord', sub: 'Mythic 1/1 · Rank #2' },
-  { edition: 4276, labelKo: '프리즘 윙크 매화 리본', labelEn: 'Prism Wink Maehwa', sub: 'Rank #310 · Cute Wink' },
-  { edition: 21, labelKo: '핑크 빙어 먹방', labelEn: 'Pink Smelt Catcher', sub: 'Rare · Arctic Smelt' },
+  { edition: 192, labelKo: '극지 탐험가 우샨카', labelEn: 'Polar Explorer Ushanka', sub: 'Rare · Kelp Mint' },
+  { edition: 21, labelKo: '핑크 비니 빙어 캐처', labelEn: 'Pink Smelt Catcher', sub: 'Rare · Arctic Smelt' },
 ];
 
 const PARADE_ROW_2_ITEMS = [
-  { edition: 1433, labelKo: '도깨비불 대마법사', labelEn: 'Dokkaebi Fire Wizard', sub: 'Legendary · Rank #93' },
-  { edition: 10, labelKo: '다크 히어로', labelEn: 'Dark Hero Vigilante', sub: 'Mythic 1/1 · Rank #10' },
-  { edition: 48, labelKo: '도깨비불 베레모', labelEn: 'Dokkaebi Fire Beret', sub: 'Rare · Dokkaebi Aura' },
   { edition: 3, labelKo: '크립토 불 황제', labelEn: 'Crypto Bull Emperor', sub: 'Mythic 1/1 · Rank #8' },
-  { edition: 479, labelKo: '조선 왕실 익선관', labelEn: 'Joseon Royal Ikseongwan', sub: 'Rare · Rank #261' },
+  { edition: 10, labelKo: '다크 히어로', labelEn: 'Dark Hero Vigilante', sub: 'Mythic 1/1 · Rank #10' },
+  { edition: 25, labelKo: '하버 세일러 카라', labelEn: 'Harbor Sailor Collar', sub: 'Epic · Bat Wings' },
   { edition: 4, labelKo: '네온 디제이 마에스트로', labelEn: 'Neon DJ Maestro', sub: 'Mythic 1/1 · Rank #6' },
-  { edition: 26, labelKo: '왕실 단청 광휘 천사', labelEn: 'Dancheong Halo Angel', sub: 'Epic · Rank #708' },
+  { edition: 8, labelKo: '태양의 파라오', labelEn: 'Solar Pharaoh', sub: 'Mythic 1/1 · Rank #11' },
   { edition: 11, labelKo: '밤의 신사 탐정', labelEn: 'Noir Gentleman Detective', sub: 'Mythic 1/1 · Rank #9' },
-  { edition: 53, labelKo: '설원 조선 궁중 단령', labelEn: 'Snowfall Court Danryeong', sub: 'Rare · Snowfall Aura' },
-  { edition: 6522, labelKo: '드림글로우 게코 후드', labelEn: 'Dreamglow Gecko Onesie', sub: 'Rank #15 · Happy Eyes' },
-  { edition: 75, labelKo: '썬더볼트 빙하 왕관', labelEn: 'Thunderbolt Glacier Crown', sub: 'Legendary · Rank #162' },
-  { edition: 136, labelKo: '조선 왕실 두정갑 헤일로', labelEn: 'Royal Dujeonggap Halo', sub: 'Rank #173 · Joseon Armor' },
-  { edition: 25, labelKo: '마도로스 세일러 카라', labelEn: 'Harbor Sailor Collar', sub: 'Epic · Bat Wings' },
-  { edition: 192, labelKo: '극지 탐험가 우샨카', labelEn: 'Polar Explorer Ushanka', sub: 'Rare · Kelp Mint' },
+  { edition: 4276, labelKo: '글래시어 프리즘 윙크', labelEn: 'Glacier Prism Wink', sub: 'Common · Rank #310' },
+  { edition: 12, labelKo: '픽셀 펭귄 #12', labelEn: 'Pixel Penguin #12', sub: 'Generative · #12' },
+  { edition: 100, labelKo: '픽셀 펭귄 #100', labelEn: 'Pixel Penguin #100', sub: 'Generative · #100' },
+  { edition: 777, labelKo: '픽셀 펭귄 #777', labelEn: 'Pixel Penguin #777', sub: 'Generative · #777' },
+  { edition: 1000, labelKo: '픽셀 펭귄 #1000', labelEn: 'Pixel Penguin #1000', sub: 'Generative · #1000' },
+  { edition: 2026, labelKo: '픽셀 펭귄 #2026', labelEn: 'Pixel Penguin #2026', sub: 'Generative · #2026' },
+  { edition: 8888, labelKo: '픽셀 펭귄 #8888', labelEn: 'Pixel Penguin #8888', sub: 'Generative · #8888' },
+  { edition: 10000, labelKo: '픽셀 펭귄 #10000', labelEn: 'Pixel Penguin #10000', sub: 'Generative · #10000' },
 ];
 
 function scrollToSection(id) {
@@ -1093,8 +1093,8 @@ function initPfpStudio() {
     });
   });
 
-  // Preset strip: Official Logo #4442 + Prettiest curated Mythic 1/1s & Generative gems
-  const presets = [4442, 2, 5, 6, 1, 7, 9, 43, 35, 963, 500, 51, 1433, 21];
+  // Preset strip: Official Logo #4442 + Featured tokens
+  const presets = [4442, 2, 5, 6, 1, 7, 9, 43, 963, 6522, 500, 75, 192, 21];
   const strip = document.getElementById('pfp-preset-strip');
   if (strip) {
     strip.innerHTML = presets
