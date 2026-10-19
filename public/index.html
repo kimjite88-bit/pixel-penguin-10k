@@ -12,7 +12,7 @@
   <meta property="og:image" content="https://ppeng.verycloud.io/assets/logo_4442_1024.png" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" type="image/png" href="/img/P04442.png" />
-  <link rel="stylesheet" href="/styles.css?v=3.6.0" />
+  <link rel="stylesheet" href="/styles.css?v=3.7.0" />
 </head>
 <body>
   <!-- Full-Viewport Stepped Pixel Ambient Particle Canvas -->
@@ -138,8 +138,8 @@
 
           <div class="hero-cta-row">
             <button type="button" class="btn-primary" onclick="scrollToSection('sec-motion')">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-              <span data-ko="48×48 도트 모션 놀이터" data-en="48×48 Pixel Motion Playground">48×48 도트 모션 놀이터</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <span data-ko="픽셀 월드 인트로 예고편 보기" data-en="Watch Pixel World Intro">픽셀 월드 인트로 예고편 보기</span>
             </button>
             <button type="button" class="btn-secondary" onclick="scrollToSection('tab-codex')">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -153,12 +153,12 @@
         </div>
       </div>
 
-      <!-- Right: VeryChat Verified PFP Simulator -->
+      <!-- Right: VeryChat Verified PFP Simulator (Pointy-Top / Pointy-Bottom Hexagon) -->
       <div class="hero-right pixel-frame-glow">
         <div class="pfp-studio-header">
           <span class="pfp-studio-title">VERYCHAT VERIFIED PFP PREVIEWER</span>
           <div class="shape-toggles" role="group" aria-label="PFP Frame Shape">
-            <button type="button" class="shape-btn active" data-shape="hex" data-ko="육각형(VeryChat)" data-en="Hexagon">육각형(VeryChat)</button>
+            <button type="button" class="shape-btn active" data-shape="hex" data-ko="육각형(위·아래 꼭지)" data-en="Hexagon (Pointy)">육각형(위·아래 꼭지)</button>
             <button type="button" class="shape-btn" data-shape="circle" data-ko="원형" data-en="Circle">원형</button>
             <button type="button" class="shape-btn" data-shape="square" data-ko="정사각형" data-en="Square">정사각형</button>
           </div>
@@ -166,8 +166,21 @@
 
         <div class="pfp-stage">
           <div class="pfp-Frame-wrap">
-            <div class="pfp-art-box shape-hex" id="pfp-preview-box">
-              <img id="pfp-preview-img" src="/img/P04442.png" alt="PFP Preview" class="pixelated" />
+            <div class="pfp-hex-stage-shell" id="pfp-hex-stage-shell">
+              <div class="pfp-art-box shape-hex" id="pfp-preview-box">
+                <img id="pfp-preview-img" src="/img/P04442.png" alt="PFP Preview" class="pixelated" />
+              </div>
+              <!-- Explicit Pointy-Top (50,1) & Pointy-Bottom (50,99) Hexagon Border Overlay -->
+              <svg class="pfp-hex-outline" id="pfp-hex-outline" viewBox="0 0 100 100" aria-hidden="true">
+                <polygon points="50,1.2 93.3,25 93.3,75 50,98.8 6.7,75 6.7,25" fill="none" stroke="url(#vcHexGrad)" stroke-width="2.4" stroke-linejoin="round" />
+                <defs>
+                  <linearGradient id="vcHexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stop-color="#67e8f9" />
+                    <stop offset="50%" stop-color="#ff4d6d" />
+                    <stop offset="100%" stop-color="#fbbf24" />
+                  </linearGradient>
+                </defs>
+              </svg>
             </div>
             <div class="verychat-profile-pills" aria-label="VeryChat KYC & NFT Badges">
               <span class="vc-pill vc-pill-kyc"><span class="vc-star-v">V</span> KYC</span>
@@ -179,16 +192,19 @@
             <div class="verychat-header-sim">
               <div class="mini-pfp-wrap">
                 <img id="pfp-mini-img" src="/img/P04442.png" alt="Mini Avatar" class="pixelated" />
+                <svg class="mini-hex-outline" viewBox="0 0 100 100" aria-hidden="true">
+                  <polygon points="50,1.5 93.3,25 93.3,75 50,98.5 6.7,75 6.7,25" fill="none" stroke="#ff4d6d" stroke-width="4" stroke-linejoin="round" />
+                </svg>
               </div>
               <div class="sim-user-meta">
                 <div class="sim-user-name"><span id="pfp-sim-title">Pixel Penguin #4442 (공식 대표 로고)</span> <span class="vc-star-v inline-v">V</span></div>
-                <div class="sim-user-badge">@happy · VeryChat NFT PFP</div>
+                <div class="sim-user-badge">@happy · VeryChat NFT PFP (세로 꼭짓점 6각형)</div>
               </div>
             </div>
 
             <div class="pfp-quick-Metadata" id="pfp-sim-meta">
-              <div><strong data-ko="토큰 ID:" data-en="Token ID:">토큰 ID:</strong> <span id="pfp-sim-id">P04442</span> · <strong data-ko="등급:" data-en="Tier:">등급:</strong> <span id="pfp-sim-tier" class="tier-Common">Common (Official Logo)</span></div>
-              <div><strong data-ko="희귀도 순위:" data-en="Rarity Rank:">희귀도 순위:</strong> <span id="pfp-sim-rank">#9,811 / 10,000</span> · <strong data-ko="희귀도 점수:" data-en="Rarity Score:">희귀도 점수:</strong> <span id="pfp-sim-score">87.1 pts</span></div>
+              <div><strong data-ko="토큰 번호:" data-en="Token ID:">토큰 번호:</strong> <span id="pfp-sim-id">P04442</span> · <strong data-ko="구분:" data-en="Tier:">구분:</strong> <span id="pfp-sim-tier" class="tier-Common">Common (Official Logo)</span></div>
+              <div style="margin-top:3px; color:var(--accent-ice); font-size:11.5px;" data-ko="✓ 위·아래가 뾰족한 베리챗 실제 6각형 프사 규격 정중앙 정렬" data-en="✓ Centered for VeryChat Pointy-Top / Pointy-Bottom Hexagon">✓ 위·아래가 뾰족한 베리챗 실제 6각형 프사 규격 정중앙 정렬</div>
             </div>
 
             <div style="display:flex; gap:6px;">
@@ -200,110 +216,69 @@
         </div>
 
         <div>
-          <div style="font-size:11.5px; color:var(--text-secondary); margin-bottom:6px; font-weight:700;" data-ko="대표 로고(#4442)랑 아무거나 눌러서 프사 핏 확인해보기:" data-en="Try Official Logo (#4442) & Featured Penguins:">대표 로고(#4442)랑 아무거나 눌러서 프사 핏 확인해보기:</div>
+          <div style="font-size:11.5px; color:var(--text-secondary); margin-bottom:6px; font-weight:700;" data-ko="대표 로고(#4442)랑 아무거나 눌러서 세로 6각형 프사 핏 확인해보기:" data-en="Try Official Logo (#4442) & Featured Penguins:">대표 로고(#4442)랑 아무거나 눌러서 세로 6각형 프사 핏 확인해보기:</div>
           <div class="pfp-Mini-selector" id="pfp-preset-strip"></div>
         </div>
       </div>
     </section>
 
-    <!-- SECTION 0: LIVE 48×48 PIXEL MOTION GRAPHICS STAGE -->
+    <!-- SECTION 0: RETRO 16-BIT PIXEL GAME INTRO TRAILER -->
     <section class="section-block motion-showcase-section" id="sec-motion">
       <div class="section-header">
         <div>
           <div class="hero-eyebrow" style="margin-bottom:6px;">
-            <span class="pill-tag very">REAL-TIME 48×48 (2,304 PIXELS) MOTION ENGINE</span>
-            <span class="pill-tag gold">OFFICIAL LOGO #4442 + 14 PRECIOUS PENGUINS</span>
+            <span class="pill-tag very">16-BIT RETRO GAME INTRO CUTSCENE</span>
+            <span class="pill-tag gold">2D PENGUIN → FALLS IN PIT → PIXEL WORLD GREETING</span>
           </div>
-          <h2 class="section-title" data-ko="48×48 도트 모션 놀이터 — 대표 로고 #4442 & 내 눈에 이쁜 자식들" data-en="48×48 Pixel Motion Playground — Official Logo #4442 & Precious Penguins">48×48 도트 모션 놀이터 — 대표 로고 #4442 & 내 눈에 이쁜 자식들</h2>
-          <p class="section-sub" data-ko="9,811등짜리 Common이지만 제일 정감 가서 공식 대표 로고로 뽑힌 #4442번과, 등급 상관없이 다 이쁘고 귀한 자식들을 48×48 도트 모션으로 구경하는 곳입니다." data-en="Featuring #4442 (a Rank #9,811 Common chosen as our official logo simply because it looks great) alongside 13 other penguins—all equally precious regardless of tier.">9,811등짜리 Common이지만 제일 정감 가서 공식 대표 로고로 뽑힌 #4442번과, 등급 상관없이 다 이쁘고 귀한 자식들을 48×48 도트 모션으로 구경하는 곳입니다.</p>
+          <h2 class="section-title" data-ko="픽셀 펭귄 월드 — 고전게임 인트로 예고편" data-en="PIXEL PENGUIN WORLD — Retro Game Intro Trailer">픽셀 펭귄 월드 — 고전게임 인트로 예고편</h2>
+          <p class="section-sub" data-ko="평범한 2D 펭귄이 신나게 달려가다가 발이 걸려 구덩이에 빠졌는데, 눈을 떠보니 픽셀 월드! 본인도 48×48 도트 펭귄으로 변신해서 먼저 와 있던 픽셀 펭귄 친구들과 인사하며 픽셀 월드가 시작됩니다." data-en="A regular 2D penguin runs along, trips into a pit, and wakes up in the Pixel World! Transformed into a 48×48 pixel penguin, it greets its new pixel penguin friends as the adventure begins.">평범한 2D 펭귄이 신나게 달려가다가 발이 걸려 구덩이에 빠졌는데, 눈을 떠보니 픽셀 월드! 본인도 48×48 도트 펭귄으로 변신해서 먼저 와 있던 픽셀 펭귄 친구들과 인사하며 픽셀 월드가 시작됩니다.</p>
         </div>
 
-        <div class="motion-mode-bar" role="group" aria-label="Pixel Motion Graphics Mode">
-          <button type="button" class="motion-mode-btn active" data-mode="morph" data-ko="픽셀 모핑 & 오라 파티클" data-en="Pixel Morph & Aura">픽셀 모핑 & 오라 파티클</button>
-          <button type="button" class="motion-mode-btn" data-mode="matrix" data-ko="48×48 LED 매트릭스 & 스캐너" data-en="48×48 LED Matrix & Scanner">48×48 LED 매트릭스 & 스캐너</button>
-          <button type="button" class="motion-mode-btn" data-mode="vortex" data-ko="인터랙티브 픽셀 중력장" data-en="Interactive Pixel Vortex">인터랙티브 픽셀 중력장</button>
+        <div class="motion-mode-bar" role="group" aria-label="Intro Cutscene Chapter">
+          <button type="button" class="motion-mode-btn active" data-scene="0" data-ko="1. 2D 펭귄 질주 & 구덩이" data-en="1. 2D Run & Pit Fall">1. 2D 펭귄 질주 & 구덩이</button>
+          <button type="button" class="motion-mode-btn" data-scene="1" data-ko="2. 48×48 도트 변신!" data-en="2. Pixel Transformation">2. 48×48 도트 변신!</button>
+          <button type="button" class="motion-mode-btn" data-scene="2" data-ko="3. 픽셀 펭귄들과 인사" data-en="3. Greet Pixel Penguins">3. 픽셀 펭귄들과 인사</button>
+          <button type="button" class="motion-mode-btn" data-scene="3" data-ko="4. 게임 타이틀 화면" data-en="4. Title Screen">4. 게임 타이틀 화면</button>
         </div>
       </div>
 
-      <div class="motion-studio-grid">
-        <!-- Left: Live 48x48 Canvas Stage -->
-        <div class="motion-canvas-panel">
-          <div class="motion-hud-topbar">
-            <div class="hud-left-status">
-              <span class="hud-rec-dot"></span>
-              <span id="motion-hud-mode-label">LIVE 48×48 PIXEL ASSEMBLER · 60 FPS</span>
-            </div>
-            <div class="hud-coords-pill" id="motion-hud-coords">GRID: 48×48 (2,304 PX) · HOVER TO INSPECT</div>
+      <div class="retro-intro-theater">
+        <div class="motion-hud-topbar">
+          <div class="hud-left-status">
+            <span class="hud-rec-dot"></span>
+            <span id="motion-hud-mode-label">SCENE 1/4 · 일반 2D 펭귄이 달려가다 구덩이에 빠지는 중...</span>
           </div>
-
-          <div class="motion-canvas-wrap" id="motion-canvas-wrap">
-            <canvas id="pixel-stage-canvas" width="576" height="576"></canvas>
-            <!-- Floating GIF Twin Badge for 1-of-1 Animated Originals -->
-            <div class="motion-gif-pip" id="motion-gif-pip">
-              <img id="motion-pip-img" src="/img/P04442.png" alt="Official Logo #4442" class="pixelated" />
-              <span id="motion-pip-label">OFFICIAL LOGO</span>
-            </div>
-            <div class="motion-scanline-overlay" aria-hidden="true"></div>
-          </div>
-
-          <!-- Extracted 8-Color Native Pixel Palette Bar -->
-          <div class="motion-palette-row">
-            <span class="palette-label" data-ko="실시간 추출 도트 팔레트 (1px 1단색):" data-en="Live Extracted 48×48 Palette:">실시간 추출 도트 팔레트 (1px 1단색):</span>
-            <div class="palette-swatches" id="motion-palette-swatches"></div>
-          </div>
-
-          <!-- Interactive Stage Controls -->
-          <div class="motion-controls-row">
-            <button type="button" class="btn-primary" style="padding:9px 14px; font-size:12.5px;" id="btn-pixel-burst">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-              <span data-ko="도트 흩뿌렸다가 다시 모으기" data-en="Trigger Pixel Burst">도트 흩뿌렸다가 다시 모으기</span>
-            </button>
-            <button type="button" class="btn-secondary active-toggle" style="padding:9px 13px; font-size:12.5px;" id="btn-motion-autoplay">
-              <span data-ko="자동 쇼케이스 전환: ON" data-en="Auto-Cycle Showcase: ON" id="autoplay-label">자동 쇼케이스 전환: ON</span>
-            </button>
-            <button type="button" class="btn-secondary" style="padding:9px 13px; font-size:12.5px;" id="btn-motion-grid">
-              <span data-ko="48×48 격자 표시" data-en="48×48 Grid Lines">48×48 격자 표시</span>
-            </button>
-            <button type="button" class="btn-secondary" style="padding:9px 13px; font-size:12.5px;" id="btn-motion-next">
-              <span data-ko="다음 자식 보기" data-en="Next Penguin">다음 자식 보기</span>
-            </button>
-          </div>
+          <div class="hud-coords-pill" id="motion-hud-coords">HERO: #4442 (P04442) · CLICK SCREEN TO INTERACT</div>
         </div>
 
-        <!-- Right: Active Token Spotlight + 14 Featured Penguins Dock -->
-        <div class="motion-curator-panel">
-          <div class="curator-spotlight-card" id="curator-spotlight-card">
-            <div class="spotlight-top-row">
-              <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <span class="tier-pill tier-Mythic" id="spot-tier-pill">OFFICIAL LOGO</span>
-                <span class="pill-tag gold" id="spot-rank-pill">Token #4442 (P04442) · 87.1 pts</span>
-                <span class="pill-tag" id="spot-theme-pill">Glacier Sky · Classic Blue &amp; Pixel Shades</span>
-              </div>
-              <span class="spot-token-id" id="spot-token-id">P04442</span>
-            </div>
+        <div class="retro-screen-wrap" id="motion-canvas-wrap">
+          <canvas id="pixel-stage-canvas" width="960" height="540"></canvas>
+          <div class="motion-scanline-overlay" aria-hidden="true"></div>
+        </div>
 
-            <h3 class="spot-title" id="spot-title">#4442 공식 대표 로고 — Pixel Penguin #4442 (P04442)</h3>
-            <p class="spot-curator-note" id="spot-curator-note">
-              희귀도 순위는 10,000마리 중 9,811등짜리 Common이지만, 파란 하늘에 도트 선글라스 낀 게 제일 정감 가서 당당히 공식 대표 로고로 뽑힌 귀한 자식입니다.
-            </p>
-
-            <div class="spot-traits-chips" id="spot-traits-chips"></div>
-
-            <div class="spot-action-row">
-              <button type="button" class="btn-primary" style="padding:9px 16px; font-size:13px;" id="spot-equip-pfp-btn">
-                <span data-ko="상단 베리챗 PFP 프리뷰에 달아보기" data-en="Equip in VeryChat PFP Previewer">상단 베리챗 PFP 프리뷰에 달아보기</span>
-              </button>
-              <button type="button" class="btn-secondary" style="padding:9px 16px; font-size:13px;" id="spot-inspect-btn">
-                <span data-ko="상세 스펙 & 원본 이미지 다운로드" data-en="Full Rarity Breakdown & Download">상세 스펙 & 원본 이미지 다운로드</span>
-              </button>
-            </div>
+        <div class="retro-controls-bar">
+          <div style="display:flex; flex-wrap:wrap; gap:8px; align-items:center;">
+            <button type="button" class="btn-primary" style="padding:9px 15px; font-size:13px;" id="btn-pixel-burst">
+              <span data-ko="🔁 인트로 처음부터 다시보기" data-en="🔁 Replay Full Intro">🔁 인트로 처음부터 다시보기</span>
+            </button>
+            <button type="button" class="btn-secondary active-toggle" style="padding:9px 13px; font-size:12.5px;" id="btn-motion-autoplay">
+              <span data-ko="연속 재생 (예고편 모드): ON" data-en="Auto-Play Trailer: ON" id="autoplay-label">연속 재생 (예고편 모드): ON</span>
+            </button>
+            <button type="button" class="btn-secondary" style="padding:9px 13px; font-size:12.5px;" id="btn-motion-next">
+              <span data-ko="주인공 펭귄 바꾸기 (#4442 → 다음)" data-en="Switch Hero Penguin">주인공 펭귄 바꾸기 (#4442 → 다음)</span>
+            </button>
           </div>
+          <button type="button" class="btn-secondary" style="padding:9px 15px; font-size:13px; border-color:var(--accent-gold); color:var(--accent-gold);" onclick="scrollToSection('tab-codex')">
+            <span data-ko="▶ START GAME — 10,000마리 도감도 열기" data-en="▶ START GAME — Open 10,000 Codex">▶ START GAME — 10,000마리 도감도 열기</span>
+          </button>
+        </div>
 
-          <div class="curator-dock-header">
-            <span data-ko="맛보기로 골라둔 자식들 14마리 (눌러서 도트 모션 전환)" data-en="14 Sample Penguins (Click to Switch)">맛보기로 골라둔 자식들 14마리 (눌러서 도트 모션 전환)</span>
-            <span class="dock-sub-hint" data-ko="등급 달라도 다 똑같이 귀한 자식들" data-en="All equally precious regardless of tier">등급 달라도 다 똑같이 귀한 자식들</span>
+        <!-- Compact Character Select Bar -->
+        <div class="retro-select-player-box">
+          <div class="curator-dock-header" style="margin-bottom:8px;">
+            <span data-ko="SELECT PLAYER — 인트로 주인공 도트 펭귄 고르기 (누르면 구덩이에서 이 펭귄으로 변신합니다)" data-en="SELECT PLAYER — Choose Which Pixel Penguin You Transform Into">SELECT PLAYER — 인트로 주인공 도트 펭귄 고르기 (누르면 구덩이에서 이 펭귄으로 변신합니다)</span>
+            <span class="dock-sub-hint" id="spot-title">#4442 공식 대표 로고</span>
           </div>
-
           <div class="curator-dock-grid" id="curator-dock-grid"></div>
         </div>
       </div>
@@ -311,7 +286,7 @@
       <!-- Dual-Row Infinite Pixel Parade Marquee -->
       <div class="pixel-parade-wrapper">
         <div class="parade-header-bar">
-          <span class="parade-title" data-ko="LIVE 48×48 PIXEL PARADE — 지나가는 펭귄 자식들 (마우스 올리면 멈추고 누르면 상세 보기)" data-en="LIVE 48×48 PIXEL PARADE — Passing Penguins (Hover to pause, click to inspect)">LIVE 48×48 PIXEL PARADE — 지나가는 펭귄 자식들 (마우스 올리면 멈추고 누르면 상세 보기)</span>
+          <span class="parade-title" data-ko="LIVE 48×48 PIXEL PARADE — 픽셀 월드에 살고 있는 펭귄 자식들 (누르면 상세 보기)" data-en="LIVE 48×48 PIXEL PARADE — Penguins Living in Pixel World (Click to inspect)">LIVE 48×48 PIXEL PARADE — 픽셀 월드에 살고 있는 펭귄 자식들 (누르면 상세 보기)</span>
           <span class="parade-badge">10,000 PRECIOUS PFP PENGUINS</span>
         </div>
         <div class="parade-track-container">
@@ -389,10 +364,6 @@
               NFT는 판매 중에도 판매자 지갑에 그대로 있고, 판매자는 마켓 컨트랙트에 거래 권한만 승인합니다. 구매하면 컨트랙트가 한 트랜잭션에서 NFT 이전과 VERY 지급을 함께 처리하므로, 한쪽만 실행되는 일은 없습니다.
             </p>
           </div>
-
-          <p class="rarity-footnote" data-ko="희귀도 순위는 마켓 규격상 rarity.tools 알고리즘(전체 수 ÷ 해당 파츠 보유 수 합산)으로 매겨놓긴 했는데, 순위 높다고 뭐 해드리는 거 없으니 숫자에 연연하지 마시고 내 눈에 이쁜 펭귄 고르시면 됩니다." data-en="Rarity rankings follow the standard rarity.tools formula (Total Supply ÷ Trait Count), though higher ranks grant zero extra perks—just pick whichever penguin looks cutest to you.">
-            희귀도 순위는 마켓 규격상 rarity.tools 알고리즘(전체 수 ÷ 해당 파츠 보유 수 합산)으로 매겨놓긴 했는데, 순위 높다고 뭐 해드리는 거 없으니 숫자에 연연하지 마시고 내 눈에 이쁜 펭귄 고르시면 됩니다.
-          </p>
         </div>
 
         <!-- Right Column: On-Chain Specification Rows (Exact VERY PUNKS Reference Match) -->
@@ -476,13 +447,13 @@
 
     <!-- TAB PAGE 2: 도감도 (10,000 CODEX & 210 TRAITS) -->
     <div id="tab-page-codex" class="tab-page" style="display:none;">
-    <!-- SECTION 3: FULL 10,000 COLLECTION EXPLORER & RARITY RANKER -->
+    <!-- SECTION 3: FULL 10,000 COLLECTION EXPLORER -->
     <section class="section-block" id="sec-explorer" style="margin-top:20px;">
       <div class="section-header">
         <div>
           <span class="pill-tag" style="margin-bottom:8px; display:inline-block;">ALL 10,000 PRECIOUS PENGUINS (P00001 – P10000)</span>
           <h2 class="section-title" data-ko="도감도 — 10,000마리 전체 자식들 도감 (P00001 ~ P10000)" data-en="10,000 Codex — All Precious Penguins Explorer (P00001 – P10000)">도감도 — 10,000마리 전체 자식들 도감 (P00001 ~ P10000)</h2>
-          <p class="section-sub" data-ko="1번부터 10,000번까지 똑같이 생긴 놈 하나 없이 다 제각각 이쁘게 뽑힌 자식들입니다. 등급이나 순위 높다고 밥 먹여주는 거 아니니, 그냥 번호나 파츠로 검색해서 내 눈에 제일 이쁜 프사용 펭귄을 찾아보세요." data-en="All 10,000 penguins (#1–#10,000) with zero duplicates. Higher ranks don't pay the bills, so just filter by traits and find whichever penguin looks cutest for your PFP.">1번부터 10,000번까지 똑같이 생긴 놈 하나 없이 다 제각각 이쁘게 뽑힌 자식들입니다. 등급이나 순위 높다고 밥 먹여주는 거 아니니, 그냥 번호나 파츠로 검색해서 내 눈에 제일 이쁜 프사용 펭귄을 찾아보세요.</p>
+          <p class="section-sub" data-ko="1번부터 10,000번까지 똑같이 생긴 놈 하나 없이 다 제각각 이쁘게 뽑힌 자식들입니다. 그냥 번호나 파츠로 검색해서 내 눈에 제일 이쁜 프사용 펭귄을 찾아보세요." data-en="All 10,000 penguins (#1–#10,000) with zero duplicates. Filter by traits and find whichever penguin looks cutest for your PFP.">1번부터 10,000번까지 똑같이 생긴 놈 하나 없이 다 제각각 이쁘게 뽑힌 자식들입니다. 그냥 번호나 파츠로 검색해서 내 눈에 제일 이쁜 프사용 펭귄을 찾아보세요.</p>
         </div>
       </div>
 
@@ -493,7 +464,7 @@
           </div>
 
           <select id="exp-tier" class="filter-select" aria-label="Filter by Rarity Tier">
-            <option value="">전체 등급 (다 똑같이 귀함 · 10,000)</option>
+            <option value="">전체 구분 (다 똑같이 귀함 · 10,000)</option>
             <option value="Mythic">Mythic (39마리)</option>
             <option value="Legendary">Legendary (200마리)</option>
             <option value="Epic">Epic (450마리)</option>
@@ -504,11 +475,9 @@
           </select>
 
           <select id="exp-sort" class="filter-select" aria-label="Sort Order">
-            <option value="rank_asc">희귀도 순위 높은순 (Rank #1 → #10,000)</option>
             <option value="id_asc">번호 오름차순 (#1 → #10,000)</option>
             <option value="id_desc">번호 내림차순 (#10,000 → #1)</option>
-            <option value="tier_desc">등급순 (Mythic → Common)</option>
-            <option value="rank_desc">희귀도 순위 낮은순 (#10,000 → #1)</option>
+            <option value="tier_desc">구분별 모아보기 (Mythic → Common)</option>
           </select>
 
           <button type="button" class="btn-secondary" style="padding:9px 14px; font-size:13px;" id="exp-reset-btn" data-ko="필터 초기화" data-en="Reset Filters">필터 초기화</button>
@@ -741,6 +710,6 @@
     </div>
   </footer>
 
-  <script src="/app.js?v=3.6.0"></script>
+  <script src="/app.js?v=3.7.0"></script>
 </body>
 </html>
