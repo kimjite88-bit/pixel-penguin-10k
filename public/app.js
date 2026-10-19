@@ -50,7 +50,7 @@ const CURATED_BEAUTY_14 = [
     titleEn: '#4442 Pixel Shades Penguin',
     themeKo: 'Common · Glacier Sky & Pixel Shades',
     themeEn: 'Common · Glacier Sky & Pixel Shades',
-    noteKo: '파란 하늘에 도트 선글라스 낀 정감 가는 자식입니다.',
+    noteKo: '파란 하늘에 픽셀 선글라스 낀 정감 가는 자식입니다.',
     noteEn: 'Blue sky and pixel shades.',
   },
   {
@@ -67,7 +67,7 @@ const CURATED_BEAUTY_14 = [
     themeKo: 'Mythic · Rank #12 · Fox Onesie & Wink',
     themeEn: 'Mythic · Rank #12 · Fox Onesie & Wink',
     noteKo:
-      '펭귄인데 여우 후드 잠옷(Fox Onesie) 뒤집어쓰고 윙크하는 귀여운 자식입니다. 일반 도트 펭귄들 중 희귀도 점수 1등(전체 #12, Mythic)으로 뽑혔는데, 역시나 뭐 주는 건 없습니다.',
+      '펭귄인데 여우 후드 잠옷(Fox Onesie) 뒤집어쓰고 윙크하는 귀여운 자식입니다. 일반 픽셀 펭귄들 중 희귀도 점수 1등(전체 #12, Mythic)으로 뽑혔는데, 역시나 뭐 주는 건 없습니다.',
     noteEn:
       'A penguin wearing a fox onesie and winking. Highest rarity.tools score among static pixel penguins (Rank #12, Mythic), though it still gives zero perks.',
   },
@@ -569,9 +569,9 @@ function setIntroScene(sceneIdx, resetTimer = true) {
   const labelEl = document.getElementById('motion-hud-mode-label');
   if (labelEl) {
     const labelsKo = [
-      'SCENE 1/3 · 2D 눈밭 산책 → 도트 구덩이 추락 & 파란 도트 펭귄 변신',
-      'SCENE 2/3 · 16-BIT 픽셀 월드 도착! 알록달록 도트 펭귄 친구들과 환영 산책',
-      'SCENE 3/3 · PIXEL PENGUIN WORLD — 베리챗 도트 펭귄 10,000마리',
+      'SCENE 1/3 · 2D 눈밭 산책 → 픽셀 구덩이 추락 & 파란 픽셀 펭귄 변신',
+      'SCENE 2/3 · 16-BIT 픽셀 월드 도착! 알록달록 픽셀 펭귄 친구들과 환영 산책',
+      'SCENE 3/3 · PIXEL PENGUIN WORLD — 베리챗 픽셀 펭귄 10,000마리',
     ];
     const labelsEn = [
       'SCENE 1/3 · 2D Snow Walk → Pixel Chasm Fall & Blue Pixel Transformation',
@@ -1714,10 +1714,10 @@ function initPixelMotionStudio() {
           Math.max(104, topEdge - 6),
           isScanShocked
             ? CURRENT_LANG === 'ko'
-              ? '어어어?! 내 몸이 파란 도트로 변하고 있어!!'
-              : 'Whoa?! I am turning into blue pixels!!'
+              ? '어어어?! 내 몸이 픽셀로 변하고 있어!!'
+              : 'Whoa?! I am turning into pixels!!'
             : CURRENT_LANG === 'ko'
-              ? '우와아!! 파란 도트 펭귄으로 변신 완료!!'
+              ? '우와아!! 파란 픽셀 펭귄으로 변신 완료!!'
               : 'Woohoo!! Transformed into a Blue Pixel Penguin!!',
           isScanShocked ? '#38bdf8' : '#34d399',
           now
@@ -1725,9 +1725,9 @@ function initPixelMotionStudio() {
 
         drawRetroDialogueBar(
           ctx,
-          'SCENE 1 · 도트 변환',
+          'SCENE 1 · 픽셀 변환',
           CURRENT_LANG === 'ko'
-            ? `삐리릭—! 차원 균열의 도트 광선을 맞고 매끈했던 파란 펭귄이 파란 도트 펭귄으로 변신 완료! (${pct}%)`
+            ? `삐리릭—! 차원 균열의 픽셀 광선을 맞고 매끈했던 파란 펭귄이 파란 픽셀 펭귄으로 변신 완료! (${pct}%)`
             : `BEEP—! Scanned by the dimensional pixel beam, our smooth blue penguin transforms into a Blue Pixel Penguin! (${pct}%)`
         );
       }
@@ -1792,8 +1792,8 @@ function initPixelMotionStudio() {
           heroX + spriteSize / 2 + 24,
           heroY - 4,
           CURRENT_LANG === 'ko'
-            ? '헐 내 몸이 파란 도트가 됐잖아?! 너네도 빠졌냐?!'
-            : 'Whoa, I am blue pixels now?! Did you guys fall in too?!',
+            ? '헐 내 몸이 픽셀이 됐잖아?! 너네도 빠졌냐?!'
+            : 'Whoa, I am pixels now?! Did you guys fall in too?!',
           '#38bdf8',
           now
         );
@@ -1801,7 +1801,7 @@ function initPixelMotionStudio() {
           ctx,
           'SCENE 2 · 픽셀월드 도착',
           CURRENT_LANG === 'ko'
-            ? '"헐?! 내 몸이 네모난 파란 도트가 됐잖아?!" 벚꽃 날리는 16비트 픽셀 월드에 무사히 착지한 파란 펭귄!'
+            ? '"헐?! 내 몸이 네모난 픽셀이 됐잖아?!" 벚꽃 날리는 16비트 픽셀 월드에 무사히 착지한 파란 펭귄!'
             : '"Whoa?! I turned into a Blue Pixel Penguin?!" Safely landed in the 16-bit Cherry Blossom Pixel World!'
         );
       } else if (p < 0.68) {
@@ -1812,7 +1812,7 @@ function initPixelMotionStudio() {
           speaker1.fx + spriteSize / 2,
           speaker1.fy - 6,
           CURRENT_LANG === 'ko'
-            ? 'ㅋㅋㅋ 어서와!! 여긴 사도 아무 혜택 없는 도트 천국이야!'
+            ? 'ㅋㅋㅋ 어서와!! 여긴 사도 아무 혜택 없는 픽셀 천국이야!'
             : 'Haha welcome!! This is the Zero-Perks Pixel Penguin Paradise!',
           '#ff4d6d',
           now
@@ -1821,7 +1821,7 @@ function initPixelMotionStudio() {
           ctx,
           'SCENE 2 · 알록달록 친구들 환영식',
           CURRENT_LANG === 'ko'
-            ? '"ㅋㅋㅋ 어서와!! 여긴 사도 아무 혜택 없는 순수 베리챗 프사(PFP) 도트 천국이야!"'
+            ? '"ㅋㅋㅋ 어서와!! 여긴 사도 아무 혜택 없는 순수 베리챗 프사(PFP) 픽셀 천국이야!"'
             : '"Haha welcome!! This is the 100% Zero-Perks VeryChat PFP Pixel Penguin Paradise!"'
         );
       } else {
@@ -1841,7 +1841,7 @@ function initPixelMotionStudio() {
           ctx,
           'SCENE 2 · 벚꽃 강변 산책 파티',
           CURRENT_LANG === 'ko'
-            ? '"거창한 로드맵 따위 없다! 알록달록 도트 펭귄 친구들과 다 같이 벚꽃 강변을 걸으며 놀자!"'
+            ? '"거창한 로드맵 따위 없다! 알록달록 픽셀 펭귄 친구들과 다 같이 벚꽃 강변을 걸으며 놀자!"'
             : '"No complicated roadmap here! Let\'s all stroll and party with our colorful penguin friends!"'
         );
       }
@@ -1954,7 +1954,7 @@ function initPixelMotionStudio() {
         ctx,
         'SCENE 3 · 타이틀',
         CURRENT_LANG === 'ko'
-          ? '그렇게 시작된 베리챗 도트 펭귄 10,000마리 세상! 아래에서 내 마음에 드는 펭귄을 골라 6각형 프사로 장착해보세요.'
+          ? '그렇게 시작된 베리챗 픽셀 펭귄 10,000마리 세상! 아래에서 내 마음에 드는 펭귄을 골라 6각형 프사로 장착해보세요.'
           : 'And so begins the world of 10,000 VeryChat Pixel Penguins! Pick your favorite penguin below and rock it as your Hexagon PFP.'
       );
     }
