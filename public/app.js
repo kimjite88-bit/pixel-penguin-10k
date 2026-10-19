@@ -466,41 +466,15 @@ function initAmbientPixelCanvas() {
 //    Scene 2: Lands in Pixel World & greets full-body pixel penguin friends (22 species colors)
 //    Scene 3: Retro 16-bit Game Title Screen (PIXEL PENGUIN / START PIXEL WORLD)
 // ============================================================================
-const SCENE_DURATIONS = [4800, 4500, 5400, 5400]; // ms per scene
-
-const MOTION_SPECIES_22 = [
-  { id: '01', code: 'SPC-05', ko: '기본 블루', en: 'Classic Blue' },
-  { id: '02', code: 'SPC-01', ko: '코코아 브라운', en: 'Cocoa Brown' },
-  { id: '03', code: 'SPC-02', ko: '미드나잇 블랙', en: 'Midnight' },
-  { id: '04', code: 'SPC-03', ko: '살구 오렌지', en: 'Apricot Orange' },
-  { id: '05', code: 'SPC-04', ko: '로즈 핑크', en: 'Rose Pink' },
-  { id: '06', code: 'SPC-06', ko: '바이올렛 퍼플', en: 'Violet Purple' },
-  { id: '07', code: 'SPC-07', ko: '스노우 화이트', en: 'Snow White' },
-  { id: '08', code: 'SPC-08', ko: '듄 샌드', en: 'Dune Sand' },
-  { id: '09', code: 'SPC-09', ko: '제이드 그린', en: 'Jade Green' },
-  { id: '10', code: 'SPC-10', ko: '엠버 레드', en: 'Ember Red' },
-  { id: '11', code: 'SPC-11', ko: '본 스켈레톤', en: 'Bone Skeleton' },
-  { id: '12', code: 'SPC-12', ko: '글래시어 아이스', en: 'Glacier Ice' },
-  { id: '13', code: 'SPC-13', ko: '펄 라벤더', en: 'Pearl Lavender' },
-  { id: '14', code: 'SPC-14', ko: '크롬 실버', en: 'Chrome Silver' },
-  { id: '15', code: 'SPC-15', ko: '골드 황금', en: 'Golden' },
-  { id: '16', code: 'SPC-16', ko: '고대 석상', en: 'Ancient Stone' },
-  { id: '17', code: 'SPC-17', ko: '심연 에메랄드', en: 'Abyssal' },
-  { id: '18', code: 'SPC-18', ko: '먹구름 스톰', en: 'Stormcloud' },
-  { id: '19', code: 'SPC-19', ko: '드림글로우', en: 'Dreamglow' },
-  { id: '20', code: 'SPC-20', ko: '데몬 다크레드', en: 'Demon Red' },
-  { id: '21', code: 'SPC-21', ko: '블레이즈 파이어', en: 'Blaze Fire' },
-  { id: '22', code: 'SPC-22', ko: '리프 오션', en: 'Reef Ocean' },
-];
+const SCENE_DURATIONS = [5000, 5400, 5400]; // 3 Scenes: 0 (추락), 1 (픽셀월드), 2 (타이틀)
 
 const MOTION_STATE = {
-  activeIdx: 0, // 0..21 index into MOTION_SPECIES_22
-  sceneIdx: 0, // 0: 2D Run & Pit, 1: Transform, 2: Greet Friends, 3: Title Screen
+  sceneIdx: 0, // 0: 2D Snow Walk & Pit Fall, 1: Pixel World Meetup, 2: Title Screen
   autoPlay: true,
   sceneStartTime: performance.now(),
   hero2DImg: null,
   hero2DLoaded: false,
-  speciesSprites: new Map(), // '01'..'22' -> { img, loaded }
+  speciesSprites: new Map(),
   menuHoverIdx: 0,
 };
 
@@ -515,7 +489,7 @@ function ensureHero2DSprite() {
   return img;
 }
 
-function ensureSpeciesSprite(spId) {
+function ensureSpeciesSprite(spId = '01') {
   const key = String(spId).padStart(2, '0');
   if (MOTION_STATE.speciesSprites.has(key)) {
     return MOTION_STATE.speciesSprites.get(key);
@@ -532,7 +506,7 @@ function ensureSpeciesSprite(spId) {
 }
 
 function setIntroScene(sceneIdx, resetTimer = true) {
-  MOTION_STATE.sceneIdx = ((sceneIdx % 4) + 4) % 4;
+  MOTION_STATE.sceneIdx = ((sceneIdx % 3) + 3) % 3;
   if (resetTimer) {
     MOTION_STATE.sceneStartTime = performance.now();
   }
@@ -543,52 +517,25 @@ function setIntroScene(sceneIdx, resetTimer = true) {
   const labelEl = document.getElementById('motion-hud-mode-label');
   if (labelEl) {
     const labelsKo = [
-      'SCENE 1/4 · 평화로운 2D 눈밭 산책 → 바나나 밟고 도트 벼랑 추락!!',
-      'SCENE 2/4 · 차원 워프 터널! 매끈한 2D 몸매 → 48×48 도트 강제 재조립!!',
-      'SCENE 3/4 · 픽셀 월드 도착! 먼저 빠진 도트 펭귄 친구들과 둠칫둠칫 환영식',
-      'SCENE 4/4 · PIXEL PENGUIN WORLD — 베리챗 도트 펭귄 10,000마리',
+      'SCENE 1/3 · 평화로운 2D 눈밭 산책 → 바나나 밟고 도트 구덩이 추락!!',
+      'SCENE 2/3 · 픽셀 월드 도착! 먼저 빠진 도트 펭귄 친구들과 둠칫둠칫 환영식',
+      'SCENE 3/3 · PIXEL PENGUIN WORLD — 베리챗 도트 펭귄 10,000마리',
     ];
     const labelsEn = [
-      'SCENE 1/4 · Peaceful 2D Snow Walk → Banana Slip into the Pixel Chasm!!',
-      'SCENE 2/4 · Dimensional Warp! Smooth 2D → 48×48 Pixel Reconstruction!!',
-      'SCENE 3/4 · Welcome to Pixel World! Bouncing with Pixel Penguin Friends',
-      'SCENE 4/4 · PIXEL PENGUIN WORLD — 10,000 VeryChat Pixel Penguins',
+      'SCENE 1/3 · Peaceful 2D Snow Walk → Banana Slip into the Pixel Pit!!',
+      'SCENE 2/3 · Welcome to Pixel World! Bouncing with Pixel Penguin Friends',
+      'SCENE 3/3 · PIXEL PENGUIN WORLD — 10,000 VeryChat Pixel Penguins',
     ];
     labelEl.textContent =
       CURRENT_LANG === 'ko' ? labelsKo[MOTION_STATE.sceneIdx] : labelsEn[MOTION_STATE.sceneIdx];
   }
 }
 
-// Keep selectMotionPenguin as a clean no-op / hero-blue loader for compatibility
 function selectMotionPenguin() {
-  MOTION_STATE.activeIdx = 0;
-  ensureSpeciesSprite('05');
+  ensureSpeciesSprite('01');
 }
 
-// Offscreen Mosaic Canvas for real-time 2D -> Chunky Pixel block transition in Scene 2
-let MOSAIC_CANVAS = null;
-let MOSAIC_CTX = null;
-function drawMosaic2DPenguin(ctx, cx, cy, size, blockCount = 16) {
-  const img = ensureHero2DSprite();
-  if (!MOTION_STATE.hero2DLoaded || !img) return;
-  if (!MOSAIC_CANVAS) {
-    MOSAIC_CANVAS = document.createElement('canvas');
-    MOSAIC_CTX = MOSAIC_CANVAS.getContext('2d');
-  }
-  const b = Math.max(8, Math.min(48, Math.round(blockCount)));
-  MOSAIC_CANVAS.width = b;
-  MOSAIC_CANVAS.height = b;
-  MOSAIC_CTX.clearRect(0, 0, b, b);
-  MOSAIC_CTX.imageSmoothingEnabled = true;
-  MOSAIC_CTX.drawImage(img, 0, 0, b, b);
-
-  ctx.save();
-  ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(MOSAIC_CANVAS, cx - size / 2, cy - size / 2, size, size);
-  ctx.restore();
-}
-
-// Helper: Draw the Uploaded 2D Full-Body Hero Penguin (hero_2d.png) with squash-and-stretch & comic flair
+// Helper: Draw the Uploaded 2D Full-Body Hero Penguin (hero_2d.png) with squash-and-stretch
 function drawUploaded2DPenguin(ctx, cx, cy, size, angleRad = 0, scaleX = 1, scaleY = 1) {
   const img = ensureHero2DSprite();
   ctx.save();
@@ -602,7 +549,7 @@ function drawUploaded2DPenguin(ctx, cx, cy, size, angleRad = 0, scaleX = 1, scal
   ctx.restore();
 }
 
-// Helper: Draw a Comic Spiky Impact Starburst (for banana slip & transformations)
+// Helper: Draw a Comic Spiky Impact Starburst (for banana slip)
 function drawComicStarburst(ctx, cx, cy, innerR, outerR, points, fillCol, strokeCol, rot = 0) {
   ctx.save();
   ctx.translate(cx, cy);
@@ -627,7 +574,7 @@ function drawComicStarburst(ctx, cx, cy, innerR, outerR, points, fillCol, stroke
   ctx.restore();
 }
 
-// Helper: Draw a proper 3-Petal Cartoon Banana Peel (NO cheap half-circle!)
+// Helper: Draw a proper 3-Petal Cartoon Banana Peel
 function drawCartoonBananaPeel(ctx, x, y, angle = 0, scale = 1) {
   ctx.save();
   ctx.translate(x, y);
@@ -673,12 +620,11 @@ function drawCartoonBananaPeel(ctx, x, y, angle = 0, scale = 1) {
   ctx.restore();
 }
 
-// Helper: Draw a 3D Isometric Voxel Cube (for Scene 1 Pit & Scene 2 Warp Vortex)
+// Helper: Draw a 3D Isometric Voxel Cube
 function drawIsoVoxelCube(ctx, cx, cy, r, topCol, leftCol, rightCol) {
   const dx = r * 0.866;
   const dy = r * 0.5;
   ctx.save();
-  // Top face
   ctx.fillStyle = topCol;
   ctx.beginPath();
   ctx.moveTo(cx, cy - r);
@@ -687,7 +633,6 @@ function drawIsoVoxelCube(ctx, cx, cy, r, topCol, leftCol, rightCol) {
   ctx.lineTo(cx - dx, cy - dy);
   ctx.closePath();
   ctx.fill();
-  // Left face
   ctx.fillStyle = leftCol;
   ctx.beginPath();
   ctx.moveTo(cx - dx, cy - dy);
@@ -696,7 +641,6 @@ function drawIsoVoxelCube(ctx, cx, cy, r, topCol, leftCol, rightCol) {
   ctx.lineTo(cx - dx, cy + dy);
   ctx.closePath();
   ctx.fill();
-  // Right face
   ctx.fillStyle = rightCol;
   ctx.beginPath();
   ctx.moveTo(cx, cy);
@@ -769,9 +713,8 @@ function drawPixelHeart(ctx, cx, cy, p = 3, color = '#ff4d6d') {
   ctx.restore();
 }
 
-// Helper: Draw Rich 2D Cartoon Snow Village Environment for Scene 1 (NO lazy rectangles/semicircles!)
+// Helper: Draw Rich 2D Cartoon Snow Village Environment for Scene 1
 function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
-  // 1. Multi-stop 2D Anime Sky Gradient
   const skyGrad = ctx.createLinearGradient(0, 0, 0, 370);
   skyGrad.addColorStop(0, '#0284c7');
   skyGrad.addColorStop(0.45, '#38bdf8');
@@ -780,7 +723,7 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   ctx.fillStyle = skyGrad;
   ctx.fillRect(0, 0, 960, 380);
 
-  // 2. Warm Glowing 2D Cartoon Sun with Rotating Sunbeams & Cool Shades
+  // Warm Glowing 2D Cartoon Sun with Rotating Sunbeams & Cool Shades
   ctx.save();
   ctx.translate(112, 74);
   const sunGlow = ctx.createRadialGradient(0, 0, 18, 0, 0, 92);
@@ -792,7 +735,6 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   ctx.arc(0, 0, 92, 0, Math.PI * 2);
   ctx.fill();
 
-  // Rotating sun rays
   ctx.save();
   ctx.rotate(now * 0.0005);
   for (let i = 0; i < 12; i++) {
@@ -807,7 +749,6 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   }
   ctx.restore();
 
-  // Sun body
   ctx.fillStyle = '#fde047';
   ctx.strokeStyle = '#d97706';
   ctx.lineWidth = 3;
@@ -816,7 +757,6 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   ctx.fill();
   ctx.stroke();
 
-  // Cool sunglasses on the sun
   ctx.fillStyle = '#0f172a';
   ctx.fillRect(-22, -10, 18, 11);
   ctx.fillRect(4, -10, 18, 11);
@@ -824,7 +764,6 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(-19, -8, 5, 3);
   ctx.fillRect(7, -8, 5, 3);
-  // Rosy cheeks & cheeky smile
   ctx.fillStyle = 'rgba(244, 63, 94, 0.45)';
   ctx.beginPath();
   ctx.ellipse(-18, 7, 5, 3, 0, 0, Math.PI * 2);
@@ -837,20 +776,18 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   ctx.stroke();
   ctx.restore();
 
-  // 3. Fluffy Multi-Puff 2D Cartoon Clouds
+  // Fluffy Multi-Puff 2D Cartoon Clouds
   const draw2DCloud = (baseX, cy, scale) => {
     const cx = ((baseX + now * 0.018) % 1140) - 120;
     ctx.save();
     ctx.translate(cx, cy);
     ctx.scale(scale, scale);
-    // Soft blue bottom shadow
     ctx.fillStyle = '#cbeafe';
     ctx.beginPath();
     ctx.arc(-28, 8, 18, 0, Math.PI * 2);
     ctx.arc(0, 10, 22, 0, Math.PI * 2);
     ctx.arc(28, 8, 18, 0, Math.PI * 2);
     ctx.fill();
-    // Bright white cloud puffs
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     ctx.arc(-28, 3, 18, 0, Math.PI * 2);
@@ -864,7 +801,7 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   draw2DCloud(560, 48, 0.95);
   draw2DCloud(830, 72, 1.25);
 
-  // 4. Far 2D Alpine Snow-Capped Mountains (2-tone directional light & shadow slopes)
+  // Far 2D Alpine Snow-Capped Mountains
   const peaks = [
     { x: 110, y: 150, w: 220, bY: 365 },
     { x: 295, y: 118, w: 260, bY: 365 },
@@ -873,7 +810,6 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
     { x: 910, y: 168, w: 200, bY: 365 },
   ];
   peaks.forEach((pk) => {
-    // Left sunlit face
     ctx.fillStyle = '#dbeafe';
     ctx.beginPath();
     ctx.moveTo(pk.x, pk.y);
@@ -882,7 +818,6 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
     ctx.closePath();
     ctx.fill();
 
-    // Right shaded glacier face
     ctx.fillStyle = '#93c5fd';
     ctx.beginPath();
     ctx.moveTo(pk.x, pk.y);
@@ -891,7 +826,6 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
     ctx.closePath();
     ctx.fill();
 
-    // Crisp white snow cap at peak
     const capH = (pk.bY - pk.y) * 0.38;
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
@@ -912,7 +846,7 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
     ctx.fill();
   });
 
-  // 5. Mid-Ground Rolling Bezier Snow Hills
+  // Mid-Ground Rolling Bezier Snow Hills
   ctx.fillStyle = '#e0f2fe';
   ctx.beginPath();
   ctx.moveTo(0, 365);
@@ -933,10 +867,9 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   ctx.closePath();
   ctx.fill();
 
-  // 6. Cute 2D Snow Igloo on the Left Mid-Ground Hill (x = 185, y = 324)
+  // Cute 2D Snow Igloo on the Left Mid-Ground Hill
   ctx.save();
   ctx.translate(185, 326);
-  // Chimney smoke puffs
   for (let s = 0; s < 3; s++) {
     const sp = ((now * 0.001 + s * 0.33) % 1);
     ctx.fillStyle = `rgba(255, 255, 255, ${(1 - sp) * 0.7})`;
@@ -946,7 +879,6 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   }
   ctx.fillStyle = '#475569';
   ctx.fillRect(18, -42, 8, 16);
-  // Igloo dome
   ctx.fillStyle = '#ffffff';
   ctx.strokeStyle = '#7dd3fc';
   ctx.lineWidth = 2.5;
@@ -955,14 +887,12 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
-  // Igloo ice brick lines
   ctx.beginPath();
   ctx.moveTo(-34, -14);
   ctx.lineTo(34, -14);
   ctx.moveTo(-24, -27);
   ctx.lineTo(24, -27);
   ctx.stroke();
-  // Igloo entrance arch
   ctx.fillStyle = '#1e293b';
   ctx.beginPath();
   ctx.arc(8, 0, 13, Math.PI, 0);
@@ -972,7 +902,7 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   ctx.stroke();
   ctx.restore();
 
-  // 7. Snow-Frosted 2D Evergreen Pine Trees
+  // Snow-Frosted 2D Evergreen Pine Trees
   const draw2DPineTree = (tx, ty, scale) => {
     ctx.save();
     ctx.translate(tx, ty);
@@ -992,7 +922,6 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
       ctx.lineTo(-t.w, t.y);
       ctx.quadraticCurveTo(-t.w * 0.6, t.y - t.h * 0.3, 0, t.y - t.h);
       ctx.fill();
-      // White snow frosting cap on each bough
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
       ctx.moveTo(0, t.y - t.h);
@@ -1009,8 +938,7 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   draw2DPineTree(415, 338, 0.9);
   draw2DPineTree(895, 332, 1.1);
 
-  // 8. Cute Wooden Fence & Glowing Vintage Lamp Post along the Walk
-  ctx.strokeStyle = '#92400e';
+  // Cute Wooden Fence & Glowing Vintage Lamp Post
   ctx.fillStyle = '#b45309';
   for (let fx = 235; fx <= 385; fx += 30) {
     ctx.fillRect(fx, 336, 6, 26);
@@ -1018,7 +946,6 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   ctx.fillRect(232, 342, 162, 4);
   ctx.fillRect(232, 351, 162, 4);
 
-  // Vintage Streetlamp at x = 442
   ctx.fillStyle = '#334155';
   ctx.fillRect(440, 286, 5, 76);
   ctx.fillRect(434, 358, 17, 5);
@@ -1030,7 +957,7 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   ctx.lineWidth = 2;
   ctx.stroke();
 
-  // 9. Deep 3D-Perspective Dimensional Pixel Chasm (x = pitLeft..pitRight)
+  // Deep 3D-Perspective Dimensional Pixel Chasm (x = pitLeft..pitRight)
   const pitGrad = ctx.createLinearGradient(0, 358, 0, 540);
   pitGrad.addColorStop(0, '#090614');
   pitGrad.addColorStop(0.45, '#1e1b4b');
@@ -1039,20 +966,21 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   ctx.fillStyle = pitGrad;
   ctx.fillRect(pitLeft - 8, 358, pitRight - pitLeft + 16, 182);
 
-  // Glowing concentric dimensional vortex rings inside the pit
   const pitCenterX = (pitLeft + pitRight) / 2;
   for (let r = 0; r < 4; r++) {
     const ringPhase = ((now * 0.0012 + r * 0.25) % 1);
     const ry = 525 - ringPhase * 150;
     const rx = (pitRight - pitLeft) * (0.44 - ringPhase * 0.12);
-    ctx.strokeStyle = r % 2 === 0 ? `rgba(103, 232, 249, ${1 - ringPhase})` : `rgba(255, 77, 109, ${1 - ringPhase})`;
+    ctx.strokeStyle =
+      r % 2 === 0
+        ? `rgba(103, 232, 249, ${1 - ringPhase})`
+        : `rgba(255, 77, 109, ${1 - ringPhase})`;
     ctx.lineWidth = 3;
     ctx.beginPath();
     ctx.ellipse(pitCenterX, ry, rx, 12, 0, 0, Math.PI * 2);
     ctx.stroke();
   }
 
-  // Rising 3D Isometric Voxel Cubes from the pit
   for (let i = 0; i < 18; i++) {
     const vx = pitLeft + 22 + ((i * 41) % (pitRight - pitLeft - 44));
     const vy = 535 - (((now * 0.16 + i * 31) % 175) | 0);
@@ -1065,8 +993,7 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
     }
   }
 
-  // 10. Foreground 2D Snow Promenade & Jagged Cracked Ice Cliff Walls
-  // Left Snow Ground
+  // Foreground 2D Snow Promenade & Jagged Cracked Ice Cliff Walls
   const groundGrad = ctx.createLinearGradient(0, 358, 0, 540);
   groundGrad.addColorStop(0, '#ffffff');
   groundGrad.addColorStop(0.18, '#f1f5f9');
@@ -1076,7 +1003,6 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   ctx.fillRect(0, 358, pitLeft, 182);
   ctx.fillRect(pitRight, 358, 960 - pitRight, 182);
 
-  // 3D Jagged Ice Cliff Wall on Left & Right edges of the Chasm
   ctx.fillStyle = '#38bdf8';
   ctx.beginPath();
   ctx.moveTo(pitLeft, 358);
@@ -1101,7 +1027,6 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   ctx.closePath();
   ctx.fill();
 
-  // Fluffy snow lip overhang & hanging icicles along the promenade
   ctx.fillStyle = '#ffffff';
   ctx.strokeStyle = '#93c5fd';
   ctx.lineWidth = 2;
@@ -1118,7 +1043,6 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
     ctx.stroke();
   }
 
-  // Hanging sharp icicles near the chasm edges
   const icicleXs = [pitLeft - 32, pitLeft - 18, pitLeft - 6, pitRight + 6, pitRight + 18, pitRight + 32];
   ctx.fillStyle = '#bae6fd';
   icicleXs.forEach((ix, idx) => {
@@ -1131,7 +1055,6 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
     ctx.fill();
   });
 
-  // Snow path stepping stones
   ctx.fillStyle = '#94a3b8';
   for (let px = 45; px < pitLeft - 45; px += 72) {
     ctx.beginPath();
@@ -1139,7 +1062,7 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
     ctx.fill();
   }
 
-  // 11. Crooked Wooden Warning Sign & Hazard Cone right before the Pit
+  // Crooked Wooden Warning Sign & Hazard Cone right before the Pit
   ctx.save();
   ctx.translate(492, 360);
   ctx.rotate(-0.07);
@@ -1150,7 +1073,6 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   ctx.lineWidth = 3;
   ctx.fillRect(-76, -98, 152, 38);
   ctx.strokeRect(-76, -98, 152, 38);
-  // Danger diagonal stripes on top border
   ctx.fillStyle = '#ef4444';
   ctx.fillRect(-74, -96, 148, 6);
   ctx.fillStyle = '#991b1b';
@@ -1159,7 +1081,6 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   ctx.fillText('⚠ 위험: 도트 벼랑!', 0, -73);
   ctx.restore();
 
-  // Striped Orange Traffic Cone at x = 556
   ctx.save();
   ctx.translate(556, 362);
   ctx.fillStyle = '#ea580c';
@@ -1177,7 +1098,7 @@ function drawRich2DSnowVillage(ctx, now, pitLeft, pitRight) {
   ctx.restore();
 }
 
-// Helper: Draw the 16-Bit Side-Scrolling Pixel Penguin World Background (with Wooden Bridge & Falling Cherry Petals)
+// Helper: Draw the 16-Bit Side-Scrolling Pixel Penguin World Background
 function drawRetroPixelWorldBackground(ctx, now) {
   const P = 4;
   const snap = (v) => Math.floor(v / P) * P;
@@ -1319,7 +1240,7 @@ function drawRetroPixelWorldBackground(ctx, now) {
   }
 }
 
-// Helper: Update the Crisp HTML RPG Dialogue Box below the Canvas (100% legible on Mobile & Desktop!)
+// Helper: Update the Crisp HTML RPG Dialogue Box below the Canvas
 let LAST_DIALOGUE_KEY = '';
 function drawRetroDialogueBar(ctx, speaker, lineText) {
   const key = `${speaker}|${lineText}`;
@@ -1337,11 +1258,11 @@ function initPixelMotionStudio() {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
 
-  // Preload 2D Hero Penguin and all 22 Full-Body Pixel Penguins for the crowd scenes
+  // Preload 2D Hero Penguin (hero_2d.png) and Original Default Blue Pixel Penguin (sp_01.png)
   ensureHero2DSprite();
-  MOTION_SPECIES_22.forEach((sp) => ensureSpeciesSprite(sp.id));
+  ensureSpeciesSprite('01');
 
-  // Scene Chapter Buttons (0, 1, 2, 3)
+  // Scene Chapter Buttons (0: 추락, 1: 픽셀월드, 2: 타이틀)
   document.querySelectorAll('.motion-mode-btn[data-scene]').forEach((btn) => {
     btn.addEventListener('click', () => {
       setIntroScene(Number(btn.dataset.scene), true);
@@ -1350,7 +1271,7 @@ function initPixelMotionStudio() {
 
   // HTML Dialogue Next Scene Button
   document.getElementById('intro-dialogue-next-btn')?.addEventListener('click', () => {
-    setIntroScene((MOTION_STATE.sceneIdx + 1) % 4, true);
+    setIntroScene((MOTION_STATE.sceneIdx + 1) % 3, true);
   });
 
   // Replay Full Intro Button
@@ -1380,50 +1301,44 @@ function initPixelMotionStudio() {
     }
   });
 
-  // Canvas Click Interaction
+  // Canvas Click Interaction (2 Menu Options on Scene 2 Title Screen)
   canvas.addEventListener('click', (e) => {
     const rect = canvas.getBoundingClientRect();
     const mx = ((e.clientX - rect.left) / rect.width) * canvas.width;
     const my = ((e.clientY - rect.top) / rect.height) * canvas.height;
 
-    if (MOTION_STATE.sceneIdx === 3) {
-      if (mx >= 280 && mx <= 680 && my >= 186 && my <= 228) {
+    if (MOTION_STATE.sceneIdx === 2) {
+      if (mx >= 280 && mx <= 680 && my >= 190 && my <= 238) {
         scrollToSection('tab-codex');
         return;
       }
-      if (mx >= 280 && mx <= 680 && my >= 229 && my <= 264) {
-        document.querySelector('.hero-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        return;
-      }
-      if (mx >= 280 && mx <= 680 && my >= 265 && my <= 304) {
+      if (mx >= 280 && mx <= 680 && my >= 239 && my <= 286) {
         setIntroScene(0, true);
         return;
       }
     }
-    setIntroScene((MOTION_STATE.sceneIdx + 1) % 4, true);
+    setIntroScene((MOTION_STATE.sceneIdx + 1) % 3, true);
   });
 
   canvas.addEventListener('mousemove', (e) => {
-    if (MOTION_STATE.sceneIdx !== 3) return;
+    if (MOTION_STATE.sceneIdx !== 2) return;
     const rect = canvas.getBoundingClientRect();
     const my = ((e.clientY - rect.top) / rect.height) * canvas.height;
-    if (my >= 186 && my < 228) MOTION_STATE.menuHoverIdx = 0;
-    else if (my >= 228 && my < 264) MOTION_STATE.menuHoverIdx = 1;
-    else if (my >= 264 && my <= 310) MOTION_STATE.menuHoverIdx = 2;
+    if (my >= 190 && my < 238) MOTION_STATE.menuHoverIdx = 0;
+    else if (my >= 238 && my <= 290) MOTION_STATE.menuHoverIdx = 1;
   });
 
   setIntroScene(0, true);
 
-  // Main 60 FPS Cutscene Loop
+  // Main 60 FPS Cutscene Loop (Strictly Default Blue Penguin sp_01.png!)
   function renderIntroCutscene(now) {
-    // Protagonist is Always Classic Blue ('05') while all 22 colors populate the Pixel World!
-    const heroPixelEntry = ensureSpeciesSprite('05');
+    const bluePixelPenguin = ensureSpeciesSprite('01');
 
     let elapsed = now - MOTION_STATE.sceneStartTime;
     const curDuration = SCENE_DURATIONS[MOTION_STATE.sceneIdx] || 5200;
 
     if (MOTION_STATE.autoPlay && elapsed >= curDuration) {
-      setIntroScene((MOTION_STATE.sceneIdx + 1) % 4, true);
+      setIntroScene((MOTION_STATE.sceneIdx + 1) % 3, true);
       elapsed = 0;
     }
 
@@ -1451,7 +1366,6 @@ function initPixelMotionStudio() {
         drawCartoonBananaPeel(ctx, bx, by, flyP * Math.PI * 5, 1.1);
       }
 
-      // 2D Hero Penguin Animation with Squash & Stretch, Footstep Snow Puffs, and 720-deg Flip!
       const runPhase = now * 0.024;
       let pengX = 95;
       let pengY = 294;
@@ -1468,7 +1382,6 @@ function initPixelMotionStudio() {
         scaleX = 1 + bounceSin * 0.06;
         scaleY = 1 - bounceSin * 0.06;
 
-        // Cute snow-dust puffs behind his feet while strolling
         for (let d = 0; d < 3; d++) {
           const dp = ((now * 0.004 + d * 0.33) % 1);
           ctx.fillStyle = `rgba(255, 255, 255, ${(1 - dp) * 0.85})`;
@@ -1477,7 +1390,6 @@ function initPixelMotionStudio() {
           ctx.fill();
         }
 
-        // Floating musical notes
         ctx.fillStyle = '#0284c7';
         ctx.font = '900 20px "Pretendard", sans-serif';
         ctx.fillText('♪', pengX - 58, pengY - 40 - Math.sin(now * 0.008) * 8);
@@ -1491,7 +1403,6 @@ function initPixelMotionStudio() {
         scaleX = 1.08;
         scaleY = 0.94;
 
-        // Comic Spiky Starburst at the slip point!
         if (subP < 0.65) {
           drawComicStarburst(ctx, 532, 344, 20, 42, 10, '#fde047', '#dc2626', now * 0.006);
           ctx.fillStyle = '#991b1b';
@@ -1500,7 +1411,6 @@ function initPixelMotionStudio() {
           ctx.fillText('미끄덩!!', 532, 349);
         }
 
-        // Anime speed-arc trail behind the flipping penguin
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -1514,7 +1424,6 @@ function initPixelMotionStudio() {
         scaleX = Math.max(0.55, 0.92 - subP * 0.3);
         scaleY = Math.min(1.35, 1.08 + subP * 0.25);
 
-        // Erupting Dimensional Pixel Beam from the chasm as the penguin plunges in!
         const beamGrad = ctx.createLinearGradient(pitCenterX, 540, pitCenterX, 140);
         beamGrad.addColorStop(0, 'rgba(255, 77, 109, 0.75)');
         beamGrad.addColorStop(0.5, 'rgba(56, 189, 248, 0.45)');
@@ -1523,7 +1432,6 @@ function initPixelMotionStudio() {
         ctx.fillRect(pitLeft + 24, 150, pitRight - pitLeft - 48, 390);
       }
 
-      // Ground shadow before chasm
       if (pengX < pitLeft - 10) {
         ctx.fillStyle = 'rgba(15, 23, 42, 0.22)';
         ctx.beginPath();
@@ -1531,12 +1439,17 @@ function initPixelMotionStudio() {
         ctx.fill();
       }
 
-      // Clip inside chasm depth so the penguin plunges down into the pit
       ctx.save();
       ctx.beginPath();
       ctx.rect(0, 0, 960, 505);
       ctx.clip();
-      drawUploaded2DPenguin(ctx, pengX, pengY, 146, pengRot, scaleX, scaleY);
+      // Right as he drops deep into the glowing pixel pit (p > 0.78), flash into Default Blue Pixel Penguin!
+      if (p > 0.78 && bluePixelPenguin.loaded && bluePixelPenguin.img) {
+        ctx.imageSmoothingEnabled = false;
+        ctx.drawImage(bluePixelPenguin.img, pengX - 73, pengY - 73, 146, 146);
+      } else {
+        drawUploaded2DPenguin(ctx, pengX, pengY, 146, pengRot, scaleX, scaleY);
+      }
       ctx.restore();
 
       if (p < slipStartP) {
@@ -1565,291 +1478,44 @@ function initPixelMotionStudio() {
         ctx,
         'SCENE 1 · 추락',
         CURRENT_LANG === 'ko'
-          ? '픽셀월드 가기 전 매끈했던 2D 주인공 펭귄! 눈밭을 산책하다 바나나를 밟고 도트 벼랑으로 추락하고 마는데...'
-          : 'Our smooth 2D hero penguin was strolling through the snow, slipped on a banana peel, and plunged into the pixel chasm...'
+          ? '픽셀월드 가기 전 매끈했던 2D 펭귄! 눈밭을 산책하다 바나나를 밟고 도트 구덩이로 빠지고 마는데...'
+          : 'Our smooth 2D penguin was strolling through the snow, slipped on a banana peel, and fell right into the pixel pit...'
       );
     }
 
     // ========================================================================
-    // SCENE 1 ("2. 도트변신"): 3D Dimensional Warp Vortex & Real-Time Mosaic -> 48x48 Morph!
+    // SCENE 1 ("2. 픽셀월드"): Default Blue Pixel Penguins Only (sp_01.png) — ZERO Name Tags!
     // ========================================================================
     else if (MOTION_STATE.sceneIdx === 1) {
-      const centerX = 480;
-      const centerY = 262;
-
-      // 1. Deep Cosmic Dimensional Vortex Gradient
-      const bgGrad = ctx.createRadialGradient(centerX, centerY, 20, centerX, centerY, 560);
-      bgGrad.addColorStop(0, '#311042');
-      bgGrad.addColorStop(0.45, '#150d2a');
-      bgGrad.addColorStop(1, '#06050c');
-      ctx.fillStyle = bgGrad;
-      ctx.fillRect(0, 0, 960, 540);
-
-      // 2. 16 Radiating 3D Perspective Tunnel Grid Lines
-      ctx.save();
-      ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
-      ctx.lineWidth = 2;
-      for (let i = 0; i < 16; i++) {
-        const ang = (i * Math.PI * 2) / 16 + now * 0.0004;
-        ctx.beginPath();
-        ctx.moveTo(centerX + Math.cos(ang) * 32, centerY + Math.sin(ang) * 32);
-        ctx.lineTo(centerX + Math.cos(ang) * 620, centerY + Math.sin(ang) * 620);
-        ctx.stroke();
-      }
-
-      // 3. 8 Zooming Concentric 3D Perspective Neon Octagon/Rectangle Frames
-      for (let f = 0; f < 8; f++) {
-        const z = ((now * 0.00055 + f / 8) % 1);
-        const scale = z * z;
-        const fw = 60 + scale * 920;
-        const fh = 36 + scale * 520;
-        ctx.strokeStyle =
-          f % 2 === 0
-            ? `rgba(255, 77, 109, ${scale * 0.65})`
-            : `rgba(103, 232, 249, ${scale * 0.65})`;
-        ctx.lineWidth = 1.5 + scale * 3;
-        ctx.strokeRect(centerX - fw / 2, centerY - fh / 2, fw, fh);
-      }
-      ctx.restore();
-
-      // 4. Swirling Helix of 36 3D Isometric Voxel Cubes
-      for (let i = 0; i < 36; i++) {
-        const orbitAng = i * 0.52 + now * 0.0028 * (i % 2 === 0 ? 1 : -1);
-        const dist = 135 + ((i * 29 + now * 0.12) % 280);
-        const vx = centerX + Math.cos(orbitAng) * dist * 1.25;
-        const vy = centerY + Math.sin(orbitAng) * dist * 0.68;
-        const cubeR = 6 + (i % 3) * 3;
-        if (i % 3 === 0) {
-          drawIsoVoxelCube(ctx, vx, vy, cubeR, '#fde047', '#eab308', '#ca8a04');
-        } else if (i % 2 === 0) {
-          drawIsoVoxelCube(ctx, vx, vy, cubeR, '#67e8f9', '#06b6d4', '#0891b2');
-        } else {
-          drawIsoVoxelCube(ctx, vx, vy, cubeR, '#ff758f', '#ff4d6d', '#c9184a');
-        }
-      }
-
-      // 5. Left & Right Cyber-Pixel Tesla Emitters
-      const drawSideEmitter = (isLeft) => {
-        const ex = isLeft ? 0 : 960;
-        const dir = isLeft ? 1 : -1;
-        ctx.save();
-        ctx.fillStyle = '#1e293b';
-        ctx.strokeStyle = '#38bdf8';
-        ctx.lineWidth = 3;
-        ctx.fillRect(isLeft ? 0 : 896, centerY - 56, 64, 112);
-        ctx.strokeRect(isLeft ? 0 : 896, centerY - 56, 64, 112);
-        ctx.fillStyle = '#ff4d6d';
-        ctx.fillRect(isLeft ? 56 : 884, centerY - 34, 20, 68);
-        ctx.fillStyle = '#67e8f9';
-        ctx.beginPath();
-        ctx.arc(ex + dir * 82, centerY, 16 + Math.sin(now * 0.02) * 4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.restore();
-      };
-      drawSideEmitter(true);
-      drawSideEmitter(false);
-
-      const charSize = 224;
-      const charY = centerY + Math.sin(now * 0.008) * 8;
-
-      if (p < 0.25) {
-        // Phase 1: 2D Penguin Caught in Holographic Target Rings!
-        const subP = p / 0.25;
-        ctx.strokeStyle = '#fbbf24';
-        ctx.lineWidth = 3;
-        ctx.strokeRect(centerX - 126, charY - 126, 252, 252);
-        drawUploaded2DPenguin(
-          ctx,
-          centerX,
-          charY,
-          charSize,
-          (1 - subP) * Math.PI * 1.5 + Math.sin(now * 0.025) * 0.2,
-          1,
-          1
-        );
-
-        drawRetroSpeechBubble(
-          ctx,
-          centerX,
-          charY - 126,
-          CURRENT_LANG === 'ko'
-            ? '어어어?! 여긴 어디야?! 내 매끈한 2D 몸매가!!'
-            : 'Whoa?! Where am I?! My smooth 2D body!!',
-          '#fbbf24'
-        );
-      } else if (p < 0.72) {
-        // Phase 2: Real-Time Progressive Mosaic + Dual Tesla Lightning + Pixel Block Reconstruction!
-        const morphP = (p - 0.25) / 0.47;
-        const splitY = charY - charSize / 2 + morphP * charSize;
-
-        // Crackling Lightning Bolts from Left & Right Tesla Emitters to the Scan Frontier!
-        [82, 878].forEach((startX) => {
-          ctx.strokeStyle = '#67e8f9';
-          ctx.lineWidth = 4;
-          ctx.beginPath();
-          ctx.moveTo(startX, centerY);
-          const steps = 6;
-          for (let s = 1; s < steps; s++) {
-            const lx = startX + ((centerX - startX) * s) / steps;
-            const ly =
-              centerY +
-              ((splitY - centerY) * s) / steps +
-              Math.sin(now * 0.05 + s * 2.1) * 18;
-            ctx.lineTo(lx, ly);
-          }
-          ctx.lineTo(centerX, splitY);
-          ctx.stroke();
-        });
-
-        // Bottom Half: Real-Time Chunky Mosaic 2D Penguin (actively breaking into pixel blocks!)
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(0, splitY, 960, 540 - splitY);
-        ctx.clip();
-        const resBlocks = morphP < 0.5 ? 18 : 12;
-        drawMosaic2DPenguin(ctx, centerX, charY, charSize, resBlocks);
-        ctx.restore();
-
-        // Top Half: Crisp 48x48 Full-Body Pixel Penguin!
-        ctx.save();
-        ctx.beginPath();
-        ctx.rect(0, 0, 960, splitY);
-        ctx.clip();
-        ctx.imageSmoothingEnabled = false;
-        if (heroPixelEntry.loaded && heroPixelEntry.img) {
-          ctx.drawImage(
-            heroPixelEntry.img,
-            centerX - charSize / 2,
-            charY - charSize / 2,
-            charSize,
-            charSize
-          );
-        }
-        ctx.restore();
-
-        // High-Energy Pixel Matrix Scan Wave + Detaching Pixel Tiles along splitY
-        ctx.fillStyle = 'rgba(255, 77, 109, 0.85)';
-        ctx.fillRect(centerX - 165, splitY - 8, 330, 16);
-        ctx.fillStyle = '#67e8f9';
-        ctx.fillRect(centerX - 155, splitY - 4, 310, 8);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(centerX - 145, splitY - 2, 290, 4);
-
-        for (let b = 0; b < 18; b++) {
-          const bx = centerX - 110 + b * 13;
-          const by = splitY + Math.sin(now * 0.03 + b) * 18;
-          ctx.fillStyle = b % 2 === 0 ? '#fde047' : '#38bdf8';
-          ctx.fillRect(bx, by - 5, 10, 10);
-        }
-
-        drawRetroSpeechBubble(
-          ctx,
-          centerX,
-          charY - 128,
-          CURRENT_LANG === 'ko'
-            ? `⚡ 강제 48×48 도트 변환 가동 중... (${Math.round(morphP * 100)}%)`
-            : `⚡ 48×48 Pixel Matrix Reconstruction... (${Math.round(morphP * 100)}%)`,
-          '#67e8f9',
-          true
-        );
-      } else {
-        // Phase 3: 16-Bit Supernova Birth!
-        const burstP = (p - 0.72) / 0.28;
-
-        // Rotating golden starburst rays behind the reborn pixel penguin
-        ctx.save();
-        ctx.translate(centerX, charY);
-        ctx.rotate(now * 0.0015);
-        for (let r = 0; r < 12; r++) {
-          ctx.rotate((Math.PI * 2) / 12);
-          ctx.fillStyle =
-            r % 2 === 0 ? 'rgba(251, 191, 36, 0.28)' : 'rgba(255, 77, 109, 0.22)';
-          ctx.beginPath();
-          ctx.moveTo(0, 0);
-          ctx.lineTo(-22, -220);
-          ctx.lineTo(22, -220);
-          ctx.closePath();
-          ctx.fill();
-        }
-        ctx.restore();
-
-        // Expanding pixel shockwave ring
-        const ringR = Math.round((80 + burstP * 160) / 6) * 6;
-        ctx.strokeStyle = '#fbbf24';
-        ctx.lineWidth = 6;
-        ctx.strokeRect(centerX - ringR, charY - ringR, ringR * 2, ringR * 2);
-
-        const bounce = Math.floor(now / 190) % 2 === 0 ? 0 : -12;
-        ctx.imageSmoothingEnabled = false;
-        if (heroPixelEntry.loaded && heroPixelEntry.img) {
-          ctx.drawImage(
-            heroPixelEntry.img,
-            centerX - charSize / 2,
-            charY - charSize / 2 + bounce,
-            charSize,
-            charSize
-          );
-        }
-
-        drawPixelHeart(ctx, centerX - 135, charY - 48 + bounce, 4, '#ff4d6d');
-        drawPixelHeart(ctx, centerX + 135, charY - 48 + bounce, 4, '#fbbf24');
-        drawPixelHeart(ctx, centerX - 115, charY + 42 + bounce, 3, '#67e8f9');
-        drawPixelHeart(ctx, centerX + 115, charY + 42 + bounce, 3, '#ff4d6d');
-
-        drawRetroSpeechBubble(
-          ctx,
-          centerX,
-          charY - 126 + bounce,
-          CURRENT_LANG === 'ko'
-            ? '헐... 각진 48×48 도트 몸매 오히려 좋아?!!'
-            : 'Whoa... This 48×48 pixel body actually rocks?!!',
-          '#ff4d6d'
-        );
-      }
-
-      drawRetroDialogueBar(
-        ctx,
-        'SCENE 2 · 도트변신',
-        CURRENT_LANG === 'ko'
-          ? '구덩이 속 차원 워프 터널에서 도트 변환 빔을 맞고 48×48 전신 도트 펭귄으로 다시 태어났다!'
-          : 'Caught in the dimensional warp tunnel, our penguin is rebuilt block-by-block into a 48×48 Pixel Penguin!'
-      );
-    }
-
-    // ========================================================================
-    // SCENE 2 ("3. 픽셀월드"): Lively Pixel Village Meetup (ZERO Name Tags Under Feet & ZERO Overlapping Bubbles!)
-    // ========================================================================
-    else if (MOTION_STATE.sceneIdx === 2) {
       drawRetroPixelWorldBackground(ctx, now);
       ctx.imageSmoothingEnabled = false;
 
-      // 1. Background Village Penguins strolling near the river, bridge & cherry trees (Multi-depth!)
+      // Background Blue Pixel Penguins strolling near the river, bridge & cherry trees
       const bgPenguins = [
-        { id: '12', baseX: 280, y: 278, size: 78, speed: 0.02, flip: false },
-        { id: '15', baseX: 545, y: 266, size: 76, speed: -0.015, flip: true },
-        { id: '07', baseX: 720, y: 280, size: 78, speed: 0.018, flip: false },
-        { id: '19', baseX: 835, y: 286, size: 74, speed: -0.012, flip: true },
+        { baseX: 280, y: 278, size: 78, flip: false },
+        { baseX: 545, y: 266, size: 76, flip: true },
+        { baseX: 720, y: 280, size: 78, flip: false },
+        { baseX: 835, y: 286, size: 74, flip: true },
       ];
       bgPenguins.forEach((bp, idx) => {
-        const entry = ensureSpeciesSprite(bp.id);
         const bx = bp.baseX + Math.sin(now * 0.0015 + idx * 1.7) * 22;
         const hop = Math.floor((now + idx * 170) / 280) % 2 === 0 ? 0 : -5;
         ctx.fillStyle = 'rgba(15, 23, 42, 0.25)';
         ctx.fillRect(bx + 18, bp.y + bp.size - 7, bp.size - 36, 6);
-        if (entry.loaded && entry.img) {
+        if (bluePixelPenguin.loaded && bluePixelPenguin.img) {
           ctx.save();
           if (bp.flip) {
             ctx.translate(bx + bp.size, bp.y + hop);
             ctx.scale(-1, 1);
-            ctx.drawImage(entry.img, 0, 0, bp.size, bp.size);
+            ctx.drawImage(bluePixelPenguin.img, 0, 0, bp.size, bp.size);
           } else {
-            ctx.drawImage(entry.img, bx, bp.y + hop, bp.size, bp.size);
+            ctx.drawImage(bluePixelPenguin.img, bx, bp.y + hop, bp.size, bp.size);
           }
           ctx.restore();
         }
       });
 
-      // 2. Protagonist drops from the sky on the Left (x = 132, y = 312)
+      // Protagonist Blue Pixel Penguin drops from the sky on the Left (x = 132, y = 312)
       const spriteSize = 138;
       const heroGroundY = 312;
       const landP = Math.min(1, p / 0.16);
@@ -1860,53 +1526,50 @@ function initPixelMotionStudio() {
       ctx.fillStyle = 'rgba(15, 23, 42, 0.32)';
       ctx.fillRect(heroX + 32, heroGroundY + spriteSize - 11, spriteSize - 64, 9);
 
-      if (heroPixelEntry.loaded && heroPixelEntry.img) {
+      if (bluePixelPenguin.loaded && bluePixelPenguin.img) {
         ctx.save();
         ctx.translate(heroX + spriteSize, heroY);
         ctx.scale(-1, 1);
-        ctx.drawImage(heroPixelEntry.img, 0, 0, spriteSize, spriteSize);
+        ctx.drawImage(bluePixelPenguin.img, 0, 0, spriteSize, spriteSize);
         ctx.restore();
       }
 
-      // 3. 5 Foreground Penguin Friends in a Staggered Natural Semicircle (NO Name Tags Underneath!)
+      // 5 Foreground Default Blue Pixel Penguin Friends (Staggered Y, ZERO Name Tags!)
       const fgFriends = [
-        { id: '04', x: 356, y: 318 },
-        { id: '03', x: 472, y: 296 },
-        { id: '09', x: 588, y: 322 },
-        { id: '06', x: 702, y: 298 },
-        { id: '02', x: 812, y: 318 },
+        { x: 356, y: 318 },
+        { x: 472, y: 296 },
+        { x: 588, y: 322 },
+        { x: 702, y: 298 },
+        { x: 812, y: 318 },
       ];
 
       const walkInP = Math.min(1, p / 0.24);
       fgFriends.forEach((fr, idx) => {
-        const fEntry = ensureSpeciesSprite(fr.id);
         const fx = Math.round(fr.x + (1 - walkInP) * 140);
         const fHop = Math.floor((now + idx * 130) / 230) % 2 === 0 ? 0 : -10;
         const fy = fr.y + fHop;
 
-        // Clean oval pixel shadow under feet (NO text boxes or species names!)
         ctx.fillStyle = 'rgba(15, 23, 42, 0.32)';
         ctx.fillRect(fx + 32, fr.y + spriteSize - 11, spriteSize - 64, 9);
 
-        if (fEntry.loaded && fEntry.img) {
-          ctx.drawImage(fEntry.img, fx, fy, spriteSize, spriteSize);
+        if (bluePixelPenguin.loaded && bluePixelPenguin.img) {
+          ctx.drawImage(bluePixelPenguin.img, fx, fy, spriteSize, spriteSize);
         }
       });
 
-      // Floating Pixel Hearts & Musical Notes across the party
       drawPixelHeart(ctx, 308, 338 - ((now * 0.04) % 45), 3, '#ff4d6d');
       drawPixelHeart(ctx, 545, 315 - (((now + 300) * 0.04) % 45), 3, '#fbbf24');
       drawPixelHeart(ctx, 775, 325 - (((now + 600) * 0.04) % 45), 3, '#ff4d6d');
 
-      // 4. Sequenced Single-Speaker Speech Bubbles (100% Zero Overlap!)
+      // Sequenced Single-Speaker Speech Bubbles (100% Zero Overlap!)
       if (p >= 0.14 && p < 0.42) {
         drawRetroSpeechBubble(
           ctx,
           heroX + spriteSize / 2 + 20,
           heroY - 8,
           CURRENT_LANG === 'ko'
-            ? '야!! 너네도 그 바나나 밟고 빠졌냐?! 반갑다!!'
-            : 'HEY!! Did you guys slip on that banana too?! Hi!!',
+            ? '헐 내 몸이 각진 도트가 됐잖아?! 너네도 빠졌냐?!'
+            : 'Whoa my body turned into pixels?! Did you guys fall in too?!',
           '#38bdf8'
         );
       } else if (p >= 0.42 && p < 0.72) {
@@ -1915,7 +1578,7 @@ function initPixelMotionStudio() {
           fgFriends[1].x + spriteSize / 2,
           fgFriends[1].y - 12,
           CURRENT_LANG === 'ko'
-            ? 'ㅋㅋㅋ 어서와!! 여긴 아무 혜택 없는 도트 펭귄 천국이야 ♥'
+            ? 'ㅋㅋㅋ 어서와!! 여긴 사도 아무 혜택 없는 도트 천국이야 ♥'
             : 'Haha welcome!! This is the Zero-Perks Pixel Penguin Paradise ♥',
           '#ff4d6d'
         );
@@ -1925,30 +1588,30 @@ function initPixelMotionStudio() {
           fgFriends[3].x + spriteSize / 2 - 20,
           fgFriends[3].y - 12,
           CURRENT_LANG === 'ko'
-            ? '복잡한 로드맵 따위 없다! 베리챗 프사 달고 다 같이 놀자 ♪'
-            : 'No complicated roadmap here! Rock your VeryChat PFP and party ♪',
+            ? '복잡한 로드맵 따위 없다! 다 같이 둠칫둠칫 놀자 ♪'
+            : 'No complicated roadmap here! Just bounce and party ♪',
           '#fbbf24'
         );
       }
 
       drawRetroDialogueBar(
         ctx,
-        'SCENE 3 · 픽셀월드',
+        'SCENE 2 · 픽셀월드',
         CURRENT_LANG === 'ko'
-          ? '구덩이 아래 펼쳐진 픽셀 월드! 먼저 빠져서 살고 있던 각양각색 도트 펭귄 친구들이 몰려와 환영해 준다!'
-          : 'Down below lies the Pixel World! Colorful pixel penguin friends who fell in earlier gather around to celebrate!'
+          ? '구덩이에 빠지자마자 48×48 도트 펭귄으로 변신! 먼저 빠져서 살고 있던 도트 펭귄들이 몰려와 환영해 준다!'
+          : 'Falling into the pit turned him into a 48×48 Pixel Penguin! Friends who fell in earlier gather around to say hi!'
       );
     }
 
     // ========================================================================
-    // SCENE 3 ("4. 타이틀"): Retro 16-Bit Title Screen & 12-Penguin Parade (ZERO Name Tags!)
+    // SCENE 2 ("3. 타이틀"): Retro 16-Bit Title Screen (2 Menu Items Only + Default Blue Penguins Only!)
     // ========================================================================
     else {
       drawRetroPixelWorldBackground(ctx, now);
       ctx.imageSmoothingEnabled = false;
 
       const titleBounce = Math.floor(now / 480) % 2 === 0 ? 0 : -4;
-      const titleY = 62 + titleBounce;
+      const titleY = 64 + titleBounce;
 
       ctx.save();
       ctx.textAlign = 'center';
@@ -1979,14 +1642,14 @@ function initPixelMotionStudio() {
       ctx.fillRect(rbX, rbY, rbW, rbH);
       ctx.fillStyle = '#fff0f3';
       ctx.font = '900 13.5px "Pretendard", monospace';
-      ctx.fillText('★ 펭귄이 난무하는 베리챗 48×48 도트 월드 ★', 480, rbY + rbH / 2 + 1);
+      ctx.fillText('★ 펭귄이 난무하는 베리챗 픽셀 월드 ★', 480, rbY + rbH / 2 + 1);
       ctx.restore();
 
-      // Center RPG Command Box (Zero species mentions!)
-      const menuW = 396;
-      const menuH = 114;
+      // Center RPG Command Box — 2nd option (CHANGE COLOR) completely removed! Only 2 clean items!
+      const menuW = 384;
+      const menuH = 92;
       const menuX = 480 - menuW / 2;
-      const menuY = 184;
+      const menuY = 192;
 
       ctx.fillStyle = '#090b14';
       ctx.fillRect(menuX - 6, menuY - 6, menuW + 12, menuH + 12);
@@ -2004,22 +1667,20 @@ function initPixelMotionStudio() {
       const menuItems =
         CURRENT_LANG === 'ko'
           ? [
-              '▶ 10,000마리 도감도 구경하기 (OPEN CODEX)',
-              '▼ 베리챗 6각형 프사 장착해보기 (TRY PFP)',
-              '↻ 인트로 애니메이션 다시보기 (REPLAY)',
+              'START PIXEL WORLD (10,000마리 도감도)',
+              'REPLAY INTRO (인트로 처음부터 보기)',
             ]
           : [
-              '▶ EXPLORE 10,000 CODEX',
-              '▼ TRY VERYCHAT HEXAGON PFP',
-              '↻ REPLAY INTRO CUTSCENE',
+              'START PIXEL WORLD (Open 10K Codex)',
+              'REPLAY INTRO (Watch Cutscene)',
             ];
 
       menuItems.forEach((mText, idx) => {
-        const rowY = menuY + 26 + idx * 31;
-        const isSelected = MOTION_STATE.menuHoverIdx === idx;
+        const rowY = menuY + 29 + idx * 34;
+        const isSelected = (MOTION_STATE.menuHoverIdx % 2) === idx;
         if (isSelected) {
           ctx.fillStyle = 'rgba(255, 77, 109, 0.22)';
-          ctx.fillRect(menuX + 12, rowY - 13, menuW - 24, 26);
+          ctx.fillRect(menuX + 12, rowY - 14, menuW - 24, 28);
           drawPixelHeart(ctx, menuX + 30, rowY, 2.5, '#ff4d6d');
         }
         ctx.fillStyle = isSelected ? '#ffffff' : '#94a3b8';
@@ -2029,26 +1690,13 @@ function initPixelMotionStudio() {
         ctx.fillText(mText, menuX + 48, rowY + 1);
       });
 
-      // Back row of 5 smaller pixel penguins strolling along the river bank
-      const backRowIds = ['01', '07', '12', '16', '21'];
-      backRowIds.forEach((sid, idx) => {
-        const spEntry = ensureSpeciesSprite(sid);
-        const bx = 115 + idx * 172 + Math.sin(now * 0.002 + idx) * 14;
-        const by = 284 + (Math.floor((now + idx * 150) / 260) % 2 === 0 ? 0 : -5);
-        if (spEntry.loaded && spEntry.img) {
-          ctx.drawImage(spEntry.img, bx, by, 76, 76);
-        }
-      });
-
-      // Front Lineup of 7 Full-Body Pixel Penguins Bouncing on the Village Plaza (ZERO Name Tags!)
-      const lineupIds = ['02', '04', '03', '05', '09', '06', '15'];
+      // Bottom Lineup of 7 Default Blue Pixel Penguins (sp_01.png) Bouncing on the Grass (ZERO Name Tags & ZERO Overlapping Bubble!)
       const pSize = 128;
       const startX = 54;
       const gapX = 120;
-      const baseLineY = 332;
+      const baseLineY = 330;
 
-      lineupIds.forEach((sid, idx) => {
-        const spEntry = ensureSpeciesSprite(sid);
+      for (let idx = 0; idx < 7; idx++) {
         const lx = startX + idx * gapX;
         const isHeroCenter = idx === 3;
         const hop = Math.floor((now + idx * 140) / 250) % 2 === 0 ? 0 : -9;
@@ -2057,19 +1705,19 @@ function initPixelMotionStudio() {
         ctx.fillStyle = 'rgba(15, 23, 42, 0.35)';
         ctx.fillRect(lx + 30, baseLineY + pSize - 10, pSize - 60, 9);
 
-        if (spEntry.loaded && spEntry.img) {
-          ctx.drawImage(spEntry.img, lx, ly, pSize, pSize);
+        if (bluePixelPenguin.loaded && bluePixelPenguin.img) {
+          ctx.drawImage(bluePixelPenguin.img, lx, ly, pSize, pSize);
         }
 
         if (isHeroCenter) {
           drawPixelHeart(ctx, lx + pSize / 2 - 42, ly + 8, 3, '#ff4d6d');
           drawPixelHeart(ctx, lx + pSize / 2 + 42, ly + 8, 3, '#fbbf24');
         }
-      });
+      }
 
       drawRetroDialogueBar(
         ctx,
-        'SCENE 4 · 타이틀',
+        'SCENE 3 · 타이틀',
         CURRENT_LANG === 'ko'
           ? '그렇게 시작된 베리챗 도트 펭귄 10,000마리 세상! 아래에서 내 마음에 드는 펭귄을 골라 6각형 프사로 장착해보세요.'
           : 'And so begins the world of 10,000 VeryChat Pixel Penguins! Pick your favorite penguin below and rock it as your Hexagon PFP.'

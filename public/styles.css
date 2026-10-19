@@ -283,7 +283,7 @@ body {
    ========================================================================== */
 .motion-mode-bar {
   display: grid;
-  grid-template-columns: repeat(4, auto);
+  grid-template-columns: repeat(3, auto);
   background: var(--bg-card);
   border: 1px solid var(--border-strong);
   border-radius: 10px;
@@ -1639,7 +1639,7 @@ body {
     gap: 8px;
   }
   .motion-mode-bar {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     width: 100%;
   }
   /* 22 Species Dock becomes a smooth 2-row horizontal touch-swipeable strip on mobile/tablet! */
