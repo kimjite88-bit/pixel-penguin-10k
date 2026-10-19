@@ -12,7 +12,7 @@
   <meta property="og:image" content="https://ppeng.verycloud.io/assets/logo_4442_1024.png?v=v322" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" type="image/png" href="/img/P04442.png?v=v322" />
-  <link rel="stylesheet" href="/styles.css?v=4.7.0" />
+  <link rel="stylesheet" href="/styles.css?v=4.8.0" />
 </head>
 <body>
   <!-- Full-Viewport Stepped Pixel Ambient Particle Canvas -->
@@ -66,7 +66,7 @@
           </div>
 
           <div class="motion-mode-bar" role="group" aria-label="Intro Cutscene Chapter">
-            <button type="button" class="motion-mode-btn active" data-scene="0" data-ko="1. 추락" data-en="1. Pit Fall">1. 추락</button>
+            <button type="button" class="motion-mode-btn active" data-scene="0" data-ko="1. 추락 & 도트변신" data-en="1. Pit Fall">1. 추락 &amp; 도트변신</button>
             <button type="button" class="motion-mode-btn" data-scene="1" data-ko="2. 픽셀월드" data-en="2. Pixel World">2. 픽셀월드</button>
             <button type="button" class="motion-mode-btn" data-scene="2" data-ko="3. 타이틀" data-en="3. Title">3. 타이틀</button>
           </div>
@@ -76,20 +76,27 @@
           <div class="motion-hud-topbar">
             <div class="hud-left-status">
               <span class="hud-rec-dot"></span>
-              <span id="motion-hud-mode-label">SCENE 1/3 · 평화로운 2D 눈밭 산책</span>
+              <span id="motion-hud-mode-label">SCENE 1/3 · 2D 눈밭 산책 → 도트 구덩이 추락 &amp; 파란 도트 펭귄 변신</span>
             </div>
             <div class="hud-coords-pill" id="motion-hud-coords">48×48 RETRO INTRO</div>
           </div>
 
+          <!-- 3-Segment Real-Time Chapter Progress Track -->
+          <div class="intro-progress-track" aria-hidden="true">
+            <div class="intro-progress-seg"><div class="intro-progress-fill" id="intro-prog-0"></div></div>
+            <div class="intro-progress-seg"><div class="intro-progress-fill" id="intro-prog-1"></div></div>
+            <div class="intro-progress-seg"><div class="intro-progress-fill" id="intro-prog-2"></div></div>
+          </div>
+
           <div class="retro-screen-wrap" id="motion-canvas-wrap">
-            <canvas id="pixel-stage-canvas" width="960" height="540"></canvas>
+            <canvas id="pixel-stage-canvas" width="1920" height="1080"></canvas>
             <div class="motion-scanline-overlay" aria-hidden="true"></div>
           </div>
 
           <!-- Mobile-Friendly Crisp HTML RPG Dialogue Box -->
           <div class="intro-dialogue-card" id="intro-dialogue-card">
             <span class="intro-dialogue-badge" id="intro-dialogue-speaker">SCENE 1 · 추락</span>
-            <p class="intro-dialogue-text" id="intro-dialogue-text">매끈했던 2D 파란 펭귄이 눈밭 산책 중 바나나를 밟고 픽셀 차원 구덩이로 추락! 파란 도트 펭귄으로 변환됩니다...</p>
+            <p class="intro-dialogue-text" id="intro-dialogue-text">매끈했던 2D 파란 펭귄이 눈밭 산책 중 바나나를 밟고 픽셀 차원 구덩이로 추락! 48×48 파란 도트 펭귄으로 변신합니다.</p>
             <button type="button" class="intro-dialogue-next" id="intro-dialogue-next-btn" data-ko="다음 장면 ▶" data-en="Next ▶">다음 장면 ▶</button>
           </div>
 
@@ -419,6 +426,6 @@
     </div>
   </footer>
 
-  <script src="/app.js?v=4.7.0"></script>
+  <script src="/app.js?v=4.8.0"></script>
 </body>
 </html>
