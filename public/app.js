@@ -630,31 +630,32 @@ function drawUploaded2DPenguin(ctx, cx, cy, size, angleRad, isShocked) {
   ctx.restore();
 }
 
-// Helper: Draw a Retro Pixel Speech Bubble
+// Helper: Draw a Retro Pixel Speech Bubble (Scaled up for crisp Mobile legibility)
 function drawRetroSpeechBubble(ctx, x, y, text, borderColor = '#ff4d6d', isDark = false) {
   ctx.save();
-  ctx.font = '900 13px "Pretendard", "Malgun Gothic", monospace';
-  const padX = 11;
+  ctx.font = '900 16px "Pretendard", "Malgun Gothic", sans-serif';
+  const padX = 14;
   const tw = Math.ceil(ctx.measureText(text).width);
   const bw = tw + padX * 2;
-  const bh = 28;
-  const bx = Math.round((x - bw / 2) / 2) * 2;
-  const by = Math.round((y - bh) / 2) * 2;
+  const bh = 34;
+  const clampedX = Math.max(bw / 2 + 12, Math.min(960 - bw / 2 - 12, x));
+  const bx = Math.round((clampedX - bw / 2) / 2) * 2;
+  const by = Math.max(10, Math.round((y - bh) / 2) * 2);
 
   ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
   ctx.fillRect(bx + 4, by + 4, bw, bh);
 
   ctx.fillStyle = borderColor;
-  ctx.fillRect(bx - 2, by - 2, bw + 4, bh + 4);
+  ctx.fillRect(bx - 3, by - 3, bw + 6, bh + 6);
 
   ctx.fillStyle = isDark ? '#11162b' : '#fffdf9';
   ctx.fillRect(bx, by, bw, bh);
 
   ctx.fillStyle = borderColor;
-  ctx.fillRect(x - 4, by + bh + 2, 8, 4);
-  ctx.fillRect(x - 2, by + bh + 6, 4, 4);
+  ctx.fillRect(clampedX - 5, by + bh + 3, 10, 4);
+  ctx.fillRect(clampedX - 3, by + bh + 7, 6, 4);
   ctx.fillStyle = isDark ? '#11162b' : '#fffdf9';
-  ctx.fillRect(x - 2, by + bh, 4, 4);
+  ctx.fillRect(clampedX - 3, by + bh, 6, 4);
 
   ctx.fillStyle = isDark ? '#ffffff' : '#11162b';
   ctx.textAlign = 'center';
@@ -802,9 +803,9 @@ function drawRetroPixelWorldBackground(ctx, now) {
     ctx.fillRect(x, 400, P * 2, P * 2);
   }
   ctx.fillStyle = '#e9d8a6';
-  ctx.fillRect(0, 412, 960, 56);
+  ctx.fillRect(0, 412, 960, 74);
   ctx.fillStyle = '#f4e8c1';
-  ctx.fillRect(0, 416, 960, 44);
+  ctx.fillRect(0, 416, 960, 62);
   for (let fx = 36; fx < 940; fx += 92) {
     ctx.fillStyle = fx % 184 === 36 ? '#ff4d6d' : '#fbbf24';
     ctx.fillRect(fx, 390, P * 2, P * 2);
@@ -813,45 +814,17 @@ function drawRetroPixelWorldBackground(ctx, now) {
   }
 }
 
-// Helper: Draw Retro Bottom RPG Narrative Dialogue Box
-function drawRetroDialogueBar(ctx, speaker, lineText, stepHint = '화면을 클릭하면 다음 장면으로 넘어갑니다') {
-  ctx.save();
-  const bx = 28;
-  const by = 468;
-  const bw = 904;
-  const bh = 58;
-
-  ctx.fillStyle = '#090b14';
-  ctx.fillRect(bx - 4, by - 4, bw + 8, bh + 8);
-  ctx.fillStyle = '#67e8f9';
-  ctx.fillRect(bx - 2, by - 2, bw + 4, bh + 4);
-  ctx.fillStyle = 'rgba(13, 16, 33, 0.94)';
-  ctx.fillRect(bx, by, bw, bh);
-
-  ctx.fillStyle = '#ff4d6d';
-  ctx.fillRect(bx + 12, by + 11, 132, 22);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '900 11.5px "Pretendard", monospace';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(speaker, bx + 78, by + 22);
-
-  ctx.fillStyle = '#f8fafc';
-  ctx.font = '800 14.5px "Pretendard", "Malgun Gothic", sans-serif';
-  ctx.textAlign = 'left';
-  ctx.fillText(lineText, bx + 158, by + 23);
-
-  ctx.fillStyle = '#94a3b8';
-  ctx.font = '700 11px monospace';
-  ctx.fillText(stepHint, bx + 158, by + 44);
-
-  if (Math.floor(performance.now() / 380) % 2 === 0) {
-    ctx.fillStyle = '#fbbf24';
-    ctx.font = '900 14px monospace';
-    ctx.textAlign = 'right';
-    ctx.fillText('▼ NEXT', bx + bw - 16, by + 32);
+// Helper: Update the Crisp HTML RPG Dialogue Box below the Canvas (100% legible on Mobile & Desktop!)
+let LAST_DIALOGUE_KEY = '';
+function drawRetroDialogueBar(ctx, speaker, lineText) {
+  const key = `${speaker}|${lineText}`;
+  if (key !== LAST_DIALOGUE_KEY) {
+    LAST_DIALOGUE_KEY = key;
+    const spEl = document.getElementById('intro-dialogue-speaker');
+    const txtEl = document.getElementById('intro-dialogue-text');
+    if (spEl) spEl.textContent = speaker;
+    if (txtEl) txtEl.textContent = lineText;
   }
-  ctx.restore();
 }
 
 function initPixelMotionStudio() {
@@ -863,7 +836,7 @@ function initPixelMotionStudio() {
   ensureHero2DSprite();
   MOTION_SPECIES_22.forEach((sp) => ensureSpeciesSprite(sp.id));
 
-  // Build 22 Species Full-Body Selector Dock (#curator-dock-grid) — ZERO NFT square captures!
+  // Build 22 Species Full-Body Selector Dock (#curator-dock-grid) — Exact 11x2 = 22 Grid!
   const dockGrid = document.getElementById('curator-dock-grid');
   if (dockGrid) {
     dockGrid.innerHTML = MOTION_SPECIES_22.map((sp, idx) => {
@@ -892,6 +865,11 @@ function initPixelMotionStudio() {
     btn.addEventListener('click', () => {
       setIntroScene(Number(btn.dataset.scene), true);
     });
+  });
+
+  // HTML Dialogue Next Scene Button
+  document.getElementById('intro-dialogue-next-btn')?.addEventListener('click', () => {
+    setIntroScene((MOTION_STATE.sceneIdx + 1) % 4, true);
   });
 
   // Replay Full Intro Button
@@ -1648,6 +1626,11 @@ async function loadPfpPreview(tokenNum) {
       tierEl.className = `tier-${tok.tier}`;
     }
 
+    const rankEl = document.getElementById('pfp-sim-rank');
+    if (rankEl) {
+      rankEl.textContent = `#${Number(tok.rarity_rank).toLocaleString()}`;
+    }
+
     document.querySelectorAll('.pfp-thumb-btn').forEach((btn) => {
       btn.classList.toggle('active', Number(btn.dataset.num) === tok.edition);
     });
@@ -1667,7 +1650,7 @@ function initPfpStudio() {
     });
   });
 
-  // Preset strip: Featured generative penguins
+  // Preset strip: Featured generative penguins (7x2 = 14 Grid)
   const presets = CURATED_BEAUTY_14.map((c) => c.edition);
   const strip = document.getElementById('pfp-preset-strip');
   if (strip) {
@@ -1675,7 +1658,7 @@ function initPfpStudio() {
       .map((num, idx) => {
         const id = `P${String(num).padStart(5, '0')}`;
         const src = num <= 11 ? `/assets/specials/${num}_fast.gif` : `/img/${id}.png`;
-        return `<button type="button" class="pfp-thumb-btn ${idx === 0 ? 'active' : ''}" data-num="${num}" title="Preview #${num}">
+        return `<button type="button" class="pfp-thumb-btn ${idx === 0 ? 'active' : ''}" data-num="${num}" title="#${num}">
           <img src="${src}" alt="#${num}" class="pixelated" loading="lazy" />
         </button>`;
       })
@@ -1727,7 +1710,7 @@ function renderSpecialsGrid(specials) {
         <img src="${sp.fast_gif_url}" alt="${escapeHtml(sp.title)}" class="pixelated" loading="lazy" />
         <div class="card-top-badges">
           <span class="tier-pill tier-등급없음">등급없음</span>
-          <span class="rank-pill">#${sp.rarity_rank}</span>
+          <span class="rank-pill">Rank #${sp.rarity_rank}</span>
         </div>
       </div>
       <div class="nft-card-meta">
@@ -1736,13 +1719,32 @@ function renderSpecialsGrid(specials) {
       </div>
       <div class="nft-card-title">${escapeHtml(sp.archetype)}</div>
       <div class="nft-card-footer">
-        <span class="score-tag">Rank #${sp.rarity_rank}</span>
-        <span class="score-tag">${Number(sp.rarity_score).toLocaleString()} pts</span>
+        <span class="score-tag">1-of-1 GIF</span>
+        <span class="score-tag" style="color:var(--accent-cyan); font-weight:800;">${Number(sp.rarity_score).toLocaleString()} pts</span>
       </div>
     </button>
   `
     )
     .join('');
+}
+
+function updateMobileTraitFilterBtnLabel() {
+  const toggleBtn = document.getElementById('btn-toggle-trait-filters');
+  if (!toggleBtn) return;
+  let activeCount = 0;
+  document.querySelectorAll('.exp-cat-select').forEach((s) => {
+    if (s.value) activeCount++;
+  });
+  const span = toggleBtn.querySelector('span');
+  if (span) {
+    if (activeCount > 0) {
+      span.textContent = CURRENT_LANG === 'ko' ? `🎛️ 파츠 필터 (${activeCount}개 적용)` : `🎛️ Filters (${activeCount})`;
+      toggleBtn.classList.add('active-toggle');
+    } else {
+      span.textContent = CURRENT_LANG === 'ko' ? '🎛️ 파츠 필터 (9종)' : '🎛️ Trait Filters (9)';
+      toggleBtn.classList.remove('active-toggle');
+    }
+  }
 }
 
 // Build 9-Category Dropdowns in Explorer
@@ -1761,7 +1763,7 @@ function buildExplorerTraitDropdowns() {
     return `
       <div class="trait-select-box">
         <label for="filter-cat-${cat}">${CAT_LABELS_KO[cat] || cat}</label>
-        <select id="filter-cat-${cat}" data-cat="${cat}" class="filter-select exp-cat-select" style="padding:7px 10px; font-size:12px;">
+        <select id="filter-cat-${cat}" data-cat="${cat}" class="filter-select exp-cat-select" style="padding:7px 8px; font-size:12px;">
           <option value="">전체 (All)</option>
           ${optionsHtml}
         </select>
@@ -1772,6 +1774,7 @@ function buildExplorerTraitDropdowns() {
   container.querySelectorAll('.exp-cat-select').forEach((sel) => {
     sel.addEventListener('change', () => {
       CURRENT_PAGE = 1;
+      updateMobileTraitFilterBtnLabel();
       fetchExplorerTokens();
     });
   });
@@ -1810,8 +1813,8 @@ async function fetchExplorerTokens() {
     if (countEl) {
       countEl.innerHTML =
         CURRENT_LANG === 'ko'
-          ? `총 <strong>${data.total.toLocaleString()}</strong>마리 귀한 자식들 검색됨 (페이지 ${data.page} / ${TOTAL_PAGES})`
-          : `Showing <strong>${data.total.toLocaleString()}</strong> Precious Penguins (Page ${data.page} of ${TOTAL_PAGES})`;
+          ? `총 <strong>${data.total.toLocaleString()}</strong>마리 검색됨 (페이지 ${data.page} / ${TOTAL_PAGES})`
+          : `Showing <strong>${data.total.toLocaleString()}</strong> Penguins (Page ${data.page} of ${TOTAL_PAGES})`;
     }
 
     document.getElementById('page-indicator').textContent = `${data.page} / ${TOTAL_PAGES}`;
@@ -1839,16 +1842,12 @@ async function fetchExplorerTokens() {
             <img src="${item.image_url}" alt="${escapeHtml(item.name)}" class="pixelated" loading="lazy" />
             <div class="card-top-badges">
               <span class="tier-pill tier-${item.tier}">${item.tier}</span>
-              <span class="rank-pill">#${item.rarity_rank}</span>
+              <span class="rank-pill">Rank #${item.rarity_rank}</span>
             </div>
-          </div>
-          <div class="nft-card-meta">
-            <span>${item.id}</span>
-            <span>#${item.edition}</span>
           </div>
           <div class="nft-card-title">${escapeHtml(subtitle)}</div>
           <div class="nft-card-footer">
-            <span class="score-tag">Rank #${item.rarity_rank}</span>
+            <span class="score-tag" style="font-weight:800; color:#e2e8f0;">${item.id}</span>
             <span class="score-tag" style="color:var(--accent-cyan); font-weight:800;">${Number(item.rarity_score).toLocaleString()} pts</span>
           </div>
         </button>
@@ -1881,6 +1880,7 @@ function filterExplorerByTrait(cat, val) {
   const searchEl = document.getElementById('exp-search');
   if (searchEl) searchEl.value = '';
   CURRENT_PAGE = 1;
+  updateMobileTraitFilterBtnLabel();
   fetchExplorerTokens();
   scrollToSection('sec-explorer');
 }
@@ -2012,24 +2012,24 @@ async function openTokenModal(tokenNum) {
           <span class="pill-tag gold">${Number(tok.rarity_score).toLocaleString()} pts</span>
         </div>
 
-        <h2 id="modal-token-title" style="font-size:24px; font-weight:900; margin-bottom:12px;">${escapeHtml(tok.name)}</h2>
+        <h2 id="modal-token-title" style="font-size:22px; font-weight:900; margin-bottom:10px;">${escapeHtml(tok.name)}</h2>
 
-        <div class="spec-rows-stack" style="margin-bottom:14px;">
-          <div class="spec-row" style="padding:10px 14px;">
+        <div class="spec-rows-stack" style="margin-bottom:12px;">
+          <div class="spec-row">
             <span class="spec-label">번호 (Token ID)</span>
             <span class="spec-value">${tok.id} (#${tok.edition})</span>
           </div>
-          <div class="spec-row" style="padding:10px 14px;">
+          <div class="spec-row">
             <span class="spec-label">희귀도 순위 · 점수 (rarity.tools)</span>
             <span class="spec-value" style="color:var(--accent-cyan);">Rank #${tok.rarity_rank} (${Number(tok.rarity_score).toLocaleString()} pts)</span>
           </div>
-          <div class="spec-row" style="padding:10px 14px;">
+          <div class="spec-row">
             <span class="spec-label">장착 파츠 수 (특성 개수 점수)</span>
             <span class="spec-value">${tok.active_trait_stat.active_count}개 (${tok.active_trait_stat.pct}% · +${Number(tok.active_trait_stat.score).toLocaleString()} pts)</span>
           </div>
         </div>
 
-        <h4 style="font-size:14px; font-weight:800; margin-bottom:6px;">파츠별 rarity.tools 점수 (전체 수 10,000 ÷ 보유 수)</h4>
+        <h4 style="font-size:13.5px; font-weight:800; margin-bottom:6px;">파츠별 rarity.tools 점수 (전체 수 10,000 ÷ 보유 수)</h4>
         <div class="trait-breakdown-list">
           ${traitsHtml}
         </div>
@@ -2060,6 +2060,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Navigation Tabs
   document.querySelectorAll('.market-tab').forEach((tab) => {
     tab.addEventListener('click', () => scrollToSection(tab.dataset.target));
+  });
+
+  // Mobile 9-Category Filter Drawer Toggle
+  document.getElementById('btn-toggle-trait-filters')?.addEventListener('click', () => {
+    const gridEl = document.getElementById('exp-trait-filters');
+    if (gridEl) {
+      gridEl.classList.toggle('mobile-open');
+    }
   });
 
   // Update official website display
@@ -2110,6 +2118,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     document.querySelectorAll('.exp-cat-select').forEach((s) => {
       s.value = '';
     });
+    updateMobileTraitFilterBtnLabel();
     CURRENT_PAGE = 1;
     fetchExplorerTokens();
   });
