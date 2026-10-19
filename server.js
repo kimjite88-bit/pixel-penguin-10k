@@ -1,6 +1,6 @@
 /**
  * PIXEL PENGUIN (Pixel Penguin 10K) — Official Homepage & 10K Explorer Server
- * Built by Very Penguin Labs for VERY Mainnet (Chain ID: 4613)
+ * Built by @happy Ahndoge for VERY Mainnet (Chain ID: 4613)
  *
  * Serves:
  * - Bilingual (KO/EN) Official Collection Homepage & VeryChat NFT Market Specs
@@ -159,7 +159,7 @@ function expandTokenFull(num) {
     ...base,
     description: isSpecial
       ? sp.description
-      : `Pixel Penguin 10K Official Collection on VeryChain (Very NFT). Created by Very Penguin Labs. Mint Price: 100 VERY.`,
+      : `Pixel Penguin 10K Official Collection on VeryChain (Very NFT). Created by @happy Ahndoge. Mint Price: 100 VERY.`,
     n_frames: isSpecial ? sp.n_frames : 1,
     trait_breakdown: breakdown,
     active_trait_stat: {
@@ -378,7 +378,7 @@ app.get('/api/metadata/:id', (req, res) => {
     name: full.name,
     collection: 'Pixel Penguin 10K',
     symbol: 'PPENG',
-    issuer: 'Very Penguin Labs',
+    issuer: '@happy Ahndoge',
     description: full.description,
     rarity_tier: full.tier,
     rarity_rank: full.rarity_rank,

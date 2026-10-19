@@ -1,6 +1,6 @@
 /**
  * PIXEL PENGUIN (Pixel Penguin 10K · Symbol: PPENG) — Frontend Application & 48x48 Pixel Motion Engine
- * Issued by Very Penguin Labs on VERY Mainnet (4613)
+ * Issued by @happy Ahndoge on VERY Mainnet (4613)
  */
 
 let APP_CONFIG = null;
@@ -1487,7 +1487,7 @@ function buildSubmissionModal() {
 
   const fields = [
     { label: '1. 프로젝트명 (Project Name)', value: 'PIXEL PENGUIN (Pixel Penguin 10K)' },
-    { label: '2. 발행자 명 (Issuer / Creator)', value: 'Very Penguin Labs (베리 펭귄 랩스)' },
+    { label: '2. 발행자 명 (Issuer / Creator)', value: '@happy Ahndoge (VERY CHAT 고인물)' },
     { label: '3. 심볼 (Symbol)', value: 'PPENG' },
     {
       label: '4. 공식 대표 로고 (#4442 · P04442 · 1024×1024 PNG)',
@@ -1534,7 +1534,7 @@ function buildSubmissionModal() {
       const allText = [
         `[베리챗(VeryChat) NFT 마켓 공식 등록 정보]`,
         `• 프로젝트명: PIXEL PENGUIN (Pixel Penguin 10K)`,
-        `• 발행자 명: Very Penguin Labs (베리 펭귄 랩스)`,
+        `• 발행자 명: @happy Ahndoge (VERY CHAT 고인물)`,
         `• 심볼(Symbol): PPENG`,
         `• 공식 대표 로고: #4442 (P04442) — ${siteUrl}/assets/logo_4442_1024.png`,
         `• 체인 / 표준: VERY Mainnet (4613) / ERC-721`,
