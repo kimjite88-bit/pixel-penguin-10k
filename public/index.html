@@ -96,7 +96,7 @@
                 <span data-ko="자동재생: ON" data-en="Auto: ON" id="autoplay-label">자동재생: ON</span>
               </button>
               <button type="button" class="btn-secondary" style="padding:8px 12px; font-size:12.5px;" id="btn-motion-next">
-                <span data-ko="주인공 바꾸기 (#4442)" data-en="Change Penguin (#4442)">주인공 바꾸기 (#4442)</span>
+                <span data-ko="주인공 색깔 바꾸기 (기본 블루)" data-en="Change Species Color">주인공 색깔 바꾸기 (기본 블루)</span>
               </button>
             </div>
             <button type="button" class="btn-secondary" style="padding:8px 14px; font-size:12.5px; border-color:var(--accent-gold); color:var(--accent-gold);" onclick="scrollToSection('tab-codex')">
@@ -104,11 +104,11 @@
             </button>
           </div>
 
-          <!-- Compact Character Select Bar -->
+          <!-- 22 Species Full-Body Pixel Character Select Bar -->
           <div class="retro-select-player-box">
             <div class="curator-dock-header" style="margin-bottom:6px;">
-              <span data-ko="주인공 펭귄 골라보기" data-en="Pick a Penguin">주인공 펭귄 골라보기</span>
-              <span class="dock-sub-hint" id="spot-title">#4442 선글라스 펭귄</span>
+              <span data-ko="픽셀 월드 22종(Species) 색깔 골라보기 (누르면 주인공 색깔이 바뀝니다)" data-en="Pick from 22 Species Colors">픽셀 월드 22종(Species) 색깔 골라보기 (누르면 주인공 색깔이 바뀝니다)</span>
+              <span class="dock-sub-hint" id="spot-title">[01] 기본 블루 (Classic Blue)</span>
             </div>
             <div class="curator-dock-grid" id="curator-dock-grid"></div>
           </div>
@@ -233,18 +233,6 @@
           </div>
         </div>
       </section>
-
-      <!-- 3. PIXEL PARADE MARQUEE -->
-      <div class="pixel-parade-wrapper" style="margin-top:16px;">
-        <div class="parade-header-bar">
-          <span class="parade-title" data-ko="🐧 지나가는 펭귄들 (누르면 상세 보기)" data-en="🐧 Passing Penguins (Click to inspect)">🐧 지나가는 펭귄들 (누르면 상세 보기)</span>
-          <span class="parade-badge">48×48 PIXEL</span>
-        </div>
-        <div class="parade-track-container">
-          <div class="parade-row scroll-left" id="pixel-parade-row-1"></div>
-          <div class="parade-row scroll-right" id="pixel-parade-row-2"></div>
-        </div>
-      </div>
 
     </div><!-- /#tab-page-intro -->
 
@@ -393,6 +381,6 @@
     </div>
   </footer>
 
-  <script src="/app.js?v=3.8.0"></script>
+  <script src="/app.js?v=3.9.0"></script>
 </body>
 </html>
