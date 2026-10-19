@@ -2189,90 +2189,6 @@ function closeTokenModal() {
   document.getElementById('token-modal')?.classList.remove('open');
 }
 
-// Listing Submission Sheet Copy Modal
-function buildSubmissionModal() {
-  const container = document.getElementById('submission-rows-container');
-  if (!container) return;
-
-  const siteUrl = 'https://ppeng.verycloud.io';
-  const storyEn = document.getElementById('story-en-text')?.textContent.trim() || '';
-  const storyKo = document.getElementById('story-ko-text')?.textContent.trim() || '';
-
-  const fields = [
-    { label: '1. 프로젝트명 (Project Name)', value: 'PIXEL PENGUIN (Pixel Penguin 10K)' },
-    { label: '2. 발행자 명 (Issuer / Creator)', value: '@happy Ahndoge (VERY CHAT 고인물)' },
-    { label: '3. 심볼 (Symbol)', value: 'PPENG' },
-    {
-      label: '4. 공식 대표 로고 (#4442 · P04442 · 1024×1024 PNG)',
-      value: `${siteUrl}/assets/logo_4442_1024.png`,
-    },
-    { label: '5. 공식 홈페이지 링크 (Official Website · 단독 링크)', value: siteUrl },
-    { label: '6. 프로젝트 설명 — 영문 (VERY PUNKS 레퍼런스 스타일)', value: storyEn },
-    { label: '7. 프로젝트 설명 / 취지 — 국문', value: storyKo },
-    {
-      label: '8. 민팅 및 마켓 스펙 요약',
-      value: '체인: VERY Mainnet (4613) | 토큰 표준: ERC-721 | 공급량: 10,000 | 대표 로고: #4442 (P04442) | 민팅 일정: 2026년 10월 23일 (금) | 민팅가: 100 VERY | VERY 소각: 거래 금액의 5% (0x0000...dEaD) | 컬렉션 수수료: 0%',
-    },
-  ];
-
-  container.innerHTML = fields
-    .map(
-      (f, idx) => `
-    <div class="copy-row-box">
-      <div style="flex:1; min-width:0;">
-        <div style="font-size:12px; color:var(--accent-ice); font-weight:800; margin-bottom:4px;">${escapeHtml(f.label)}</div>
-        <div style="font-size:13.5px; color:#fff; word-break:break-word; line-height:1.55;" id="sub-val-${idx}">${escapeHtml(f.value)}</div>
-      </div>
-      <button type="button" class="copy-mini-btn" data-idx="${idx}">복사</button>
-    </div>
-  `
-    )
-    .join('');
-
-  container.querySelectorAll('.copy-mini-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const idx = Number(btn.dataset.idx);
-      navigator.clipboard.writeText(fields[idx].value);
-      const orig = btn.textContent;
-      btn.textContent = '✓ 복사됨!';
-      setTimeout(() => {
-        btn.textContent = orig;
-      }, 1500);
-    });
-  });
-
-  const copyAllBtn = document.getElementById('copy-all-submission-btn');
-  if (copyAllBtn) {
-    copyAllBtn.onclick = () => {
-      const allText = [
-        `[베리챗(VeryChat) NFT 마켓 공식 등록 정보]`,
-        `• 프로젝트명: PIXEL PENGUIN (Pixel Penguin 10K)`,
-        `• 발행자 명: @happy Ahndoge (VERY CHAT 고인물)`,
-        `• 심볼(Symbol): PPENG`,
-        `• 공식 대표 로고: #4442 (P04442) — ${siteUrl}/assets/logo_4442_1024.png`,
-        `• 체인 / 표준: VERY Mainnet (4613) / ERC-721`,
-        `• 총 공급량: 10,000`,
-        `• 민팅 일정 / 가격: 2026년 10월 23일(금) / 100 VERY`,
-        `• VERY 소각 / 컬렉션 수수료: 거래 금액의 5% (0x0000...dEaD) / 0%`,
-        `• 공식 홈페이지(단독 링크): ${siteUrl}`,
-        ``,
-        `[컬렉션 소개 (EN - VERY PUNKS Reference Style)]`,
-        storyEn,
-        ``,
-        `[프로젝트 설명 및 기획 취지 (KO)]`,
-        storyKo,
-      ].join('\n');
-
-      navigator.clipboard.writeText(allText);
-      const orig = copyAllBtn.textContent;
-      copyAllBtn.textContent = '✓ 전체 항목이 클립보드에 복사되었습니다!';
-      setTimeout(() => {
-        copyAllBtn.textContent = orig;
-      }, 2000);
-    };
-  }
-}
-
 // Initialize App
 document.addEventListener('DOMContentLoaded', async () => {
   startMintCountdown();
@@ -2304,24 +2220,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (e.target.id === 'token-modal') closeTokenModal();
   });
 
-  const subModal = document.getElementById('submission-modal');
-  const openSubModal = () => {
-    buildSubmissionModal();
-    subModal?.classList.add('open');
-  };
-  document.getElementById('open-submission-modal-btn')?.addEventListener('click', openSubModal);
-  document.getElementById('open-submission-modal-btn-2')?.addEventListener('click', openSubModal);
-  document.getElementById('close-submission-modal')?.addEventListener('click', () => {
-    subModal?.classList.remove('open');
-  });
-  subModal?.addEventListener('click', (e) => {
-    if (e.target.id === 'submission-modal') subModal.classList.remove('open');
-  });
-
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeTokenModal();
-      subModal?.classList.remove('open');
     }
   });
 

@@ -37,10 +37,6 @@
       </a>
 
       <div class="header-actions">
-        <button type="button" class="btn-submission-Copy" id="open-submission-modal-btn">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-          <span data-ko="마켓 제출 정보 복사" data-en="Listing Submission Info">마켓 제출 정보 복사</span>
-        </button>
         <div class="lang-switch" role="group" aria-label="Language Switcher">
           <button type="button" class="lang-btn active" data-lang="ko">KR</button>
           <button type="button" class="lang-btn" data-lang="en">EN</button>
@@ -301,12 +297,8 @@
       <div class="section-header">
         <div>
           <h2 class="section-title" data-ko="컬렉션 정보 및 온체인 명세 (NFT Market 정보)" data-en="Collection Info & On-Chain Specifications">컬렉션 정보 및 온체인 명세 (NFT Market 정보)</h2>
-          <p class="section-sub" data-ko="베리챗(VeryChat) NFT 마켓 등록 양식에 맞춘 프로젝트 소개와 온체인 기본 스펙입니다. 민팅 영업 멘트 빼고 있는 그대로 솔직하게 적었습니다." data-en="Official collection story, website link, and on-chain market specs written with zero sales fluff.">베리챗(VeryChat) NFT 마켓 등록 양식에 맞춘 프로젝트 소개와 온체인 기본 스펙입니다. 민팅 영업 멘트 빼고 있는 그대로 솔직하게 적었습니다.</p>
+          <p class="section-sub" data-ko="베리챗(VeryChat) NFT 마켓의 프로젝트 소개와 온체인 기본 스펙입니다. 민팅 영업 멘트 빼고 있는 그대로 솔직하게 적었습니다." data-en="Official collection story, website link, and on-chain market specs written with zero sales fluff.">베리챗(VeryChat) NFT 마켓의 프로젝트 소개와 온체인 기본 스펙입니다. 민팅 영업 멘트 빼고 있는 그대로 솔직하게 적었습니다.</p>
         </div>
-        <button type="button" class="btn-secondary" id="open-submission-modal-btn-2">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-          <span data-ko="발행 등록용 텍스트 한 번에 복사" data-en="Copy Listing Registration Sheet">발행 등록용 텍스트 한 번에 복사</span>
-        </button>
       </div>
 
       <div class="market-info-grid">
@@ -679,21 +671,6 @@
     </div>
   </div>
 
-  <!-- LISTING SUBMISSION COPY MODAL (For VeryChat NFT Market Team) -->
-  <div class="modal-backdrop" id="submission-modal" role="dialog" aria-modal="true" aria-labelledby="submission-modal-title">
-    <div class="modal-card" style="max-width:740px;">
-      <button type="button" class="modal-close-btn" id="close-submission-modal">✕ 닫기</button>
-      <h3 id="submission-modal-title" style="font-size:20px; font-weight:800; margin-bottom:6px;">베리챗(VeryChat) NFT 마켓 제출용 공식 정보 시트</h3>
-      <p style="font-size:13.5px; color:var(--text-secondary); margin-bottom:18px;">
-        금요일(10월 23일) 민팅 등록을 위해 요청받으신 <strong>프로젝트명, 발행자 명, 심볼, 프로젝트 설명(영문/국문), 공식 홈페이지 링크</strong>를 항목별 또는 전체 일괄 복사하실 수 있습니다.
-      </p>
-      <div id="submission-rows-container"></div>
-      <div style="margin-top:16px; display:flex; justify-content:flex-end; gap:10px;">
-        <button type="button" class="btn-primary" id="copy-all-submission-btn">전체 제출 항목 한 번에 복사하기</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Hidden 3072x3072 High-Res Upscale Canvas -->
   <canvas id="upscale-canvas" width="3072" height="3072" style="display:none;"></canvas>
 
@@ -710,6 +687,6 @@
     </div>
   </footer>
 
-  <script src="/app.js?v=3.7.0"></script>
+  <script src="/app.js?v=3.7.1"></script>
 </body>
 </html>
