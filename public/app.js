@@ -35,26 +35,23 @@ const CAT_LABELS_KO = {
   Prop: '종합 소품 (Prop)',
 };
 
-// Official Logo (#4442) + 14 Featured Generative Penguins from our 10,000 Collection
+// Featured Generative Penguins from our 10,000 Collection
 const CURATED_BEAUTY_14 = [
   {
     edition: 4442,
     id: 'P04442',
     isSpecial: false,
-    isLogo: true,
     tier: 'Common',
     rank: 9811,
     score: '87.1',
-    shortKo: '대표 로고',
-    shortEn: 'Official Logo',
-    titleKo: '#4442 공식 대표 로고 — Pixel Penguin #4442 (P04442)',
-    titleEn: '#4442 Official Collection Logo — Pixel Penguin #4442',
-    themeKo: 'Common (#9811) · Glacier Sky & Pixel Shades',
-    themeEn: 'Common (#9811) · Glacier Sky & Pixel Shades',
-    noteKo:
-      '희귀도 순위는 10,000마리 중 9,811등짜리 Common이지만, 파란 하늘에 도트 선글라스 낀 게 제일 정감 가서 당당히 공식 대표 로고로 뽑힌 귀한 자식입니다. 등급 낮아도 이렇게 이쁩니다.',
-    noteEn:
-      'Ranked #9,811 out of 10,000 (Common tier), yet chosen as our official collection logo simply because the blue sky and pixel shades look great. Proof that tier means nothing here.',
+    shortKo: '선글라스 펭귄',
+    shortEn: 'Pixel Shades',
+    titleKo: '#4442 선글라스 펭귄 (P04442)',
+    titleEn: '#4442 Pixel Shades Penguin',
+    themeKo: 'Common · Glacier Sky & Pixel Shades',
+    themeEn: 'Common · Glacier Sky & Pixel Shades',
+    noteKo: '파란 하늘에 도트 선글라스 낀 정감 가는 자식입니다.',
+    noteEn: 'Blue sky and pixel shades.',
   },
   {
     edition: 963,
@@ -294,7 +291,7 @@ const CURATED_BEAUTY_14 = [
 
 // Additional Penguins for the 28-Token Dual-Row Infinite Pixel Parade (All 48x48 Generative Penguins)
 const PARADE_ROW_1_ITEMS = [
-  { edition: 4442, labelKo: '공식 대표 로고', labelEn: 'Official Logo', sub: 'Pixel Shades · #4442' },
+  { edition: 4442, labelKo: '선글라스 펭귄', labelEn: 'Pixel Shades Penguin', sub: 'Pixel Shades · #4442' },
   { edition: 963, labelKo: '여우 잠옷 펭귄', labelEn: 'Fox Onesie Penguin', sub: 'Legendary · #963' },
   { edition: 6522, labelKo: '도마뱀 후드 펭귄', labelEn: 'Gecko Onesie Penguin', sub: 'Uncommon · #6522' },
   { edition: 43, labelKo: '꽃화관 빙어 낚시', labelEn: 'Floral Wreath Angler', sub: 'Epic · #43' },
@@ -1778,13 +1775,12 @@ async function loadPfpPreview(tokenNum) {
     const imgUrl = tok.edition <= 11 ? tok.image_url : tok.pixel_48_url;
     document.getElementById('pfp-preview-img').src = imgUrl;
     document.getElementById('pfp-mini-img').src = imgUrl;
-    document.getElementById('pfp-sim-title').textContent =
-      tok.edition === 4442 ? `${tok.name} (공식 대표 로고)` : tok.name;
+    document.getElementById('pfp-sim-title').textContent = tok.name;
     document.getElementById('pfp-sim-id').textContent = tok.id;
 
     const tierEl = document.getElementById('pfp-sim-tier');
     if (tierEl) {
-      tierEl.textContent = tok.edition === 4442 ? `${tok.tier} (Official Logo)` : tok.tier;
+      tierEl.textContent = tok.tier;
       tierEl.className = `tier-${tok.tier}`;
     }
 
@@ -2147,36 +2143,26 @@ async function openTokenModal(tokenNum) {
       <div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
           <span class="tier-pill tier-${tok.tier}">${tok.tier}</span>
-          <span class="pill-tag">Edition #${tok.edition} / 10,000</span>
-          <span class="pill-tag gold">Mint Price: 100 VERY</span>
+          <span class="pill-tag">#${tok.edition} / 10,000</span>
+          <span class="pill-tag gold">100 VERY</span>
         </div>
 
-        <h2 id="modal-token-title" style="font-size:24px; font-weight:900; margin-bottom:6px;">${escapeHtml(tok.name)}</h2>
-        <p style="font-size:13.5px; color:var(--text-secondary); margin-bottom:14px;">
-          VERY CHAT 고인물 @happy Ahndoge가 빚은 10,000마리 중 ${tok.edition}번째로 태어난 귀한 자식입니다. 사신다고 돈 드리거나 뭐 해드리는 거 일절 없으며, 철저히 베리챗 세로 꼭짓점 6각형 프사(Verified PFP) 전용입니다.
-        </p>
+        <h2 id="modal-token-title" style="font-size:24px; font-weight:900; margin-bottom:12px;">${escapeHtml(tok.name)}</h2>
 
         <div class="spec-rows-stack" style="margin-bottom:14px;">
           <div class="spec-row" style="padding:10px 14px;">
-            <span class="spec-label">번호 (Token ID / Edition)</span>
-            <span class="spec-value">${tok.id} (#${tok.edition} / 10,000)</span>
+            <span class="spec-label">번호 (Token ID)</span>
+            <span class="spec-value">${tok.id} (#${tok.edition})</span>
           </div>
           <div class="spec-row" style="padding:10px 14px;">
-            <span class="spec-label">장착한 옵션 파츠 수</span>
-            <span class="spec-value">${tok.active_trait_stat.active_count}개 장착 (${tok.active_trait_stat.pct}%)</span>
+            <span class="spec-label">장착 파츠 수</span>
+            <span class="spec-value">${tok.active_trait_stat.active_count}개 (${tok.active_trait_stat.pct}%)</span>
           </div>
         </div>
 
-        <h4 style="font-size:14px; font-weight:800; margin-bottom:6px;">9가지 파츠 차림새 (누르면 같은 파츠 낀 자식들만 모아봄)</h4>
+        <h4 style="font-size:14px; font-weight:800; margin-bottom:6px;">파츠 구성 (누르면 같은 파츠 낀 펭귄 검색)</h4>
         <div class="trait-breakdown-list">
           ${traitsHtml}
-        </div>
-
-        <div class="hash-box">
-          <div><strong>[쌍둥이 없음 증명 해시 (SHA-256)]</strong></div>
-          <div>Native 48×48 SHA-256 (prefix): ${tok.hashes.native_sha16}...</div>
-          <div>Final Image SHA-256 (prefix):  ${tok.hashes.image_sha16}...</div>
-          <div>Metadata JSON SHA-256 (prefix): ${tok.hashes.json_sha16}...</div>
         </div>
       </div>
     `;
