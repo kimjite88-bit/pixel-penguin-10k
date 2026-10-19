@@ -228,7 +228,7 @@ app.get('/api/tokens', (req, res) => {
   const q = String(req.query.q || '').trim().toLowerCase();
   const tierFilter = String(req.query.tier || '').trim();
   const editionFilter = String(req.query.edition || '').trim();
-  const sort = String(req.query.sort || 'rank_asc').trim();
+  const sort = String(req.query.sort || 'id_asc').trim();
   const page = Math.max(1, parseInt(req.query.page || '1', 10) || 1);
   const limit = Math.min(100, Math.max(1, parseInt(req.query.limit || '40', 10) || 40));
 

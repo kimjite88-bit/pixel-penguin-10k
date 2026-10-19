@@ -2244,7 +2244,7 @@ async function fetchExplorerTokens() {
   const q = document.getElementById('exp-search')?.value.trim() || '';
   const tier = document.getElementById('exp-tier')?.value || '';
   const edition = document.getElementById('exp-edition')?.value || '';
-  const sort = document.getElementById('exp-sort')?.value || 'rank_asc';
+  const sort = document.getElementById('exp-sort')?.value || 'id_asc';
 
   if (q) params.set('q', q);
   if (tier) params.set('tier', tier);
@@ -2568,7 +2568,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const edEl = document.getElementById('exp-edition');
     if (edEl) edEl.value = '';
     const sortEl = document.getElementById('exp-sort');
-    if (sortEl) sortEl.value = 'rank_asc';
+    if (sortEl) sortEl.value = 'id_asc';
     document.querySelectorAll('.exp-cat-select').forEach((s) => {
       s.value = '';
     });
