@@ -488,13 +488,16 @@ body {
 .pfp-Frame-wrap {
   position: relative;
   width: 180px;
-  height: 180px;
   margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
 }
 
 .pfp-art-box {
-  width: 100%;
-  height: 100%;
+  width: 180px;
+  height: 180px;
   overflow: hidden;
   border: 2.5px solid var(--accent-very);
   background: #171625;
@@ -510,9 +513,18 @@ body {
   border-radius: 50%;
 }
 
+/* Exact VeryChat NFT PFP Hexagon: Pointy-Top / Pointy-Bottom with 6 Rounded Vertices */
 .pfp-art-box.shape-hex {
-  border-radius: 12px;
-  clip-path: polygon(25% 5%, 75% 5%, 98% 50%, 75% 95%, 25% 95%, 2% 50%);
+  border: none;
+  border-radius: 0;
+  clip-path: polygon(
+    45.95% 1.09%, 46.90% 0.62%, 47.90% 0.28%, 48.94% 0.07%, 50.00% 0.00%, 51.06% 0.07%, 52.10% 0.28%, 53.10% 0.62%, 54.05% 1.09%,
+    90.33% 22.04%, 91.21% 22.63%, 92.01% 23.32%, 92.71% 24.12%, 93.30% 25.00%, 93.77% 25.95%, 94.11% 26.96%, 94.31% 27.99%, 94.38% 29.05%,
+    94.38% 70.95%, 94.31% 72.01%, 94.11% 73.04%, 93.77% 74.05%, 93.30% 75.00%, 92.71% 75.88%, 92.01% 76.68%, 91.21% 77.37%, 90.33% 77.96%,
+    54.05% 98.91%, 53.10% 99.38%, 52.10% 99.72%, 51.06% 99.93%, 50.00% 100.00%, 48.94% 99.93%, 47.90% 99.72%, 46.90% 99.38%, 45.95% 98.91%,
+    9.67% 77.96%, 8.79% 77.37%, 7.99% 76.68%, 7.29% 75.88%, 6.70% 75.00%, 6.23% 74.05%, 5.89% 73.04%, 5.69% 72.01%, 5.62% 70.95%,
+    5.62% 29.05%, 5.69% 27.99%, 5.89% 26.96%, 6.23% 25.95%, 6.70% 25.00%, 7.29% 24.12%, 7.99% 23.32%, 8.79% 22.63%, 9.67% 22.04%
+  );
 }
 
 .pfp-art-box img {
@@ -522,18 +534,60 @@ body {
   display: block;
 }
 
-.verychat-badge-floating {
-  position: absolute;
-  bottom: 4px;
-  right: 4px;
-  background: linear-gradient(135deg, #ff4d6d, #e11d48);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 900;
-  padding: 3px 8px;
+.verychat-profile-pills {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.vc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
   border-radius: 999px;
-  border: 2px solid var(--bg-deep);
-  box-shadow: 0 4px 12px rgba(255, 77, 109, 0.5);
+  font-size: 10.5px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.vc-pill-kyc {
+  background: rgba(255, 107, 107, 0.14);
+  color: #ff7b7b;
+  border: 1px solid rgba(255, 107, 107, 0.22);
+}
+
+.vc-pill-nft {
+  background: rgba(129, 140, 248, 0.15);
+  color: #93a3ff;
+  border: 1px solid rgba(129, 140, 248, 0.24);
+}
+
+.vc-star-v {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  font-size: 8.5px;
+  font-weight: 900;
+  color: #fff;
+  background: #ff6b6b;
+}
+
+.vc-pill-nft .vc-star-v {
+  background: #7c83ff;
+}
+
+.vc-star-v.inline-v {
+  width: 15px;
+  height: 15px;
+  font-size: 9px;
+  background: linear-gradient(135deg, #ff6b6b, #c084fc);
+  vertical-align: middle;
+  margin-left: 3px;
 }
 
 .pfp-mock-chat {
@@ -554,33 +608,25 @@ body {
 
 .mini-pfp-wrap {
   position: relative;
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   flex-shrink: 0;
 }
 
 .mini-pfp-wrap img {
   width: 100%;
   height: 100%;
-  border-radius: 10px;
-  border: 1.5px solid var(--accent-very);
-}
-
-.mini-v-dot {
-  position: absolute;
-  bottom: -2px;
-  right: -2px;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--accent-very);
-  color: #fff;
-  font-size: 8px;
-  font-weight: 900;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1.5px solid var(--bg-deep);
+  object-fit: cover;
+  display: block;
+  border: none;
+  clip-path: polygon(
+    45.95% 1.09%, 46.90% 0.62%, 47.90% 0.28%, 48.94% 0.07%, 50.00% 0.00%, 51.06% 0.07%, 52.10% 0.28%, 53.10% 0.62%, 54.05% 1.09%,
+    90.33% 22.04%, 91.21% 22.63%, 92.01% 23.32%, 92.71% 24.12%, 93.30% 25.00%, 93.77% 25.95%, 94.11% 26.96%, 94.31% 27.99%, 94.38% 29.05%,
+    94.38% 70.95%, 94.31% 72.01%, 94.11% 73.04%, 93.77% 74.05%, 93.30% 75.00%, 92.71% 75.88%, 92.01% 76.68%, 91.21% 77.37%, 90.33% 77.96%,
+    54.05% 98.91%, 53.10% 99.38%, 52.10% 99.72%, 51.06% 99.93%, 50.00% 100.00%, 48.94% 99.93%, 47.90% 99.72%, 46.90% 99.38%, 45.95% 98.91%,
+    9.67% 77.96%, 8.79% 77.37%, 7.99% 76.68%, 7.29% 75.88%, 6.70% 75.00%, 6.23% 74.05%, 5.89% 73.04%, 5.69% 72.01%, 5.62% 70.95%,
+    5.62% 29.05%, 5.69% 27.99%, 5.89% 26.96%, 6.23% 25.95%, 6.70% 25.00%, 7.29% 24.12%, 7.99% 23.32%, 8.79% 22.63%, 9.67% 22.04%
+  );
 }
 
 .sim-user-meta {
@@ -598,7 +644,7 @@ body {
 
 .sim-user-badge {
   font-size: 11px;
-  color: var(--accent-very);
+  color: var(--text-secondary);
   font-weight: 700;
 }
 
