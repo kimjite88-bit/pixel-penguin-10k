@@ -1149,7 +1149,7 @@ function renderSpecialsGrid(specials) {
       <div class="nft-thumb-wrap">
         <img src="${sp.fast_gif_url}" alt="${escapeHtml(sp.title)}" class="pixelated" loading="lazy" />
         <div class="card-top-badges">
-          <span class="tier-pill tier-Mythic">MYTHIC</span>
+          <span class="tier-pill tier-등급없음">등급없음</span>
           <span class="rank-pill">Rank #${sp.rarity_rank}</span>
         </div>
       </div>
@@ -1482,7 +1482,7 @@ function buildSubmissionModal() {
   const container = document.getElementById('submission-rows-container');
   if (!container) return;
 
-  const siteUrl = window.location.origin;
+  const siteUrl = 'https://ppeng.verycloud.io';
   const storyEn = document.getElementById('story-en-text')?.textContent.trim() || '';
   const storyKo = document.getElementById('story-ko-text')?.textContent.trim() || '';
 
@@ -1580,10 +1580,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Update official website display
+  const canonicalUrl = 'https://ppeng.verycloud.io';
   const urlDisplay = document.getElementById('official-url-display');
   const globeLink = document.getElementById('official-globe-link');
-  if (urlDisplay) urlDisplay.textContent = window.location.origin;
-  if (globeLink) globeLink.href = window.location.origin;
+  if (urlDisplay) urlDisplay.textContent = canonicalUrl;
+  if (globeLink) globeLink.href = canonicalUrl;
 
   // Modal Close Events
   document.getElementById('close-token-modal')?.addEventListener('click', closeTokenModal);

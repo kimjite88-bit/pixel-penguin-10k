@@ -982,6 +982,7 @@ body {
 .tier-Rare { color: var(--tier-rare); border-color: rgba(56, 189, 248, 0.5); }
 .tier-Uncommon { color: var(--tier-uncommon); border-color: rgba(52, 211, 153, 0.5); }
 .tier-Common { color: var(--tier-common); border-color: rgba(148, 163, 184, 0.35); }
+.tier-등급없음, .tier-Unranked { color: #cbd5e1; border-color: rgba(203, 213, 225, 0.45); }
 
 .rank-pill {
   font-size: 10.5px;

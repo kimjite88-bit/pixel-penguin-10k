@@ -42,6 +42,7 @@ const TIER_RANK_WEIGHT = {
   Rare: 3,
   Uncommon: 2,
   Common: 1,
+  등급없음: 0,
 };
 
 function loadCollectionData() {
