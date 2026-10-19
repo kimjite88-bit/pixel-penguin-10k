@@ -42,19 +42,19 @@ const CURATED_BEAUTY_14 = [
     id: 'P04442',
     isSpecial: false,
     isLogo: true,
-    tier: 'Mythic',
+    tier: 'Common',
     rank: 9811,
     score: '87.1',
     shortKo: '대표 로고',
     shortEn: 'Official Logo',
     titleKo: '#4442 공식 대표 로고 — Pixel Penguin #4442 (P04442)',
     titleEn: '#4442 Official Collection Logo — Pixel Penguin #4442',
-    themeKo: 'Glacier Sky (Blue) · Classic Blue (A-3) & Pixel Shades',
-    themeEn: 'Glacier Sky (Blue) · Classic Blue (A-3) & Pixel Shades',
+    themeKo: 'Common (#9811) · Glacier Sky & Pixel Shades',
+    themeEn: 'Common (#9811) · Glacier Sky & Pixel Shades',
     noteKo:
-      'PIXEL PENGUIN 10K 공식 대표 로고(P04442)입니다. Glacier Sky (Blue) 배경, Classic Blue (A-3) 스킨, Pixel Shades 선글라스로 구성된 토큰입니다.',
+      '희귀도 순위는 10,000마리 중 9,811등짜리 Common이지만, 파란 하늘에 도트 선글라스 낀 게 제일 정감 가서 당당히 공식 대표 로고로 뽑힌 귀한 자식입니다. 등급 낮아도 이렇게 이쁩니다.',
     noteEn:
-      'Official collection logo of PIXEL PENGUIN 10K (P04442). Features a Classic Blue (A-3) penguin with Pixel Shades on a Glacier Sky (Blue) background.',
+      'Ranked #9,811 out of 10,000 (Common tier), yet chosen as our official collection logo simply because the blue sky and pixel shades look great. Proof that tier means nothing here.',
   },
   {
     edition: 2,
@@ -66,13 +66,13 @@ const CURATED_BEAUTY_14 = [
     shortKo: '천상의 대천사',
     shortEn: 'Archangel',
     titleKo: '#2 천상의 대천사 (Celestial Archangel)',
-    titleEn: '#2 Celestial Archangel (Mythic 1/1)',
-    themeKo: '1-of-1 GIF · Rank #1 · Seraphim Wings & Halo',
-    themeEn: '1-of-1 GIF · Rank #1 · Seraphim Wings & Halo',
+    titleEn: '#2 Celestial Archangel (Mythic)',
+    themeKo: 'Rank #1 · Seraphim Wings & Halo',
+    themeEn: 'Rank #1 · Seraphim Wings & Halo',
     noteKo:
-      '전체 10,000개 중 희귀도 1위(Rank #1 · 60,012.23 pts) 토큰입니다. 골드 배경, 헤일로, 세라핌 날개, 윙크 모션으로 구성되어 있습니다.',
+      '나누라길래 나눈 순위표에서 1등 먹은 자식입니다. 날개 달고 윙크까지 하지만, 1등이라고 해서 돈 드리거나 뭐 더 챙겨드리는 거 일절 없습니다. 그냥 눈이 호강하는 프사용입니다.',
     noteEn:
-      'Ranked #1 out of 10,000 tokens (60,012.23 pts). 1-of-1 GIF featuring Celestial Azure skin, Radiant Golden Halo, and Seraphim White Wings.',
+      'Ranked #1 on the rarity chart with wings and a wink—though being #1 still gives you zero extra money or perks. Strictly a cute PFP.',
   },
   {
     edition: 5,
@@ -84,13 +84,13 @@ const CURATED_BEAUTY_14 = [
     shortKo: '빙하의 제왕',
     shortEn: 'Glacier King',
     titleKo: '#5 빙하의 제왕 (Glacier Emperor)',
-    titleEn: '#5 Glacier Emperor (Mythic 1/1)',
-    themeKo: '1-of-1 GIF · Rank #3 · Ice Crystal Crown',
-    themeEn: '1-of-1 GIF · Rank #3 · Ice Crystal Crown',
+    titleEn: '#5 Glacier Emperor (Mythic)',
+    themeKo: 'Rank #3 · Ice Crystal Crown',
+    themeEn: 'Rank #3 · Ice Crystal Crown',
     noteKo:
-      '희귀도 3위(Rank #3 · 60,007.14 pts) 토큰입니다. 오로라 빙하 배경, 얼음 결정 왕관, 모피 망토, 눈보라 파티클로 구성되어 있습니다.',
+      '얼음 왕관에 털망토까지 두른 겨울 컨셉 자식입니다. 이름은 거창하게 빙하의 제왕인데, 사신다고 얼음 한 조각 드리는 거 없습니다. 순수 프사용입니다.',
     noteEn:
-      'Ranked #3 overall (60,007.14 pts). 1-of-1 GIF with Aurora Glacier Palace background, Glacier Ice Crystal Crown, and Frost Flurry.',
+      'Dressed like an ice king with a crystal crown and fur cape. Despite the grand name, owning it grants zero perks—just a cool winter PFP.',
   },
   {
     edition: 6,
@@ -102,13 +102,13 @@ const CURATED_BEAUTY_14 = [
     shortKo: '심해의 지배자',
     shortEn: 'Abyssal Ruler',
     titleKo: '#6 심해의 지배자 (Abyssal Sea Ruler)',
-    titleEn: '#6 Abyssal Sea Ruler (Mythic 1/1)',
-    themeKo: '1-of-1 GIF · Rank #4 · Jellyfish & Coral Crown',
-    themeEn: '1-of-1 GIF · Rank #4 · Jellyfish & Coral Crown',
+    titleEn: '#6 Abyssal Sea Ruler (Mythic)',
+    themeKo: 'Rank #4 · Jellyfish & Coral Crown',
+    themeEn: 'Rank #4 · Jellyfish & Coral Crown',
     noteKo:
-      '희귀도 4위(Rank #4 · 60,007.14 pts) 토큰입니다. 심해 배경, 해파리 및 물방울 애니메이션, 산호 왕관으로 구성되어 있습니다.',
+      '바닷속에서 해파리랑 물방울 띄워놓고 노는 자식입니다. 색감이 이뻐서 베리챗 어두운 배경에 프사로 걸어두면 꽤 잘 보입니다.',
     noteEn:
-      'Ranked #4 overall (60,007.14 pts). 1-of-1 GIF featuring Bioluminescent Jellyfish & Bubble Tide and Golden Coral Sea Crown.',
+      'Hanging out underwater with glowing jellyfish and bubbles. Pops nicely against VeryChat dark mode as a profile picture.',
   },
   {
     edition: 43,
@@ -119,14 +119,14 @@ const CURATED_BEAUTY_14 = [
     score: '517.67',
     shortKo: '꽃화관 빙어 낚시',
     shortEn: 'Floral Angler',
-    titleKo: '#43 꽃화관 빙어 낚시꾼 (Floral Wreath Angler)',
+    titleKo: '#43 꽃화관 쓰고 빙어 낚는 자식 (Floral Wreath Angler)',
     titleEn: '#43 Floral Wreath Ice Angler (Epic)',
-    themeKo: 'Epic · Rank #187 · Floral Wreath & Arctic Smelt',
-    themeEn: 'Epic · Rank #187 · Floral Wreath & Arctic Smelt',
+    themeKo: 'Epic · Floral Wreath & Arctic Smelt',
+    themeEn: 'Epic · Floral Wreath & Arctic Smelt',
     noteKo:
-      'Epic 등급(Rank #187 · 517.67 pts) 제너레이티브 토큰입니다. 꽃화관(Floral Wreath), 얼음 낚싯대(Fishing Rod & Ice Catch), 북극 빙어(Caught Arctic Smelt) 파츠 조합입니다.',
+      '머리에 꽃화관 얹고 낚싯대에 빙어까지 물고 있는 알짜배기 자식입니다. 꼭 1등짜리 아니어도 이렇게 조합 이쁘게 뽑힌 애들이 수두룩합니다.',
     noteEn:
-      'Epic generative token (Rank #187 · 517.67 pts) equipped with Floral Wreath, Fishing Rod & Ice Catch, and Caught Arctic Smelt.',
+      'Wearing a floral wreath while catching an arctic smelt. Proof that you do not need a #1 rank to get an adorable combination.',
   },
   {
     edition: 963,
@@ -135,16 +135,16 @@ const CURATED_BEAUTY_14 = [
     tier: 'Legendary',
     rank: 12,
     score: '1,914.93',
-    shortKo: '여우 원지 (#1 Gen)',
-    shortEn: 'Fox Onesie #1',
-    titleKo: '#963 여우 원지 펭귄 (Fox Onesie · 제너레이티브 1위)',
-    titleEn: '#963 Fox Onesie Penguin (Rank #12)',
-    themeKo: 'Legendary · Rank #12 · Fox Onesie & Solar Ember',
-    themeEn: 'Legendary · Rank #12 · Fox Onesie & Solar Ember',
+    shortKo: '여우 잠옷 펭귄',
+    shortEn: 'Fox Onesie',
+    titleKo: '#963 여우 잠옷 입고 윙크하는 자식 (Fox Onesie)',
+    titleEn: '#963 Fox Onesie Penguin (Legendary)',
+    themeKo: 'Legendary · Fox Onesie & Wink',
+    themeEn: 'Legendary · Fox Onesie & Wink',
     noteKo:
-      '제너레이티브 9,989개 중 희귀도 1위(전체 Rank #12 · 1,914.93 pts) 토큰입니다. Reef Shallows 배경, Chrome 스킨, Fox Onesie, Solar Ember 오라 조합입니다.',
+      '펭귄인데 여우 후드 잠옷(Fox Onesie) 뒤집어쓰고 윙크하는 귀여운 자식입니다. 기본 도트 펭귄들 중에서는 희귀도 점수가 제일 높게 나왔는데, 역시나 뭐 주는 건 없습니다.',
     noteEn:
-      'Highest-ranked generative penguin (Rank #12 overall · 1,914.93 pts). Chrome Penguin with Fox Onesie, Wink, and Solar Ember Aura.',
+      'A penguin wearing a fox onesie and winking. Highest rarity score among the static 48×48 penguins, though it still gives zero perks.',
   },
   {
     edition: 6522,
@@ -153,16 +153,16 @@ const CURATED_BEAUTY_14 = [
     tier: 'Uncommon',
     rank: 15,
     score: '1,839.98',
-    shortKo: '게코 후드 원지',
+    shortKo: '게코 후드 펭귄',
     shortEn: 'Gecko Onesie',
-    titleKo: '#6522 드림글로우 게코 후드 원지 (Gecko Onesie)',
-    titleEn: '#6522 Dreamglow Gecko Onesie (Rank #15)',
-    themeKo: 'Rank #15 · Dreamglow Penguin & Gecko Onesie',
-    themeEn: 'Rank #15 · Dreamglow Penguin & Gecko Onesie',
+    titleKo: '#6522 도마뱀 후드 뒤집어쓴 자식 (Gecko Onesie)',
+    titleEn: '#6522 Dreamglow Gecko Onesie (Uncommon)',
+    themeKo: 'Uncommon · Dreamglow & Gecko Onesie',
+    themeEn: 'Uncommon · Dreamglow & Gecko Onesie',
     noteKo:
-      '전체 희귀도 순위 15위(1,839.98 pts) 제너레이티브 토큰입니다. Krill Peach 배경, Dreamglow 스킨, Gecko Onesie(후드 일체형 의상), Happy Arches 눈 파츠로 구성되어 있습니다.',
+      '등급은 Uncommon인데 희귀한 스킨이랑 초록 도마뱀 후드가 겹쳐서 점수가 높게 나온 특이한 자식입니다. 눈웃음 짓고 있어서 프사로 쓰기 딱 좋습니다.',
     noteEn:
-      'Ranked #15 overall (1,839.98 pts). Features Krill Peach background, Dreamglow Penguin skin, Gecko Onesie (hood up), and Happy Arches eyes.',
+      'Labeled Uncommon tier but scored high thanks to its Dreamglow skin and Gecko Onesie hood. Smiling eyes make it a great PFP.',
   },
   {
     edition: 1,
@@ -174,13 +174,13 @@ const CURATED_BEAUTY_14 = [
     shortKo: 'GO 제우스',
     shortEn: 'GO Zeus',
     titleKo: '#1 GO 제우스 (Olympian Thunder God)',
-    titleEn: '#1 GO Zeus (Mythic 1/1)',
-    themeKo: '1-of-1 GIF · Rank #7 · Lightning Laurel Crown',
-    themeEn: '1-of-1 GIF · Rank #7 · Lightning Laurel Crown',
+    titleEn: '#1 GO Zeus (Mythic)',
+    themeKo: 'Token #1 · Lightning Laurel Crown',
+    themeEn: 'Token #1 · Lightning Laurel Crown',
     noteKo:
-      '컬렉션 1번 토큰(P00001 · Rank #7)입니다. 번개 이펙트 배경, 월계관, 골드림 스퀘어 안경, GO 망토 파츠로 구성되어 있습니다.',
+      '기념비적인 1번 자식(P00001)입니다. 뒤에 번개 치고 금테 안경에 월계관까지 썼지만, 1번이라고 해서 에어드랍 같은 거 기대하시면 곤란합니다.',
     noteEn:
-      'Token #1 of PIXEL PENGUIN 10K (Rank #7). 1-of-1 GIF with Olympian Thunderbolt Storm, Golden Laurel Crown, and Gold-Rim Glasses.',
+      'Token #1 of the collection with lightning and gold-rim glasses. Being #1 still means zero airdrops or financial promises.',
   },
   {
     edition: 7,
@@ -192,13 +192,13 @@ const CURATED_BEAUTY_14 = [
     shortKo: '시공간의 지배자',
     shortEn: 'Chronos Ruler',
     titleKo: '#7 시공간의 지배자 (Chronos Time-Space Ruler)',
-    titleEn: '#7 Chronos Time-Space Ruler (Mythic 1/1)',
-    themeKo: '1-of-1 GIF · Rank #5 · Clockwork & Heterochromia',
-    themeEn: '1-of-1 GIF · Rank #5 · Clockwork & Heterochromia',
+    titleEn: '#7 Chronos Time-Space Ruler (Mythic)',
+    themeKo: 'Rank #5 · Clockwork & Heterochromia',
+    themeEn: 'Rank #5 · Clockwork & Heterochromia',
     noteKo:
-      '희귀도 5위(Rank #5 · 60,007.14 pts) 토큰입니다. 시계탑 기어 배경, 에메랄드/골드 오드아이(Heterochromia), 모래시계 망토 조합입니다.',
+      '양쪽 눈 색깔 다른 오드아이에 시계 태엽 돌아가는 자식입니다. 중2병 감성 좋아하는 분들이 베리챗 프사로 달면 딱입니다.',
     noteEn:
-      'Ranked #5 overall (60,007.14 pts). 1-of-1 GIF featuring Clockwork Sanctum gears and Emerald/Gold Heterochromia eyes.',
+      'Features heterochromia eyes and spinning clockwork gears. Ideal if you enjoy a dramatic chuni-style VeryChat PFP.',
   },
   {
     edition: 9,
@@ -210,13 +210,13 @@ const CURATED_BEAUTY_14 = [
     shortKo: '사이버 네온 군주',
     shortEn: 'Cyber Overlord',
     titleKo: '#9 사이버 네온 군주 (Cyber Neon Overlord)',
-    titleEn: '#9 Cyber Neon Overlord (Mythic 1/1)',
-    themeKo: '1-of-1 GIF · Rank #2 · Holo-Spectrum Visor',
-    themeEn: '1-of-1 GIF · Rank #2 · Holo-Spectrum Visor',
+    titleEn: '#9 Cyber Neon Overlord (Mythic)',
+    themeKo: 'Rank #2 · Holo-Spectrum Visor',
+    themeEn: 'Rank #2 · Holo-Spectrum Visor',
     noteKo:
-      '희귀도 2위(Rank #2 · 60,010.33 pts) 토큰입니다. 사이버펑크 네온 시티 배경, 홀로그램 바이저, 네온 크리스탈 크라운 조합입니다.',
+      '네온사인 번쩍거리는 사이버펑크 바이저 낀 자식입니다. 밤에 채팅방에서 눈에 잘 띄라고 형광색 도트 아낌없이 찍었습니다.',
     noteEn:
-      'Ranked #2 overall (60,010.33 pts). 1-of-1 GIF with Cyberpunk Neon Metropolis, Holo-Spectrum Visor, and Neon Crystal Crown.',
+      'Sporting a holo-spectrum visor in a neon city so your profile picture stands out clearly in late-night chat rooms.',
   },
   {
     edition: 500,
@@ -227,14 +227,14 @@ const CURATED_BEAUTY_14 = [
     score: '932.31',
     shortKo: '크리스탈 나이트',
     shortEn: 'Crystal Knight',
-    titleKo: '#500 크리스탈 나이트 헬멧 & 프로스트 스태프 (Crystal Knight)',
-    titleEn: '#500 Crystal Knight Helmet & Frost Staff (Mythic)',
-    themeKo: 'Mythic · Rank #46 · Crystal Helmet & Frost Staff',
-    themeEn: 'Mythic · Rank #46 · Crystal Helmet & Frost Staff',
+    titleKo: '#500 투구 쓰고 비눗방울 부는 자식 (Crystal Knight)',
+    titleEn: '#500 Crystal Knight Helmet & Bubble Pipe',
+    themeKo: 'Mythic · Crystal Helmet & Bubble Pipe',
+    themeEn: 'Mythic · Crystal Helmet & Bubble Pipe',
     noteKo:
-      'Mythic 등급(Rank #46 · 932.31 pts) 제너레이티브 토큰입니다. Krill Peach 배경, Ember 스킨, Crystal Knight Helmet, Frost Staff, Seashell Bubble Pipe 조합입니다.',
+      '비장하게 기사 투구랑 지팡이 들어놓고 입에는 조개 비눗방울 파이프 물고 있는 하찮고 귀여운 자식입니다.',
     noteEn:
-      'Generative Mythic token (Rank #46 · 932.31 pts) featuring Ember Penguin, Crystal Knight Helmet, Frost Staff, and Seashell Bubble Pipe.',
+      'Wearing a serious knight helmet and frost staff while blowing bubbles from a seashell pipe—goofy and cute.',
   },
   {
     edition: 75,
@@ -243,16 +243,16 @@ const CURATED_BEAUTY_14 = [
     tier: 'Legendary',
     rank: 162,
     score: '550.29',
-    shortKo: '썬더볼트 빙하 왕관',
-    shortEn: 'Glacier Crown',
-    titleKo: '#75 썬더볼트 빙하 왕관 & 바시티 자켓 (Glacier Crown)',
-    titleEn: '#75 Thunderbolt Glacier Iceberg Crown (Legendary)',
-    themeKo: 'Legendary · Rank #162 · Glacier Crown & Varsity Jacket',
-    themeEn: 'Legendary · Rank #162 · Glacier Crown & Varsity Jacket',
+    shortKo: '빙하 왕관 과잠',
+    shortEn: 'Glacier Varsity',
+    titleKo: '#75 용암 동굴에서 과잠 입은 자식 (Glacier Crown)',
+    titleEn: '#75 Glacier Crown & Varsity Jacket',
+    themeKo: 'Legendary · Glacier Crown & Varsity Jacket',
+    themeEn: 'Legendary · Glacier Crown & Varsity Jacket',
     noteKo:
-      'Legendary 등급(Rank #162 · 550.29 pts) 토큰입니다. Lava Cave 배경, Dreamglow 스킨, Glacier Iceberg Crown, Blue Varsity Jacket, Thunderbolt Static 오라 조합입니다.',
+      '뜨거운 용암 동굴 배경에 얼음 왕관 쓰고 파란 과잠(Varsity Jacket) 입은 청개구리 같은 자식입니다.',
     noteEn:
-      'Legendary token (Rank #162 · 550.29 pts) with Dreamglow Penguin, Glacier Iceberg Crown, Blue Varsity Jacket, and Thunderbolt Static Aura.',
+      'Wearing an ice crown and blue varsity jacket inside a hot lava cave—a delightfully contradictory penguin.',
   },
   {
     edition: 192,
@@ -261,16 +261,16 @@ const CURATED_BEAUTY_14 = [
     tier: 'Rare',
     rank: 7788,
     score: '146.63',
-    shortKo: '극지 탐험가 우샨카',
+    shortKo: '군밤장수 털모자',
     shortEn: 'Polar Ushanka',
-    titleKo: '#192 극지 탐험가 우샨카 & 민트 코코아 (Polar Ushanka)',
-    titleEn: '#192 Polar Explorer Ushanka & Cocoa Penguin (Rare)',
-    themeKo: 'Rare · Kelp Mint · Polar Explorer Ushanka',
-    themeEn: 'Rare · Kelp Mint · Polar Explorer Ushanka',
+    titleKo: '#192 민트 배경에 털모자 쓴 초코 펭귄 (Polar Ushanka)',
+    titleEn: '#192 Polar Ushanka & Cocoa Penguin (Rare)',
+    themeKo: 'Rare · Kelp Mint · Polar Ushanka',
+    themeEn: 'Rare · Kelp Mint · Polar Ushanka',
     noteKo:
-      'Rare 등급(146.63 pts) 토큰입니다. Kelp Mint 배경, Cocoa 스킨, Polar Explorer Ushanka 모자, Blue Polo 의상으로 구성된 깔끔한 조합입니다.',
+      '희귀도 순위는 7,788등이지만 민트색 배경에 코코아 색 깃털이랑 털모자 조합이 아주 기가 막히게 귀여운 자식입니다.',
     noteEn:
-      'Rare token (146.63 pts) featuring Kelp Mint background, Cocoa Penguin skin, Polar Explorer Ushanka hat, and Blue Polo.',
+      'Ranked #7,788, but the mint background, cocoa feathers, and plush ushanka hat make it ridiculously cute.',
   },
   {
     edition: 21,
@@ -279,16 +279,16 @@ const CURATED_BEAUTY_14 = [
     tier: 'Rare',
     rank: 6885,
     score: '162.54',
-    shortKo: '핑크 빙어 캐처',
+    shortKo: '핑크 비니 빙어',
     shortEn: 'Pink Smelt Catch',
-    titleKo: '#21 오키드 핑크 & 그린 비니 빙어 캐처 (Pink Smelt Catcher)',
-    titleEn: '#21 Orchid Pink & Green Beanie Smelt Catcher (Rare)',
-    themeKo: 'Rare · Orchid Pink · Green Beanie & Arctic Smelt',
-    themeEn: 'Rare · Orchid Pink · Green Beanie & Arctic Smelt',
+    titleKo: '#21 핑크 배경에 초록 비니 쓰고 빙어 문 자식',
+    titleEn: '#21 Orchid Pink & Green Beanie Smelt Catcher',
+    themeKo: 'Rare · Orchid Pink · Green Beanie',
+    themeEn: 'Rare · Orchid Pink · Green Beanie',
     noteKo:
-      'Rare 등급(162.54 pts) 토큰입니다. Orchid Pink 배경, Rose Penguin 스킨, Green Beanie 모자, Caught Arctic Smelt(북극 빙어) 소품 조합입니다.',
+      '분홍색 배경에 초록 비니 쓰고 입에 빙어 한 마리 야무지게 물고 있는 귀한 자식입니다. 프사로 해두면 볼 때마다 기분 좋아집니다.',
     noteEn:
-      'Rare token (162.54 pts) with Orchid Pink background, Rose Penguin skin, Green Beanie, and Caught Arctic Smelt.',
+      'Pink penguin in a green beanie holding a freshly caught smelt in its beak—guaranteed to brighten up your profile.',
   },
 ];
 
@@ -1233,8 +1233,8 @@ async function fetchExplorerTokens() {
     if (countEl) {
       countEl.innerHTML =
         CURRENT_LANG === 'ko'
-          ? `총 <strong>${data.total.toLocaleString()}</strong>개 픽셀 펭귄 검색됨 (페이지 ${data.page} / ${TOTAL_PAGES})`
-          : `Showing <strong>${data.total.toLocaleString()}</strong> Pixel Penguins (Page ${data.page} of ${TOTAL_PAGES})`;
+          ? `총 <strong>${data.total.toLocaleString()}</strong>마리 귀한 자식들 검색됨 (페이지 ${data.page} / ${TOTAL_PAGES})`
+          : `Showing <strong>${data.total.toLocaleString()}</strong> Precious Penguins (Page ${data.page} of ${TOTAL_PAGES})`;
     }
 
     document.getElementById('page-indicator').textContent = `${data.page} / ${TOTAL_PAGES}`;
@@ -1428,35 +1428,37 @@ async function openTokenModal(tokenNum) {
       <div>
         <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:8px;">
           <span class="tier-pill tier-${tok.tier}">${tok.tier}</span>
-          <span class="pill-tag">rarity.tools Rank #${tok.rarity_rank.toLocaleString()} / 10,000</span>
+          <span class="pill-tag">Rank #${tok.rarity_rank.toLocaleString()} / 10,000</span>
           <span class="pill-tag gold">Mint Price: 100 VERY</span>
         </div>
 
         <h2 id="modal-token-title" style="font-size:24px; font-weight:900; margin-bottom:6px;">${escapeHtml(tok.name)}</h2>
-        <p style="font-size:13.5px; color:var(--text-secondary); margin-bottom:14px;">${escapeHtml(tok.description)}</p>
+        <p style="font-size:13.5px; color:var(--text-secondary); margin-bottom:14px;">
+          VERY CHAT 고인물 @happy Ahndoge가 빚은 10,000마리 중 ${tok.edition}번째로 태어난 귀한 자식입니다. 등급(${tok.tier})이나 순위(#${tok.rarity_rank.toLocaleString()})가 높든 낮든 사신다고 돈 드리거나 뭐 해드리는 거 일절 없으며, 철저히 베리챗 프사(Verified PFP) 전용입니다.
+        </p>
 
         <div class="spec-rows-stack" style="margin-bottom:14px;">
           <div class="spec-row" style="padding:10px 14px;">
-            <span class="spec-label">Token ID / Edition</span>
+            <span class="spec-label">번호 (Token ID / Edition)</span>
             <span class="spec-value">${tok.id} (#${tok.edition} / 10,000)</span>
           </div>
           <div class="spec-row" style="padding:10px 14px;">
-            <span class="spec-label">rarity.tools Rarity Score</span>
-            <span class="spec-value ice">${tok.rarity_score.toLocaleString()} pts (Rank #${tok.rarity_rank.toLocaleString()})</span>
+            <span class="spec-label">나누라길래 매긴 점수 (Rarity Score)</span>
+            <span class="spec-value ice">${tok.rarity_score.toLocaleString()} pts (Rank #${tok.rarity_rank.toLocaleString()} · 점수 높다고 뭐 안 줌)</span>
           </div>
           <div class="spec-row" style="padding:10px 14px;">
-            <span class="spec-label">Active Optional Traits Count</span>
+            <span class="spec-label">장착한 옵션 파츠 수</span>
             <span class="spec-value">${tok.active_trait_stat.active_count}개 장착 (+${tok.active_trait_stat.score} pts · ${tok.active_trait_stat.pct}%)</span>
           </div>
         </div>
 
-        <h4 style="font-size:14px; font-weight:800; margin-bottom:6px;">9대 카테고리 파츠 구성 및 개별 희귀도 점수 (클릭 시 동일 파츠 필터)</h4>
+        <h4 style="font-size:14px; font-weight:800; margin-bottom:6px;">9가지 파츠 차림새 (누르면 같은 파츠 낀 자식들만 모아봄)</h4>
         <div class="trait-breakdown-list">
           ${traitsHtml}
         </div>
 
         <div class="hash-box">
-          <div><strong>[FQL Cryptographic Provenance]</strong></div>
+          <div><strong>[쌍둥이 없음 증명 해시 (SHA-256)]</strong></div>
           <div>Native 48×48 SHA-256 (prefix): ${tok.hashes.native_sha16}...</div>
           <div>Final Image SHA-256 (prefix):  ${tok.hashes.image_sha16}...</div>
           <div>Metadata JSON SHA-256 (prefix): ${tok.hashes.json_sha16}...</div>
