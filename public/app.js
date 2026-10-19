@@ -489,14 +489,14 @@ function ensureHero2DSprite() {
   img.onload = () => {
     MOTION_STATE.hero2DLoaded = true;
   };
-  img.src = '/assets/motion_sprites/hero_2d.png?v=4.9.0';
+  img.src = '/assets/motion_sprites/hero_2d.png?v=4.9.3';
   MOTION_STATE.hero2DImg = img;
 
   const sheet = new Image();
   sheet.onload = () => {
     MOTION_STATE.hero2DSheetLoaded = true;
   };
-  sheet.src = '/assets/motion_sprites/hero_2d_sheet.png?v=4.9.0';
+  sheet.src = '/assets/motion_sprites/hero_2d_sheet.png?v=4.9.3';
   MOTION_STATE.hero2DSheet = sheet;
   return img;
 }
@@ -532,14 +532,14 @@ function ensureSpeciesSprite(spId = '01') {
     entry.img = img;
     entry.loaded = true;
   };
-  img.src = `/assets/motion_sprites/sp_${key}.png?v=4.9.0`;
+  img.src = `/assets/motion_sprites/sp_${key}.png?v=4.9.3`;
 
   const sheet = new Image();
   sheet.onload = () => {
     entry.sheet = sheet;
     entry.sheetLoaded = true;
   };
-  sheet.src = `/assets/motion_sprites/sp_${key}_sheet.png?v=4.9.0`;
+  sheet.src = `/assets/motion_sprites/sp_${key}_sheet.png?v=4.9.3`;
   return entry;
 }
 
@@ -587,8 +587,22 @@ function selectMotionPenguin() {
   ['01', '04', '05', '06', '09', '15'].forEach((id) => ensureSpeciesSprite(id));
 }
 
-// Helper: Compute Eye-Blink & 4-Step Walk Frame Index (0:idle, 1:blink, 2:walkL, 3:walkR, 4:walkLBlink, 5:walkRBlink)
-function getPenguinAnimState(now, seed = 0, isWalking = true, forceBlink = false) {
+// Helper: Compute Eye-Blink, 4-Step Walk & Shocked Frame Index (0:idle, 1:blink, 2:walkL, 3:walkR, 4:walkLBlink, 5:walkRBlink, 6:shock)
+function getPenguinAnimState(
+  now,
+  seed = 0,
+  isWalking = true,
+  forceBlink = false,
+  isShocked = false
+) {
+  if (isShocked) {
+    return {
+      frameIdx: 6,
+      stepBobY: 0,
+      waddleRot: 0,
+    };
+  }
+
   // Periodic natural eye blink: blinks every ~1800ms for 210ms, plus occasional double blink
   const blinkCycle = (now + seed * 470) % 1850;
   const isBlinking =
@@ -627,7 +641,7 @@ function getPenguinAnimState(now, seed = 0, isWalking = true, forceBlink = false
   return { frameIdx, stepBobY, waddleRot };
 }
 
-// Helper: Draw the Uploaded 2D Full-Body Hero Penguin (hero_2d_sheet.png) with Eye Blink & Alternating Walk Feet
+// Helper: Draw the Uploaded 2D Full-Body Hero Penguin (hero_2d_sheet.png) with Eye Blink, Walk Feet & Shock Expression
 function drawUploaded2DPenguin(
   ctx,
   cx,
@@ -637,10 +651,11 @@ function drawUploaded2DPenguin(
   scaleX = 1,
   scaleY = 1,
   now = 0,
-  isWalking = true
+  isWalking = true,
+  isShocked = false
 ) {
   const img = ensureHero2DSprite();
-  const anim = getPenguinAnimState(now, 0, isWalking);
+  const anim = getPenguinAnimState(now, 0, isWalking, false, isShocked);
   ctx.save();
   ctx.translate(cx, cy + anim.stepBobY);
   ctx.rotate(angleRad + anim.waddleRot);
@@ -1443,14 +1458,14 @@ function initPixelMotionStudio() {
       const pitCenterX = 744;
       drawScene1Background(ctx, now);
 
-      const slipStartP = 0.35;
-      const scanStartP = 0.54;
+      const slipStartP = 0.32;
+      const scanStartP = 0.56;
 
       // Banana Peel on the Snow Cliff Edge (x = 532, y = 355)
       if (p < slipStartP) {
         drawCartoonBananaPeel(ctx, 532, 355, 0, 1.05);
       } else if (p < 0.72) {
-        const flyP = Math.min(1, (p - slipStartP) / 0.32);
+        const flyP = Math.min(1, (p - slipStartP) / 0.34);
         const bx = 532 - flyP * 125;
         const by = 350 - Math.sin(flyP * Math.PI) * 145;
         drawCartoonBananaPeel(ctx, bx, by, flyP * Math.PI * 5, 1.08);
@@ -1504,23 +1519,65 @@ function initPixelMotionStudio() {
             : 'Before Pixel World, our smooth 2D blue penguin waddles and blinks happily along the snowy cliff...'
         );
       } else if (p < scanStartP) {
-        // Phase B: Banana Slip & High Arc into the Pixel Portal Chasm
+        // Phase B: Banana Slip Shock & High Arc into the Pixel Portal Chasm
         const subP = (p - slipStartP) / (scanStartP - slipStartP);
-        pengX = 524 + subP * (pitCenterX - 524);
-        pengY = 286 - Math.sin(subP * Math.PI) * 112 - subP * 14;
-        pengRot = subP * Math.PI * 2.0;
-        scaleX = 1.05;
-        scaleY = 0.95;
+        if (subP < 0.48) {
+          // Rear back in shock right as he steps on the banana peel so the shocked face (O_O) is crystal clear!
+          const shockP = subP / 0.48;
+          pengX = 524 + shockP * 42 + Math.sin(now * 0.09) * 2.5;
+          pengY = 284 - Math.sin(shockP * Math.PI * 0.5) * 36;
+          pengRot = -0.22 - shockP * 0.16;
+          scaleX = 0.95;
+          scaleY = 1.07;
+        } else {
+          // Launch from the banana peel and tumble into the Pixel Portal Chasm
+          const fallP = (subP - 0.48) / 0.52;
+          pengX = 566 + fallP * (pitCenterX - 566);
+          pengY = 248 - Math.sin(fallP * Math.PI) * 82 + fallP * 26;
+          pengRot = -0.38 + fallP * Math.PI * 1.65;
+          scaleX = 1.04;
+          scaleY = 0.96;
+        }
 
         if (subP < 0.72) {
           drawComicStarburst(ctx, 534, 342, 18, 38, 10, '#fde047', '#e11d48', now * 0.006);
         }
 
-        drawUploaded2DPenguin(ctx, pengX, pengY, spriteSize, pengRot, scaleX, scaleY, now, false);
+        drawUploaded2DPenguin(
+          ctx,
+          pengX,
+          pengY,
+          spriteSize,
+          pengRot,
+          scaleX,
+          scaleY,
+          now,
+          false,
+          true
+        );
+
+        // Comic shock radiate lines above the penguin's head during the banana slip
+        if (subP < 0.56) {
+          ctx.save();
+          ctx.strokeStyle = '#fde047';
+          ctx.lineWidth = 3.5;
+          ctx.lineCap = 'round';
+          for (let k = -2; k <= 2; k++) {
+            const ang = -Math.PI / 2 + k * 0.34 + pengRot * 0.5;
+            const r1 = spriteSize * 0.48;
+            const r2 = spriteSize * 0.6;
+            ctx.beginPath();
+            ctx.moveTo(pengX + Math.cos(ang) * r1, pengY - 8 + Math.sin(ang) * r1);
+            ctx.lineTo(pengX + Math.cos(ang) * r2, pengY - 8 + Math.sin(ang) * r2);
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+
         drawRetroSpeechBubble(
           ctx,
           Math.min(790, pengX),
-          Math.max(68, pengY - 80),
+          Math.max(68, pengY - 88),
           CURRENT_LANG === 'ko'
             ? '어익후?! 웬 바나나야!! 으아아아악~!!'
             : 'WHOA?! A banana peel?! AAAAAAH~!!',
@@ -1532,11 +1589,11 @@ function initPixelMotionStudio() {
           ctx,
           'SCENE 1 · 바나나 미끄덩!',
           CURRENT_LANG === 'ko'
-            ? '어익후?! 눈밭 위의 바나나 껍질을 밟고 미끄러져 신비한 픽셀 차원 균열(구덩이) 속으로 추락한다!'
-            : 'WHOA?! He slips on a banana peel and tumbles headfirst into the glowing Pixel Rift!'
+            ? '어익후?! 눈밭 위의 바나나 껍질을 밟고 화들짝 놀라 픽셀 차원 균열(구덩이) 속으로 추락한다!'
+            : 'WHOA?! Shocked as he slips on a banana peel, he tumbles into the glowing Pixel Rift!'
         );
       } else {
-        // Phase C: Real-Time Holographic Scan-Beam Transformation (2D Blue hero_2d -> 48x48 Blue sp_01!)
+        // Phase C: Real-Time Holographic Scan-Beam Transformation (2D Blue hero_2d -> Pixel Blue sp_01!)
         const subP = (p - scanStartP) / (1 - scanStartP);
         const scanRatio = Math.min(1, subP / 0.78);
         pengX = pitCenterX;
@@ -1544,7 +1601,8 @@ function initPixelMotionStudio() {
 
         const topEdge = pengY - spriteSize / 2;
         const scanY = topEdge + scanRatio * spriteSize;
-        const scanAnim = getPenguinAnimState(now, 1, true);
+        const isScanShocked = scanRatio < 0.82;
+        const scanAnim = getPenguinAnimState(now, 1, true, false, isScanShocked);
 
         // Top Portion (Above Laser Scan Line): Crisp 48x48 BLUE Pixel Penguin (sp_01_sheet.png)
         if (bluePixelPenguin.sheetLoaded && bluePixelPenguin.sheet) {
@@ -1654,10 +1712,14 @@ function initPixelMotionStudio() {
           ctx,
           pengX - 24,
           Math.max(104, topEdge - 6),
-          CURRENT_LANG === 'ko'
-            ? '어어어?! 내 몸이 파란 도트로 변하고 있어!!'
-            : 'Whoa?! I am turning into blue pixels!!',
-          '#38bdf8',
+          isScanShocked
+            ? CURRENT_LANG === 'ko'
+              ? '어어어?! 내 몸이 파란 도트로 변하고 있어!!'
+              : 'Whoa?! I am turning into blue pixels!!'
+            : CURRENT_LANG === 'ko'
+              ? '우와아!! 파란 도트 펭귄으로 변신 완료!!'
+              : 'Woohoo!! Transformed into a Blue Pixel Penguin!!',
+          isScanShocked ? '#38bdf8' : '#34d399',
           now
         );
 
