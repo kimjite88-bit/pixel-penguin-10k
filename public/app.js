@@ -2163,7 +2163,7 @@ function renderSpecialsGrid(specials) {
       <div class="nft-thumb-wrap">
         <img src="${sp.fast_gif_url}" alt="${escapeHtml(sp.title)}" class="pixelated" loading="lazy" />
         <div class="card-top-badges">
-          <span class="tier-pill tier-등급없음">등급없음</span>
+          <span class="tier-pill tier-Mythic">MYTHIC</span>
           <span class="rank-pill">Rank #${sp.rarity_rank}</span>
         </div>
       </div>

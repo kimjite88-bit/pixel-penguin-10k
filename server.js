@@ -42,7 +42,6 @@ const TIER_RANK_WEIGHT = {
   Rare: 3,
   Uncommon: 2,
   Common: 1,
-  등급없음: 0,
 };
 
 function loadCollectionData() {
@@ -304,14 +303,8 @@ app.get('/api/tokens', (req, res) => {
     matchedNums.push(num);
   }
 
-  // Sort matched token numbers
+  // Sort matched token numbers (including #1~#11 in all sort orders)
   matchedNums.sort((a, b) => {
-    // Keep #1~#11 low-profile in the unfiltered explorer; surface them normally when filtering by tier
-    if (!tierFilter && !q) {
-      const aIsGif = a <= 11 ? 1 : 0;
-      const bIsGif = b <= 11 ? 1 : 0;
-      if (aIsGif !== bIsGif) return aIsGif - bIsGif;
-    }
     const rowA = collection.tokens[a - 1];
     const rowB = collection.tokens[b - 1];
     if (sort === 'id_asc') return a - b;
@@ -324,7 +317,7 @@ app.get('/api/tokens', (req, res) => {
       if (wDiff !== 0) return wDiff;
       return rowA[3] - rowB[3];
     }
-    // Default: rank_asc (Rank #1 -> #10,000)
+    // rank_asc (Rank #1 -> #10,000)
     return rowA[3] - rowB[3];
   });
 
