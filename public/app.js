@@ -1125,23 +1125,6 @@ function drawUfoSpaceshipWithPilot(
   ctx.rotate(tiltRad);
   ctx.scale(scale, scale);
 
-  // 0. Outer Energy Shield Aura (when shields > 0)
-  if (shields > 0) {
-    const pulse = 0.22 + 0.1 * Math.sin(now * 0.008);
-    ctx.save();
-    ctx.strokeStyle =
-      shields >= 3
-        ? `rgba(103, 232, 249, ${pulse + 0.18})`
-        : shields === 2
-        ? `rgba(250, 204, 21, ${pulse + 0.22})`
-        : `rgba(251, 113, 133, ${pulse + 0.28})`;
-    ctx.lineWidth = 2.2;
-    ctx.beginPath();
-    ctx.ellipse(0, -14, 76, 56, 0, 0, Math.PI * 2);
-    ctx.stroke();
-    ctx.restore();
-  }
-
   // 1. Rear Propulsion Plasma Flame + Bottom Anti-Gravity Core Glow
   if (thrusterBoost > 0) {
     const jetFlicker = (18 + Math.sin(now * 0.06) * 7) * thrusterBoost;
@@ -1228,31 +1211,33 @@ function drawUfoSpaceshipWithPilot(
   ctx.fillStyle = '#38bdf8';
   ctx.fillRect(7, 3, 5, 3);
 
-  // 5. Top Glass Dome Hatch ("우주선 대가리"): Hinges open on left pivot (-44, 4) when openHatchRatio > 0!
-  //    Encloses both the normal-sized head AND the upper torso/wings!
+  // 5. Top Glass Dome Hatch ("우주선 대가리" / 유리막): 100% Identical to Scene 3 (3번 우주선 유리막과 완전히 동일하게 맞춤)!
+  const P = 4;
   ctx.save();
-  ctx.translate(-44, 4);
-  ctx.rotate(-openHatchRatio * 0.92);
-  ctx.translate(44, -4);
+  ctx.imageSmoothingEnabled = false;
+  ctx.translate(-44, 3);
+  ctx.rotate(-openHatchRatio * 0.95);
+  ctx.translate(44, -3);
 
-  const domeGrad = ctx.createLinearGradient(0, -68, 0, 4);
-  domeGrad.addColorStop(0, 'rgba(186, 230, 253, 0.26)');
-  domeGrad.addColorStop(0.6, 'rgba(56, 189, 248, 0.10)');
-  domeGrad.addColorStop(1, 'rgba(14, 116, 144, 0.24)');
-  ctx.fillStyle = domeGrad;
-  ctx.strokeStyle = 'rgba(125, 211, 252, 0.92)';
-  ctx.lineWidth = 2.2;
-  ctx.beginPath();
-  ctx.ellipse(0, 4, 44, 68, 0, Math.PI, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
+  // Translucent cyan glass fill inside the dome arch
+  ctx.fillStyle = 'rgba(56, 189, 248, 0.16)';
+  ctx.fillRect(-32, -60, 64, 62);
+  ctx.fillRect(-40, -48, 80, 50);
 
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.78)';
-  ctx.lineWidth = 3;
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.ellipse(0, 3, 37, 58, 0, Math.PI * 1.14, Math.PI * 1.48);
-  ctx.stroke();
+  // Stepped 16-Bit Pixel Arch Outline (#7dd3fc)
+  ctx.fillStyle = '#7dd3fc';
+  ctx.fillRect(-28, -64, 56, P);
+  ctx.fillRect(-36, -60, 8, P);
+  ctx.fillRect(28, -60, 8, P);
+  ctx.fillRect(-40, -56, P, 8);
+  ctx.fillRect(36, -56, P, 8);
+  ctx.fillRect(-44, -48, P, 48);
+  ctx.fillRect(40, -48, P, 48);
+
+  // Crisp white pixel glass reflection blocks
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(-28, -56, 12, P);
+  ctx.fillRect(-32, -52, P, 14);
   ctx.restore();
 
   // 6. Metallic UFO Saucer Main Hull (Completely covers y = 3..25, hiding only the feet!)
@@ -3165,12 +3150,12 @@ function initPixelMotionStudio() {
         }
       );
 
-      // Speech Bubble above the Giant UFO
+      // Speech Bubble above the Giant UFO (Raised to ufoY - 140 so it never touches the open glass canopy!)
       if (launchRatio < 0.85) {
         drawRetroSpeechBubble(
           ctx,
           ufoX + 12,
-          Math.max(66, ufoY - 104),
+          Math.max(66, ufoY - 140),
           !MOTION_STATE.scene0Launching
             ? CURRENT_LANG === 'ko'
               ? '남극이 파괴되고 있어요! 위에서 내 NFT 번호 입력 후 [🚀 NFT 탑승]을 눌러 이륙하세요!'
@@ -3940,7 +3925,7 @@ function initPixelMotionStudio() {
         drawRetroSpeechBubble(
           ctx,
           ufoLandX + 24,
-          ufoCurY - 94,
+          ufoCurY - 140,
           CURRENT_LANG === 'ko'
             ? '푸슈욱—! 콜록콜록.. 우주선 해치 오픈! 여기가 픽셀월드야?!'
             : 'Psssh—! *Cough* UFO Hatch Open! Is this Pixel World?!',
