@@ -39,14 +39,14 @@ const CAT_LABELS_KO = {
 const CURATED_BEAUTY_14 = [
   {
     edition: 4441,
-    id: 'P04441',
+    id: 'P4441',
     isSpecial: false,
     tier: 'Common',
     rank: 9811,
     score: '87.1',
     shortKo: '선글라스 펭귄',
     shortEn: 'Pixel Shades',
-    titleKo: '#4441 선글라스 펭귄 (P04441)',
+    titleKo: '#4441 선글라스 펭귄 (P4441)',
     titleEn: '#4441 Pixel Shades Penguin',
     themeKo: 'Common · Glacier Sky & Pixel Shades',
     themeEn: 'Common · Glacier Sky & Pixel Shades',
@@ -55,7 +55,7 @@ const CURATED_BEAUTY_14 = [
   },
   {
     edition: 962,
-    id: 'P00962',
+    id: 'P0962',
     isSpecial: false,
     tier: 'Mythic',
     rank: 12,
@@ -73,7 +73,7 @@ const CURATED_BEAUTY_14 = [
   },
   {
     edition: 6521,
-    id: 'P06521',
+    id: 'P6521',
     isSpecial: false,
     tier: 'Mythic',
     rank: 15,
@@ -91,7 +91,7 @@ const CURATED_BEAUTY_14 = [
   },
   {
     edition: 42,
-    id: 'P00042',
+    id: 'P0042',
     isSpecial: false,
     tier: 'Legendary',
     rank: 187,
@@ -109,7 +109,7 @@ const CURATED_BEAUTY_14 = [
   },
   {
     edition: 499,
-    id: 'P00499',
+    id: 'P0499',
     isSpecial: false,
     tier: 'Mythic',
     rank: 46,
@@ -127,7 +127,7 @@ const CURATED_BEAUTY_14 = [
   },
   {
     edition: 74,
-    id: 'P00074',
+    id: 'P0074',
     isSpecial: false,
     tier: 'Legendary',
     rank: 162,
@@ -145,7 +145,7 @@ const CURATED_BEAUTY_14 = [
   },
   {
     edition: 191,
-    id: 'P00191',
+    id: 'P0191',
     isSpecial: false,
     tier: 'Common',
     rank: 7788,
@@ -163,7 +163,7 @@ const CURATED_BEAUTY_14 = [
   },
   {
     edition: 20,
-    id: 'P00020',
+    id: 'P0020',
     isSpecial: false,
     tier: 'Common',
     rank: 6885,
@@ -181,7 +181,7 @@ const CURATED_BEAUTY_14 = [
   },
   {
     edition: 24,
-    id: 'P00024',
+    id: 'P0024',
     isSpecial: false,
     tier: 'Uncommon',
     rank: 2785,
@@ -199,7 +199,7 @@ const CURATED_BEAUTY_14 = [
   },
   {
     edition: 4275,
-    id: 'P04275',
+    id: 'P4275',
     isSpecial: false,
     tier: 'Epic',
     rank: 310,
@@ -217,7 +217,7 @@ const CURATED_BEAUTY_14 = [
   },
   {
     edition: 87,
-    id: 'P00087',
+    id: 'P0087',
     isSpecial: false,
     tier: 'Common',
     rank: 6044,
@@ -235,7 +235,7 @@ const CURATED_BEAUTY_14 = [
   },
   {
     edition: 107,
-    id: 'P00107',
+    id: 'P0107',
     isSpecial: false,
     tier: 'Common',
     rank: 7545,
@@ -253,7 +253,7 @@ const CURATED_BEAUTY_14 = [
   },
   {
     edition: 311,
-    id: 'P00311',
+    id: 'P0311',
     isSpecial: false,
     tier: 'Common',
     rank: 5671,
@@ -271,7 +271,7 @@ const CURATED_BEAUTY_14 = [
   },
   {
     edition: 776,
-    id: 'P00776',
+    id: 'P0776',
     isSpecial: false,
     tier: 'Uncommon',
     rank: 4419,
@@ -1977,7 +1977,7 @@ function buildPixelParadeMarquee() {
   if (!row1 || !row2) return;
 
   const renderCard = (item) => {
-    const id = `P${String(item.edition).padStart(5, '0')}`;
+    const id = `P${String(item.edition).padStart(4, '0')}`;
     const src =
       item.edition <= 10 ? `/assets/specials/${item.edition}_fast.gif?v=v322` : `/img/${id}.png?v=v322`;
     const name = CURRENT_LANG === 'ko' ? item.labelKo : item.labelEn;
@@ -2105,7 +2105,7 @@ function initPfpStudio() {
   if (strip) {
     strip.innerHTML = presets
       .map((num, idx) => {
-        const id = `P${String(num).padStart(5, '0')}`;
+        const id = `P${String(num).padStart(4, '0')}`;
         const src = num <= 10 ? `/assets/specials/${num}_fast.gif?v=v322` : `/img/${id}.png?v=v322`;
         return `<button type="button" class="pfp-thumb-btn ${idx === 0 ? 'active' : ''}" data-num="${num}" title="#${num}">
           <img src="${src}" alt="#${num}" class="pixelated" loading="lazy" />

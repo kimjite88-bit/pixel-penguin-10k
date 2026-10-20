@@ -5,8 +5,8 @@
  * Serves:
  * - Bilingual (KO/EN) Official Collection Homepage & VeryChat NFT Market Specs
  * - 11 Special 1-of-1 Animated Genesis Originals (#0 ~ #10)
- * - Full 10,000 Token Explorer & rarity.tools Rarity Score Calculator (P00000 ~ P09999)
- * - Lossless Pixel Art Binary Pack Streaming (/img/P00000.png ~ /img/P09999.png)
+ * - Full 10,000 Token Explorer & rarity.tools Rarity Score Calculator (P0000 ~ P9999)
+ * - Lossless Pixel Art Binary Pack Streaming (/img/P0000.png ~ /img/P9999.png)
  * - FQL Cryptographic Provenance & SHA-256 Verification API
  */
 
@@ -90,7 +90,7 @@ function expandTokenSummary(num) {
   const idx = num;
   const row = collection.tokens[idx];
   const [tIndices, activeK, rarityScore, rarityRank, nativeSha16, imageSha16, jsonSha16] = row;
-  const id = `P${String(num).padStart(5, '0')}`;
+  const id = `P${String(num).padStart(4, '0')}`;
   const isSpecial = num <= 10;
   const sp = isSpecial ? specialsByNum.get(num) : null;
 
@@ -285,9 +285,14 @@ app.get('/api/tokens', (req, res) => {
     if (!catOk) continue;
 
     if (q) {
-      const idStr = `p${String(num).padStart(5, '0')}`;
+      const idStr = `p${String(num).padStart(4, '0')}`;
+      const idStr5 = `p${String(num).padStart(5, '0')}`;
       const numStr = String(num);
-      let qMatch = (exactNum !== null && exactNum === num) || idStr.includes(q) || `#${numStr}` === q;
+      let qMatch =
+        (exactNum !== null && exactNum === num) ||
+        idStr.includes(q) ||
+        idStr5.includes(q) ||
+        `#${numStr}` === q;
 
       if (!qMatch && num <= 10) {
         const sp = specialsByNum.get(num);
@@ -355,7 +360,7 @@ app.get('/api/token/:id', (req, res) => {
   }
   const num = parseTokenNumber(req.params.id);
   if (num === null) {
-    return res.status(404).json({ error: 'Invalid token ID (valid range: P00000 ~ P09999 or 0 ~ 9999)' });
+    return res.status(404).json({ error: 'Invalid token ID (valid range: P0000 ~ P9999 or 0 ~ 9999)' });
   }
   res.json(expandTokenFull(num));
 });
