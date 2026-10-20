@@ -12,7 +12,7 @@
   <meta property="og:image" content="https://ppeng.verycloud.io/assets/logo_4441_1024.png?v=v322" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" type="image/png" href="/img/P4441.png?v=v322" />
-  <link rel="stylesheet" href="/styles.css?v=5.2.6" />
+  <link rel="stylesheet" href="/styles.css?v=5.3.0" />
 </head>
 <body>
   <!-- Full-Viewport Stepped Pixel Ambient Particle Canvas -->
@@ -67,9 +67,11 @@
           </div>
 
           <div class="motion-mode-bar" role="group" aria-label="Intro Cutscene Chapter">
-            <button type="button" class="motion-mode-btn active" data-scene="0" data-ko="1. 🚨 남극탈출 &amp; 탑승" data-en="1. 🚨 Escape &amp; Board">1. 🚨 남극탈출 &amp; 탑승</button>
-            <button type="button" class="motion-mode-btn" data-scene="1" data-ko="2. 🛸 하늘교전 &amp; 픽셀화" data-en="2. 🛸 Battle &amp; Pixelate">2. 🛸 하늘교전 &amp; 픽셀화</button>
-            <button type="button" class="motion-mode-btn" data-scene="2" data-ko="3. 💥 불시착 &amp; 환영" data-en="3. 💥 Crash-Land &amp; Welcome">3. 💥 불시착 &amp; 환영</button>
+            <button type="button" class="motion-mode-btn active" data-scene="0" data-ko="1. 🚨 탈출선택" data-en="1. 🚨 Escape?">1. 🚨 탈출선택</button>
+            <button type="button" class="motion-mode-btn" data-scene="1" data-ko="2. 🚀 이륙모션" data-en="2. 🚀 Liftoff">2. 🚀 이륙모션</button>
+            <button type="button" class="motion-mode-btn" data-scene="2" data-ko="3. 🎮 하늘게임" data-en="3. 🎮 Sky Game">3. 🎮 하늘게임</button>
+            <button type="button" class="motion-mode-btn" data-scene="3" data-ko="4. ✨ 픽셀화" data-en="4. ✨ Pixelate">4. ✨ 픽셀화</button>
+            <button type="button" class="motion-mode-btn" data-scene="4" data-ko="5. 🌸 벚꽃마을" data-en="5. 🌸 Pixel Town">5. 🌸 벚꽃마을</button>
           </div>
         </div>
 
@@ -78,30 +80,32 @@
           <div class="fullscreen-game-topbar" id="fullscreen-game-topbar">
             <div class="fs-topbar-left">
               <span class="boarding-alert-pill" data-ko="🎮 전체화면 게임 모드" data-en="🎮 FULLSCREEN GAME">🎮 전체화면 게임 모드</span>
-              <span class="fs-pilot-status" id="fs-pilot-status-label">탑승: 기본 파란 펭귄</span>
+              <span class="fs-pilot-status" id="fs-pilot-status-label">탑승: 기본 파란 펭귄 (노 기록)</span>
             </div>
             <div class="fs-topbar-right">
-              <button type="button" class="fs-scene-btn" onclick="setIntroScene(0, true)" data-ko="1.탈출" data-en="1.Escape">1.탈출</button>
-              <button type="button" class="fs-scene-btn" onclick="setIntroScene(1, true)" data-ko="2.교전게임" data-en="2.Battle">2.교전게임</button>
-              <button type="button" class="fs-scene-btn" onclick="setIntroScene(2, true)" data-ko="3.불시착" data-en="3.Land">3.불시착</button>
+              <button type="button" class="fs-scene-btn" onclick="setIntroScene(0, true)" data-ko="1.선택" data-en="1.Select">1.선택</button>
+              <button type="button" class="fs-scene-btn" onclick="setIntroScene(1, true)" data-ko="2.이륙" data-en="2.Liftoff">2.이륙</button>
+              <button type="button" class="fs-scene-btn" onclick="setIntroScene(2, true)" data-ko="3.게임" data-en="3.Game">3.게임</button>
+              <button type="button" class="fs-scene-btn" onclick="setIntroScene(3, true)" data-ko="4.픽셀화" data-en="4.Pixel">4.픽셀화</button>
+              <button type="button" class="fs-scene-btn" onclick="setIntroScene(4, true)" data-ko="5.벚꽃마을" data-en="5.Town">5.벚꽃마을</button>
               <button type="button" class="fs-exit-btn" id="btn-exit-fullscreen-top" data-ko="✕ 게임 종료 (나가기)" data-en="✕ Exit Fullscreen">✕ 게임 종료 (나가기)</button>
             </div>
           </div>
 
-          <!-- UFO BOARDING DOCK: Enter My NFT Number (#0~#9999) OR "없음 (No NFT / No Record)" -->
+          <!-- UFO ESCAPE DECISION & BOARDING DOCK: "탈출하시겠습니까? [예] 옆에 NFT 번호 입력 (미입력 시 노 기록) / [아니오] 클릭 시 기본 펭귄으로 5번 벚꽃마을 직행" -->
           <div class="ufo-boarding-dock" id="ufo-boarding-dock">
             <div class="boarding-dock-left">
-              <span class="boarding-alert-pill" data-ko="🛸 우주선 탑승기" data-en="🛸 UFO Boarding">🛸 우주선 탑승기</span>
-              <span class="boarding-prompt-text" data-ko="내 NFT 번호를 입력해주세요:" data-en="Enter My NFT # (0~9999):">내 NFT 번호를 입력해주세요:</span>
+              <span class="boarding-alert-pill" data-ko="🚨 남극 탈출 선택" data-en="🚨 Escape Choice">🚨 남극 탈출 선택</span>
+              <span class="boarding-prompt-text" data-ko="탈출하시겠습니까?" data-en="Escape in UFO?">탈출하시겠습니까?</span>
               <div class="boarding-input-group">
-                <input type="number" id="ufo-pilot-id-input" class="pilot-id-input" min="0" max="9999" value="4441" placeholder="0~9999" />
-                <button type="button" class="boarding-apply-btn" id="btn-ufo-board-nft" data-ko="🚀 NFT 탑승" data-en="🚀 Board NFT">🚀 NFT 탑승</button>
+                <button type="button" class="boarding-apply-btn" id="btn-ufo-board-nft" data-ko="🚀 예 (탈출하기)" data-en="🚀 YES (Escape)">🚀 예 (탈출하기)</button>
+                <input type="number" id="ufo-pilot-id-input" class="pilot-id-input" min="0" max="9999" value="" data-placeholder-ko="NFT 번호 (안쓰면 노기록)" data-placeholder-en="NFT # (Blank = No Record)" placeholder="NFT 번호 (안쓰면 노기록)" />
                 <button type="button" class="pilot-mini-btn" id="btn-ufo-random-id" title="랜덤 NFT 번호">🎲</button>
-                <button type="button" class="boarding-none-btn" id="btn-ufo-board-none" data-ko="없음 (기록 안 남음)" data-en="None (No Record)">없음 (기록 안 남음)</button>
+                <button type="button" class="boarding-none-btn" id="btn-ufo-board-none" data-ko="🌸 아니오 (탈출 안함·벚꽃마을)" data-en="🌸 NO (Skip to Cherry Town)">🌸 아니오 (탈출 안함·벚꽃마을)</button>
               </div>
             </div>
             <div class="boarding-dock-right">
-              <span class="pilot-skin-badge" id="ufo-pilot-skin-badge">탑승: #4441 · 깃털스킨: 기본 블루 (랭킹 기록 ON)</span>
+              <span class="pilot-skin-badge" id="ufo-pilot-skin-badge">🎨 기본 파란 펭귄 (NFT 미입력 · 노 기록)</span>
               <button type="button" class="boarding-fullscreen-btn" id="btn-dock-fullscreen-play" data-ko="🎮 게임 참여 (전체화면)" data-en="🎮 Join Game (Fullscreen)">🎮 게임 참여 (전체화면)</button>
               <button type="button" class="pilot-rank-btn" id="btn-open-leaderboard">
                 <span data-ko="🏆 랭킹보기" data-en="🏆 Leaderboard">🏆 랭킹보기</span>
@@ -112,20 +116,45 @@
           <div class="motion-hud-topbar">
             <div class="hud-left-status">
               <span class="hud-rec-dot"></span>
-              <span id="motion-hud-mode-label">SCENE 1/3 · 🚨 남극이 파괴되고 있어요! 우주선에 탑승해 탈출하세요!</span>
+              <span id="motion-hud-mode-label">SCENE 1/5 · 🚨 남극이 파괴되고 있어요! 탈출하시겠습니까?</span>
             </div>
           </div>
 
-          <!-- 3-Segment Real-Time Chapter Progress Track -->
+          <!-- 5-Segment Real-Time Chapter Progress Track -->
           <div class="intro-progress-track" aria-hidden="true">
             <div class="intro-progress-seg"><div class="intro-progress-fill" id="intro-prog-0"></div></div>
             <div class="intro-progress-seg"><div class="intro-progress-fill" id="intro-prog-1"></div></div>
             <div class="intro-progress-seg"><div class="intro-progress-fill" id="intro-prog-2"></div></div>
+            <div class="intro-progress-seg"><div class="intro-progress-fill" id="intro-prog-3"></div></div>
+            <div class="intro-progress-seg"><div class="intro-progress-fill" id="intro-prog-4"></div></div>
           </div>
 
           <div class="retro-screen-wrap" id="motion-canvas-wrap">
             <canvas id="pixel-stage-canvas" width="1920" height="1080"></canvas>
             <div class="motion-scanline-overlay" aria-hidden="true"></div>
+
+            <!-- SCENE 1 ON-SCREEN ESCAPE PROMPT OVERLAY ("탈출하시겠습니까? [예] 옆에 NFT 번호 입력 / [아니오] 벚꽃마을 직행") -->
+            <div class="scene1-escape-overlay" id="scene1-escape-overlay">
+              <div class="s1-overlay-card">
+                <div class="s1-overlay-title" data-ko="🚨 남극이 무너지고 있습니다! 우주선을 타고 탈출하시겠습니까?" data-en="🚨 Antarctica is crumbling! Will you board the UFO and escape?">
+                  🚨 남극이 무너지고 있습니다! 우주선을 타고 탈출하시겠습니까?
+                </div>
+                <div class="s1-overlay-controls">
+                  <div class="s1-yes-group">
+                    <button type="button" class="s1-yes-btn" id="btn-scene1-yes" data-ko="🚀 예 (탈출하기)" data-en="🚀 YES (Escape)">🚀 예 (탈출하기)</button>
+                    <input type="number" id="scene1-nft-input" class="s1-nft-input" min="0" max="9999" value="" data-placeholder-ko="NFT 번호 입력 (안 쓰면 노 기록)" data-placeholder-en="NFT # (Blank = No Record)" placeholder="NFT 번호 입력 (안 쓰면 노 기록)" />
+                    <button type="button" class="pilot-mini-btn" id="btn-scene1-random" title="랜덤 NFT 번호">🎲</button>
+                  </div>
+                  <button type="button" class="s1-no-btn" id="btn-scene1-no" data-ko="🌸 아니오 (탈출 안 함 → 기본 펭귄으로 벚꽃마을 바로가기)" data-en="🌸 NO (Don't Escape → Go to Cherry Blossom Town)">
+                    🌸 아니오 (탈출 안 함 → 기본 펭귄으로 벚꽃마을 바로가기)
+                  </button>
+                </div>
+                <div class="s1-overlay-sub" id="s1-overlay-sub" data-ko="💡 [예] 옆에 NFT 번호를 입력하면 해당 깃털스킨으로 탑승해 순위가 기록되고, 안 쓰면 노 기록(기본 파란 펭귄)으로 출발합니다." data-en="💡 Enter your NFT # next to [YES] to record your rank with its Feather Skin, or leave blank for No Record.">
+                  💡 [예] 옆에 NFT 번호를 입력하면 해당 깃털스킨으로 탑승해 순위가 기록되고, 안 쓰면 노 기록(기본 파란 펭귄)으로 출발합니다.
+                </div>
+              </div>
+            </div>
+
             <!-- Floating "🎮 게임 참여 (전체화면)" CTA Button on Canvas (Hidden once in Fullscreen) -->
             <button type="button" class="canvas-fullscreen-cta" id="btn-canvas-fullscreen-play">
               <span data-ko="🎮 게임 참여 (전체화면 · 스크롤 고정)" data-en="🎮 Join Game (Fullscreen · Lock Scroll)">🎮 게임 참여 (전체화면 · 스크롤 고정)</span>
@@ -528,6 +557,6 @@
     </div>
   </footer>
 
-  <script src="/app.js?v=5.2.6"></script>
+  <script src="/app.js?v=5.3.0"></script>
 </body>
 </html>
