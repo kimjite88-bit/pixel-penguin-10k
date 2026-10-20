@@ -489,6 +489,8 @@ const MOTION_STATE = {
   autoPlay: true,
   isFullscreen: false,
   sceneStartTime: performance.now(),
+  scene0Launching: false,
+  scene0LaunchStartTime: 0,
   hero2DImg: null,
   hero2DLoaded: false,
   hero2DSheet: null,
@@ -867,7 +869,17 @@ function handleExitOrCodexClick() {
   }
 }
 
-function boardUfoWithoutNft(restartScene = true) {
+function triggerScene0Liftoff(now = performance.now()) {
+  if (MOTION_STATE.sceneIdx !== 0) {
+    setIntroScene(0, true);
+  }
+  if (!MOTION_STATE.scene0Launching) {
+    MOTION_STATE.scene0Launching = true;
+    MOTION_STATE.scene0LaunchStartTime = now;
+  }
+}
+
+function boardUfoWithoutNft(triggerLiftoff = true) {
   UFO_GAME.hasNft = false;
   UFO_GAME.pilotTokenId = null;
   UFO_GAME.pilotSpeciesId = '01';
@@ -875,15 +887,19 @@ function boardUfoWithoutNft(restartScene = true) {
   UFO_GAME.lastRank = null;
   ensureSpeciesSprite('01');
   updateUfoBoardingDockUI();
-  if (restartScene) {
-    setIntroScene(0, true);
+  if (triggerLiftoff) {
+    if (MOTION_STATE.sceneIdx === 0) {
+      triggerScene0Liftoff(performance.now());
+    } else {
+      setIntroScene(1, true);
+    }
   }
 }
 
-async function setUfoPilotTokenId(tokenNum, triggerPfp = true, restartScene = false) {
+async function setUfoPilotTokenId(tokenNum, triggerPfp = true, triggerLiftoff = false) {
   const raw = String(tokenNum ?? '').trim().replace(/^#/, '').replace(/^P/i, '');
   if (raw === '' || Number.isNaN(Number(raw))) {
-    boardUfoWithoutNft(restartScene);
+    boardUfoWithoutNft(triggerLiftoff);
     return;
   }
   const num = Math.max(0, Math.min(9999, Math.floor(Number(raw))));
@@ -915,8 +931,12 @@ async function setUfoPilotTokenId(tokenNum, triggerPfp = true, restartScene = fa
   if (triggerPfp && typeof loadPfpPreview === 'function') {
     loadPfpPreview(num, false);
   }
-  if (restartScene) {
-    setIntroScene(0, true);
+  if (triggerLiftoff) {
+    if (MOTION_STATE.sceneIdx === 0) {
+      triggerScene0Liftoff(performance.now());
+    } else {
+      setIntroScene(1, true);
+    }
   }
 }
 
@@ -1152,18 +1172,18 @@ function drawUfoSpaceshipWithPilot(
   ctx.fill();
   ctx.stroke();
 
-  // 3. UPPER-BODY PENGUIN PILOT (Normal Head Size + Full Chest, Belly & Both Wings Visible!)
+  // 3. UPPER-BODY PENGUIN PILOT (100% Stationary inside Cockpit + Zero Lower-Edge Gap!)
   //    pilotSize = 86 (at scale 1.40 -> 120px on screen, matching normal penguin size!)
-  //    srcH = 216 (out of 256): includes Full Head (y=15..156) + Full Upper Body/Chest/Wings (y=156..216), hiding ONLY the feet (y=220..248)!
+  //    srcCropH = 220 (out of 256): includes Full Head + Full Upper Body/Chest/Wings, and tucks lower waist (y=0..+9) behind Cockpit Collar!
   ctx.save();
   ctx.beginPath();
-  ctx.rect(-56, -86, 112, 91); // Clips cleanly at y = +5 (cockpit rim)
+  ctx.rect(-56, -86, 112, 95); // Clips at y = +9 (deep inside the opaque cockpit collar & saucer hull!)
   ctx.clip();
 
   const pilotSize = 86;
-  const srcCropH = 216;
-  const drawH = pilotSize * (srcCropH / 256); // 72.5px tall (Head ~44px + Torso/Wings ~28.5px!)
-  const pilotTopY = 5 - drawH - openHatchRatio * 4; // Bottom of torso sits at y = +5, so whole chest & wings are above rim!
+  const srcCropH = 220;
+  const drawH = pilotSize * (srcCropH / 256); // 73.9px tall
+  const pilotTopY = 9 - drawH; // 100% FIXED constant! Never bobs or shifts when hatch opens!
   ctx.imageSmoothingEnabled = true;
   if (sheet2D) {
     ctx.drawImage(
@@ -1338,19 +1358,18 @@ function drawPixelUfoSpaceshipWithPilot(
   ctx.fillStyle = '#334155';
   ctx.fillRect(-22, -39, 9, 38);
 
-  // 2. UPPER-BODY 16-BIT PIXEL PENGUIN PILOT (Normal Head Size + Full Chest, Belly & Both Wings Visible!)
+  // 2. UPPER-BODY 16-BIT PIXEL PENGUIN PILOT (100% Stationary inside Cockpit + Zero Lower-Edge Gap!)
   //    pilotSize = 86 (at scale 1.42 -> 122px on screen, identical to the 124px penguin friends!)
-  //    srcCropH = 216 (out of 256): shows Full Head (15..156) + Full Upper Body/Chest/Wings (156..216), hiding ONLY the feet (220..245)!
+  //    srcCropH = 220 (out of 256): shows Full Head + Full Upper Body/Chest/Wings, and tucks lower waist (y=0..+9) behind Cockpit Collar!
   ctx.save();
   ctx.beginPath();
-  ctx.rect(-58, -88, 116, 92);
+  ctx.rect(-58, -88, 116, 97); // Clips at y = +9 (deep inside the opaque pixel cockpit collar & saucer hull!)
   ctx.clip();
 
   const pilotSize = 86;
-  const srcCropH = 216;
-  const drawH = Math.round(pilotSize * (srcCropH / 256)); // 73px tall (Head + Full Upper Torso & Wings!)
-  const happyBob = openHatchRatio > 0.6 ? (Math.floor(now / 260) % 2 === 0 ? 0 : -3) : 0;
-  const pilotTopY = 4 - drawH - Math.round(openHatchRatio * 4) + happyBob;
+  const srcCropH = 220;
+  const drawH = Math.round(pilotSize * (srcCropH / 256)); // 74px tall
+  const pilotTopY = 9 - drawH; // 100% FIXED constant (-65)! Protagonist penguin NEVER bobs up & down or exposes a cut edge!
   if (spEntry && spEntry.sheetLoaded && spEntry.sheet) {
     ctx.drawImage(
       spEntry.sheet,
@@ -1378,11 +1397,11 @@ function drawPixelUfoSpaceshipWithPilot(
   }
   ctx.restore();
 
-  // 3. Stepped 16-Bit Pixel Cockpit Collar (y = 1..9)
+  // 3. Stepped 16-Bit Pixel Cockpit Collar (y = 0..9, overlaps penguin's lower waist y = 0..9 with ZERO gap!)
   ctx.fillStyle = '#090d1a';
-  ctx.fillRect(-46, 1, 92, 8);
+  ctx.fillRect(-46, 0, 92, 9);
   ctx.fillStyle = '#1e293b';
-  ctx.fillRect(-42, 3, 84, 4);
+  ctx.fillRect(-42, 2, 84, 5);
   ctx.fillStyle = '#34d399';
   ctx.fillRect(-16, 3, 6, 4);
   ctx.fillStyle = '#facc15';
@@ -1539,7 +1558,10 @@ function setIntroScene(sceneIdx, resetTimer = true) {
   MOTION_STATE.sceneIdx = ((sceneIdx % 3) + 3) % 3;
   if (resetTimer) {
     MOTION_STATE.sceneStartTime = performance.now();
-    if (MOTION_STATE.sceneIdx === 1) {
+    if (MOTION_STATE.sceneIdx === 0) {
+      MOTION_STATE.scene0Launching = false;
+      MOTION_STATE.scene0LaunchStartTime = 0;
+    } else if (MOTION_STATE.sceneIdx === 1) {
       resetUfoGame(MOTION_STATE.sceneStartTime, false);
     }
   }
@@ -2263,6 +2285,122 @@ function drawScene1Background(ctx, now) {
   }
 }
 
+// Helper: Draw Scene 2 SKY BATTLE Background (High-Altitude Stratosphere & Cloud Sea — NO Ground Cliff/Igloo!)
+function drawScene2SkyBattleBackground(ctx, now) {
+  ctx.save();
+  // 1. Deep Stratosphere to Cerulean Sky Gradient (0..540)
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, 540);
+  skyGrad.addColorStop(0.0, '#050c24');
+  skyGrad.addColorStop(0.24, '#0c2358');
+  skyGrad.addColorStop(0.55, '#0369a1');
+  skyGrad.addColorStop(0.82, '#38bdf8');
+  skyGrad.addColorStop(1.0, '#bae6fd');
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, 960, 540);
+
+  // 2. High-Altitude Aurora Ribbons & Atmospheric Wind Streaks
+  const auroraGrad = ctx.createLinearGradient(0, 40, 960, 220);
+  auroraGrad.addColorStop(0, 'rgba(56, 189, 248, 0.0)');
+  auroraGrad.addColorStop(0.45, 'rgba(103, 232, 249, 0.14)');
+  auroraGrad.addColorStop(0.8, 'rgba(244, 114, 182, 0.18)');
+  auroraGrad.addColorStop(1, 'rgba(168, 85, 247, 0.25)');
+  ctx.fillStyle = auroraGrad;
+  ctx.fillRect(0, 30, 960, 210);
+
+  // High-speed sky wind streaks sweeping left
+  ctx.fillStyle = 'rgba(224, 242, 254, 0.26)';
+  for (let w = 0; w < 10; w++) {
+    const wx = 960 - (((now * (0.42 + (w % 3) * 0.15) + w * 137) % 1120) | 0);
+    const wy = 68 + ((w * 43) % 320);
+    const ww = 64 + (w % 4) * 28;
+    ctx.fillRect(wx, wy, ww, 2);
+  }
+
+  // 3. Far Parallax High-Altitude Fluffy Clouds (y = 110..330)
+  const drawFluffyCloud = (cx, cy, scale, alpha, tint = '#ffffff') => {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.scale(scale, scale);
+    ctx.globalAlpha = alpha;
+    // Soft underside shadow
+    ctx.fillStyle = '#bae6fd';
+    ctx.beginPath();
+    ctx.roundRect(-64, 4, 128, 26, 13);
+    ctx.fill();
+    // Main sunlit cloud puffs
+    ctx.fillStyle = tint;
+    ctx.beginPath();
+    ctx.arc(-34, 4, 22, 0, Math.PI * 2);
+    ctx.arc(-6, -6, 30, 0, Math.PI * 2);
+    ctx.arc(26, 2, 24, 0, Math.PI * 2);
+    ctx.arc(46, 10, 16, 0, Math.PI * 2);
+    ctx.arc(-50, 10, 15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  };
+
+  for (let c = 0; c < 6; c++) {
+    const cx = 1080 - (((now * 0.085 + c * 210) % 1240) | 0);
+    const cy = 115 + ((c * 67) % 210);
+    const sc = 0.68 + (c % 3) * 0.18;
+    drawFluffyCloud(cx, cy, sc, 0.48, '#e0f2fe');
+  }
+
+  for (let c = 0; c < 5; c++) {
+    const cx = 1100 - (((now * 0.16 + c * 255) % 1280) | 0);
+    const cy = 220 + ((c * 53) % 155);
+    const sc = 0.85 + (c % 2) * 0.22;
+    drawFluffyCloud(cx, cy, sc, 0.78, '#ffffff');
+  }
+
+  // 4. Right-Side High-Altitude Dimensional Pixel Vortex in the Sky (x = 770..950, y = 60..420)
+  const riftGrad = ctx.createRadialGradient(855, 235, 16, 855, 235, 195);
+  riftGrad.addColorStop(0.0, 'rgba(103, 232, 249, 0.52)');
+  riftGrad.addColorStop(0.45, 'rgba(168, 85, 247, 0.34)');
+  riftGrad.addColorStop(0.78, 'rgba(236, 72, 153, 0.16)');
+  riftGrad.addColorStop(1.0, 'rgba(15, 23, 42, 0.0)');
+  ctx.fillStyle = riftGrad;
+  ctx.fillRect(650, 20, 310, 440);
+
+  // Floating 16-bit Voxel Cubes swirling around the Sky Rift
+  for (let v = 0; v < 14; v++) {
+    const ang = now * 0.0024 + (v * Math.PI * 2) / 14;
+    const radX = 42 + (v % 4) * 24;
+    const radY = 75 + (v % 3) * 42;
+    const vx = Math.round(855 + Math.cos(ang) * radX);
+    const vy = Math.round(235 + Math.sin(ang) * radY);
+    const sz = v % 3 === 0 ? 10 : 7;
+    ctx.fillStyle = '#090d1a';
+    ctx.fillRect(vx - 1, vy - 1, sz + 2, sz + 2);
+    ctx.fillStyle = v % 3 === 0 ? '#67e8f9' : v % 2 === 0 ? '#f472b6' : '#facc15';
+    ctx.fillRect(vx, vy, sz, sz);
+  }
+
+  // 5. Lower Billowing Stratosphere Cloud-Sea Deck (y = 432..540) — Pure Sky Above the Clouds!
+  ctx.fillStyle = '#bae6fd';
+  ctx.fillRect(0, 468, 960, 72);
+  const cloudDeckShift = (now * 0.22) % 160;
+  for (let k = -1; k < 8; k++) {
+    const kx = k * 150 - cloudDeckShift;
+    ctx.fillStyle = '#e0f2fe';
+    ctx.beginPath();
+    ctx.arc(kx + 40, 468, 56, 0, Math.PI * 2);
+    ctx.arc(kx + 110, 476, 48, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(kx + 32, 482, 52, 0, Math.PI * 2);
+    ctx.arc(kx + 96, 488, 60, 0, Math.PI * 2);
+    ctx.arc(kx + 148, 492, 46, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 496, 960, 44);
+
+  ctx.restore();
+}
+
 // Helper: Draw Scene 2 & 3 Background (Studio 16-Bit Pixel Cherry-Blossom Park + Live Petals & Water Glints)
 function drawScene2PixelWorldBackground(ctx, now) {
   ensureIntroBackgrounds();
@@ -2603,6 +2741,12 @@ function initPixelMotionStudio() {
         handleBoardWithInput();
       }
     });
+    pilotInput.addEventListener('input', () => {
+      const raw = pilotInput.value.trim();
+      if (raw !== '' && !Number.isNaN(parseInt(raw, 10))) {
+        setUfoPilotTokenId(parseInt(raw, 10), false, false);
+      }
+    });
     pilotInput.addEventListener('change', () => {
       const raw = pilotInput.value.trim();
       if (raw !== '' && !Number.isNaN(parseInt(raw, 10))) {
@@ -2669,6 +2813,10 @@ function initPixelMotionStudio() {
 
   // HTML Dialogue Next Scene Button
   document.getElementById('intro-dialogue-next-btn')?.addEventListener('click', () => {
+    if (MOTION_STATE.sceneIdx === 0 && !MOTION_STATE.scene0Launching) {
+      triggerScene0Liftoff(performance.now());
+      return;
+    }
     if (MOTION_STATE.sceneIdx === 1 && UFO_GAME.phase === 'combat') {
       triggerUfoShotDown(performance.now());
       return;
@@ -2730,8 +2878,12 @@ function initPixelMotionStudio() {
     const { mx, my } = getLogicalCoords(e.clientX, e.clientY);
 
     if (MOTION_STATE.sceneIdx === 0) {
-      // Clicking anywhere in Scene 0 launches straight into Scene 1 Sky Battle!
-      setIntroScene(1, true);
+      // Clicking in Scene 0 triggers liftoff animation (or advances if already launching)!
+      if (!MOTION_STATE.scene0Launching) {
+        triggerScene0Liftoff(performance.now());
+      } else {
+        setIntroScene(1, true);
+      }
       return;
     }
 
@@ -2863,14 +3015,25 @@ function initPixelMotionStudio() {
     let elapsed = now - MOTION_STATE.sceneStartTime;
     const curDuration = SCENE_DURATIONS[MOTION_STATE.sceneIdx] || 5600;
 
-    // Scene 0 & Scene 2 auto-advance on timer; Scene 1 advances when Whole-UFO Pixel Scan finishes!
-    if (MOTION_STATE.sceneIdx !== 1 && MOTION_STATE.autoPlay && elapsed >= curDuration) {
-      setIntroScene((MOTION_STATE.sceneIdx + 1) % 3, true);
+    // Scene 0 NEVER auto-takes-off until user boards/launches! Scene 2 auto-loops if autoPlay is on.
+    if (MOTION_STATE.sceneIdx === 2 && MOTION_STATE.autoPlay && elapsed >= curDuration) {
+      setIntroScene(0, true);
       elapsed = 0;
     }
 
     let p = Math.min(1, Math.max(0, elapsed / curDuration));
-    if (MOTION_STATE.sceneIdx === 1) {
+    if (MOTION_STATE.sceneIdx === 0) {
+      if (!MOTION_STATE.scene0Launching) {
+        p = 0.22; // Parked on launchpad with open hatch, waiting for user to enter NFT # or click 탑승!
+      } else {
+        const launchElapsed = now - MOTION_STATE.scene0LaunchStartTime;
+        p = 0.22 + Math.min(0.78, (launchElapsed / 1850) * 0.78);
+        if (launchElapsed >= 1850) {
+          setIntroScene(1, true);
+          p = 0;
+        }
+      }
+    } else if (MOTION_STATE.sceneIdx === 1) {
       if (UFO_GAME.phase === 'combat') {
         const combatEl = now - UFO_GAME.phaseStartTime;
         p = Math.min(0.55, (combatEl / 4800) * 0.55);
@@ -2888,12 +3051,12 @@ function initPixelMotionStudio() {
     // ========================================================================
     // SCENE 0 ("1. 🚨 남극탈출 & 탑승"):
     //   "남극이 파괴되고 있어요! 탈출하세요!"
-    //   Crumbling Antarctica snow cliff + Giant UFO parked on snow -> Open top hatch closes -> Blasts off into the sky!
+    //   Waits on crumbling Antarctica cliff with Open Hatch until user enters NFT # or clicks 탑승 -> Hatch locks -> Liftoff to the Sky!
     // ========================================================================
     if (MOTION_STATE.sceneIdx === 0) {
       ctx.save();
       // Subtle earthquake tremor as Antarctica crumbles!
-      const quakeMag = p < 0.7 ? 2.4 : 4.2;
+      const quakeMag = !MOTION_STATE.scene0Launching ? 1.8 : 3.8;
       ctx.translate(
         Math.sin(now * 0.055) * quakeMag,
         Math.cos(now * 0.048) * (quakeMag * 0.75)
@@ -2922,7 +3085,7 @@ function initPixelMotionStudio() {
       }
 
       // Top Emergency Alert Banner
-      const alW = 540;
+      const alW = 560;
       const alH = 36;
       const alX = 480 - alW / 2;
       const alY = 14;
@@ -2932,19 +3095,23 @@ function initPixelMotionStudio() {
       ctx.lineWidth = 2;
       ctx.strokeRect(alX, alY, alW, alH);
       ctx.fillStyle = Math.floor(now / 260) % 2 === 0 ? '#fda4af' : '#fde047';
-      ctx.font = '900 13.5px "Pretendard", "Malgun Gothic", sans-serif';
+      ctx.font = '900 13px "Pretendard", "Malgun Gothic", sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const pilotTag =
         UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null
-          ? `NFT #${UFO_GAME.pilotTokenId} (${UFO_GAME.pilotSpeciesLabel})`
+          ? `Pixel Penguin #${UFO_GAME.pilotTokenId} (${UFO_GAME.pilotSpeciesLabel})`
           : CURRENT_LANG === 'ko'
           ? '기본 파란 펭귄 (기록 안 남음)'
           : 'Default Blue Penguin';
       ctx.fillText(
-        CURRENT_LANG === 'ko'
-          ? `🚨 남극 붕괴 경보! 탈출 우주선 가동 · 탑승자: ${pilotTag}`
-          : `🚨 ANTARCTICA CRUMBLING! ESCAPE UFO READY · PILOT: ${pilotTag}`,
+        !MOTION_STATE.scene0Launching
+          ? CURRENT_LANG === 'ko'
+            ? `🚨 남극 붕괴 경보! NFT 번호 입력 후 [🚀 NFT 탑승] 또는 [없음]을 눌러 이륙하세요!`
+            : `🚨 ANTARCTICA CRUMBLING! Enter NFT # and click [Board NFT] or [None] to Liftoff!`
+          : CURRENT_LANG === 'ko'
+          ? `🚀 이륙 시퀀스 가동! 탑승 대원: ${pilotTag}`
+          : `🚀 LIFTOFF SEQUENCE ACTIVE! PILOT: ${pilotTag}`,
         480,
         alY + alH / 2 + 1
       );
@@ -2955,7 +3122,7 @@ function initPixelMotionStudio() {
       ctx.beginPath();
       ctx.ellipse(285, 356, 108, 18, 0, 0, Math.PI * 2);
       ctx.fill();
-      ctx.strokeStyle = p < 0.62 ? '#facc15' : '#67e8f9';
+      ctx.strokeStyle = !MOTION_STATE.scene0Launching ? '#facc15' : '#67e8f9';
       ctx.lineWidth = 2.5;
       ctx.beginPath();
       ctx.ellipse(285, 356, 94, 14, 0, 0, Math.PI * 2);
@@ -2963,16 +3130,23 @@ function initPixelMotionStudio() {
       ctx.restore();
 
       // Giant UFO Kinematics in Scene 0:
-      // p = 0.00..0.42: Parked on snow cliff, top glass dome hatch is OPEN (openHatchRatio = 1) showing penguin boarding!
-      // p = 0.42..0.64: Top glass dome hatch smoothly locks shut (openHatchRatio: 1 -> 0, "철컥!")
-      // p = 0.64..1.00: Plasma thrusters roar to life & Giant UFO blasts off into the upper-right sky!
-      const openHatchRatio =
-        p < 0.42 ? 1 : p < 0.64 ? Math.max(0, 1 - (p - 0.42) / 0.22) : 0;
-      const launchP = p < 0.64 ? 0 : Math.pow((p - 0.64) / 0.36, 2);
-      const ufoX = 285 + launchP * 260;
-      const ufoY = 324 - launchP * 390 + (p < 0.64 ? Math.sin(now * 0.015) * 3 : 0);
-      const ufoTilt = launchP > 0 ? -0.22 * Math.min(1, launchP * 1.8) : 0;
-      const thrusterBoost = p < 0.5 ? 0.4 : p < 0.64 ? 1.1 : 2.3;
+      // While !scene0Launching: Parked completely still on snow cliff (ufoX=285, ufoY=324), top hatch is OPEN (openHatchRatio = 1)!
+      // Once scene0Launching is triggered:
+      //   launchRatio = 0.00..0.36: Top glass dome hatch smoothly locks shut (openHatchRatio: 1 -> 0, "철컥!")
+      //   launchRatio = 0.36..1.00: Plasma thrusters roar & Giant UFO blasts straight up into the high sky!
+      const launchRatio = MOTION_STATE.scene0Launching
+        ? Math.min(1, Math.max(0, (now - MOTION_STATE.scene0LaunchStartTime) / 1850))
+        : 0;
+      const openHatchRatio = !MOTION_STATE.scene0Launching
+        ? 1
+        : launchRatio < 0.36
+        ? Math.max(0, 1 - launchRatio / 0.36)
+        : 0;
+      const launchP = launchRatio < 0.36 ? 0 : Math.pow((launchRatio - 0.36) / 0.64, 2);
+      const ufoX = 285 + launchP * 190;
+      const ufoY = 324 - launchP * 420; // Completely stationary at 324 until liftoff!
+      const ufoTilt = launchP > 0 ? -0.24 * Math.min(1, launchP * 1.8) : 0;
+      const thrusterBoost = !MOTION_STATE.scene0Launching ? 0.35 : launchRatio < 0.36 ? 1.15 : 2.4;
 
       drawUfoSpaceshipWithPilot(
         ctx,
@@ -2980,7 +3154,7 @@ function initPixelMotionStudio() {
         ufoY,
         ufoTilt,
         now,
-        p < 0.38, // Surprised expression at crumbling Antarctica initially, then determined pilot!
+        false,
         false,
         3,
         {
@@ -2992,33 +3166,37 @@ function initPixelMotionStudio() {
       );
 
       // Speech Bubble above the Giant UFO
-      if (p < 0.88) {
+      if (launchRatio < 0.85) {
         drawRetroSpeechBubble(
           ctx,
           ufoX + 12,
           Math.max(66, ufoY - 104),
-          p < 0.45
+          !MOTION_STATE.scene0Launching
             ? CURRENT_LANG === 'ko'
-              ? '으아악!! 남극이 파괴되고 있어요!! 어서 우주선 타고 탈출하자!!'
-              : 'AAAAH!! Antarctica is crumbling!! Board the Giant UFO and escape!!'
-            : p < 0.68
+              ? '남극이 파괴되고 있어요! 위에서 내 NFT 번호 입력 후 [🚀 NFT 탑승]을 눌러 이륙하세요!'
+              : 'Antarctica is crumbling! Enter your NFT # above and click [Board NFT] to take off!'
+            : launchRatio < 0.42
             ? CURRENT_LANG === 'ko'
               ? '철컥! 우주선 해치 잠금 완료! 엔진 점화— 하늘로 출격!!'
               : 'CLANK! UFO Hatch Locked! Igniting plasma thrusters— LIFTOFF!!'
             : CURRENT_LANG === 'ko'
-            ? '부우우웅—!! 남극 상공 돌파! 장애물을 피해 날아가자!!'
-            : 'VROOOOM—!! Blasting into the sky! Dodge the obstacles!!',
-          p < 0.45 ? '#fb7185' : '#38bdf8',
+            ? '부우우웅—!! 남극 고고도 상공 하늘로 이륙한다!!'
+            : 'VROOOOM—!! Blasting high up into the sky!!',
+          !MOTION_STATE.scene0Launching ? '#fb7185' : '#38bdf8',
           now
         );
       }
 
       drawRetroDialogueBar(
         ctx,
-        'SCENE 1 · 🚨 남극 붕괴 & 우주선 탑승',
-        CURRENT_LANG === 'ko'
-          ? `남극이 파괴되고 있어요! ${pilotTag} 대원이 대형 UFO 우주선에 탑승해 하늘로 긴급 탈출합니다! (클릭 시 즉시 교전 시작)`
-          : `Antarctica is crumbling! Pilot ${pilotTag} boards the Giant UFO on the snow cliff and blasts off into the sky!`
+        'SCENE 1 · 🚨 남극 붕괴 & 우주선 탑승 대기',
+        !MOTION_STATE.scene0Launching
+          ? CURRENT_LANG === 'ko'
+            ? `현재 탑승 대기 중(${pilotTag}): 위 탑승기에 내 NFT 번호(0~9999)를 입력하고 [🚀 NFT 탑승] 또는 [없음]을 누르면 이륙합니다!`
+            : `Waiting on launchpad (${pilotTag}): Enter your NFT # (0–9999) above and click [Board NFT] or [None] to take off!`
+          : CURRENT_LANG === 'ko'
+          ? `부우우웅—!! ${pilotTag} 대원을 태운 대형 우주선이 해치를 닫고 남극 상공 하늘로 솟구쳐 오릅니다!`
+          : `VROOOOM—!! The Giant UFO locks its hatch and blasts high into the sky with Pilot ${pilotTag}!`
       );
 
       ctx.restore();
@@ -3026,7 +3204,7 @@ function initPixelMotionStudio() {
 
     // ========================================================================
     // SCENE 1 ("2. 🛸 하늘교전 & 픽셀화"):
-    //   Phase A ('combat'): Mobile-First Sky Battle in the Giant UFO (Scale 1.44x)!
+    //   Phase A ('combat'): High-Altitude Sky Battle above the Cloud Sea in the Giant UFO!
     //   Phase B ('scan'): Shot Down (격추!) -> The ENTIRE Giant UFO + Penguin Pilot inside get scanned into a 16-Bit Pixel UFO + Pixel Penguin!
     // ========================================================================
     else if (MOTION_STATE.sceneIdx === 1) {
@@ -3039,7 +3217,7 @@ function initPixelMotionStudio() {
         ctx.translate((Math.random() - 0.5) * mag, (Math.random() - 0.5) * mag);
       }
 
-      drawScene1Background(ctx, now);
+      drawScene2SkyBattleBackground(ctx, now);
 
       // Cosmic speed lines & starfield in the upper sky
       ctx.save();
