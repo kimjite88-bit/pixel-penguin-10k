@@ -36,6 +36,7 @@ let specialsByNum = new Map();
 let traitScoreLookup = {};
 
 const TIER_RANK_WEIGHT = {
+  Unranked: 7,
   Mythic: 6,
   Legendary: 5,
   Epic: 4,
