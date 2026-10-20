@@ -2335,11 +2335,15 @@ body.ufo-fullscreen-lock {
 
 .retro-intro-theater.is-fullscreen-mode .retro-screen-wrap {
   max-height: 68dvh;
-  margin: 0 auto;
+  margin: auto;
   width: min(100%, calc(68dvh * 16 / 9));
 }
 
 .retro-intro-theater.is-fullscreen-mode .mobile-fullscreen-touchpad {
+  display: none;
+}
+
+.retro-intro-theater.is-fullscreen-mode[data-scene="2"] .mobile-fullscreen-touchpad {
   display: flex;
   align-items: center;
   justify-content: center;

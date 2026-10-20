@@ -484,7 +484,7 @@ function initAmbientPixelCanvas() {
 //    Scene 3 (4. 픽셀화): Reference #4 (UFO pulled into towering Voxel Beam & pixelating)
 //    Scene 4 (5. 벚꽃마을): Cherry Blossom Pixel Town arrival & welcome by pixel penguin friends
 // ============================================================================
-const SCENE_DURATIONS = [99999999, 2500, 15000, 3000, 99999999];
+const SCENE_DURATIONS = [99999999, 2500, 99999999, 3000, 99999999];
 
 const MOTION_STATE = {
   sceneIdx: 0,
@@ -693,6 +693,7 @@ function resetUfoGame(now = performance.now(), keepUserControl = false) {
   UFO_GAME.score = 0;
   UFO_GAME.kills = 0;
   UFO_GAME.combo = 1;
+  UFO_GAME.lastDiffLevel = 1;
   UFO_GAME.lastFireAt = now;
   UFO_GAME.lastSpawnAt = now;
   UFO_GAME.hitFlashUntil = 0;
@@ -1874,6 +1875,10 @@ function updateIntroProgressBars(activeSceneIdx, progressRatio) {
 
 function setIntroScene(sceneIdx, resetTimer = true) {
   MOTION_STATE.sceneIdx = ((sceneIdx % 5) + 5) % 5;
+  const theaterEl = document.getElementById('retro-intro-theater');
+  if (theaterEl) {
+    theaterEl.dataset.scene = String(MOTION_STATE.sceneIdx);
+  }
   if (resetTimer) {
     MOTION_STATE.sceneStartTime = performance.now();
     if (MOTION_STATE.sceneIdx === 0) {
@@ -2982,12 +2987,14 @@ function drawUfoCombatHud(ctx, now, remainSec = 15) {
     );
   }
 
-  // Remaining Stage Timer
-  ctx.fillStyle = remainSec <= 4 ? '#fb7185' : '#bae6fd';
+  // Escalating Difficulty Level & Survival Time (No artificial time limit — survive until 3 shields deplete!)
+  const diffLevel = Math.max(1, Math.round(remainSec));
+  const survivalSec = Math.max(0, Math.floor((now - UFO_GAME.phaseStartTime) / 1000));
+  ctx.fillStyle = diffLevel >= 5 ? '#fb7185' : diffLevel >= 3 ? '#fde047' : '#bae6fd';
   ctx.font = '900 12px "Pretendard", "Malgun Gothic", sans-serif';
   ctx.textAlign = 'right';
   ctx.fillText(
-    `TIME ${Math.max(0, Math.ceil(remainSec))}s`,
+    `LV.${diffLevel} · ${survivalSec}s`,
     hx + hw - 14,
     hy + hh / 2 + 1
   );
@@ -3206,16 +3213,9 @@ function initPixelMotionStudio() {
     const touch = e.touches[0];
     if (!touch) return;
 
-    if (
-      MOTION_STATE.isFullscreen ||
-      MOTION_STATE.sceneIdx === 2
-    ) {
-      if (e.cancelable) e.preventDefault();
-    }
-
-    const { mx, my } = getLogicalCoords(touch.clientX, touch.clientY);
-
     if (MOTION_STATE.sceneIdx === 2) {
+      if (e.cancelable) e.preventDefault();
+      const { mx, my } = getLogicalCoords(touch.clientX, touch.clientY);
       UFO_GAME.userControlled = true;
       UFO_GAME.targetX = Math.max(125, Math.min(680, mx));
       UFO_GAME.targetY = Math.max(92, Math.min(390, my - 36));
@@ -3225,13 +3225,12 @@ function initPixelMotionStudio() {
   canvas.addEventListener('touchmove', handleTouchSteer, { passive: false });
 
   // Dedicated Mobile Fullscreen Touchpad Below Canvas
+  // CRITICAL FIX: Never call setIntroScene(2, true) when sceneIdx !== 2 (prevents resetting score & blocking Scene 4/5 transition!)
   const touchpadEl = document.getElementById('mobile-fullscreen-touchpad');
   if (touchpadEl) {
     const steerFromPad = (clientX, clientY, ev) => {
+      if (MOTION_STATE.sceneIdx !== 2) return;
       if (ev && ev.cancelable) ev.preventDefault();
-      if (MOTION_STATE.sceneIdx !== 2) {
-        setIntroScene(2, true);
-      }
       const rect = touchpadEl.getBoundingClientRect();
       const rx = Math.max(0, Math.min(1, (clientX - rect.left) / Math.max(1, rect.width)));
       const ry = Math.max(0, Math.min(1, (clientY - rect.top) / Math.max(1, rect.height)));
@@ -3413,10 +3412,27 @@ function initPixelMotionStudio() {
       drawRefSkyGameBackground(ctx, now);
 
       const combatElapsed = now - UFO_GAME.phaseStartTime;
-      const remainSec = Math.max(0, (curDuration - combatElapsed) / 1000);
+      const combatSec = Math.max(0, combatElapsed / 1000);
+      // Progressive Difficulty Level: escalates every 8 seconds (LV.1 -> LV.10 MAX), no artificial 15s cutoff!
+      const diffLevel = Math.min(10, 1 + Math.floor(combatSec / 8));
+      const speedMult = 1 + (diffLevel - 1) * 0.22;
+
+      if (diffLevel > (UFO_GAME.lastDiffLevel || 1)) {
+        UFO_GAME.lastDiffLevel = diffLevel;
+        const lvBonus = diffLevel * 300;
+        UFO_GAME.score += lvBonus;
+        UFO_GAME.popups.push({
+          x: Math.max(220, Math.min(740, UFO_GAME.x)),
+          y: Math.max(95, UFO_GAME.y - 62),
+          vy: -1.4,
+          text: `LV.${diffLevel} SPEED UP! +${lvBonus}`,
+          col: '#fde047',
+          alpha: 1,
+        });
+      }
 
       // 1. Update Giant UFO Position (Keyboard OR Touch/Mouse Target)
-      const keySpd = 5.8 * dt;
+      const keySpd = 6.2 * dt;
       let keyMoved = false;
       if (UFO_GAME.keys['ArrowLeft'] || UFO_GAME.keys['KeyA']) {
         UFO_GAME.targetX -= keySpd;
@@ -3456,24 +3472,27 @@ function initPixelMotionStudio() {
         );
       }
 
-      // 3. Spawn Reference Image #3 Entities:
-      //    - 3-Star Golden Arcs ('star', +200 PTS each)
-      //    - Vertical Glowing Pink Neon Warp Rings ('ring', +500 PTS)
-      //    - 3D Neon Wireframe Voxel Cubes ('cube', +350 PTS)
-      //    - Dark Purple Spiked Naval Mines ('mine', +250 PTS on laser kill or -1 shield on hit)
-      const spawnInterval = 440;
+      // 3. Spawn Reference Image #3 Entities with Progressive Difficulty Scaling:
+      //    - Spawn interval tightens from 420ms (LV.1) down to 130ms (LV.8+)
+      //    - Mine probability rises from 28% (LV.1) up to 72% (LV.7+)
+      //    - Mine speed, HP, and multi-mine spread formations scale up with diffLevel
+      const spawnInterval = Math.max(130, 420 - (diffLevel - 1) * 40);
       if (now - UFO_GAME.lastSpawnAt >= spawnInterval) {
         UFO_GAME.lastSpawnAt = now;
         const roll = Math.random();
         const baseY = 115 + Math.random() * 245;
+        const mineProb = Math.min(0.72, 0.28 + (diffLevel - 1) * 0.07);
+        const starCut = (1 - mineProb) * 0.46;
+        const ringCut = (1 - mineProb) * 0.72;
+        const cubeCut = 1 - mineProb;
 
-        if (roll < 0.34) {
+        if (roll < starCut) {
           for (let s = 0; s < 3; s++) {
             UFO_GAME.entities.push({
               type: 'star',
               x: 940 + s * 44,
               y: baseY - s * 16,
-              vx: -5.0,
+              vx: -5.0 * speedMult,
               vy: 0,
               r: 17,
               hp: 1,
@@ -3481,43 +3500,52 @@ function initPixelMotionStudio() {
               vrot: 0,
             });
           }
-        } else if (roll < 0.54) {
+        } else if (roll < ringCut) {
           UFO_GAME.entities.push({
             type: 'ring',
             x: 940,
             y: Math.max(140, Math.min(340, baseY)),
-            vx: -4.8,
+            vx: -4.8 * speedMult,
             vy: 0,
             r: 36,
             hp: 1,
             rot: 0,
             vrot: 0,
           });
-        } else if (roll < 0.74) {
+        } else if (roll < cubeCut) {
           UFO_GAME.entities.push({
             type: 'cube',
             colorMode: Math.random() < 0.5 ? 'cyan' : 'pink',
             x: 940,
             y: baseY,
-            vx: -5.1,
-            vy: Math.sin(now * 0.008) * 0.6,
+            vx: -5.1 * speedMult,
+            vy: Math.sin(now * 0.008) * 0.6 * speedMult,
             r: 19,
             hp: 1,
             rot: Math.random() * Math.PI,
             vrot: 0.05,
           });
         } else {
-          UFO_GAME.entities.push({
-            type: 'mine',
-            x: 940,
-            y: baseY,
-            vx: -(5.4 + Math.random() * 1.8),
-            vy: (Math.random() - 0.5) * 1.2,
-            r: 21,
-            hp: 2,
-            rot: 0,
-            vrot: 0.04,
-          });
+          const mineHp = diffLevel >= 4 ? 4 : diffLevel >= 2 ? 3 : 2;
+          const mineCount = diffLevel >= 5 ? 3 : diffLevel >= 2 && Math.random() < 0.55 ? 2 : 1;
+          for (let m = 0; m < mineCount; m++) {
+            // Aimed/off-axis lane targeting on first mine at LV.2+ so idle UFOs cannot survive indefinitely via nose lasers
+            const targetLaneY =
+              m === 0 && diffLevel >= 2 && Math.random() < 0.55
+                ? Math.max(105, Math.min(375, UFO_GAME.y + (Math.random() < 0.5 ? -36 : 38)))
+                : Math.max(105, Math.min(375, baseY + (m - (mineCount - 1) / 2) * 74));
+            UFO_GAME.entities.push({
+              type: 'mine',
+              x: 940 + m * 38,
+              y: targetLaneY,
+              vx: -(5.4 + Math.random() * 1.8) * speedMult,
+              vy: (Math.random() - 0.5) * (1.2 + (diffLevel - 1) * 0.35),
+              r: 21,
+              hp: mineHp,
+              rot: m * 0.4,
+              vrot: 0.04 * speedMult,
+            });
+          }
         }
       }
 
@@ -3641,11 +3669,6 @@ function initPixelMotionStudio() {
         drawUfoEntity(ctx, ent, now);
       }
 
-      // Stage Clear after 15 seconds -> Enter Scene 4 Voxel Beam Pixelation
-      if (combatElapsed >= curDuration) {
-        triggerUfoShotDown(now);
-      }
-
       // 6. Trailing Cyan & Yellow Pixel Squares behind the UFO (Matching Reference Image #3)
       ctx.save();
       for (let t = 0; t < 8; t++) {
@@ -3680,7 +3703,7 @@ function initPixelMotionStudio() {
         }
       );
 
-      drawUfoCombatHud(ctx, now, remainSec);
+      drawUfoCombatHud(ctx, now, diffLevel);
 
       // Render Explosion Particles & Floating Score Popups
       for (let i = UFO_GAME.particles.length - 1; i >= 0; i--) {
