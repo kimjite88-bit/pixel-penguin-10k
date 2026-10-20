@@ -12,7 +12,7 @@
   <meta property="og:image" content="https://ppeng.verycloud.io/assets/logo_4441_1024.png?v=v322" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" type="image/png" href="/img/P4441.png?v=v322" />
-  <link rel="stylesheet" href="/styles.css?v=5.0.3" />
+  <link rel="stylesheet" href="/styles.css?v=5.1.0" />
 </head>
 <body>
   <!-- Full-Viewport Stepped Pixel Ambient Particle Canvas -->
@@ -57,16 +57,16 @@
     <!-- TAB PAGE 1: 컬렉션 소개 (COLLECTION INTRO) -->
     <div id="tab-page-intro" class="tab-page active">
 
-      <!-- 1. TOPMOST: RETRO 16-BIT PIXEL GAME INTRO TRAILER -->
+      <!-- 1. TOPMOST: RETRO 16-BIT PIXEL GAME INTRO TRAILER & UFO MINI-GAME -->
       <section class="section-block motion-showcase-section" id="sec-motion">
         <div class="section-header intro-header-bar">
           <div class="intro-title-group">
             <h2 class="section-title" data-ko="PIXEL PENGUIN WORLD" data-en="PIXEL PENGUIN WORLD">PIXEL PENGUIN WORLD</h2>
-            <p class="section-sub" data-ko="산책하다 구덩이에 빠져 픽셀이 된 펭귄 이야기" data-en="A 2D penguin slips into a pit and wakes up as a pixel penguin">산책하다 구덩이에 빠져 픽셀이 된 펭귄 이야기</p>
+            <p class="section-sub" data-ko="우주선 타고 날다 격추되어 픽셀 월드에 불시착한 파란 펭귄 이야기" data-en="Pilot the UFO, get shot down into the Pixel Rift, and land in Pixel World">우주선 타고 날다 격추되어 픽셀 월드에 불시착한 파란 펭귄 이야기</p>
           </div>
 
           <div class="motion-mode-bar" role="group" aria-label="Intro Cutscene Chapter">
-            <button type="button" class="motion-mode-btn active" data-scene="0" data-ko="1. 추락 & 픽셀변신" data-en="1. Pit Fall">1. 추락 &amp; 픽셀변신</button>
+            <button type="button" class="motion-mode-btn active" data-scene="0" data-ko="1. 🛸 우주선 &amp; 추락" data-en="1. 🛸 UFO &amp; Fall">1. 🛸 우주선 &amp; 추락</button>
             <button type="button" class="motion-mode-btn" data-scene="1" data-ko="2. 픽셀월드" data-en="2. Pixel World">2. 픽셀월드</button>
             <button type="button" class="motion-mode-btn" data-scene="2" data-ko="3. 타이틀" data-en="3. Title">3. 타이틀</button>
           </div>
@@ -76,7 +76,15 @@
           <div class="motion-hud-topbar">
             <div class="hud-left-status">
               <span class="hud-rec-dot"></span>
-              <span id="motion-hud-mode-label">SCENE 1/3 · 2D 눈밭 산책 → 픽셀 구덩이 추락 &amp; 파란 픽셀 펭귄 변신</span>
+              <span id="motion-hud-mode-label">SCENE 1/3 · 🛸 파란 펭귄 우주선 출격 → 격추 추락 &amp; 픽셀 펭귄 변신</span>
+            </div>
+            <div class="hud-right-pilot-bar">
+              <label for="ufo-pilot-id-input" class="pilot-id-label" data-ko="랭킹 등록 NFT #" data-en="Rank NFT #">랭킹 등록 NFT #</label>
+              <input type="number" id="ufo-pilot-id-input" class="pilot-id-input" min="0" max="9999" value="0" placeholder="0~9999" />
+              <button type="button" class="pilot-mini-btn" id="btn-ufo-random-id" title="랜덤 번호">🎲</button>
+              <button type="button" class="pilot-rank-btn" id="btn-open-leaderboard">
+                <span data-ko="🏆 랭킹보기" data-en="🏆 Leaderboard">🏆 랭킹보기</span>
+              </button>
             </div>
           </div>
 
@@ -94,19 +102,22 @@
 
           <!-- Mobile-Friendly Crisp HTML RPG Dialogue Box -->
           <div class="intro-dialogue-card" id="intro-dialogue-card">
-            <span class="intro-dialogue-badge" id="intro-dialogue-speaker">SCENE 1 · 추락</span>
-            <p class="intro-dialogue-text" id="intro-dialogue-text">매끈했던 2D 파란 펭귄이 눈밭 산책 중 바나나를 밟고 픽셀 차원 구덩이로 추락! 파란 픽셀 펭귄으로 변신합니다.</p>
+            <span class="intro-dialogue-badge" id="intro-dialogue-speaker">SCENE 1 · 🛸 우주선 출격</span>
+            <p class="intro-dialogue-text" id="intro-dialogue-text">파란 펭귄이 우주선 조종석에 상반신만 내밀고 출격! 마우스/터치/방향키로 바나나·운석을 격파하세요. 격추되면 차원 포털로 추락해 픽셀 월드로 갑니다!</p>
             <button type="button" class="intro-dialogue-next" id="intro-dialogue-next-btn" data-ko="다음 장면 ▶" data-en="Next ▶">다음 장면 ▶</button>
           </div>
 
           <div class="retro-controls-bar">
             <button type="button" class="btn-primary ctrl-btn" id="btn-pixel-burst">
-              <span data-ko="인트로 처음부터" data-en="Replay Intro">인트로 처음부터</span>
+              <span data-ko="🛸 우주선 게임 출격" data-en="🛸 Launch UFO Game">🛸 우주선 게임 출격</span>
+            </button>
+            <button type="button" class="btn-secondary ctrl-btn gold-outline" id="btn-open-leaderboard-bottom">
+              <span data-ko="🏆 NFT 랭킹보기 (클릭 시 이동)" data-en="🏆 NFT Leaderboard">🏆 NFT 랭킹보기 (클릭 시 이동)</span>
             </button>
             <button type="button" class="btn-secondary active-toggle ctrl-btn" id="btn-motion-autoplay">
-              <span data-ko="자동재생: ON" data-en="Auto: ON" id="autoplay-label">자동재생: ON</span>
+              <span data-ko="자동진행: ON" data-en="Auto: ON" id="autoplay-label">자동진행: ON</span>
             </button>
-            <button type="button" class="btn-secondary ctrl-btn gold-outline" onclick="scrollToSection('tab-codex')">
+            <button type="button" class="btn-secondary ctrl-btn" onclick="scrollToSection('tab-codex')">
               <span data-ko="10,000마리 도감도 구경하기" data-en="Explore 10K Codex">10,000마리 도감도 구경하기</span>
             </button>
           </div>
@@ -389,6 +400,21 @@
     </div>
   </div>
 
+  <!-- UFO SPACE GAME — NFT NUMBER (#0 ~ #9999) LEADERBOARD MODAL -->
+  <div class="modal-backdrop" id="leaderboard-modal" role="dialog" aria-modal="true" aria-labelledby="leaderboard-modal-title">
+    <div class="modal-card leaderboard-modal-card">
+      <button type="button" class="modal-close-btn" id="close-leaderboard-modal" data-ko="✕ 닫기" data-en="✕ Close">✕ 닫기</button>
+      <div class="leaderboard-modal-header">
+        <div class="leaderboard-title-wrap">
+          <span class="pill-tag very">UFO ARCADE RANKING</span>
+          <h3 id="leaderboard-modal-title" data-ko="🏆 우주선 게임 NFT 번호 랭킹보드" data-en="🏆 UFO Game NFT Number Leaderboard">🏆 우주선 게임 NFT 번호 랭킹보드</h3>
+          <p data-ko="랭킹의 NFT 번호(#0~#9999)를 클릭하면 즉시 해당 NFT의 육각형 프사 착용기 & 도감 상세정보로 이동합니다!" data-en="Click any ranked NFT (#0~#9999) to immediately inspect that Penguin in the Hexagon PFP Studio & Codex!">랭킹의 NFT 번호(#0~#9999)를 클릭하면 즉시 해당 NFT의 육각형 프사 착용기 &amp; 도감 상세정보로 이동합니다!</p>
+        </div>
+      </div>
+      <div class="leaderboard-list-wrap" id="leaderboard-list-body"></div>
+    </div>
+  </div>
+
   <!-- Hidden 3072x3072 High-Res Upscale Canvas -->
   <canvas id="upscale-canvas" width="3072" height="3072" style="display:none;"></canvas>
 
@@ -403,6 +429,6 @@
     </div>
   </footer>
 
-  <script src="/app.js?v=5.0.8"></script>
+  <script src="/app.js?v=5.1.0"></script>
 </body>
 </html>

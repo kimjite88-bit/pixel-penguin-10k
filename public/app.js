@@ -465,7 +465,7 @@ function initAmbientPixelCanvas() {
 //    Scene 1: Lands in 16-Bit Cherry Blossom Pixel World & bounces with Blue Pixel Penguin friends
 //    Scene 2: Authentic 16-Bit Arcade Title Screen (Sculpted Bitmap Pixel Logo + RPG Command Box + Centered 5-Penguin Crew)
 // ============================================================================
-const SCENE_DURATIONS = [6200, 5400, 5600]; // 3 Scenes: 0 (추락·도트변신), 1 (픽셀월드), 2 (타이틀)
+const SCENE_DURATIONS = [8600, 5600, 5600]; // 3 Scenes: 0 (🛸 우주선 교전·격추·픽셀변신), 1 (픽셀월드 도착), 2 (타이틀)
 
 const MOTION_STATE = {
   sceneIdx: 0,
@@ -482,6 +482,419 @@ const MOTION_STATE = {
   speciesSprites: new Map(),
   menuHoverIdx: 0,
 };
+
+// ============================================================================
+// OPEN-SOURCE HYBRID UFO ARCADE ENGINE (bcastell/starfighter + radarhere/spacegame)
+// Protagonist: Default Blue Penguin (Upper-Body Pilot in UFO Glass Cockpit)
+// Flow: UFO Space Combat -> Shot Down (격추!) -> Parabolic Fall into Portal -> Pixel Scan -> Pixel World!
+// ============================================================================
+const UFO_GAME = {
+  phase: 'combat', // 'combat' | 'ejected' | 'scan'
+  phaseStartTime: 0,
+  lastTickAt: 0,
+  userControlled: false,
+  pilotTokenId: 0,
+  x: 210,
+  y: 205,
+  vx: 0,
+  vy: 0,
+  targetX: 210,
+  targetY: 205,
+  tiltRad: 0,
+  shields: 3,
+  maxShields: 3,
+  score: 0,
+  lastFinalScore: 0,
+  lastRank: null,
+  kills: 0,
+  combo: 1,
+  lastFireAt: 0,
+  lastSpawnAt: 0,
+  hitFlashUntil: 0,
+  shakeUntil: 0,
+  ejectedFromX: 280,
+  ejectedFromY: 205,
+  scoreSubmitted: false,
+  keys: {},
+  lasers: [],
+  entities: [], // { type: 'banana'|'meteor'|'mine'|'fish'|'core', x, y, vx, vy, r, hp, rot, vrot }
+  particles: [], // { x, y, vx, vy, col, sz, alpha, decay }
+  popups: [], // { x, y, vy, text, col, alpha }
+  stars: Array.from({ length: 28 }, (_, i) => ({
+    x: (i * 73) % 960,
+    y: 18 + ((i * 41) % 280),
+    spd: 1.4 + (i % 4) * 0.85,
+    sz: i % 3 === 0 ? 3 : 2,
+  })),
+};
+
+function resetUfoGame(now = performance.now(), keepUserControl = false) {
+  UFO_GAME.phase = 'combat';
+  UFO_GAME.phaseStartTime = now;
+  UFO_GAME.lastTickAt = now;
+  UFO_GAME.userControlled = keepUserControl;
+  UFO_GAME.x = 200;
+  UFO_GAME.y = 200;
+  UFO_GAME.vx = 0;
+  UFO_GAME.vy = 0;
+  UFO_GAME.targetX = 200;
+  UFO_GAME.targetY = 200;
+  UFO_GAME.tiltRad = 0;
+  UFO_GAME.shields = 3;
+  UFO_GAME.score = 0;
+  UFO_GAME.kills = 0;
+  UFO_GAME.combo = 1;
+  UFO_GAME.lastFireAt = now;
+  UFO_GAME.lastSpawnAt = now - 300;
+  UFO_GAME.hitFlashUntil = 0;
+  UFO_GAME.shakeUntil = 0;
+  UFO_GAME.scoreSubmitted = false;
+  UFO_GAME.lasers = [];
+  UFO_GAME.entities = [];
+  UFO_GAME.particles = [];
+  UFO_GAME.popups = [];
+}
+
+function triggerUfoShotDown(now = performance.now()) {
+  if (UFO_GAME.phase !== 'combat') return;
+  UFO_GAME.phase = 'ejected';
+  UFO_GAME.phaseStartTime = now;
+  UFO_GAME.shields = 0;
+  UFO_GAME.ejectedFromX = Math.max(140, Math.min(540, UFO_GAME.x));
+  UFO_GAME.ejectedFromY = Math.max(95, Math.min(295, UFO_GAME.y));
+  UFO_GAME.shakeUntil = now + 420;
+  UFO_GAME.lastFinalScore = Math.max(350, UFO_GAME.score);
+  // Spawn dramatic shot-down explosion burst
+  for (let i = 0; i < 24; i++) {
+    const a = (i / 24) * Math.PI * 2 + (Math.random() - 0.5) * 0.25;
+    const sp = 2.2 + Math.random() * 5.2;
+    UFO_GAME.particles.push({
+      x: UFO_GAME.x,
+      y: UFO_GAME.y,
+      vx: Math.cos(a) * sp,
+      vy: Math.sin(a) * sp,
+      col: i % 3 === 0 ? '#facc15' : i % 2 === 0 ? '#fb7185' : '#67e8f9',
+      sz: 4 + (i % 3) * 2,
+      alpha: 1,
+      decay: 0.022,
+    });
+  }
+  submitUfoScoreToServer(UFO_GAME.pilotTokenId, UFO_GAME.lastFinalScore, UFO_GAME.kills);
+}
+
+async function submitUfoScoreToServer(tokenId, score, kills) {
+  if (UFO_GAME.scoreSubmitted || score <= 0) return;
+  UFO_GAME.scoreSubmitted = true;
+  try {
+    const res = await fetch('/api/leaderboard', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tokenId, score, kills }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      UFO_GAME.lastRank = data.rank || null;
+    }
+  } catch (e) {
+    // Non-blocking fallback
+  }
+}
+
+async function openLeaderboardModal() {
+  const modal = document.getElementById('leaderboard-modal');
+  const body = document.getElementById('leaderboard-list-body');
+  if (!modal || !body) return;
+  modal.classList.add('open');
+  body.innerHTML = `<div style="padding:32px; text-align:center; color:#94a3b8; font-weight:800;">${
+    CURRENT_LANG === 'ko' ? '랭킹 데이터를 불러오는 중...' : 'Loading NFT Leaderboard...'
+  }</div>`;
+
+  try {
+    const res = await fetch('/api/leaderboard?limit=30');
+    const data = await res.json();
+    const items = data.items || [];
+    if (items.length === 0) {
+      body.innerHTML = `<div style="padding:32px; text-align:center; color:#94a3b8;">아직 등록된 기록이 없습니다.</div>`;
+      return;
+    }
+    body.innerHTML = items
+      .map((item) => {
+        const medal =
+          item.rank === 1
+            ? '🥇 1위'
+            : item.rank === 2
+            ? '🥈 2위'
+            : item.rank === 3
+            ? '🥉 3위'
+            : `#${item.rank}`;
+        const topClass = item.rank <= 3 ? `rank-top-${item.rank}` : '';
+        const goLabel = CURRENT_LANG === 'ko' ? `#${item.edition} 보러가기 ▶` : `Go to #${item.edition} ▶`;
+        const subText =
+          CURRENT_LANG === 'ko'
+            ? `희귀도 순위 #${Number(item.rarity_rank).toLocaleString()} · 격파 ${item.kills || 0}기`
+            : `Rarity Rank #${Number(item.rarity_rank).toLocaleString()} · ${item.kills || 0} Hits`;
+        return `
+          <div class="rank-row-card ${topClass}" onclick="jumpToRankedNft(${item.edition})">
+            <div class="rank-badge-num">${medal}</div>
+            <img src="${item.image_url}" alt="${item.id}" class="rank-avatar-thumb" loading="lazy" />
+            <div class="rank-nft-info">
+              <div class="rank-nft-title">
+                <span>#${item.edition} (${item.id})</span>
+                <span class="tier-pill tier-${item.tier}" style="font-size:10.5px; padding:2px 7px;">${item.tier}</span>
+              </div>
+              <div class="rank-nft-sub">${subText}</div>
+            </div>
+            <div class="rank-score-val">${Number(item.score).toLocaleString()} PTS</div>
+            <div class="rank-go-btn">${goLabel}</div>
+          </div>
+        `;
+      })
+      .join('');
+  } catch (e) {
+    body.innerHTML = `<div style="padding:32px; text-align:center; color:#fb7185;">랭킹 로드 실패</div>`;
+  }
+}
+
+function closeLeaderboardModal() {
+  document.getElementById('leaderboard-modal')?.classList.remove('open');
+}
+
+function jumpToRankedNft(edition) {
+  const num = Math.max(0, Math.min(9999, Number(edition) || 0));
+  closeLeaderboardModal();
+  setUfoPilotTokenId(num, false);
+  loadPfpPreview(num);
+  openTokenModal(num);
+}
+
+function setUfoPilotTokenId(tokenNum, triggerPfp = true) {
+  const num = Math.max(0, Math.min(9999, Math.floor(Number(tokenNum) || 0)));
+  UFO_GAME.pilotTokenId = num;
+  const inputEl = document.getElementById('ufo-pilot-id-input');
+  if (inputEl && Number(inputEl.value) !== num) {
+    inputEl.value = String(num);
+  }
+  const pfpInput = document.getElementById('pfp-jump-input');
+  if (pfpInput) {
+    pfpInput.value = String(num);
+  }
+  if (triggerPfp && typeof loadPfpPreview === 'function') {
+    loadPfpPreview(num);
+  }
+}
+
+// Helper: Draw UFO Spaceship with Upper-Body Default Blue Penguin Pilot inside the Glass Canopy!
+// Hides lower body/legs 100% naturally inside the metallic saucer hull while showing head, blinking/shocked eyes & upper torso!
+function drawUfoSpaceshipWithPilot(
+  ctx,
+  cx,
+  cy,
+  tiltRad = 0,
+  now = 0,
+  isShocked = false,
+  isImpactBlink = false,
+  shields = 3
+) {
+  ensureHero2DSprite();
+  const anim = getPenguinAnimState(
+    isImpactBlink ? 320 : now,
+    0,
+    false,
+    isImpactBlink,
+    isShocked && !isImpactBlink
+  );
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(tiltRad);
+
+  // 0. Outer Hexagonal Energy Shield Aura (when shields > 0)
+  if (shields > 0) {
+    const pulse = 0.22 + 0.1 * Math.sin(now * 0.008);
+    ctx.save();
+    ctx.strokeStyle =
+      shields >= 3
+        ? `rgba(103, 232, 249, ${pulse + 0.18})`
+        : shields === 2
+        ? `rgba(250, 204, 21, ${pulse + 0.22})`
+        : `rgba(251, 113, 133, ${pulse + 0.28})`;
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.ellipse(0, -6, 74, 46, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // 1. Rear Propulsion Plasma Flame (Left tail thruster) + Bottom Anti-Gravity Core Glow
+  const jetFlicker = 18 + Math.sin(now * 0.06) * 7;
+  ctx.fillStyle = 'rgba(56, 189, 248, 0.35)';
+  ctx.beginPath();
+  ctx.ellipse(-58 - jetFlicker * 0.4, 10, jetFlicker, 7, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#fde047';
+  ctx.beginPath();
+  ctx.ellipse(-56 - jetFlicker * 0.2, 10, jetFlicker * 0.55, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Bottom anti-gravity rings
+  const ringSpread = (now * 0.04) % 14;
+  ctx.strokeStyle = `rgba(103, 232, 249, ${0.65 - ringSpread / 22})`;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(0, 24 + ringSpread * 0.6, 30 - ringSpread * 0.8, 5, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // 2. Back of Glass Cockpit Dome & Pilot Seat Headrest (Taller, roomier dome so full face + beak + upper chest show clearly!)
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.52)';
+  ctx.beginPath();
+  ctx.ellipse(0, 3, 45, 48, 0, Math.PI, Math.PI * 2);
+  ctx.fill();
+
+  // Pilot seat backrest behind penguin
+  ctx.fillStyle = '#1e293b';
+  ctx.strokeStyle = '#090d1a';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(-22, -36, 14, 36, 5);
+  ctx.fill();
+  ctx.stroke();
+
+  // 3. UPPER-BODY BLUE PENGUIN PILOT (Clipped cleanly to the Glass Cockpit Dome above y = +4!)
+  //    Shows full head, blinking/shocked eyes, orange beak, and upper blue chest/flippers while hiding lower belly & feet 100%!
+  ctx.save();
+  ctx.beginPath();
+  ctx.ellipse(0, 4, 44, 49, 0, Math.PI, Math.PI * 2);
+  ctx.lineTo(44, 4);
+  ctx.lineTo(-44, 4);
+  ctx.closePath();
+  ctx.clip();
+
+  const pilotSize = 112;
+  ctx.imageSmoothingEnabled = true;
+  if (MOTION_STATE.hero2DSheetLoaded && MOTION_STATE.hero2DSheet) {
+    ctx.drawImage(
+      MOTION_STATE.hero2DSheet,
+      anim.frameIdx * 256,
+      0,
+      256,
+      172, // Upper 67% of sprite: Head + Eyes + Beak + Upper Blue Torso (zero legs/feet!)
+      -pilotSize / 2 + 1,
+      -62,
+      pilotSize,
+      pilotSize * (172 / 256)
+    );
+  } else if (MOTION_STATE.hero2DLoaded && MOTION_STATE.hero2DImg) {
+    ctx.drawImage(
+      MOTION_STATE.hero2DImg,
+      0,
+      0,
+      256,
+      172,
+      -pilotSize / 2 + 1,
+      -62,
+      pilotSize,
+      pilotSize * (172 / 256)
+    );
+  }
+  ctx.restore();
+
+  // 4. Cockpit Control Yoke & Dashboard Collar (Wraps around the bottom of the glass dome at y = -1..+5)
+  ctx.fillStyle = '#0f172a';
+  ctx.strokeStyle = '#67e8f9';
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.ellipse(0, 4, 45, 7.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Glowing dashboard LEDs inside cockpit rim
+  ctx.fillStyle = '#34d399';
+  ctx.fillRect(-14, 2, 5, 3);
+  ctx.fillStyle = '#facc15';
+  ctx.fillRect(-4, 3, 5, 3);
+  ctx.fillStyle = '#38bdf8';
+  ctx.fillRect(7, 2, 5, 3);
+
+  // 5. Front Translucent Glass Dome Specular Glint & Rim Outline
+  const domeGrad = ctx.createLinearGradient(0, -45, 0, 4);
+  domeGrad.addColorStop(0, 'rgba(186, 230, 253, 0.25)');
+  domeGrad.addColorStop(0.6, 'rgba(56, 189, 248, 0.08)');
+  domeGrad.addColorStop(1, 'rgba(14, 116, 144, 0.22)');
+  ctx.fillStyle = domeGrad;
+  ctx.strokeStyle = 'rgba(125, 211, 252, 0.92)';
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  ctx.ellipse(0, 4, 44, 46, 0, Math.PI, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Curved white glass reflection highlight
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.78)';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.ellipse(0, 3, 37, 39, 0, Math.PI * 1.14, Math.PI * 1.48);
+  ctx.stroke();
+
+  // 6. Metallic UFO Saucer Main Hull (Completely covers y = 2..24)
+  // Bottom engine pod
+  ctx.fillStyle = '#0f172a';
+  ctx.strokeStyle = '#090d1a';
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  ctx.ellipse(0, 17, 32, 9, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Main metallic saucer disc
+  const hullGrad = ctx.createLinearGradient(0, -2, 0, 22);
+  hullGrad.addColorStop(0, '#e2e8f0');
+  hullGrad.addColorStop(0.35, '#38bdf8');
+  hullGrad.addColorStop(0.75, '#0284c7');
+  hullGrad.addColorStop(1, '#0f172a');
+  ctx.fillStyle = hullGrad;
+  ctx.strokeStyle = '#090d1a';
+  ctx.lineWidth = 2.6;
+  ctx.beginPath();
+  ctx.ellipse(0, 10, 62, 14, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Saucer equator metallic bevel line
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.ellipse(0, 8, 56, 9, 0, 0.1 * Math.PI, 0.9 * Math.PI);
+  ctx.stroke();
+
+  // 5 Rotating Neon Rim Lights around the UFO Saucer
+  const lightPhase = Math.floor(now / 110);
+  const rimPositions = [-44, -22, 0, 22, 44];
+  rimPositions.forEach((lx, idx) => {
+    const ly = 11 + Math.cos((lx / 50) * (Math.PI / 2)) * 3.5;
+    const isLit = (lightPhase + idx) % 2 === 0;
+    ctx.fillStyle = '#090d1a';
+    ctx.beginPath();
+    ctx.ellipse(lx, ly, 5.5, 3.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = isLit ? '#facc15' : '#67e8f9';
+    ctx.beginPath();
+    ctx.ellipse(lx, ly, 4, 2.3, 0, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Twin Front Plasma Laser Cannon Nozzles (Right-side nose of saucer)
+  ctx.fillStyle = '#facc15';
+  ctx.strokeStyle = '#090d1a';
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.roundRect(54, 4, 13, 5, 2);
+  ctx.roundRect(50, 11, 13, 5, 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.restore();
+}
 
 function ensureHero2DSprite() {
   if (MOTION_STATE.hero2DImg) return MOTION_STATE.hero2DImg;
@@ -561,6 +974,9 @@ function setIntroScene(sceneIdx, resetTimer = true) {
   MOTION_STATE.sceneIdx = ((sceneIdx % 3) + 3) % 3;
   if (resetTimer) {
     MOTION_STATE.sceneStartTime = performance.now();
+    if (MOTION_STATE.sceneIdx === 0) {
+      resetUfoGame(MOTION_STATE.sceneStartTime, false);
+    }
   }
   document.querySelectorAll('.motion-mode-btn[data-scene]').forEach((btn) => {
     btn.classList.toggle('active', Number(btn.dataset.scene) === MOTION_STATE.sceneIdx);
@@ -569,13 +985,13 @@ function setIntroScene(sceneIdx, resetTimer = true) {
   const labelEl = document.getElementById('motion-hud-mode-label');
   if (labelEl) {
     const labelsKo = [
-      'SCENE 1/3 · 2D 눈밭 산책 → 픽셀 구덩이 추락 & 파란 픽셀 펭귄 변신',
-      'SCENE 2/3 · 16-BIT 픽셀 월드 도착! 알록달록 픽셀 펭귄 친구들과 환영 산책',
+      'SCENE 1/3 · 🛸 파란 펭귄 우주선 교전 → 격추 추락 & 픽셀 펭귄 변신',
+      'SCENE 2/3 · 16-BIT 픽셀 월드 불시착! 알록달록 픽셀 펭귄 친구들과 환영 산책',
       'SCENE 3/3 · PIXEL PENGUIN WORLD — 베리챗 픽셀 펭귄 10,000마리',
     ];
     const labelsEn = [
-      'SCENE 1/3 · 2D Snow Walk → Pixel Chasm Fall & Blue Pixel Transformation',
-      'SCENE 2/3 · Welcome to 16-Bit Pixel World! Strolling with Colorful Penguin Friends',
+      'SCENE 1/3 · 🛸 Blue Penguin UFO Battle → Shot Down into Pixel Rift',
+      'SCENE 2/3 · Landed in 16-Bit Pixel World! Strolling with Penguin Friends',
       'SCENE 3/3 · PIXEL PENGUIN WORLD — 10,000 VeryChat Pixel Penguins',
     ];
     labelEl.textContent =
@@ -1351,6 +1767,234 @@ function drawRetroDialogueBar(ctx, speaker, lineText) {
   }
 }
 
+// Helper: Draw Damaged Empty UFO Saucer Spiraling Away After Shot-Down (Glass Dome Popped Open!)
+function drawDamagedUfoSaucer(ctx, cx, cy, rotRad = 0, now = 0) {
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(rotRad);
+
+  // Dark smoke puffs & fiery orange sparks erupting from the damaged engine
+  for (let s = 0; s < 4; s++) {
+    const sp = (now * 0.005 + s * 0.25) % 1;
+    ctx.fillStyle = s % 2 === 0 ? `rgba(251, 113, 133, ${(1 - sp) * 0.85})` : `rgba(30, 41, 59, ${(1 - sp) * 0.82})`;
+    ctx.beginPath();
+    ctx.arc(8 - sp * 34, -8 - sp * 32, 7 + sp * 9, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Open glass canopy dome hinging backward on the left
+  ctx.save();
+  ctx.translate(-38, 2);
+  ctx.rotate(-0.72);
+  ctx.strokeStyle = 'rgba(125, 211, 252, 0.88)';
+  ctx.fillStyle = 'rgba(56, 189, 248, 0.22)';
+  ctx.lineWidth = 2.2;
+  ctx.beginPath();
+  ctx.ellipse(38, 0, 38, 32, 0, Math.PI, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+
+  // Bottom engine pod
+  ctx.fillStyle = '#0f172a';
+  ctx.strokeStyle = '#090d1a';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(0, 16, 28, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Main metallic saucer disc (matching live UFO hull)
+  const hullGrad = ctx.createLinearGradient(0, -2, 0, 20);
+  hullGrad.addColorStop(0, '#cbd5e1');
+  hullGrad.addColorStop(0.4, '#0284c7');
+  hullGrad.addColorStop(1, '#0f172a');
+  ctx.fillStyle = hullGrad;
+  ctx.strokeStyle = '#090d1a';
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.ellipse(0, 9, 58, 13, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Empty cockpit rim opening
+  ctx.fillStyle = '#0f172a';
+  ctx.strokeStyle = '#fb7185';
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.ellipse(0, 3, 40, 7, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+// Helper: Draw a Pixel Golden Ice-Fish or Cyber Meteor / Plasma Mine for the UFO Game
+function drawUfoEntity(ctx, ent, now) {
+  ctx.save();
+  ctx.translate(ent.x, ent.y);
+
+  if (ent.type === 'banana') {
+    drawCartoonBananaPeel(ctx, 0, 0, ent.rot, 0.96);
+  } else if (ent.type === 'meteor') {
+    ctx.rotate(ent.rot);
+    // Glowing cyber-pixel asteroid with craters
+    ctx.fillStyle = '#090d1a';
+    ctx.beginPath();
+    ctx.arc(0, 0, ent.r + 3, 0, Math.PI * 2);
+    ctx.fill();
+    const mGrad = ctx.createRadialGradient(-5, -5, 2, 0, 0, ent.r);
+    mGrad.addColorStop(0, '#a855f7');
+    mGrad.addColorStop(0.55, '#4c1d95');
+    mGrad.addColorStop(1, '#1e1b4b');
+    ctx.fillStyle = mGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, ent.r, 0, Math.PI * 2);
+    ctx.fill();
+    // Pixel neon cracks
+    ctx.fillStyle = '#67e8f9';
+    ctx.fillRect(-ent.r * 0.4, -4, 6, 4);
+    ctx.fillRect(2, 3, 5, 5);
+    ctx.fillStyle = '#f472b6';
+    ctx.fillRect(-3, -ent.r * 0.5, 4, 4);
+  } else if (ent.type === 'mine') {
+    ctx.rotate(ent.rot);
+    // Spiky neon plasma mine
+    drawComicStarburst(ctx, 0, 0, ent.r * 0.55, ent.r + 5, 8, '#fb7185', '#090d1a', 0);
+    ctx.fillStyle = '#fef08a';
+    ctx.beginPath();
+    ctx.arc(0, 0, ent.r * 0.36, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (ent.type === 'fish') {
+    // Golden Ice-Fish collectible (+500 PTS)
+    const bob = Math.sin(now * 0.012 + ent.x * 0.03) * 3;
+    ctx.translate(0, bob);
+    // Outer golden aura
+    ctx.fillStyle = 'rgba(250, 204, 21, 0.24)';
+    ctx.beginPath();
+    ctx.arc(0, 0, 20, 0, Math.PI * 2);
+    ctx.fill();
+    // Tail fin
+    ctx.fillStyle = '#f59e0b';
+    ctx.strokeStyle = '#090d1a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(10, 0);
+    ctx.lineTo(20, -9);
+    ctx.lineTo(18, 0);
+    ctx.lineTo(20, 9);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    // Fish body
+    ctx.fillStyle = '#fde047';
+    ctx.beginPath();
+    ctx.ellipse(-2, 0, 14, 8.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    // Cute eye
+    ctx.fillStyle = '#090d1a';
+    ctx.beginPath();
+    ctx.arc(-8, -2, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(-9, -3, 1.5, 1.5);
+  } else if (ent.type === 'core') {
+    // Glowing Very Crystal Core (+350 PTS)
+    ctx.rotate(now * 0.004);
+    drawComicStarburst(ctx, 0, 0, 8, 16, 4, '#67e8f9', '#090d1a', 0);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(-3, -3, 6, 6);
+  }
+  ctx.restore();
+}
+
+// Helper: Top Arcade HUD Bar inside Scene 0 Combat Phase
+function drawUfoCombatHud(ctx, now) {
+  ctx.save();
+  // Left HUD Pill: Score, Combo & Shields (Widened so zero overlap between shields & control hint!)
+  const hx = 16;
+  const hy = 12;
+  const hw = 436;
+  const hh = 34;
+  ctx.fillStyle = 'rgba(9, 13, 26, 0.88)';
+  ctx.fillRect(hx - 2, hy - 2, hw + 4, hh + 4);
+  ctx.strokeStyle = '#38bdf8';
+  ctx.lineWidth = 1.6;
+  ctx.strokeRect(hx, hy, hw, hh);
+
+  // Pilot NFT Tag
+  const idCode = `P${String(UFO_GAME.pilotTokenId).padStart(4, '0')}`;
+  ctx.fillStyle = '#fde047';
+  ctx.font = '900 12.5px "Pretendard", "Malgun Gothic", sans-serif';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(`🛸 ${idCode}`, hx + 10, hy + hh / 2 + 1);
+
+  // Score
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(
+    `SCORE ${UFO_GAME.score.toLocaleString()}`,
+    hx + 84,
+    hy + hh / 2 + 1
+  );
+
+  // Combo
+  if (UFO_GAME.combo > 1) {
+    ctx.fillStyle = '#34d399';
+    ctx.fillText(`x${UFO_GAME.combo}`, hx + 190, hy + hh / 2 + 1);
+  }
+
+  // 3 Shield Hearts
+  for (let s = 0; s < UFO_GAME.maxShields; s++) {
+    const active = s < UFO_GAME.shields;
+    drawPixelHeart(
+      ctx,
+      hx + 236 + s * 22,
+      hy + hh / 2,
+      2.1,
+      active ? '#38bdf8' : '#334155'
+    );
+  }
+
+  // Control mode indicator (Cleanly separated on the right)
+  ctx.fillStyle = UFO_GAME.userControlled ? '#34d399' : '#bae6fd';
+  ctx.font = '800 11.5px "Pretendard", "Malgun Gothic", sans-serif';
+  ctx.textAlign = 'right';
+  ctx.fillText(
+    UFO_GAME.userControlled
+      ? CURRENT_LANG === 'ko'
+        ? '🎮 직접 조종중'
+        : '🎮 PLAYING'
+      : CURRENT_LANG === 'ko'
+      ? '터치·마우스 조종'
+      : 'MOVE TO PLAY',
+    hx + hw - 12,
+    hy + hh / 2 + 1
+  );
+
+  // Center-Right Interactive Action Pill: "[💥 격추 & 추락 ▶]" (x = 464..608, y = 12..46)
+  const bx = 464;
+  const by = 12;
+  const bw = 144;
+  const bh = 34;
+  ctx.fillStyle = 'rgba(225, 29, 72, 0.88)';
+  ctx.fillRect(bx, by, bw, bh);
+  ctx.strokeStyle = '#fda4af';
+  ctx.lineWidth = 1.5;
+  ctx.strokeRect(bx, by, bw, bh);
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '900 12px "Pretendard", "Malgun Gothic", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(
+    CURRENT_LANG === 'ko' ? '💥 격추 & 추락 ▶' : '💥 Eject & Fall ▶',
+    bx + bw / 2,
+    by + bh / 2 + 1
+  );
+
+  ctx.restore();
+}
+
 function initPixelMotionStudio() {
   const canvas = document.getElementById('pixel-stage-canvas');
   if (!canvas) return;
@@ -1361,7 +2005,60 @@ function initPixelMotionStudio() {
   ensureHero2DSprite();
   ['01', '04', '05', '06', '09', '15'].forEach((id) => ensureSpeciesSprite(id));
 
-  // Scene Chapter Buttons (0: 추락, 1: 픽셀월드, 2: 타이틀)
+  // Pilot NFT ID Input & Random Button & Leaderboard Buttons
+  const pilotInput = document.getElementById('ufo-pilot-id-input');
+  if (pilotInput) {
+    pilotInput.addEventListener('change', () => {
+      const n = parseInt(pilotInput.value, 10);
+      if (!Number.isNaN(n)) setUfoPilotTokenId(n, true);
+    });
+    pilotInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const n = parseInt(pilotInput.value, 10);
+        if (!Number.isNaN(n)) setUfoPilotTokenId(n, true);
+      }
+    });
+  }
+
+  document.getElementById('btn-ufo-random-id')?.addEventListener('click', () => {
+    const rnd = Math.floor(Math.random() * 10000);
+    setUfoPilotTokenId(rnd, true);
+  });
+
+  document.getElementById('btn-open-leaderboard')?.addEventListener('click', () => {
+    openLeaderboardModal();
+  });
+  document.getElementById('btn-open-leaderboard-bottom')?.addEventListener('click', () => {
+    openLeaderboardModal();
+  });
+  document.getElementById('close-leaderboard-modal')?.addEventListener('click', () => {
+    closeLeaderboardModal();
+  });
+  document.getElementById('leaderboard-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'leaderboard-modal') closeLeaderboardModal();
+  });
+
+  // Keyboard Controls for UFO Spaceship (Arrow Keys & WASD & Space)
+  window.addEventListener('keydown', (e) => {
+    if (
+      ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(
+        e.code
+      )
+    ) {
+      const activeTag = document.activeElement?.tagName;
+      if (activeTag === 'INPUT' || activeTag === 'SELECT' || activeTag === 'TEXTAREA') return;
+      UFO_GAME.keys[e.code] = true;
+      if (MOTION_STATE.sceneIdx === 0 && UFO_GAME.phase === 'combat') {
+        UFO_GAME.userControlled = true;
+        if ( e.code.startsWith('Arrow')) e.preventDefault();
+      }
+    }
+  });
+  window.addEventListener('keyup', (e) => {
+    UFO_GAME.keys[e.code] = false;
+  });
+
+  // Scene Chapter Buttons (0: 우주선 & 추락, 1: 픽셀월드, 2: 타이틀)
   document.querySelectorAll('.motion-mode-btn[data-scene]').forEach((btn) => {
     btn.addEventListener('click', () => {
       setIntroScene(Number(btn.dataset.scene), true);
@@ -1370,17 +2067,21 @@ function initPixelMotionStudio() {
 
   // HTML Dialogue Next Scene Button
   document.getElementById('intro-dialogue-next-btn')?.addEventListener('click', () => {
+    if (MOTION_STATE.sceneIdx === 0 && UFO_GAME.phase === 'combat') {
+      triggerUfoShotDown(performance.now());
+      return;
+    }
     setIntroScene((MOTION_STATE.sceneIdx + 1) % 3, true);
   });
 
-  // Replay Full Intro Button
+  // Launch UFO Game / Replay Full Intro Button
   document.getElementById('btn-pixel-burst')?.addEventListener('click', () => {
     MOTION_STATE.autoPlay = true;
     const autoBtn = document.getElementById('btn-motion-autoplay');
     autoBtn?.classList.add('active-toggle');
     const lblEl = document.getElementById('autoplay-label');
     if (lblEl) {
-      lblEl.textContent = CURRENT_LANG === 'ko' ? '자동재생: ON' : 'Auto: ON';
+      lblEl.textContent = CURRENT_LANG === 'ko' ? '자동진행: ON' : 'Auto: ON';
     }
     setIntroScene(0, true);
   });
@@ -1395,16 +2096,45 @@ function initPixelMotionStudio() {
     if (lblEl) {
       lblEl.textContent =
         CURRENT_LANG === 'ko'
-          ? `자동재생: ${MOTION_STATE.autoPlay ? 'ON' : 'OFF'}`
+          ? `자동진행: ${MOTION_STATE.autoPlay ? 'ON' : 'OFF'}`
           : `Auto: ${MOTION_STATE.autoPlay ? 'ON' : 'OFF'}`;
     }
   });
 
+  // Helper to map client pointer to 960x540 canvas logical coordinates
+  const getLogicalCoords = (clientX, clientY) => {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      mx: ((clientX - rect.left) / rect.width) * 960,
+      my: ((clientY - rect.top) / rect.height) * 540,
+    };
+  };
+
   // Canvas Click Interaction (Mapped to 960x540 Logical Coordinates)
   canvas.addEventListener('click', (e) => {
-    const rect = canvas.getBoundingClientRect();
-    const mx = ((e.clientX - rect.left) / rect.width) * 960;
-    const my = ((e.clientY - rect.top) / rect.height) * 540;
+    const { mx, my } = getLogicalCoords(e.clientX, e.clientY);
+
+    if (MOTION_STATE.sceneIdx === 0) {
+      // Clicking "[💥 격추 & 추락 ▶]" button on top HUD triggers immediate shot-down & portal fall!
+      if (UFO_GAME.phase === 'combat' && mx >= 460 && mx <= 612 && my >= 10 && my <= 50) {
+        triggerUfoShotDown(performance.now());
+        return;
+      }
+      if (UFO_GAME.phase === 'combat') {
+        UFO_GAME.userControlled = true;
+        UFO_GAME.targetX = Math.max(96, Math.min(565, mx));
+        UFO_GAME.targetY = Math.max(76, Math.min(312, my));
+        return;
+      }
+    }
+
+    if (MOTION_STATE.sceneIdx === 1) {
+      // Clicking the top Score/Leaderboard banner in Scene 1 opens the NFT Leaderboard Modal!
+      if (mx >= 210 && mx <= 750 && my >= 10 && my <= 52) {
+        openLeaderboardModal();
+        return;
+      }
+    }
 
     if (MOTION_STATE.sceneIdx === 2) {
       if (mx >= 310 && mx <= 650 && my >= 180 && my <= 225) {
@@ -1420,16 +2150,41 @@ function initPixelMotionStudio() {
   });
 
   canvas.addEventListener('mousemove', (e) => {
-    if (MOTION_STATE.sceneIdx !== 2) return;
-    const rect = canvas.getBoundingClientRect();
-    const my = ((e.clientY - rect.top) / rect.height) * 540;
-    if (my >= 180 && my < 226) MOTION_STATE.menuHoverIdx = 0;
-    else if (my >= 226 && my <= 275) MOTION_STATE.menuHoverIdx = 1;
+    const { mx, my } = getLogicalCoords(e.clientX, e.clientY);
+    if (MOTION_STATE.sceneIdx === 0 && UFO_GAME.phase === 'combat') {
+      if (my > 54 && mx < 680) {
+        UFO_GAME.userControlled = true;
+        UFO_GAME.targetX = Math.max(96, Math.min(565, mx));
+        UFO_GAME.targetY = Math.max(76, Math.min(312, my));
+      }
+      return;
+    }
+    if (MOTION_STATE.sceneIdx === 2) {
+      if (my >= 180 && my < 226) MOTION_STATE.menuHoverIdx = 0;
+      else if (my >= 226 && my <= 275) MOTION_STATE.menuHoverIdx = 1;
+    }
   });
+
+  // Mobile Touch Drag Steering for UFO Spaceship
+  const handleTouchSteer = (e) => {
+    if (MOTION_STATE.sceneIdx !== 0 || UFO_GAME.phase !== 'combat') return;
+    const touch = e.touches[0];
+    if (!touch) return;
+    const { mx, my } = getLogicalCoords(touch.clientX, touch.clientY);
+    if (mx >= 460 && mx <= 612 && my >= 10 && my <= 50) {
+      triggerUfoShotDown(performance.now());
+      return;
+    }
+    UFO_GAME.userControlled = true;
+    UFO_GAME.targetX = Math.max(96, Math.min(565, mx));
+    UFO_GAME.targetY = Math.max(76, Math.min(312, my - 24));
+  };
+  canvas.addEventListener('touchstart', handleTouchSteer, { passive: true });
+  canvas.addEventListener('touchmove', handleTouchSteer, { passive: true });
 
   setIntroScene(0, true);
 
-  // Main 60 FPS Cutscene Loop (1920x1080 HiDPI Buffer, 960x540 Logical Space)
+  // Main 60 FPS Cutscene & UFO Arcade Loop (1920x1080 HiDPI Buffer, 960x540 Logical Space)
   function renderIntroCutscene(now) {
     const bluePixelPenguin = ensureSpeciesSprite('01');
     const hero2DImg = ensureHero2DSprite();
@@ -1437,12 +2192,25 @@ function initPixelMotionStudio() {
     let elapsed = now - MOTION_STATE.sceneStartTime;
     const curDuration = SCENE_DURATIONS[MOTION_STATE.sceneIdx] || 5600;
 
-    if (MOTION_STATE.autoPlay && elapsed >= curDuration) {
+    // In Scene 0, scene transition is driven organically by the UFO -> Ejected -> Scan completion!
+    if (MOTION_STATE.sceneIdx !== 0 && MOTION_STATE.autoPlay && elapsed >= curDuration) {
       setIntroScene((MOTION_STATE.sceneIdx + 1) % 3, true);
       elapsed = 0;
     }
 
-    const p = Math.min(1, Math.max(0, elapsed / curDuration));
+    let p = Math.min(1, Math.max(0, elapsed / curDuration));
+    if (MOTION_STATE.sceneIdx === 0) {
+      if (UFO_GAME.phase === 'combat') {
+        const combatEl = now - UFO_GAME.phaseStartTime;
+        p = Math.min(0.45, (combatEl / 4500) * 0.45);
+      } else if (UFO_GAME.phase === 'ejected') {
+        const ejEl = now - UFO_GAME.phaseStartTime;
+        p = 0.45 + Math.min(0.22, (ejEl / 1450) * 0.22);
+      } else {
+        const scEl = now - UFO_GAME.phaseStartTime;
+        p = 0.67 + Math.min(0.33, (scEl / 2550) * 0.33);
+      }
+    }
     updateIntroProgressBars(MOTION_STATE.sceneIdx, p);
 
     // Render in 2x HiDPI (1920x1080) using 960x540 logical coordinates
@@ -1450,151 +2218,374 @@ function initPixelMotionStudio() {
     ctx.clearRect(0, 0, 960, 540);
 
     // ========================================================================
-    // SCENE 0 ("1. 추락 & 픽셀변신"): 2D Snow Walk (Smooth Waddle + Blink) -> Banana Slip -> Holographic Pixel Matrix Scan!
+    // SCENE 0 ("1. 🛸 우주선 & 추락"):
+    //   Phase A ('combat'): Blue Penguin Upper-Body Pilot in UFO Spaceship -> Dodges & Blasts Bananas/Meteors!
+    //   Phase B ('ejected'): Shot Down (격추!) -> Crippled UFO spirals away & 2D Blue Penguin arcs into Pixel Portal!
+    //   Phase C ('scan'): Holographic Laser Scan transforms 2D Blue Penguin -> Pixel Blue Penguin (sp_01) -> Scene 1!
     // ========================================================================
     if (MOTION_STATE.sceneIdx === 0) {
       const pitCenterX = 744;
-      drawScene1Background(ctx, now);
+      const dt = Math.min(32, Math.max(8, now - (UFO_GAME.lastTickAt || now))) / 16.67;
+      UFO_GAME.lastTickAt = now;
 
-      const slipStartP = 0.30;
-      const scanStartP = 0.54;
-
-      // Banana Peel on the Snow Cliff Edge (x = 532, y = 355) with subtle warning glint, then parabolic launch & fade
-      if (p < slipStartP) {
-        drawCartoonBananaPeel(ctx, 532, 355, 0, 1.06);
-        const glintPulse = 0.45 + 0.55 * Math.abs(Math.sin(now * 0.006));
-        ctx.save();
-        ctx.translate(534, 338);
-        ctx.scale(glintPulse, glintPulse);
-        ctx.fillStyle = '#fef08a';
-        ctx.beginPath();
-        ctx.moveTo(0, -7);
-        ctx.lineTo(2, -2);
-        ctx.lineTo(7, 0);
-        ctx.lineTo(2, 2);
-        ctx.lineTo(0, 7);
-        ctx.lineTo(-2, 2);
-        ctx.lineTo(-7, 0);
-        ctx.lineTo(-2, -2);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-      } else if (p < scanStartP) {
-        const flyP = Math.min(1, (p - slipStartP) / (scanStartP - slipStartP));
-        const bx = 532 - flyP * 175;
-        const by = 352 - 195 * flyP + 360 * flyP * flyP;
-        ctx.save();
-        ctx.globalAlpha = Math.max(0, 1 - Math.pow(flyP, 1.8));
-        drawCartoonBananaPeel(ctx, bx, by, -flyP * Math.PI * 4.5, 1.06);
-        ctx.restore();
+      // Apply subtle camera shake on impact
+      ctx.save();
+      if (now < UFO_GAME.shakeUntil) {
+        const mag = ((UFO_GAME.shakeUntil - now) / 420) * 7;
+        ctx.translate((Math.random() - 0.5) * mag, (Math.random() - 0.5) * mag);
       }
 
-      let pengX = 100;
-      let pengY = 288;
-      let pengRot = 0;
-      let scaleX = 1;
-      let scaleY = 1;
-      const spriteSize = 148;
+      drawScene1Background(ctx, now);
 
-      if (p < slipStartP) {
-        // Phase A: Happy 2D Snow Walk along the cliff path with Smooth Waddle Bounce, Alternating Feet & Eye Blinking!
-        const subP = p / slipStartP;
-        pengX = 96 + subP * 430;
-        pengY = 288;
+      // Cosmic speed lines & starfield in the upper sky for arcade flight feel
+      ctx.save();
+      UFO_GAME.stars.forEach((st) => {
+        st.x -= st.spd * dt * (UFO_GAME.phase === 'combat' ? 2.1 : 0.7);
+        if (st.x < 0) st.x += 960;
+        ctx.fillStyle = 'rgba(224, 242, 254, 0.72)';
+        ctx.fillRect(st.x, st.y, st.sz * 3, st.sz);
+      });
+      ctx.restore();
 
-        const walkAnim = getPenguinAnimState(now, 0, true, false, false);
-        const shadowScale = 1 - Math.abs(walkAnim.stepBobY) * 0.025;
+      if (UFO_GAME.phase === 'combat') {
+        const combatElapsed = now - UFO_GAME.phaseStartTime;
 
-        // Soft elliptical ground shadow on snow cliff (reacts to waddle bounce)
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.20)';
-        ctx.beginPath();
-        ctx.ellipse(pengX, 356, 36 * shadowScale, 8 * shadowScale, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Crisp snow puff footsteps behind walking feet
-        for (let d = 0; d < 3; d++) {
-          const dp = (now * 0.004 + d * 0.33) % 1;
-          ctx.fillStyle = `rgba(255, 255, 255, ${(1 - dp) * 0.82})`;
-          ctx.beginPath();
-          ctx.arc(pengX - 36 - dp * 28, 352 - dp * 11, 7 - dp * 3.5, 0, Math.PI * 2);
-          ctx.fill();
+        // 1. Update UFO Position (Keyboard OR Pointer Target OR Smart AI Autopilot)
+        const keySpd = 5.4 * dt;
+        let keyMoved = false;
+        if (UFO_GAME.keys['ArrowLeft'] || UFO_GAME.keys['KeyA']) {
+          UFO_GAME.targetX -= keySpd;
+          keyMoved = true;
+        }
+        if (UFO_GAME.keys['ArrowRight'] || UFO_GAME.keys['KeyD']) {
+          UFO_GAME.targetX += keySpd;
+          keyMoved = true;
+        }
+        if (UFO_GAME.keys['ArrowUp'] || UFO_GAME.keys['KeyW']) {
+          UFO_GAME.targetY -= keySpd;
+          keyMoved = true;
+        }
+        if (UFO_GAME.keys['ArrowDown'] || UFO_GAME.keys['KeyS']) {
+          UFO_GAME.targetY += keySpd;
+          keyMoved = true;
+        }
+        if (keyMoved) {
+          UFO_GAME.targetX = Math.max(96, Math.min(565, UFO_GAME.targetX));
+          UFO_GAME.targetY = Math.max(76, Math.min(312, UFO_GAME.targetY));
         }
 
-        drawUploaded2DPenguin(ctx, pengX, pengY, spriteSize, pengRot, scaleX, scaleY, now, true);
+        if (!UFO_GAME.userControlled) {
+          // Smart AI Autopilot weaves dynamically across the sky & aims at incoming targets
+          UFO_GAME.targetX = 215 + Math.sin(now * 0.0028) * 65;
+          UFO_GAME.targetY = 188 + Math.sin(now * 0.0052) * 76;
+        }
 
-        // Floating musical notes rising gently beside the whistling penguin
+        const dx = UFO_GAME.targetX - UFO_GAME.x;
+        const dy = UFO_GAME.targetY - UFO_GAME.y;
+        UFO_GAME.vx = dx * 0.16;
+        UFO_GAME.vy = dy * 0.16;
+        UFO_GAME.x += UFO_GAME.vx * dt;
+        UFO_GAME.y += UFO_GAME.vy * dt;
+        UFO_GAME.tiltRad = Math.max(-0.26, Math.min(0.26, UFO_GAME.vy * 0.032 + UFO_GAME.vx * 0.012));
+
+        // 2. Auto-Fire Twin Plasma Lasers from UFO Nose Cannons every 175ms
+        if (now - UFO_GAME.lastFireAt >= 175) {
+          UFO_GAME.lastFireAt = now;
+          UFO_GAME.lasers.push(
+            { x: UFO_GAME.x + 62, y: UFO_GAME.y + 4, vx: 13.5 },
+            { x: UFO_GAME.x + 58, y: UFO_GAME.y + 13, vx: 13.5 }
+          );
+        }
+
+        // 3. Spawn Incoming Obstacles (Bananas, Glitch Meteors, Plasma Mines) & Collectibles (Golden Ice-Fish, Cores)
+        const spawnInterval = UFO_GAME.userControlled ? 420 : 380;
+        if (now - UFO_GAME.lastSpawnAt >= spawnInterval) {
+          UFO_GAME.lastSpawnAt = now;
+          const roll = Math.random();
+          const spawnY = 78 + Math.random() * 235;
+          if (roll < 0.28) {
+            UFO_GAME.entities.push({
+              type: 'banana',
+              x: 920,
+              y: spawnY,
+              vx: -(5.2 + Math.random() * 2.4),
+              vy: (Math.random() - 0.5) * 1.4,
+              r: 22,
+              hp: 1,
+              rot: 0,
+              vrot: -0.14,
+            });
+          } else if (roll < 0.58) {
+            UFO_GAME.entities.push({
+              type: 'meteor',
+              x: 920,
+              y: spawnY,
+              vx: -(4.6 + Math.random() * 2.2),
+              vy: (Math.random() - 0.5) * 1.1,
+              r: 21,
+              hp: 2,
+              rot: 0,
+              vrot: 0.07,
+            });
+          } else if (roll < 0.74) {
+            UFO_GAME.entities.push({
+              type: 'mine',
+              x: 920,
+              y: spawnY,
+              vx: -(6.0 + Math.random() * 2.0),
+              vy: Math.sin(now * 0.01) * 1.6,
+              r: 18,
+              hp: 1,
+              rot: 0,
+              vrot: 0.12,
+            });
+          } else if (roll < 0.90) {
+            UFO_GAME.entities.push({
+              type: 'fish',
+              x: 920,
+              y: spawnY,
+              vx: -4.8,
+              vy: 0,
+              r: 20,
+              hp: 1,
+              rot: 0,
+              vrot: 0,
+            });
+          } else {
+            UFO_GAME.entities.push({
+              type: 'core',
+              x: 920,
+              y: spawnY,
+              vx: -5.0,
+              vy: 0,
+              r: 18,
+              hp: 1,
+              rot: 0,
+              vrot: 0.08,
+            });
+          }
+        }
+
+        // 4. Update & Draw Twin Plasma Lasers
         ctx.save();
-        for (let m = 0; m < 2; m++) {
-          const mp = (now * 0.0014 + m * 0.5) % 1;
-          const mx = pengX + 44 + m * 16 + Math.sin(mp * Math.PI * 2) * 5;
-          const my = pengY - 26 - mp * 34;
-          ctx.globalAlpha = Math.sin(mp * Math.PI) * 0.92;
-          ctx.font = '900 18px "Pretendard", sans-serif';
-          ctx.fillStyle = '#0f172a';
-          ctx.fillText(m === 0 ? '♪' : '♫', mx + 1.5, my + 1.5);
-          ctx.fillStyle = m === 0 ? '#38bdf8' : '#f472b6';
-          ctx.fillText(m === 0 ? '♪' : '♫', mx, my);
+        for (let i = UFO_GAME.lasers.length - 1; i >= 0; i--) {
+          const b = UFO_GAME.lasers[i];
+          b.x += b.vx * dt;
+          if (b.x > 960) {
+            UFO_GAME.lasers.splice(i, 1);
+            continue;
+          }
+          ctx.fillStyle = '#0284c7';
+          ctx.fillRect(b.x - 2, b.y - 3, 22, 6);
+          ctx.fillStyle = '#67e8f9';
+          ctx.fillRect(b.x, b.y - 2, 18, 4);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(b.x + 4, b.y - 1, 12, 2);
         }
         ctx.restore();
 
+        // 5. Update & Draw Entities + Laser/UFO Collisions
+        for (let i = UFO_GAME.entities.length - 1; i >= 0; i--) {
+          const ent = UFO_GAME.entities[i];
+          ent.x += ent.vx * dt;
+          ent.y += ent.vy * dt;
+          ent.rot += ent.vrot * dt;
+
+          if (ent.x < -50) {
+            UFO_GAME.entities.splice(i, 1);
+            continue;
+          }
+
+          const isCollectible = ent.type === 'fish' || ent.type === 'core';
+
+          // Check laser hit on obstacles
+          if (!isCollectible) {
+            let destroyedByLaser = false;
+            for (let j = UFO_GAME.lasers.length - 1; j >= 0; j--) {
+              const b = UFO_GAME.lasers[j];
+              if (Math.hypot(b.x - ent.x, b.y - ent.y) <= ent.r + 10) {
+                UFO_GAME.lasers.splice(j, 1);
+                ent.hp -= 1;
+                if (ent.hp <= 0) {
+                  destroyedByLaser = true;
+                  const pts =
+                    (ent.type === 'mine' ? 300 : ent.type === 'banana' ? 200 : 180) *
+                    UFO_GAME.combo;
+                  UFO_GAME.score += pts;
+                  UFO_GAME.kills += 1;
+                  UFO_GAME.popups.push({
+                    x: ent.x,
+                    y: ent.y - 10,
+                    vy: -1.4,
+                    text: `+${pts}`,
+                    col: '#67e8f9',
+                    alpha: 1,
+                  });
+                  for (let k = 0; k < 7; k++) {
+                    const a = (k / 7) * Math.PI * 2;
+                    UFO_GAME.particles.push({
+                      x: ent.x,
+                      y: ent.y,
+                      vx: Math.cos(a) * 3.2,
+                      vy: Math.sin(a) * 3.2,
+                      col: k % 2 === 0 ? '#facc15' : '#67e8f9',
+                      sz: 5,
+                      alpha: 1,
+                      decay: 0.04,
+                    });
+                  }
+                  break;
+                }
+              }
+            }
+            if (destroyedByLaser) {
+              UFO_GAME.entities.splice(i, 1);
+              continue;
+            }
+          }
+
+          // Check collision with UFO Spaceship
+          const distToUfo = Math.hypot(ent.x - UFO_GAME.x, ent.y - UFO_GAME.y);
+          if (distToUfo <= ent.r + 42) {
+            if (isCollectible) {
+              const pts = (ent.type === 'fish' ? 500 : 350) * UFO_GAME.combo;
+              UFO_GAME.score += pts;
+              UFO_GAME.combo = Math.min(8, UFO_GAME.combo + 1);
+              UFO_GAME.popups.push({
+                x: ent.x,
+                y: ent.y - 14,
+                vy: -1.8,
+                text: ent.type === 'fish' ? `🐟 +${pts}!` : `💎 +${pts}!`,
+                col: '#fde047',
+                alpha: 1,
+              });
+              UFO_GAME.entities.splice(i, 1);
+              continue;
+            } else {
+              // Obstacle hit the UFO!
+              UFO_GAME.entities.splice(i, 1);
+              UFO_GAME.hitFlashUntil = now + 520;
+              UFO_GAME.shakeUntil = now + 260;
+              UFO_GAME.combo = 1;
+              if (UFO_GAME.userControlled) {
+                UFO_GAME.shields -= 1;
+                UFO_GAME.popups.push({
+                  x: UFO_GAME.x,
+                  y: UFO_GAME.y - 38,
+                  vy: -1.5,
+                  text: UFO_GAME.shields > 0 ? '🛡️ SHIELD HIT!' : '💥 SHOT DOWN!!',
+                  col: '#fb7185',
+                  alpha: 1,
+                });
+                if (UFO_GAME.shields <= 0) {
+                  triggerUfoShotDown(now);
+                  break;
+                }
+              }
+              continue;
+            }
+          }
+
+          drawUfoEntity(ctx, ent, now);
+        }
+
+        // Passive auto-cinematic mode: after 4.5s of exciting demo combat, trigger dramatic shot-down!
+        if (!UFO_GAME.userControlled && MOTION_STATE.autoPlay && combatElapsed >= 4500) {
+          triggerUfoShotDown(now);
+        }
+
+        // 6. Draw the UFO Spaceship with Upper-Body Default Blue Penguin Pilot!
+        const isHitShocked = now < UFO_GAME.hitFlashUntil;
+        const isHitImpactBlink = now < UFO_GAME.hitFlashUntil - 420;
+        drawUfoSpaceshipWithPilot(
+          ctx,
+          UFO_GAME.x,
+          UFO_GAME.y,
+          UFO_GAME.tiltRad,
+          now,
+          isHitShocked,
+          isHitImpactBlink,
+          UFO_GAME.shields
+        );
+
+        // Floating Speech Bubble above UFO Pilot
         drawRetroSpeechBubble(
           ctx,
-          pengX + 8,
-          pengY - 78,
-          CURRENT_LANG === 'ko'
-            ? '룰루랄라~ 눈밭 산책 날씨 죽인다~ ♪'
-            : 'La-la-la~ Perfect day for a snow walk~ ♪',
-          '#38bdf8',
+          UFO_GAME.x + 8,
+          UFO_GAME.y - 54,
+          isHitShocked
+            ? CURRENT_LANG === 'ko'
+              ? '으앗!! 운석에 맞았어!! 방어막 위험해!!'
+              : 'Whoa!! Hit by a meteor!! Shield critical!!'
+            : UFO_GAME.userControlled
+            ? CURRENT_LANG === 'ko'
+              ? '삐비빅~ 우주 바나나랑 운석 다 부숴버리자!! ♪'
+              : 'Pew-pew~ Blast the space bananas & collect Golden Fish!! ♪'
+            : CURRENT_LANG === 'ko'
+            ? '우주선 순항 중~ 마우스·터치로 직접 조종해보세요! ♪'
+            : 'Cruising in my UFO~ Move mouse or touch to pilot! ♪',
+          isHitShocked ? '#fb7185' : '#38bdf8',
           now
         );
 
+        drawUfoCombatHud(ctx, now);
+
         drawRetroDialogueBar(
           ctx,
-          'SCENE 1 · 눈밭 산책',
+          'SCENE 1 · 🛸 우주선 교전',
           CURRENT_LANG === 'ko'
-            ? '픽셀월드 가기 전 매끈했던 2D 파란 펭귄! 눈을 깜빡이며 아장아장 눈밭 산책로를 걸어가는데...'
-            : 'Before Pixel World, our smooth 2D blue penguin waddles and blinks happily along the snowy cliff...'
+            ? `파란 펭귄이 상반신만 내밀고 UFO 우주선 탑승! 마우스/터치/방향키로 조종하세요. 격추되면 차원 포털로 추락해 픽셀 월드로 갑니다! (현재 ${UFO_GAME.score.toLocaleString()}점)`
+            : `Our Blue Penguin pilots the UFO! Steer with mouse/touch/arrows. When shot down, he falls into the Pixel Rift to Pixel World! (${UFO_GAME.score.toLocaleString()} PTS)`
         );
-      } else if (p < scanStartP) {
-        // Phase B: Banana Slip Shock & Smooth 360° Tumble Arc into the Pixel Portal Chasm
-        const subP = (p - slipStartP) / (scanStartP - slipStartP);
-        // Natural breakdown: first 10% of slip (subP < 0.10) is a tight impact blink (Frame 1) + squash before eyes open wide (Frame 6)!
-        const isImpactBlink = subP < 0.10;
-        if (subP < 0.44) {
-          const shockP = subP / 0.44;
-          const easeOut = 1 - Math.pow(1 - shockP, 2);
-          pengX = 526 + easeOut * 36 + Math.sin(now * 0.085) * 1.8;
-          pengY = 286 - Math.sin(shockP * Math.PI * 0.5) * 42;
-          pengRot = -0.34 * Math.sin(shockP * Math.PI * 0.5);
-          if (isImpactBlink) {
-            scaleX = 1.06;
-            scaleY = 0.94;
-          } else {
-            scaleX = 0.95 + shockP * 0.04;
-            scaleY = 1.06 - shockP * 0.04;
-          }
-        } else {
-          // Smooth parabolic arc from cliff edge into the glowing Pixel Rift (completing a full 360° spin -> 0 rad at scanStartP!)
-          const fallP = (subP - 0.44) / 0.56;
-          const smoothFall = fallP * fallP * (3 - 2 * fallP);
-          pengX = 562 + smoothFall * (pitCenterX - 562);
-          pengY = 244 - Math.sin(fallP * Math.PI) * 68 + smoothFall * 30;
-          pengRot = -0.34 * (1 - smoothFall) + smoothFall * Math.PI * 2;
-          scaleX = 1.02;
-          scaleY = 0.98;
-        }
+      } else if (UFO_GAME.phase === 'ejected') {
+        // ====================================================================
+        // Phase B ('ejected'): UFO Shot Down (격추!) -> Crippled UFO Spirals Away &
+        // 2D Blue Penguin Ejects in a Parabolic 360° Arc into the Pixel Portal Chasm!
+        // ====================================================================
+        const ejElapsed = now - UFO_GAME.phaseStartTime;
+        const subP = Math.min(1, ejElapsed / 1450);
+        const isImpactBlink = subP < 0.11;
 
-        // Crisp snow/slip impact rings at the cliff edge
-        if (subP < 0.55) {
-          const ringP = subP / 0.55;
+        // 1. Crippled Empty UFO Saucer tilting & smoking as it falls away toward the lower-left cliff
+        const ufoCrashX = UFO_GAME.ejectedFromX - subP * 145;
+        const ufoCrashY = UFO_GAME.ejectedFromY + subP * 165;
+        if (subP < 0.92) {
           ctx.save();
-          ctx.strokeStyle = `rgba(254, 240, 138, ${(1 - ringP) * 0.9})`;
-          ctx.lineWidth = 3 * (1 - ringP * 0.5);
-          ctx.beginPath();
-          ctx.ellipse(534, 352, 16 + ringP * 38, 6 + ringP * 14, 0, 0, Math.PI * 2);
-          ctx.stroke();
+          ctx.globalAlpha = subP < 0.65 ? 1 : Math.max(0, 1 - (subP - 0.65) / 0.27);
+          drawDamagedUfoSaucer(ctx, ufoCrashX, ufoCrashY, -0.35 - subP * 0.45, now);
           ctx.restore();
         }
+
+        // 2. Shot-Down Impact Starburst at Ejection Point
+        if (subP < 0.45) {
+          const burstP = subP / 0.45;
+          ctx.save();
+          ctx.globalAlpha = 1 - burstP;
+          drawComicStarburst(
+            ctx,
+            UFO_GAME.ejectedFromX,
+            UFO_GAME.ejectedFromY,
+            18 + burstP * 24,
+            42 + burstP * 48,
+            10,
+            '#facc15',
+            '#e11d48',
+            burstP * 0.6
+          );
+          ctx.restore();
+        }
+
+        // 3. Parabolic Arc of the Ejected 2D Blue Penguin into the Pixel Portal Chasm (x = 744, y = 274)
+        const smoothFall = subP * subP * (3 - 2 * subP);
+        const pengX = UFO_GAME.ejectedFromX + smoothFall * (pitCenterX - UFO_GAME.ejectedFromX);
+        const pengY =
+          UFO_GAME.ejectedFromY -
+          Math.sin(subP * Math.PI) * 92 +
+          smoothFall * (274 - UFO_GAME.ejectedFromY);
+        const pengRot = smoothFall * Math.PI * 2;
+        const scaleX = isImpactBlink ? 1.07 : 0.98;
+        const scaleY = isImpactBlink ? 0.93 : 1.02;
+        const spriteSize = 148;
 
         drawUploaded2DPenguin(
           ctx,
@@ -1609,8 +2600,7 @@ function initPixelMotionStudio() {
           !isImpactBlink
         );
 
-        // Authentic 16-Bit Pixel "!!" Shock Emote Badge beside the startled penguin
-        if (subP >= 0.08 && subP < 0.62) {
+        if (subP >= 0.08 && subP < 0.72) {
           drawPixelEmoteBubble(ctx, pengX + 64, pengY - 22, 'shock', now);
         }
 
@@ -1619,22 +2609,31 @@ function initPixelMotionStudio() {
           Math.min(780, pengX - 10),
           Math.max(58, pengY - 86),
           CURRENT_LANG === 'ko'
-            ? '어익후?! 웬 바나나야!! 으아아아악~!!'
-            : 'WHOA?! A banana peel?! AAAAAAH~!!',
+            ? '콰과광?! 우주선이 격추당했다!! 으아아아악~!!'
+            : 'KABOOM?! My UFO got shot down!! AAAAAAH~!!',
           '#fb7185',
           now
         );
 
         drawRetroDialogueBar(
           ctx,
-          'SCENE 1 · 바나나 미끄덩!',
+          'SCENE 1 · 💥 우주선 격추 & 추락!',
           CURRENT_LANG === 'ko'
-            ? '어익후?! 눈밭 위의 바나나 껍질을 밟고 화들짝 놀라 픽셀 차원 균열(구덩이) 속으로 추락한다!'
-            : 'WHOA?! Shocked as he slips on a banana peel, he tumbles into the glowing Pixel Rift!'
+            ? `콰과광—!! 우주선이 격추당해 비상 탈출한 파란 펭귄이 픽셀 차원 포털 속으로 추락합니다! (획득 점수: ${UFO_GAME.lastFinalScore.toLocaleString()}점)`
+            : `KABOOM—!! Shot down from his UFO, our blue penguin ejects and tumbles straight into the glowing Pixel Rift! (${UFO_GAME.lastFinalScore.toLocaleString()} PTS)`
         );
+
+        if (ejElapsed >= 1450) {
+          UFO_GAME.phase = 'scan';
+          UFO_GAME.phaseStartTime = now;
+        }
       } else {
-        // Phase C: Holographic Dimensional Tractor Field & 48x48 Voxel Matrix Scan Transformation (2D Blue -> Pixel Blue sp_01!)
-        const subP = (p - scanStartP) / (1 - scanStartP);
+        // ====================================================================
+        // Phase C ('scan'): Holographic Dimensional Tractor Field & 48x48 Voxel Matrix Scan Transformation
+        // (2D Surprised Blue Penguin -> Laser Beam Wipe -> Pixel Closed-Eye Blink -> Pixel Normal Open Eyes!)
+        // ====================================================================
+        const scElapsed = now - UFO_GAME.phaseStartTime;
+        const subP = Math.min(1, scElapsed / 2550);
         const scanRatio = Math.min(1, subP / 0.74);
         const completeP = subP > 0.74 ? (subP - 0.74) / 0.26 : 0;
         const happyHop =
@@ -1643,17 +2642,14 @@ function initPixelMotionStudio() {
             : 0;
         const dropOut = subP > 0.88 ? Math.pow((subP - 0.88) / 0.12, 2) * 320 : 0;
 
-        pengX = pitCenterX;
-        pengY = 274 + Math.sin(now * 0.01) * 3.5 + happyHop + dropOut;
+        const spriteSize = 148;
+        const pengX = pitCenterX;
+        const pengY = 274 + Math.sin(now * 0.01) * 3.5 + happyHop + dropOut;
 
         const topEdge = pengY - spriteSize / 2;
         const scanY = topEdge + scanRatio * spriteSize;
 
-        // Natural Expression Transition across the Scan Line:
-        // 1) Below the laser beam (unscanned 2D Penguin): still surprised (hero2D Frame 6) while being scanned!
-        // 2) Above the laser beam (newly materialized Pixel Penguin):
-        //    - While the bright laser beam is crossing the head/eyes (scanRatio < 0.58), eyes are closed in a gentle blink (Frame 1: ^ ^).
-        //    - Once the laser beam passes below the face (scanRatio >= 0.58), the Pixel Penguin naturally opens its eyes from the blink into its normal cute face (Frame 0/2/3)!
+        // Natural Expression Transition across the Scan Line (v5.0.8 FQL verified):
         const pixelBlinkDuringBeam = scanRatio < 0.58;
         const topPixelAnim = getPenguinAnimState(
           now,
@@ -1662,9 +2658,9 @@ function initPixelMotionStudio() {
           pixelBlinkDuringBeam,
           false
         );
-        const bot2DFrameIdx = 6; // Unscanned 2D lower half remains surprised until the laser beam wipes past it
+        const bot2DFrameIdx = 6;
 
-        // 1. Back Half of Holographic Dimensional Capture Rings around the Penguin
+        // 1. Back Half of Holographic Dimensional Capture Rings
         ctx.save();
         for (let r = 0; r < 3; r++) {
           const ry = pengY - 46 + r * 46 + Math.sin(now * 0.006 + r) * 5;
@@ -1775,10 +2771,8 @@ function initPixelMotionStudio() {
         // 5. High-Density 48x48 Voxel Matrix Scan Beam & Emitter Nodes
         if (scanRatio < 1) {
           ctx.save();
-          // Outer cyan glow band
           ctx.fillStyle = 'rgba(56, 189, 248, 0.26)';
           ctx.fillRect(pengX - 92, scanY - 14, 184, 28);
-          // Stepped 16-bit laser core
           ctx.fillStyle = '#0284c7';
           ctx.fillRect(pengX - 94, scanY - 4, 188, 8);
           ctx.fillStyle = '#67e8f9';
@@ -1786,7 +2780,6 @@ function initPixelMotionStudio() {
           ctx.fillStyle = '#ffffff';
           ctx.fillRect(pengX - 84, scanY - 1, 168, 2);
 
-          // Left & Right Holographic Laser Emitter Diamonds
           for (const ex of [pengX - 94, pengX + 94]) {
             ctx.fillStyle = '#0f172a';
             ctx.fillRect(ex - 6, scanY - 6, 12, 12);
@@ -1796,7 +2789,6 @@ function initPixelMotionStudio() {
             ctx.fillRect(ex - 2, scanY - 2, 4, 4);
           }
 
-          // Multi-row 16-bit Pixel Matrix Blocks snapping into the sprite along scanY
           const cols = 15;
           for (let k = 0; k < cols; k++) {
             const kx = Math.round(pengX - 56 + k * 8);
@@ -1817,7 +2809,6 @@ function initPixelMotionStudio() {
           }
           ctx.restore();
         } else if (completeP > 0 && completeP < 0.85) {
-          // 6. 100% Pixelation Completion Ring Burst (8 Golden & Cyan 16-Bit Pixel Stars!)
           const burstR = 46 + completeP * 58;
           ctx.save();
           ctx.globalAlpha = Math.max(0, 1 - completeP * 1.15);
@@ -1835,18 +2826,17 @@ function initPixelMotionStudio() {
 
         const pct = Math.min(100, Math.round(scanRatio * 100));
         const isStillScanning = scanRatio < 0.92;
-        // Speech bubble cleanly ABOVE the penguin, HUD Scanner Pill cleanly BELOW the penguin (Zero overlap!)
         drawRetroSpeechBubble(
           ctx,
           pengX - 18,
           Math.max(54, topEdge - 6),
           isStillScanning
             ? CURRENT_LANG === 'ko'
-              ? '어어어?! 내 몸이 픽셀로 변하고 있어!!'
-              : 'Whoa?! I am turning into pixels!!'
+              ? '어어어?! 추락하면서 내 몸이 픽셀로 변하고 있어!!'
+              : 'Whoa?! As I fall, I am turning into pixels!!'
             : CURRENT_LANG === 'ko'
-            ? '우와아!! 파란 픽셀 펭귄으로 변신 완료!!'
-            : 'Woohoo!! Transformed into a Blue Pixel Penguin!!',
+            ? '우와아!! 파란 픽셀 펭귄으로 변신 완료!! 픽셀월드로 착륙!!'
+            : 'Woohoo!! Transformed into a Blue Pixel Penguin!! Landing in Pixel World!!',
           isStillScanning ? '#38bdf8' : '#34d399',
           now
         );
@@ -1856,10 +2846,54 @@ function initPixelMotionStudio() {
           ctx,
           'SCENE 1 · 픽셀 변환',
           CURRENT_LANG === 'ko'
-            ? `삐리릭—! 차원 균열의 픽셀 광선을 맞고 매끈했던 파란 펭귄이 파란 픽셀 펭귄으로 변신 완료! (${pct}%)`
-            : `BEEP—! Scanned by the dimensional pixel beam, our smooth blue penguin transforms into a Blue Pixel Penguin! (${pct}%)`
+            ? `삐리릭—! 격추되어 차원 포털로 추락하던 파란 펭귄이 픽셀 광선을 맞고 파란 픽셀 펭귄으로 변신 완료! (${pct}%)`
+            : `BEEP—! Falling through the dimensional portal, our blue penguin transforms into a Blue Pixel Penguin! (${pct}%)`
         );
+
+        if (scElapsed >= 2550) {
+          setIntroScene(1, true);
+        }
       }
+
+      // Render Explosion Particles & Floating Score Popups across all Scene 0 sub-stages
+      for (let i = UFO_GAME.particles.length - 1; i >= 0; i--) {
+        const pt = UFO_GAME.particles[i];
+        pt.x += pt.vx * dt;
+        pt.y += pt.vy * dt;
+        pt.alpha -= pt.decay * dt;
+        if (pt.alpha <= 0) {
+          UFO_GAME.particles.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, pt.alpha);
+        ctx.fillStyle = '#090d1a';
+        ctx.fillRect(pt.x - pt.sz / 2 - 1, pt.y - pt.sz / 2 - 1, pt.sz + 2, pt.sz + 2);
+        ctx.fillStyle = pt.col;
+        ctx.fillRect(pt.x - pt.sz / 2, pt.y - pt.sz / 2, pt.sz, pt.sz);
+        ctx.restore();
+      }
+
+      for (let i = UFO_GAME.popups.length - 1; i >= 0; i--) {
+        const pop = UFO_GAME.popups[i];
+        pop.y += pop.vy * dt;
+        pop.alpha -= 0.024 * dt;
+        if (pop.alpha <= 0) {
+          UFO_GAME.popups.splice(i, 1);
+          continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, pop.alpha);
+        ctx.font = '900 14px "Pretendard", "Malgun Gothic", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#090d1a';
+        ctx.fillText(pop.text, pop.x + 2, pop.y + 2);
+        ctx.fillStyle = pop.col;
+        ctx.fillText(pop.text, pop.x, pop.y);
+        ctx.restore();
+      }
+
+      ctx.restore();
     }
 
     // ========================================================================
@@ -1868,6 +2902,33 @@ function initPixelMotionStudio() {
     else if (MOTION_STATE.sceneIdx === 1) {
       drawScene2PixelWorldBackground(ctx, now);
       ctx.imageSmoothingEnabled = false;
+
+      // Top Arcade Landing Score & Leaderboard Banner (Clickable to open #leaderboard-modal!)
+      const finalPts = UFO_GAME.lastFinalScore || UFO_GAME.score || 3450;
+      const pilotCode = `P${String(UFO_GAME.pilotTokenId).padStart(4, '0')}`;
+      const rankTag = UFO_GAME.lastRank ? ` · RANK #${UFO_GAME.lastRank}` : '';
+      const banW = 510;
+      const banH = 34;
+      const banX = 480 - banW / 2;
+      const banY = 12;
+      ctx.save();
+      ctx.fillStyle = 'rgba(9, 13, 26, 0.88)';
+      ctx.fillRect(banX - 2, banY - 2, banW + 4, banH + 4);
+      ctx.strokeStyle = '#facc15';
+      ctx.lineWidth = 1.8;
+      ctx.strokeRect(banX, banY, banW, banH);
+      ctx.fillStyle = '#fde047';
+      ctx.font = '900 13px "Pretendard", "Malgun Gothic", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(
+        CURRENT_LANG === 'ko'
+          ? `🏆 픽셀월드 착륙! NFT #${UFO_GAME.pilotTokenId} (${pilotCode}) · ${finalPts.toLocaleString()} PTS${rankTag}  [랭킹보기 ▶]`
+          : `🏆 Landed! NFT #${UFO_GAME.pilotTokenId} (${pilotCode}) · ${finalPts.toLocaleString()} PTS${rankTag}  [Leaderboard ▶]`,
+        480,
+        banY + banH / 2 + 1
+      );
+      ctx.restore();
 
       // Foreground Protagonist on Left: Default Blue Pixel Penguin (sp_01) Walking & Blinking on Stone Promenade!
       const spriteSize = 128;
@@ -2184,6 +3245,11 @@ async function loadPfpPreview(tokenNum) {
     if (!res.ok) return;
     const tok = await res.json();
     CURRENT_PFP_TOKEN = tok.edition;
+    UFO_GAME.pilotTokenId = tok.edition;
+    const ufoPilotInput = document.getElementById('ufo-pilot-id-input');
+    if (ufoPilotInput && Number(ufoPilotInput.value) !== tok.edition) {
+      ufoPilotInput.value = String(tok.edition);
+    }
 
     const imgUrl = tok.edition <= 10 ? tok.image_url : tok.pixel_48_url;
     document.getElementById('pfp-preview-img').src = imgUrl;

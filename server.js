@@ -406,6 +406,136 @@ app.get('/api/metadata/:id', (req, res) => {
   });
 });
 
+// ============================================================================
+// API: UFO SPACE GAME — NFT NUMBER (#0 ~ #9999) LIVE LEADERBOARD
+// ============================================================================
+const LEADERBOARD_JSON_PATH = path.join(DATA_DIR, 'ufo_leaderboard.json');
+let ufoLeaderboardMap = new Map();
+
+function seedDefaultLeaderboard() {
+  const starterSeeds = [
+    { edition: 0, score: 8450, kills: 28 },
+    { edition: 7, score: 7620, kills: 24 },
+    { edition: 195, score: 6890, kills: 21 },
+    { edition: 777, score: 5940, kills: 19 },
+    { edition: 1004, score: 5210, kills: 16 },
+    { edition: 4441, score: 4680, kills: 15 },
+    { edition: 8888, score: 3950, kills: 12 },
+    { edition: 9999, score: 3420, kills: 10 },
+  ];
+  for (const s of starterSeeds) {
+    ufoLeaderboardMap.set(s.edition, {
+      edition: s.edition,
+      score: s.score,
+      kills: s.kills,
+      updated_at: new Date().toISOString(),
+    });
+  }
+}
+
+function loadLeaderboardData() {
+  try {
+    if (fs.existsSync(LEADERBOARD_JSON_PATH)) {
+      const raw = JSON.parse(fs.readFileSync(LEADERBOARD_JSON_PATH, 'utf8'));
+      if (Array.isArray(raw) && raw.length > 0) {
+        ufoLeaderboardMap.clear();
+        for (const row of raw) {
+          const ed = parseTokenNumber(row.edition);
+          if (ed !== null && Number(row.score) > 0) {
+            ufoLeaderboardMap.set(ed, {
+              edition: ed,
+              score: Math.floor(Number(row.score)),
+              kills: Math.floor(Number(row.kills || 0)),
+              updated_at: row.updated_at || new Date().toISOString(),
+            });
+          }
+        }
+        return;
+      }
+    }
+  } catch (e) {
+    console.warn('[Leaderboard] Using default seed:', e.message);
+  }
+  seedDefaultLeaderboard();
+}
+
+function saveLeaderboardData() {
+  try {
+    const arr = Array.from(ufoLeaderboardMap.values()).sort((a, b) => b.score - a.score);
+    fs.writeFileSync(LEADERBOARD_JSON_PATH, JSON.stringify(arr.slice(0, 200), null, 2), 'utf8');
+  } catch (e) {
+    // Ignore read-only fs errors in container if any; memory map remains authoritative
+  }
+}
+
+function getFormattedLeaderboard(limit = 30) {
+  if (!collection) loadCollectionData();
+  const sorted = Array.from(ufoLeaderboardMap.values()).sort(
+    (a, b) => b.score - a.score || a.edition - b.edition
+  );
+  return sorted.slice(0, limit).map((row, idx) => {
+    const summary = collection ? expandTokenSummary(row.edition) : null;
+    return {
+      rank: idx + 1,
+      edition: row.edition,
+      id: `P${String(row.edition).padStart(4, '0')}`,
+      tier: summary ? summary.tier : 'Common',
+      rarity_rank: summary ? summary.rarity_rank : row.edition + 1,
+      image_url: summary ? summary.image_url : `/img/P${String(row.edition).padStart(4, '0')}.png`,
+      score: row.score,
+      kills: row.kills,
+      updated_at: row.updated_at,
+    };
+  });
+}
+
+loadLeaderboardData();
+
+app.get('/api/leaderboard', (req, res) => {
+  const limit = Math.min(100, Math.max(5, Number(req.query.limit || 30)));
+  res.json({
+    total_pilots: ufoLeaderboardMap.size,
+    items: getFormattedLeaderboard(limit),
+  });
+});
+
+app.post('/api/leaderboard', (req, res) => {
+  const ed = parseTokenNumber(req.body?.tokenId ?? req.body?.edition ?? 0);
+  const rawScore = Math.floor(Number(req.body?.score || 0));
+  const rawKills = Math.floor(Number(req.body?.kills || 0));
+  if (ed === null || rawScore <= 0 || rawScore > 999999) {
+    return res.status(400).json({ error: 'Invalid tokenId or score' });
+  }
+
+  const prev = ufoLeaderboardMap.get(ed);
+  const isNewBest = !prev || rawScore > prev.score;
+  if (isNewBest) {
+    ufoLeaderboardMap.set(ed, {
+      edition: ed,
+      score: rawScore,
+      kills: Math.max(rawKills, prev?.kills || 0),
+      updated_at: new Date().toISOString(),
+    });
+    saveLeaderboardData();
+  }
+
+  const allSorted = Array.from(ufoLeaderboardMap.values()).sort(
+    (a, b) => b.score - a.score || a.edition - b.edition
+  );
+  const myRank = allSorted.findIndex((r) => r.edition === ed) + 1;
+
+  res.json({
+    ok: true,
+    edition: ed,
+    id: `P${String(ed).padStart(4, '0')}`,
+    is_new_best: isNewBest,
+    best_score: ufoLeaderboardMap.get(ed).score,
+    rank: myRank,
+    total_pilots: ufoLeaderboardMap.size,
+    items: getFormattedLeaderboard(30),
+  });
+});
+
 app.use(
   express.static(PUBLIC_DIR, {
     etag: true,
