@@ -23,16 +23,16 @@ const NINE_CATS = [
 ];
 
 const CAT_LABELS_KO = {
-  Background: '배경 (Background)',
-  Aura: '오라 (Aura)',
-  Back: '등 소품 (Back)',
-  Species: '깃털 스킨 (Species)',
-  Clothes: '의상 (Clothes)',
-  Eyes: '눈 (Eyes)',
-  Mouth: '입 소품 (Mouth)',
-  Eyewear: '안경 (Eyewear)',
-  Hat: '모자 (Hat)',
-  Prop: '종합 소품 (Prop)',
+  Background: '배경',
+  Aura: '오라',
+  Back: '등 소품',
+  Species: '깃털 스킨',
+  Clothes: '의상',
+  Eyes: '눈',
+  Mouth: '입 소품',
+  Eyewear: '안경',
+  Hat: '모자',
+  Prop: '종합 소품',
 };
 
 // Featured Generative Penguins from our 10,000 Collection (0-based #0 ~ #9,999)
@@ -2040,23 +2040,11 @@ function applyLanguage(lang) {
     el.textContent = lang === 'ko' ? el.dataset.ko : el.dataset.en;
   });
 
-  const activeSp = MOTION_SPECIES_22[MOTION_STATE.activeIdx];
-  if (activeSp) {
-    const titleEl = document.getElementById('spot-title');
-    if (titleEl) {
-      titleEl.textContent =
-        lang === 'ko'
-          ? `[${activeSp.id}] ${activeSp.ko} (${activeSp.en})`
-          : `[${activeSp.id}] ${activeSp.en}`;
-    }
-    const nextBtn = document.getElementById('btn-motion-next');
-    if (nextBtn) {
-      nextBtn.innerHTML =
-        lang === 'ko'
-          ? `주인공 색깔 바꾸기 (${activeSp.ko})`
-          : `Change Color (${activeSp.en})`;
-    }
-  }
+  document.querySelectorAll('[data-placeholder-ko][data-placeholder-en]').forEach((el) => {
+    el.placeholder = lang === 'ko' ? el.dataset.placeholderKo : el.dataset.placeholderEn;
+  });
+
+  updateMobileTraitFilterBtnLabel();
   setIntroScene(MOTION_STATE.sceneIdx, false);
 }
 
@@ -2071,7 +2059,14 @@ async function loadPfpPreview(tokenNum) {
     const imgUrl = tok.edition <= 10 ? tok.image_url : tok.pixel_48_url;
     document.getElementById('pfp-preview-img').src = imgUrl;
     document.getElementById('pfp-mini-img').src = imgUrl;
-    document.getElementById('pfp-sim-title').textContent = tok.name;
+    const titleEl = document.getElementById('pfp-sim-title');
+    if (titleEl) {
+      const nameKo = tok.name_ko || tok.name;
+      const nameEn = tok.name_en || tok.name;
+      titleEl.dataset.ko = nameKo;
+      titleEl.dataset.en = nameEn;
+      titleEl.textContent = CURRENT_LANG === 'ko' ? nameKo : nameEn;
+    }
     document.getElementById('pfp-sim-id').textContent = tok.id;
 
     const tierEl = document.getElementById('pfp-sim-tier');
@@ -2157,8 +2152,12 @@ function renderSpecialsGrid(specials) {
   if (!grid || !specials) return;
 
   grid.innerHTML = specials
-    .map(
-      (sp) => `
+    .map((sp) => {
+      const subKo = sp.character_ko || sp.archetype;
+      const m = String(sp.archetype || '').match(/\(([^)]+)\)\s*$/);
+      const subEn = m ? m[1].trim() : subKo;
+      const subText = CURRENT_LANG === 'ko' ? subKo : subEn;
+      return `
     <button type="button" class="nft-card genesis-card" onclick="openTokenModal(${sp.edition})">
       <div class="nft-thumb-wrap">
         <img src="${sp.fast_gif_url}" alt="${escapeHtml(sp.title)}" class="pixelated" loading="lazy" />
@@ -2171,14 +2170,14 @@ function renderSpecialsGrid(specials) {
         <span>${sp.id}</span>
         <span>#${sp.edition}</span>
       </div>
-      <div class="nft-card-title">${escapeHtml(sp.archetype)}</div>
+      <div class="nft-card-title" data-ko="${escapeHtml(subKo)}" data-en="${escapeHtml(subEn)}">${escapeHtml(subText)}</div>
       <div class="nft-card-footer">
         <span class="score-tag">1-of-1 GIF</span>
         <span class="score-tag" style="color:var(--accent-cyan); font-weight:800;">${Number(sp.rarity_score).toLocaleString()} pts</span>
       </div>
     </button>
-  `
-    )
+  `;
+    })
     .join('');
 }
 
@@ -2214,11 +2213,14 @@ function buildExplorerTraitDropdowns() {
           `<option value="${escapeHtml(r.value)}">${escapeHtml(r.value)} (${r.count.toLocaleString()})</option>`
       )
       .join('');
+    const labelKo = CAT_LABELS_KO[cat] || cat;
+    const labelText = CURRENT_LANG === 'ko' ? labelKo : cat;
+    const allText = CURRENT_LANG === 'ko' ? '전체' : 'All';
     return `
       <div class="trait-select-box">
-        <label for="filter-cat-${cat}">${CAT_LABELS_KO[cat] || cat}</label>
+        <label for="filter-cat-${cat}" data-ko="${escapeHtml(labelKo)}" data-en="${escapeHtml(cat)}">${escapeHtml(labelText)}</label>
         <select id="filter-cat-${cat}" data-cat="${cat}" class="filter-select exp-cat-select" style="padding:7px 8px; font-size:12px;">
-          <option value="">전체 (All)</option>
+          <option value="" data-ko="전체" data-en="All">${allText}</option>
           ${optionsHtml}
         </select>
       </div>
@@ -2287,9 +2289,10 @@ async function fetchExplorerTokens() {
     grid.innerHTML = data.items
       .map((item) => {
         const isSpecial = item.edition <= 10;
-        const subtitle = isSpecial
-          ? item.archetype
-          : `${item.traits.Hat !== 'None' ? item.traits.Hat : item.traits.Clothes !== 'None' ? item.traits.Clothes : item.traits.Species}`;
+        const genTrait = `${item.traits.Hat !== 'None' ? item.traits.Hat : item.traits.Clothes !== 'None' ? item.traits.Clothes : item.traits.Species}`;
+        const subKo = isSpecial ? item.character_ko || item.archetype : genTrait;
+        const subEn = isSpecial ? item.character_en || item.archetype : genTrait;
+        const subtitle = CURRENT_LANG === 'ko' ? subKo : subEn;
         const cardTierClass =
           item.tier === 'Genesis' ? 'genesis-card' : item.tier === 'Mythic' ? 'mythic-card' : '';
         return `
@@ -2301,7 +2304,7 @@ async function fetchExplorerTokens() {
               <span class="rank-pill">Rank #${item.rarity_rank}</span>
             </div>
           </div>
-          <div class="nft-card-title">${escapeHtml(subtitle)}</div>
+          <div class="nft-card-title" data-ko="${escapeHtml(subKo)}" data-en="${escapeHtml(subEn)}">${escapeHtml(subtitle)}</div>
           <div class="nft-card-footer">
             <span class="score-tag" style="font-weight:800; color:#e2e8f0;">${item.id}</span>
             <span class="score-tag" style="color:var(--accent-cyan); font-weight:800;">${Number(item.rarity_score).toLocaleString()} pts</span>
@@ -2436,26 +2439,30 @@ async function openTokenModal(tokenNum) {
     const downloadBtnHtml = isSpecial
       ? `<a href="${tok.full_image_url}" download="${tok.id}.gif" class="btn-primary" style="text-decoration:none; width:100%; justify-content:center;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          <span>1254×1254 원본 이미지 다운로드</span>
+          <span data-ko="1254×1254 원본 이미지 다운로드" data-en="Download 1254×1254 Original GIF">${CURRENT_LANG === 'ko' ? '1254×1254 원본 이미지 다운로드' : 'Download 1254×1254 Original GIF'}</span>
          </a>`
       : `<button type="button" class="btn-primary" style="width:100%; justify-content:center;" onclick="downloadHighRes3072('${tok.id}', '${tok.pixel_48_url}')">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          <span>3072×3072 고해상도 PNG 다운로드 (64× NEAREST)</span>
+          <span data-ko="3072×3072 고해상도 PNG 다운로드 (64× NEAREST)" data-en="Download 3072×3072 High-Res PNG (64× NEAREST)">${CURRENT_LANG === 'ko' ? '3072×3072 고해상도 PNG 다운로드 (64× NEAREST)' : 'Download 3072×3072 High-Res PNG (64× NEAREST)'}</span>
          </button>`;
+
+    const titleKo = tok.name_ko || tok.name;
+    const titleEn = tok.name_en || tok.name;
+    const titleText = CURRENT_LANG === 'ko' ? titleKo : titleEn;
 
     body.innerHTML = `
       <div>
         <div class="modal-art-stage">
-          <img src="${tok.full_image_url}" alt="${escapeHtml(tok.name)}" class="pixelated" />
+          <img src="${tok.full_image_url}" alt="${escapeHtml(titleText)}" class="pixelated" />
         </div>
         <div style="display:flex; flex-direction:column; gap:8px; margin-top:12px;">
           ${downloadBtnHtml}
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-            <button type="button" class="btn-secondary" style="justify-content:center; padding:9px;" onclick="loadPfpPreview(${tok.edition}); closeTokenModal(); scrollToSection('top');">
-              PFP 시뮬레이터 장착
+            <button type="button" class="btn-secondary" style="justify-content:center; padding:9px;" onclick="loadPfpPreview(${tok.edition}); closeTokenModal(); scrollToSection('top');" data-ko="PFP 시뮬레이터 장착" data-en="Try in PFP Simulator">
+              ${CURRENT_LANG === 'ko' ? 'PFP 시뮬레이터 장착' : 'Try in PFP Simulator'}
             </button>
-            <a href="/api/metadata/${tok.id}.json" target="_blank" rel="noopener" class="btn-secondary" style="text-decoration:none; justify-content:center; padding:9px;">
-              { } 온체인 JSON 보기
+            <a href="/api/metadata/${tok.id}.json" target="_blank" rel="noopener" class="btn-secondary" style="text-decoration:none; justify-content:center; padding:9px;" data-ko="{ } 온체인 JSON 보기" data-en="{ } View On-Chain JSON">
+              ${CURRENT_LANG === 'ko' ? '{ } 온체인 JSON 보기' : '{ } View On-Chain JSON'}
             </a>
           </div>
         </div>
@@ -2468,32 +2475,32 @@ async function openTokenModal(tokenNum) {
           <span class="pill-tag gold">${Number(tok.rarity_score).toLocaleString()} pts</span>
         </div>
 
-        <h2 id="modal-token-title" style="font-size:22px; font-weight:900; margin-bottom:10px;">${escapeHtml(tok.name)}</h2>
+        <h2 id="modal-token-title" style="font-size:22px; font-weight:900; margin-bottom:10px;" data-ko="${escapeHtml(titleKo)}" data-en="${escapeHtml(titleEn)}">${escapeHtml(titleText)}</h2>
 
         <div class="spec-rows-stack" style="margin-bottom:12px;">
           <div class="spec-row">
-            <span class="spec-label">번호 (Token ID)</span>
+            <span class="spec-label" data-ko="번호 (Token ID)" data-en="Token ID">${CURRENT_LANG === 'ko' ? '번호 (Token ID)' : 'Token ID'}</span>
             <span class="spec-value">${tok.id} (#${tok.edition})</span>
           </div>
           <div class="spec-row">
-            <span class="spec-label">희귀도 순위 · 점수 (rarity.tools)</span>
+            <span class="spec-label" data-ko="희귀도 순위 · 점수 (rarity.tools)" data-en="Rarity Rank · Score (rarity.tools)">${CURRENT_LANG === 'ko' ? '희귀도 순위 · 점수 (rarity.tools)' : 'Rarity Rank · Score (rarity.tools)'}</span>
             <span class="spec-value" style="color:var(--accent-cyan);">Rank #${tok.rarity_rank} (${Number(tok.rarity_score).toLocaleString()} pts)</span>
           </div>
           <div class="spec-row">
-            <span class="spec-label">장착 파츠 수 (특성 개수 점수)</span>
-            <span class="spec-value">${tok.active_trait_stat.active_count}개 (${tok.active_trait_stat.pct}% · +${Number(tok.active_trait_stat.score).toLocaleString()} pts)</span>
+            <span class="spec-label" data-ko="장착 파츠 수 (특성 개수 점수)" data-en="Active Traits (Trait Count Score)">${CURRENT_LANG === 'ko' ? '장착 파츠 수 (특성 개수 점수)' : 'Active Traits (Trait Count Score)'}</span>
+            <span class="spec-value">${tok.active_trait_stat.active_count} (${tok.active_trait_stat.pct}% · +${Number(tok.active_trait_stat.score).toLocaleString()} pts)</span>
           </div>
           ${
             isSpecial && tok.genesis_bonus > 0
               ? `<div class="spec-row">
-            <span class="spec-label">Genesis 1-of-1 Origin 가산점 (#0~#10 순번)</span>
+            <span class="spec-label" data-ko="Genesis 1-of-1 Origin 가산점 (#0~#10 순번)" data-en="Genesis 1-of-1 Origin Bonus (#0~#10)">${CURRENT_LANG === 'ko' ? 'Genesis 1-of-1 Origin 가산점 (#0~#10 순번)' : 'Genesis 1-of-1 Origin Bonus (#0~#10)'}</span>
             <span class="spec-value" style="color:var(--tier-genesis);">+${Number(tok.genesis_bonus).toLocaleString()} pts</span>
           </div>`
               : ''
           }
         </div>
 
-        <h4 style="font-size:13.5px; font-weight:800; margin-bottom:6px;">파츠별 rarity.tools 점수 (전체 수 10,000 ÷ 보유 수)</h4>
+        <h4 style="font-size:13.5px; font-weight:800; margin-bottom:6px;" data-ko="파츠별 rarity.tools 점수 (전체 수 10,000 ÷ 보유 수)" data-en="Trait Breakdown · rarity.tools Score (10,000 ÷ Count)">${CURRENT_LANG === 'ko' ? '파츠별 rarity.tools 점수 (전체 수 10,000 ÷ 보유 수)' : 'Trait Breakdown · rarity.tools Score (10,000 ÷ Count)'}</h4>
         <div class="trait-breakdown-list">
           ${traitsHtml}
         </div>

@@ -102,11 +102,21 @@ function expandTokenSummary(num) {
   const tier = traits.Rarity;
   const vTag = `v322_${nativeSha16.slice(0, 8)}`;
   const addVer = (u) => (u.includes('?') ? `${u}&v=${vTag}` : `${u}?v=${vTag}`);
+  let charKo = null;
+  let charEn = null;
+  if (isSpecial && sp) {
+    charKo = sp.character_ko || sp.archetype;
+    const m = String(sp.archetype || '').match(/\(([^)]+)\)\s*$/);
+    charEn = m ? m[1].trim() : charKo;
+  }
   return {
     id,
     edition: num,
-    name: isSpecial ? sp.title : `Pixel Penguin #${num}`,
-    character_ko: isSpecial ? sp.character_ko : null,
+    name: isSpecial ? `Pixel Penguin #${num} — ${charKo}` : `Pixel Penguin #${num}`,
+    name_ko: isSpecial ? `Pixel Penguin #${num} — ${charKo}` : `Pixel Penguin #${num}`,
+    name_en: isSpecial ? `Pixel Penguin #${num} — ${charEn}` : `Pixel Penguin #${num}`,
+    character_ko: charKo,
+    character_en: charEn,
     archetype: isSpecial ? sp.archetype : null,
     kind: isSpecial ? 'SPECIAL_ORIGINAL_GIF' : 'GENERATIVE_48X48_NEAREST_3072',
     tier,

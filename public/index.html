@@ -258,7 +258,7 @@
               </div>
 
               <div class="pfp-jump-row">
-                <input type="text" id="pfp-jump-input" class="search-input" placeholder="번호 입력 (0 ~ 9999)" />
+                <input type="text" id="pfp-jump-input" class="search-input" data-placeholder-ko="번호 입력 (0 ~ 9999)" data-placeholder-en="Enter ID (0 ~ 9999)" placeholder="번호 입력 (0 ~ 9999)" />
                 <button type="button" class="btn-primary pfp-action-btn" id="pfp-jump-btn" data-ko="장착" data-en="Try">장착</button>
                 <button type="button" class="btn-secondary pfp-action-btn" id="pfp-detail-btn" data-ko="상세" data-en="Info">상세</button>
               </div>
@@ -290,26 +290,26 @@
         <div class="explorer-toolbar">
           <div class="toolbar-top">
             <div class="search-input-wrap">
-              <input type="search" id="exp-search" class="search-input" placeholder="번호(#0 ~ #9999) 또는 파츠 이름 검색..." />
+              <input type="search" id="exp-search" class="search-input" data-placeholder-ko="번호(#0 ~ #9999) 또는 파츠 이름 검색..." data-placeholder-en="Search by ID (#0 ~ #9999) or trait name..." placeholder="번호(#0 ~ #9999) 또는 파츠 이름 검색..." />
             </div>
 
             <select id="exp-tier" class="filter-select" aria-label="Filter by Rarity Tier">
-              <option value="">전체 등급 (10,000)</option>
-              <option value="Genesis">Genesis (11 · Rank #1~#11)</option>
-              <option value="Mythic">Mythic (39 · Rank #12~#50)</option>
-              <option value="Legendary">Legendary (200 · Rank #51~#250)</option>
-              <option value="Epic">Epic (450 · Rank #251~#700)</option>
-              <option value="Rare">Rare (1,300 · Rank #701~#2,000)</option>
-              <option value="Uncommon">Uncommon (2,500 · Rank #2,001~#4,500)</option>
-              <option value="Common">Common (5,500 · Rank #4,501~#10,000)</option>
+              <option value="" data-ko="전체 등급 (10,000)" data-en="All Tiers (10,000)">전체 등급 (10,000)</option>
+              <option value="Genesis" data-ko="Genesis (11 · Rank #1~#11)" data-en="Genesis (11 · Rank #1~#11)">Genesis (11 · Rank #1~#11)</option>
+              <option value="Mythic" data-ko="Mythic (39 · Rank #12~#50)" data-en="Mythic (39 · Rank #12~#50)">Mythic (39 · Rank #12~#50)</option>
+              <option value="Legendary" data-ko="Legendary (200 · Rank #51~#250)" data-en="Legendary (200 · Rank #51~#250)">Legendary (200 · Rank #51~#250)</option>
+              <option value="Epic" data-ko="Epic (450 · Rank #251~#700)" data-en="Epic (450 · Rank #251~#700)">Epic (450 · Rank #251~#700)</option>
+              <option value="Rare" data-ko="Rare (1,300 · Rank #701~#2,000)" data-en="Rare (1,300 · Rank #701~#2,000)">Rare (1,300 · Rank #701~#2,000)</option>
+              <option value="Uncommon" data-ko="Uncommon (2,500 · Rank #2,001~#4,500)" data-en="Uncommon (2,500 · Rank #2,001~#4,500)">Uncommon (2,500 · Rank #2,001~#4,500)</option>
+              <option value="Common" data-ko="Common (5,500 · Rank #4,501~#10,000)" data-en="Common (5,500 · Rank #4,501~#10,000)">Common (5,500 · Rank #4,501~#10,000)</option>
             </select>
 
             <select id="exp-sort" class="filter-select" aria-label="Sort Order">
-              <option value="id_asc" selected>번호순 (#0 → #9,999)</option>
-              <option value="id_desc">역순 (#9,999 → #0)</option>
-              <option value="rank_asc">희귀도 순위 (Rank #1 → #10,000)</option>
-              <option value="rank_desc">희귀도 낮은순 (#10,000 → #1)</option>
-              <option value="tier_desc">등급별 모아보기</option>
+              <option value="id_asc" data-ko="번호순 (#0 → #9,999)" data-en="ID Order (#0 → #9,999)" selected>번호순 (#0 → #9,999)</option>
+              <option value="id_desc" data-ko="역순 (#9,999 → #0)" data-en="Reverse ID (#9,999 → #0)">역순 (#9,999 → #0)</option>
+              <option value="rank_asc" data-ko="희귀도 순위 (Rank #1 → #10,000)" data-en="Rarity Rank (Rank #1 → #10,000)">희귀도 순위 (Rank #1 → #10,000)</option>
+              <option value="rank_desc" data-ko="희귀도 낮은순 (#10,000 → #1)" data-en="Lowest Rarity (#10,000 → #1)">희귀도 낮은순 (#10,000 → #1)</option>
+              <option value="tier_desc" data-ko="등급별 모아보기" data-en="Group by Tier">등급별 모아보기</option>
             </select>
 
             <div class="toolbar-btn-group">
@@ -332,11 +332,11 @@
         <div class="explorer-grid" id="explorer-grid"></div>
 
         <div class="pagination-bar">
-          <button type="button" class="page-btn" id="page-first-btn">≪ 처음</button>
-          <button type="button" class="page-btn" id="page-prev-btn">‹ 이전</button>
+          <button type="button" class="page-btn" id="page-first-btn" data-ko="≪ 처음" data-en="≪ First">≪ 처음</button>
+          <button type="button" class="page-btn" id="page-prev-btn" data-ko="‹ 이전" data-en="‹ Prev">‹ 이전</button>
           <span id="page-indicator" style="font-size:13.5px; font-weight:700; padding:0 12px;">1 / 250</span>
-          <button type="button" class="page-btn" id="page-next-btn">다음 ›</button>
-          <button type="button" class="page-btn" id="page-last-btn">끝 ≫</button>
+          <button type="button" class="page-btn" id="page-next-btn" data-ko="다음 ›" data-en="Next ›">다음 ›</button>
+          <button type="button" class="page-btn" id="page-last-btn" data-ko="끝 ≫" data-en="Last ≫">끝 ≫</button>
         </div>
       </section>
 
@@ -384,7 +384,7 @@
   <!-- TOKEN INSPECTOR MODAL -->
   <div class="modal-backdrop" id="token-modal" role="dialog" aria-modal="true" aria-labelledby="modal-token-title">
     <div class="modal-card">
-      <button type="button" class="modal-close-btn" id="close-token-modal">✕ 닫기</button>
+      <button type="button" class="modal-close-btn" id="close-token-modal" data-ko="✕ 닫기" data-en="✕ Close">✕ 닫기</button>
       <div class="modal-detail-grid" id="modal-detail-body"></div>
     </div>
   </div>
@@ -398,11 +398,11 @@
         <strong style="color:#fff;">PIXEL PENGUIN (PPENG)</strong> · <span>by <strong>@happy Ahndoge</strong></span>
       </div>
       <div>
-        <span>10,000 PFP Penguins · rarity.tools · 사신다고 뭐 안 드립니다</span>
+        <span data-ko="10,000 PFP Penguins · rarity.tools · 사신다고 뭐 안 드립니다" data-en="10,000 PFP Penguins · rarity.tools · Zero Perks">10,000 PFP Penguins · rarity.tools · 사신다고 뭐 안 드립니다</span>
       </div>
     </div>
   </footer>
 
-  <script src="/app.js?v=5.0.2"></script>
+  <script src="/app.js?v=5.0.5"></script>
 </body>
 </html>
