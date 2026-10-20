@@ -762,14 +762,18 @@ body {
 .trio-tag {
   font-size: 9px;
   font-weight: 900;
-  color: var(--accent-gold);
+  color: var(--tier-common);
   letter-spacing: 0.02em;
   white-space: nowrap;
 }
 
-.trio-tag.ice {
-  color: var(--accent-ice);
-}
+.trio-tag.tier-Genesis { color: var(--tier-genesis); }
+.trio-tag.tier-Mythic { color: var(--tier-mythic); }
+.trio-tag.tier-Legendary { color: var(--tier-legendary); }
+.trio-tag.tier-Epic { color: var(--tier-epic); }
+.trio-tag.tier-Rare { color: var(--tier-rare); }
+.trio-tag.tier-Uncommon { color: var(--tier-uncommon); }
+.trio-tag.tier-Common { color: var(--tier-common); }
 
 .trio-meta strong {
   font-size: 11.5px;

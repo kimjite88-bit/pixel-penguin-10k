@@ -2077,7 +2077,7 @@ async function loadPfpPreview(tokenNum) {
     const tierEl = document.getElementById('pfp-sim-tier');
     if (tierEl) {
       tierEl.textContent = tok.tier;
-      tierEl.className = `tier-${tok.tier}`;
+      tierEl.className = `tier-pill tier-${tok.tier}`;
     }
 
     const rankEl = document.getElementById('pfp-sim-rank');
