@@ -484,7 +484,7 @@ function initAmbientPixelCanvas() {
 //    Scene 3 (4. 픽셀화): Reference #4 (UFO pulled into towering Voxel Beam & pixelating)
 //    Scene 4 (5. 벚꽃마을): Cherry Blossom Pixel Town arrival & welcome by pixel penguin friends
 // ============================================================================
-const SCENE_DURATIONS = [99999999, 2500, 99999999, 3000, 99999999];
+const SCENE_DURATIONS = [99999999, 2600, 99999999, 3500, 99999999];
 
 const MOTION_STATE = {
   sceneIdx: 0,
@@ -3264,12 +3264,13 @@ function initPixelMotionStudio() {
   setIntroScene(0, true);
 
   // Main 60 FPS 5-Scene Reference Cutscene & Sky Game Loop (1920x1080 HiDPI Buffer, 960x540 Logical Space)
-  function renderIntroCutscene(now) {
+  function renderIntroCutscene() {
+    const now = performance.now();
     const activeSpId = UFO_GAME.pilotSpeciesId || '01';
     ensureSpeciesSprite(activeSpId);
     ensureHero2DSprite();
 
-    let elapsed = now - MOTION_STATE.sceneStartTime;
+    let elapsed = Math.max(0, now - MOTION_STATE.sceneStartTime);
     const curDuration = SCENE_DURATIONS[MOTION_STATE.sceneIdx] || 5600;
 
     let p = Math.min(1, Math.max(0, elapsed / curDuration));
@@ -3381,8 +3382,8 @@ function initPixelMotionStudio() {
         Math.min(460, ufoX + 15),
         Math.max(64, ufoY - 128),
         CURRENT_LANG === 'ko'
-          ? '큰일이야! 남극이 무너지고 있어! 지금 당장 탈출해야 해!!'
-          : 'Emergency! Antarctica is collapsing! We must escape right now!!',
+          ? '야야 남극 깨진다!! 브레이크 없고 일단 쏜다 꽉 잡아!!'
+          : 'Antarctica is cracking!! No brakes, hold on tight!!',
         '#fb7185',
         now
       );
@@ -3898,6 +3899,20 @@ function initPixelMotionStudio() {
       }
 
       const pct = Math.min(100, Math.round(scanRatio * 100));
+      drawRetroSpeechBubble(
+        ctx,
+        Math.min(540, ufoX - 24),
+        Math.max(64, topEdge - 6),
+        pct < 78
+          ? CURRENT_LANG === 'ko'
+            ? '으악 내 뽀샤시한 몸이!! 강제로 도트 찍히고 있잖아?!!'
+            : 'Aaagh my smooth body!! I am being forcibly pixelated?!!'
+          : CURRENT_LANG === 'ko'
+          ? '강제 도트화 완료... 어어 잠깐만 계기판 왜 꺼져 추락한다아악!!'
+          : 'Pixelation complete... Wait why did the engine die?! CRASHING!!',
+        pct < 78 ? '#38bdf8' : '#fb7185',
+        now
+      );
       drawPixelScanHudPill(ctx, ufoX, Math.min(488, botEdge + 18), pct);
 
       ctx.restore();
@@ -4007,7 +4022,8 @@ function initPixelMotionStudio() {
       });
 
       const spriteSize = 124;
-      const s5P = Math.min(1, Math.max(0, elapsed / 9000));
+      const s5P = Math.min(1, Math.max(0, elapsed / 6800));
+      let ufoRenderY = 418;
 
       if (MOTION_STATE.skippedEscape) {
         const defaultEntry = ensureSpeciesSprite('01');
@@ -4032,9 +4048,27 @@ function initPixelMotionStudio() {
           crashP < 1
             ? Math.round(90 + crashP * crashP * (ufoGroundY - 90))
             : Math.round(ufoGroundY + bounceOffset);
+        ufoRenderY = ufoCurY;
         const ufoCrashTilt = crashP < 1 ? 0.18 : 0.04;
 
         drawPixelGroundShadow(ctx, ufoLandX, ufoGroundY + 32, 162, bounceOffset);
+
+        // Ground impact pixel dust & spark burst when the UFO slams into the stone walkway
+        if (s5P >= 0.13 && s5P <= 0.28) {
+          const dustP = (s5P - 0.13) / 0.15;
+          ctx.save();
+          for (let d = 0; d < 8; d++) {
+            const side = d % 2 === 0 ? -1 : 1;
+            const dx = ufoLandX + side * (36 + (d * 14) + dustP * 54);
+            const dy = ufoGroundY + 18 - Math.sin(dustP * Math.PI) * (12 + (d % 3) * 8);
+            const dSz = Math.max(4, Math.round((1 - dustP) * 10));
+            ctx.fillStyle = '#090d1a';
+            ctx.fillRect(dx - 1, dy - 1, dSz + 2, dSz + 2);
+            ctx.fillStyle = d % 3 === 0 ? '#facc15' : d % 2 === 0 ? '#cbd5e1' : '#67e8f9';
+            ctx.fillRect(dx, dy, dSz, dSz);
+          }
+          ctx.restore();
+        }
 
         drawPixelUfoSpaceshipWithPilot(ctx, ufoLandX, ufoCurY, ufoCrashTilt, now, {
           scale: 1.42,
@@ -4072,6 +4106,99 @@ function initPixelMotionStudio() {
 
         renderedFriends.push({ fx, fy });
       });
+
+      // B-Grade Retro Pixel Speech Bubbles in Scene 5 (Crash-landing + Pixel Penguins Welcoming!)
+      const speaker1 = renderedFriends[0] || { fx: 432, fy: 342 };
+      const speaker2 = renderedFriends[1] || { fx: 544, fy: 336 };
+      if (MOTION_STATE.skippedEscape) {
+        const skipPhase = Math.floor(elapsed / 3400) % 2;
+        if (skipPhase === 0) {
+          drawPixelHeart(ctx, 275, 315 - ((now * 0.03) % 18), 2.6, '#38bdf8');
+          drawRetroSpeechBubble(
+            ctx,
+            268,
+            318,
+            CURRENT_LANG === 'ko'
+              ? '남극 탈출이고 나발이고 귀찮아서 바로 벚꽃마을로 째버렸지롱~'
+              : 'Skipped the whole escape game and walked straight to Cherry Town~',
+            '#38bdf8',
+            now
+          );
+        } else {
+          drawPixelHeart(ctx, speaker1.fx + 44, 318 - ((now * 0.03) % 18), 2.6, '#ff4d6d');
+          drawRetroSpeechBubble(
+            ctx,
+            speaker1.fx + spriteSize / 2 + 12,
+            speaker1.fy - 4,
+            CURRENT_LANG === 'ko'
+              ? 'ㅋㅋㅋ 우주선도 안 타고 날로 먹었네?! 어쨌든 벚꽃마을 환영한다!!'
+              : 'Haha you skipped the UFO ride?! Welcome to Cherry Blossom Town anyway!!',
+            '#ff4d6d',
+            now
+          );
+        }
+      } else if (s5P < 0.14) {
+        drawRetroSpeechBubble(
+          ctx,
+          248,
+          Math.max(108, ufoRenderY - 94),
+          CURRENT_LANG === 'ko'
+            ? '으아아악 브레이크 고장났다!! 벚꽃마을 바닥에 박는다아악!!'
+            : 'AAAAGH brakes are dead!! Crashing into Cherry Blossom Town!!',
+          '#fb7185',
+          now
+        );
+      } else if (s5P < 0.42) {
+        drawPixelHeart(ctx, 304, 336 - ((now * 0.03) % 18), 2.6, '#38bdf8');
+        drawRetroSpeechBubble(
+          ctx,
+          256,
+          306,
+          CURRENT_LANG === 'ko'
+            ? '쿠과광—!! 어우 내 허리... 우주선은 폐차각인데 불시착은 성공이다!!'
+            : 'CRAAASH—!! Ow my back... UFO is totaled, but we made it!!',
+          '#38bdf8',
+          now
+        );
+      } else {
+        const talkPhase = Math.floor(Math.max(0, elapsed - 2850) / 3400) % 3;
+        drawPixelHeart(ctx, speaker1.fx + 42, 318 - ((now * 0.03) % 20), 2.6, '#ff4d6d');
+        drawPixelHeart(ctx, speaker2.fx + 78, 314 - ((now * 0.03) % 20), 2.6, '#fbbf24');
+        if (talkPhase === 0) {
+          drawRetroSpeechBubble(
+            ctx,
+            speaker1.fx + spriteSize / 2 + 14,
+            speaker1.fy - 4,
+            CURRENT_LANG === 'ko'
+              ? '우와 우주선 추락했어 ㅋㅋ 살아있냐?! 벚꽃 픽셀마을에 온 걸 환영해!!'
+              : 'Whoa your UFO crashed haha—you alive?! Welcome to Cherry Blossom Town!!',
+            '#ff4d6d',
+            now
+          );
+        } else if (talkPhase === 1) {
+          drawRetroSpeechBubble(
+            ctx,
+            speaker2.fx + spriteSize / 2 - 12,
+            speaker2.fy - 4,
+            CURRENT_LANG === 'ko'
+              ? '사신다고 뭐 안 드립니다 ㅋㅋ 내 눈에 제일 이쁜 자식 골라서 프사나 박아~'
+              : 'Zero perks as promised haha—just pick the cutest penguin for your PFP~',
+            '#fbbf24',
+            now
+          );
+        } else {
+          drawRetroSpeechBubble(
+            ctx,
+            262,
+            306,
+            CURRENT_LANG === 'ko'
+              ? '우주선 수리비도 안 주네... 에라 모르겠다 10,000 도감도나 구경 가자!!'
+              : 'Not even paying for UFO repairs... Whatever, let us check the 10K Codex!!',
+            '#38bdf8',
+            now
+          );
+        }
+      }
 
       // Bottom-Left Retro Arcade Corner Tag
       const tagX = 16;

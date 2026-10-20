@@ -561,8 +561,10 @@ app.use(
   express.static(PUBLIC_DIR, {
     etag: true,
     setHeaders: (res, filePath) => {
-      if (/\.(html|js|css)$/i.test(filePath)) {
-        res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+      if (/\.(html|js|css|json)$/i.test(filePath)) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
       } else {
         res.setHeader('Cache-Control', 'public, max-age=86400');
       }
@@ -571,7 +573,9 @@ app.use(
 );
 
 app.get('*', (req, res) => {
-  res.setHeader('Cache-Control', 'no-cache, must-revalidate');
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
 });
 
