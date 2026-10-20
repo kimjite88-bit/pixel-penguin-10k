@@ -477,14 +477,14 @@ function initAmbientPixelCanvas() {
 }
 
 // ============================================================================
-// 2. 5-SCENE REFERENCE MOTION GRAPHIC & UFO ESCAPE MINI-GAME ENGINE (v5.3.0)
-//    Scene 0 ("1. 🚨 탈출선택"): Reference #1 (Empty UFO on crumbling glacier) + "탈출하시겠습니까?" [예 + NFT번호(안쓰면 노기록)] / [아니오 -> 5번 벚꽃마을 기본 펭귄 직행]
-//    Scene 1 ("2. 🚀 이륙모션"): Reference #2 (Motion graphic: Penguin inside UFO dome shouting "큰일이야! 남극이 무너지고 있어! 지금 당장 탈출해야 해!!")
-//    Scene 2 ("3. 🎮 하늘게임"): Reference #3 (Actual Sky Game Stage: Floating crystal islands, Golden Stars, Pink Warp Rings, Neon Cubes, Spiked Purple Mines!)
-//    Scene 3 ("4. ✨ 픽셀화"): Reference #4 (UFO pulled into towering Cyan/Magenta Voxel Beam & pixelating right before Cherry Blossom Town!)
-//    Scene 4 ("5. 🌸 벚꽃마을"): Cherry Blossom Pixel Town arrival & welcome by colorful pixel penguin friends!
+// 2. 5-SCENE REFERENCE MOTION GRAPHIC & UFO ESCAPE MINI-GAME ENGINE (v5.4.0)
+//    Scene 0 (1. 탈출선택): Reference #1 (Empty UFO on crumbling glacier) + "탈출하시겠습니까?"
+//    Scene 1 (2. 이륙모션): Reference #2 (Motion graphic: Penguin inside UFO dome blasting off)
+//    Scene 2 (3. 하늘게임): Reference #3 (Actual Sky Game Stage: Stars, Warp Rings, Neon Cubes, Mines)
+//    Scene 3 (4. 픽셀화): Reference #4 (UFO pulled into towering Voxel Beam & pixelating)
+//    Scene 4 (5. 벚꽃마을): Cherry Blossom Pixel Town arrival & welcome by pixel penguin friends
 // ============================================================================
-const SCENE_DURATIONS = [5000, 3200, 7500, 3400, 6800];
+const SCENE_DURATIONS = [99999999, 2500, 15000, 3000, 99999999];
 
 const MOTION_STATE = {
   sceneIdx: 0,
@@ -744,7 +744,7 @@ function triggerUfoShotDown(now = performance.now()) {
   } else {
     UFO_GAME.lastRank = null;
   }
-  // Transition directly to Scene 4 (sceneIdx = 3: "4. ✨ 픽셀화" — UFO Pixelation before Cherry Blossom Town!)
+  // Transition directly to Scene 4 (sceneIdx = 3: UFO Pixelation before Cherry Blossom Town)
   setIntroScene(3, true);
 }
 
@@ -771,71 +771,50 @@ async function submitUfoScoreToServer(tokenId, score, kills) {
 }
 
 function updateUfoBoardingDockUI() {
-  const nftBtn = document.getElementById('btn-ufo-board-nft');
-  const noneBtn = document.getElementById('btn-ufo-board-none');
   const badgeEl = document.getElementById('ufo-pilot-skin-badge');
-  const inputEl = document.getElementById('ufo-pilot-id-input');
   const s1InputEl = document.getElementById('scene1-nft-input');
-
-  if (nftBtn) nftBtn.classList.toggle('active-mode', UFO_GAME.hasNft);
-  if (noneBtn) noneBtn.classList.toggle('active-mode', !UFO_GAME.hasNft && MOTION_STATE.skippedEscape);
+  const s1SubEl = document.getElementById('s1-overlay-sub');
 
   if (badgeEl) {
     if (UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null) {
       const code = `P${String(UFO_GAME.pilotTokenId).padStart(4, '0')}`;
       badgeEl.textContent =
         CURRENT_LANG === 'ko'
-          ? `🎨 #${UFO_GAME.pilotTokenId}(${code}) ${UFO_GAME.pilotSpeciesLabel} · 순위 기록 ON`
-          : `🎨 #${UFO_GAME.pilotTokenId}(${code}) ${UFO_GAME.pilotSpeciesLabel} · Ranked`;
+          ? `#${UFO_GAME.pilotTokenId} (${code}) · ${UFO_GAME.pilotSpeciesLabel}`
+          : `#${UFO_GAME.pilotTokenId} (${code}) · ${UFO_GAME.pilotSpeciesLabel}`;
     } else {
       badgeEl.textContent =
         CURRENT_LANG === 'ko'
-          ? '🎨 기본 파란 펭귄 (NFT 미입력 · 노 기록)'
-          : '🎨 Default Blue Penguin (Unrecorded)';
+          ? '기본 파란 펭귄 (미기록)'
+          : 'Default Penguin (Unrecorded)';
     }
   }
-  const valStr = UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null ? String(UFO_GAME.pilotTokenId) : '';
-  if (inputEl && document.activeElement !== inputEl) {
-    inputEl.value = valStr;
+
+  if (s1SubEl) {
+    if (UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null) {
+      const code = `P${String(UFO_GAME.pilotTokenId).padStart(4, '0')}`;
+      s1SubEl.textContent =
+        CURRENT_LANG === 'ko'
+          ? `내 NFT #${UFO_GAME.pilotTokenId} (${code} · ${UFO_GAME.pilotSpeciesLabel}) 적용됨 · 점수 순위 기록`
+          : `NFT #${UFO_GAME.pilotTokenId} (${code} · ${UFO_GAME.pilotSpeciesLabel}) active · Score Ranked`;
+      s1SubEl.style.color = '#fde047';
+    } else {
+      s1SubEl.textContent =
+        CURRENT_LANG === 'ko'
+          ? 'NFT 번호 입력 시 내 펭귄 스킨이 적용되고 점수가 순위에 기록됩니다. (미입력 시 기본 펭귄 플레이)'
+          : 'Enter your NFT # to play with your penguin skin and record your score.';
+      s1SubEl.style.color = '#94a3b8';
+    }
   }
+
+  const valStr = UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null ? String(UFO_GAME.pilotTokenId) : '';
   if (s1InputEl && document.activeElement !== s1InputEl) {
     s1InputEl.value = valStr;
-  }
-  const fsLabelEl = document.getElementById('fs-pilot-status-label');
-  if (fsLabelEl) {
-    if (UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null) {
-      fsLabelEl.textContent =
-        CURRENT_LANG === 'ko'
-          ? `탑승: Pixel Penguin #${UFO_GAME.pilotTokenId} (순위 기록 ON)`
-          : `Pilot: Pixel Penguin #${UFO_GAME.pilotTokenId}`;
-    } else {
-      fsLabelEl.textContent =
-        CURRENT_LANG === 'ko' ? '탑승: 기본 파란 펭귄 (노 기록)' : 'Pilot: Default Blue (No Record)';
-    }
   }
 }
 
 function updateFullscreenExitOrCodexButton() {
-  const lbl = document.getElementById('btn-exit-or-codex-label');
-  if (lbl) {
-    if (MOTION_STATE.isFullscreen) {
-      lbl.textContent =
-        CURRENT_LANG === 'ko' ? '✕ 전체화면 종료 (나가기)' : '✕ Exit Fullscreen';
-    } else {
-      lbl.textContent =
-        CURRENT_LANG === 'ko' ? '10,000마리 도감도 구경하기' : 'Explore 10K Codex';
-    }
-  }
-  const burstBtnSpan = document.querySelector('#btn-pixel-burst span');
-  if (burstBtnSpan) {
-    if (MOTION_STATE.isFullscreen) {
-      burstBtnSpan.textContent =
-        CURRENT_LANG === 'ko' ? '🔄 3번 하늘게임 다시 시작' : '🔄 Restart Sky Game';
-    } else {
-      burstBtnSpan.textContent =
-        CURRENT_LANG === 'ko' ? '🎮 게임 참여 (전체화면 시작)' : '🎮 Join Game (Fullscreen)';
-    }
-  }
+  // No-op (minimal topbar uses CSS .is-fullscreen-mode toggle)
 }
 
 function enterUfoFullscreenGame(startCombatImmediately = true) {
@@ -989,14 +968,7 @@ function buildLeaderboardRowsHtml(items, showBoardAction = true) {
   }
   return items
     .map((item) => {
-      const medal =
-        item.rank === 1
-          ? '🥇 1위'
-          : item.rank === 2
-          ? '🥈 2위'
-          : item.rank === 3
-          ? '🥉 3위'
-          : `${item.rank}위`;
+      const medal = `${item.rank}위`;
       const topClass = item.rank <= 3 ? `rank-top-${item.rank}` : '';
       const nftName = getNftDisplayName(item);
       const spText = item.species || 'Classic';
@@ -1004,8 +976,8 @@ function buildLeaderboardRowsHtml(items, showBoardAction = true) {
         CURRENT_LANG === 'ko'
           ? `깃털스킨: ${spText} · 희귀도 순위 #${Number(item.rarity_rank).toLocaleString()} · 장애물 격파 ${item.kills || 0}기`
           : `Feather Skin: ${spText} · Rarity Rank #${Number(item.rarity_rank).toLocaleString()} · ${item.kills || 0} Hits`;
-      const goLabel = CURRENT_LANG === 'ko' ? '🔍 NFT 상세·프사 ▶' : '🔍 Inspect NFT ▶';
-      const boardLabel = CURRENT_LANG === 'ko' ? '🛸 이 NFT로 탑승' : '🛸 Board UFO';
+      const goLabel = CURRENT_LANG === 'ko' ? '상세 보기' : 'Details';
+      const boardLabel = CURRENT_LANG === 'ko' ? '이 NFT로 플레이' : 'Play with NFT';
 
       return `
         <div class="rank-row-card ${topClass}" onclick="jumpToRankedNft(${item.edition})">
@@ -1662,7 +1634,7 @@ function setIntroScene(sceneIdx, resetTimer = true) {
       MOTION_STATE.scene0Launching = false;
       MOTION_STATE.scene0LaunchStartTime = 0;
     } else if (MOTION_STATE.sceneIdx === 2) {
-      resetUfoGame(MOTION_STATE.sceneStartTime, MOTION_STATE.isFullscreen);
+      resetUfoGame(MOTION_STATE.sceneStartTime, true);
     } else if (MOTION_STATE.sceneIdx === 3) {
       UFO_GAME.phase = 'scan';
       UFO_GAME.phaseStartTime = MOTION_STATE.sceneStartTime;
@@ -1671,30 +1643,6 @@ function setIntroScene(sceneIdx, resetTimer = true) {
   const s1Overlay = document.getElementById('scene1-escape-overlay');
   if (s1Overlay) {
     s1Overlay.classList.toggle('hidden-overlay', MOTION_STATE.sceneIdx !== 0);
-  }
-
-  document.querySelectorAll('.motion-mode-btn[data-scene]').forEach((btn) => {
-    btn.classList.toggle('active', Number(btn.dataset.scene) === MOTION_STATE.sceneIdx);
-  });
-
-  const labelEl = document.getElementById('motion-hud-mode-label');
-  if (labelEl) {
-    const labelsKo = [
-      'SCENE 1/5 · 🚨 남극 붕괴! 탈출하시겠습니까? ([예] + NFT번호 / [아니오] 벚꽃마을 직행)',
-      'SCENE 2/5 · 🚀 긴급 탈출 모션 그래픽! "큰일이야! 남극이 무너지고 있어! 지금 당장 탈출해야 해!!"',
-      'SCENE 3/5 · 🎮 실제 하늘 탈출 게임! 별·워프링·큐브를 모으고 가시 기뢰를 피하세요!',
-      'SCENE 4/5 · ✨ 차원 광선 진입! 우주선 통째로 픽셀화 (벚꽃마을 도착 직전)',
-      'SCENE 5/5 · 🌸 벚꽃 픽셀마을 도착 & 픽셀 펭귄 친구들 환영식!',
-    ];
-    const labelsEn = [
-      'SCENE 1/5 · 🚨 Antarctica Crumbling! Escape? ([YES] + NFT # / [NO] Skip to Cherry Town)',
-      'SCENE 2/5 · 🚀 Emergency Liftoff Motion Graphic! "Antarctica is collapsing! Escape now!!"',
-      'SCENE 3/5 · 🎮 Sky Escape Game! Collect Stars, Warp Rings & Cubes, Dodge Spiked Mines!',
-      'SCENE 4/5 · ✨ Voxel Beam Entry! Whole UFO Pixelation right before Cherry Blossom Town',
-      'SCENE 5/5 · 🌸 Arrival in Cherry Blossom Pixel Town & Welcome!',
-    ];
-    labelEl.textContent =
-      CURRENT_LANG === 'ko' ? labelsKo[MOTION_STATE.sceneIdx] : labelsEn[MOTION_STATE.sceneIdx];
   }
 }
 
@@ -2044,7 +1992,7 @@ function drawPixelEmoteBubble(ctx, cx, bottomY, type = 'music', now = 0) {
   const icY = Math.round(by + bh / 2);
 
   if (type === 'music') {
-    // Pixel Eighth Note (♪)
+    // Pixel Eighth Note
     const nX = icX - 10;
     const nY = icY - 9;
     ctx.fillStyle = '#0284c7';
@@ -2360,7 +2308,7 @@ function drawPixelOutlinedSubtitle(ctx, text, cx, cy) {
   ctx.restore();
 }
 
-// Helper: Scene 1 ("1. 🚨 탈출선택") Background — Reference Image #1 (Empty UFO on Crumbling Antarctica Cliff)
+// Helper: Scene 1 Background — Reference Image #1 (Empty UFO on Crumbling Antarctica Cliff)
 function drawRefScene1ChoiceBackground(ctx, now) {
   ensureIntroBackgrounds();
   if (MOTION_STATE.bgRefScene1Loaded && MOTION_STATE.bgRefScene1Img) {
@@ -2397,7 +2345,7 @@ function drawRefScene1ChoiceBackground(ctx, now) {
   ctx.restore();
 }
 
-// Helper: Scene 2 ("2. 🚀 이륙모션") & Scene 4 ("4. ✨ 픽셀화") Background — Reference Vortex Pillar
+// Helper: Scene 2 & Scene 4 Background — Reference Vortex Pillar
 function drawRefVortexBackground(ctx, now) {
   ensureIntroBackgrounds();
   if (MOTION_STATE.bgRefVortexLoaded && MOTION_STATE.bgRefVortexImg) {
@@ -2436,7 +2384,7 @@ function drawRefVortexBackground(ctx, now) {
   ctx.restore();
 }
 
-// Helper: Scene 3 ("3. 🎮 하늘게임") Background — Reference Image #3 (Sky Islands, Crystals & Cloud Sea)
+// Helper: Scene 3 Background — Reference Image #3 (Sky Islands, Crystals & Cloud Sea)
 function drawRefSkyGameBackground(ctx, now) {
   ensureIntroBackgrounds();
   if (MOTION_STATE.bgRefSkyGameLoaded && MOTION_STATE.bgRefSkyGameImg) {
@@ -2713,7 +2661,7 @@ function drawDarkPurpleSpikedMine(ctx, r = 20, rot = 0) {
   ctx.restore();
 }
 
-// Helper: Draw Entities in Scene 3 ("3. 🎮 하늘게임") — Matches Reference Image #3!
+// Helper: Draw Entities in Scene 3 — Matches Reference Image #3
 function drawUfoEntity(ctx, ent, now) {
   ctx.save();
   ctx.translate(ent.x, ent.y);
@@ -2732,12 +2680,12 @@ function drawUfoEntity(ctx, ent, now) {
   ctx.restore();
 }
 
-// Helper: Top Arcade HUD Bar inside Scene 3 ("3. 🎮 하늘게임")
-function drawUfoCombatHud(ctx, now) {
+// Helper: Top Arcade HUD Bar inside Scene 3 Sky Game
+function drawUfoCombatHud(ctx, now, remainSec = 15) {
   ctx.save();
   const hx = 16;
   const hy = 12;
-  const hw = 452;
+  const hw = 430;
   const hh = 34;
   ctx.fillStyle = 'rgba(9, 13, 26, 0.88)';
   ctx.fillRect(hx - 2, hy - 2, hw + 4, hh + 4);
@@ -2745,20 +2693,20 @@ function drawUfoCombatHud(ctx, now) {
   ctx.lineWidth = 1.6;
   ctx.strokeRect(hx, hy, hw, hh);
 
-  // Pilot NFT Tag OR Guest Tag ('노 기록')
+  // Pilot NFT Tag OR Guest Tag
   if (UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null) {
     const idCode = `P${String(UFO_GAME.pilotTokenId).padStart(4, '0')}`;
     ctx.fillStyle = '#fde047';
     ctx.font = '900 12.5px "Pretendard", "Malgun Gothic", sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(`🛸 ${idCode}`, hx + 10, hy + hh / 2 + 1);
+    ctx.fillText(`NFT ${idCode}`, hx + 12, hy + hh / 2 + 1);
   } else {
     ctx.fillStyle = '#67e8f9';
     ctx.font = '900 11.5px "Pretendard", "Malgun Gothic", sans-serif';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(CURRENT_LANG === 'ko' ? '🛸 노 기록(기본)' : '🛸 NO-RECORD', hx + 10, hy + hh / 2 + 1);
+    ctx.fillText(CURRENT_LANG === 'ko' ? 'GUEST (기본)' : 'GUEST', hx + 12, hy + hh / 2 + 1);
   }
 
   // Score
@@ -2766,14 +2714,14 @@ function drawUfoCombatHud(ctx, now) {
   ctx.font = '900 12.5px "Pretendard", "Malgun Gothic", sans-serif';
   ctx.fillText(
     `SCORE ${UFO_GAME.score.toLocaleString()}`,
-    hx + 98,
+    hx + 102,
     hy + hh / 2 + 1
   );
 
   // Combo
   if (UFO_GAME.combo > 1) {
     ctx.fillStyle = '#34d399';
-    ctx.fillText(`x${UFO_GAME.combo}`, hx + 204, hy + hh / 2 + 1);
+    ctx.fillText(`x${UFO_GAME.combo}`, hx + 208, hy + hh / 2 + 1);
   }
 
   // 3 Shield Hearts
@@ -2781,46 +2729,21 @@ function drawUfoCombatHud(ctx, now) {
     const active = s < UFO_GAME.shields;
     drawPixelHeart(
       ctx,
-      hx + 248 + s * 22,
+      hx + 252 + s * 22,
       hy + hh / 2,
       2.1,
       active ? '#38bdf8' : '#334155'
     );
   }
 
-  // Control mode indicator
-  ctx.fillStyle = UFO_GAME.userControlled ? '#34d399' : '#bae6fd';
-  ctx.font = '800 11.5px "Pretendard", "Malgun Gothic", sans-serif';
+  // Remaining Stage Timer
+  ctx.fillStyle = remainSec <= 4 ? '#fb7185' : '#bae6fd';
+  ctx.font = '900 12px "Pretendard", "Malgun Gothic", sans-serif';
   ctx.textAlign = 'right';
   ctx.fillText(
-    UFO_GAME.userControlled
-      ? CURRENT_LANG === 'ko'
-        ? '🎮 직접 조종중'
-        : '🎮 PLAYING'
-      : CURRENT_LANG === 'ko'
-      ? '터치·마우스 조종'
-      : 'TOUCH / MOVE',
-    hx + hw - 12,
+    `TIME ${Math.max(0, Math.ceil(remainSec))}s`,
+    hx + hw - 14,
     hy + hh / 2 + 1
-  );
-
-  // Center-Right Interactive Action Pill: "[✨ 4번 픽셀화 진입 ▶]" (x = 478..636, y = 12..46)
-  const bx = 478;
-  const by = 12;
-  const bw = 158;
-  const bh = 34;
-  ctx.fillStyle = 'rgba(14, 165, 233, 0.92)';
-  ctx.fillRect(bx, by, bw, bh);
-  ctx.strokeStyle = '#bae6fd';
-  ctx.lineWidth = 1.6;
-  ctx.strokeRect(bx, by, bw, bh);
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '900 12px "Pretendard", "Malgun Gothic", sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(
-    CURRENT_LANG === 'ko' ? '✨ 4번 픽셀화 진입 ▶' : '✨ Pixelate UFO ▶',
-    bx + bw / 2,
-    by + bh / 2 + 1
   );
 
   ctx.restore();
@@ -2836,21 +2759,16 @@ function initPixelMotionStudio() {
   ensureHero2DSprite();
   ['01', '04', '05', '06', '09', '15'].forEach((id) => ensureSpeciesSprite(id));
 
-  // Scene 1 Overlay & Top Boarding Dock Controls:
-  // Choice A: "[🚀 예 (탈출하기)]" + NFT Number Input right beside it (If empty -> No Record / Default Blue Penguin!)
-  // Choice B: "[🌸 아니오 (탈출 안 함)]" -> Skips escape & goes straight to Scene 5 (Cherry Blossom Town) with Default Blue Penguin!
   const pilotInput = document.getElementById('ufo-pilot-id-input');
   const s1Input = document.getElementById('scene1-nft-input');
   const boardNftBtn = document.getElementById('btn-ufo-board-nft');
   const boardNoneBtn = document.getElementById('btn-ufo-board-none');
   const s1YesBtn = document.getElementById('btn-scene1-yes');
   const s1NoBtn = document.getElementById('btn-scene1-no');
-  const s1RandomBtn = document.getElementById('btn-scene1-random');
 
   const handleEscapeYesWithOptionalNft = (sourceInput) => {
-    const raw = (sourceInput ? sourceInput.value : pilotInput?.value || s1Input?.value || '').trim();
+    const raw = (sourceInput ? sourceInput.value : s1Input?.value || pilotInput?.value || '').trim();
     if (raw === '') {
-      // User left NFT number blank -> "안 쓰면 노 기록인 거지" -> Escape with Default Blue Penguin & No Record!
       boardUfoWithoutNft(true);
     } else {
       const n = parseInt(raw, 10);
@@ -2876,6 +2794,8 @@ function initPixelMotionStudio() {
       const raw = pilotInput.value.trim();
       if (raw !== '' && !Number.isNaN(parseInt(raw, 10))) {
         setUfoPilotTokenId(parseInt(raw, 10), false, false);
+      } else {
+        boardUfoWithoutNft(false);
       }
     });
   }
@@ -2894,6 +2814,8 @@ function initPixelMotionStudio() {
       const raw = s1Input.value.trim();
       if (raw !== '' && !Number.isNaN(parseInt(raw, 10))) {
         setUfoPilotTokenId(parseInt(raw, 10), false, false);
+      } else {
+        boardUfoWithoutNft(false);
       }
     });
   }
@@ -2901,7 +2823,6 @@ function initPixelMotionStudio() {
   boardNftBtn?.addEventListener('click', () => handleEscapeYesWithOptionalNft(pilotInput));
   s1YesBtn?.addEventListener('click', () => handleEscapeYesWithOptionalNft(s1Input));
 
-  // Choice B: "[🌸 아니오 (탈출 안 함)]" -> Jump directly to Scene 5 (Cherry Blossom Town) with the most basic default penguin!
   boardNoneBtn?.addEventListener('click', () => {
     skipEscapeToCherryBlossomTown();
   });
@@ -2909,17 +2830,7 @@ function initPixelMotionStudio() {
     skipEscapeToCherryBlossomTown();
   });
 
-  // "[🎲 랜덤 NFT]" buttons
-  const handleRandomNftPick = (startNow = false) => {
-    const rnd = Math.floor(Math.random() * 10000);
-    if (pilotInput) pilotInput.value = String(rnd);
-    if (s1Input) s1Input.value = String(rnd);
-    setUfoPilotTokenId(rnd, true, startNow);
-  };
-  document.getElementById('btn-ufo-random-id')?.addEventListener('click', () => handleRandomNftPick(true));
-  s1RandomBtn?.addEventListener('click', () => handleRandomNftPick(false));
-
-  // Default initial state: '노 기록 (NFT 미입력)' with Default Blue Penguin ('01')
+  // Default initial state: Guest ('기본 펭귄 · 기록 미저장') with Default Blue Penguin ('01')
   updateUfoBoardingDockUI();
 
   document.getElementById('btn-open-leaderboard')?.addEventListener('click', () => {
@@ -2935,7 +2846,7 @@ function initPixelMotionStudio() {
     if (e.target.id === 'leaderboard-modal') closeLeaderboardModal();
   });
 
-  // Keyboard Controls for Giant UFO Spaceship in Scene 3 ("3. 🎮 하늘게임", sceneIdx === 2)
+  // Keyboard Controls for Giant UFO Spaceship in Scene 3 (sceneIdx === 2)
   window.addEventListener('keydown', (e) => {
     if (
       ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(
@@ -2955,31 +2866,7 @@ function initPixelMotionStudio() {
     UFO_GAME.keys[e.code] = false;
   });
 
-  // 5 Scene Chapter Buttons (0: 탈출선택, 1: 이륙모션, 2: 하늘게임, 3: 픽셀화, 4: 벚꽃마을)
-  document.querySelectorAll('.motion-mode-btn[data-scene]').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      const targetIdx = Number(btn.dataset.scene);
-      if (targetIdx !== 4) {
-        MOTION_STATE.skippedEscape = false;
-      }
-      setIntroScene(targetIdx, true);
-    });
-  });
-
-  // HTML Dialogue Next Scene Button
-  document.getElementById('intro-dialogue-next-btn')?.addEventListener('click', () => {
-    if (MOTION_STATE.sceneIdx === 0) {
-      handleEscapeYesWithOptionalNft(s1Input || pilotInput);
-      return;
-    }
-    if (MOTION_STATE.sceneIdx === 2) {
-      triggerUfoShotDown(performance.now());
-      return;
-    }
-    setIntroScene((MOTION_STATE.sceneIdx + 1) % 5, true);
-  });
-
-  // Launch Fullscreen UFO Game ("🎮 게임 참여 (전체화면)") Buttons
+  // Launch Fullscreen UFO Game Buttons
   const handleEnterFullscreenClick = () => {
     const raw = (s1Input?.value || pilotInput?.value || '').trim();
     if (raw !== '' && !Number.isNaN(parseInt(raw, 10))) {
@@ -2998,21 +2885,6 @@ function initPixelMotionStudio() {
     exitUfoFullscreenGame();
   });
 
-  // Autoplay Toggle Button
-  const autoBtn = document.getElementById('btn-motion-autoplay');
-  autoBtn?.addEventListener('click', () => {
-    MOTION_STATE.autoPlay = !MOTION_STATE.autoPlay;
-    MOTION_STATE.sceneStartTime = performance.now();
-    autoBtn.classList.toggle('active-toggle', MOTION_STATE.autoPlay);
-    const lblEl = document.getElementById('autoplay-label');
-    if (lblEl) {
-      lblEl.textContent =
-        CURRENT_LANG === 'ko'
-          ? `자동진행: ${MOTION_STATE.autoPlay ? 'ON' : 'OFF'}`
-          : `Auto: ${MOTION_STATE.autoPlay ? 'ON' : 'OFF'}`;
-    }
-  });
-
   // Helper to map client pointer to 960x540 canvas logical coordinates
   const getLogicalCoords = (clientX, clientY) => {
     const rect = canvas.getBoundingClientRect();
@@ -3027,22 +2899,15 @@ function initPixelMotionStudio() {
     const { mx, my } = getLogicalCoords(e.clientX, e.clientY);
 
     if (MOTION_STATE.sceneIdx === 0) {
-      // Scene 1 has its own dedicated #scene1-escape-overlay buttons
       return;
     }
 
     if (MOTION_STATE.sceneIdx === 1) {
-      // Clicking during Scene 2 motion graphic skips straight to Scene 3 Sky Game
       setIntroScene(2, true);
       return;
     }
 
     if (MOTION_STATE.sceneIdx === 2) {
-      // Clicking "[✨ 4번 픽셀화 진입 ▶]" button on top HUD triggers Scene 4 Voxel Beam Pixelation!
-      if (mx >= 474 && mx <= 640 && my >= 10 && my <= 50) {
-        triggerUfoShotDown(performance.now());
-        return;
-      }
       UFO_GAME.userControlled = true;
       UFO_GAME.targetX = Math.max(125, Math.min(680, mx));
       UFO_GAME.targetY = Math.max(92, Math.min(390, my));
@@ -3055,7 +2920,7 @@ function initPixelMotionStudio() {
     }
 
     if (MOTION_STATE.sceneIdx === 4) {
-      // Clicking the top Score/Leaderboard banner in Scene 5 opens the NFT Ranking Tab!
+      // Clicking the top Score/Leaderboard banner in Scene 5 opens the NFT Ranking Tab
       if (mx >= 160 && mx <= 800 && my >= 8 && my <= 48) {
         openLeaderboardModal();
         return;
@@ -3071,7 +2936,6 @@ function initPixelMotionStudio() {
         return;
       }
     }
-    setIntroScene((MOTION_STATE.sceneIdx + 1) % 5, true);
   });
 
   canvas.addEventListener('mousemove', (e) => {
@@ -3097,7 +2961,7 @@ function initPixelMotionStudio() {
 
     if (
       MOTION_STATE.isFullscreen ||
-      (MOTION_STATE.sceneIdx === 2 && UFO_GAME.userControlled)
+      MOTION_STATE.sceneIdx === 2
     ) {
       if (e.cancelable) e.preventDefault();
     }
@@ -3105,10 +2969,6 @@ function initPixelMotionStudio() {
     const { mx, my } = getLogicalCoords(touch.clientX, touch.clientY);
 
     if (MOTION_STATE.sceneIdx === 2) {
-      if (mx >= 474 && mx <= 640 && my >= 10 && my <= 50) {
-        triggerUfoShotDown(performance.now());
-        return;
-      }
       UFO_GAME.userControlled = true;
       UFO_GAME.targetX = Math.max(125, Math.min(680, mx));
       UFO_GAME.targetY = Math.max(92, Math.min(390, my - 36));
@@ -3168,7 +3028,7 @@ function initPixelMotionStudio() {
 
     let p = Math.min(1, Math.max(0, elapsed / curDuration));
     if (MOTION_STATE.sceneIdx === 0) {
-      p = 0.25; // Scene 1 waits for user choice ([예] or [아니오])
+      p = 0.25;
     }
     updateIntroProgressBars(MOTION_STATE.sceneIdx, p);
 
@@ -3177,54 +3037,20 @@ function initPixelMotionStudio() {
     ctx.clearRect(0, 0, 960, 540);
 
     // ========================================================================
-    // SCENE 1 (sceneIdx === 0 · "1. 🚨 탈출선택" — Reference Image #1):
-    //   Shows the empty UFO resting on crumbling Antarctica glacier cliffs (bg_ref_scene1.jpg).
-    //   The interactive HTML overlay (#scene1-escape-overlay) asks:
-    //   "탈출하시겠습니까?" -> [🚀 예 (탈출하기)] + NFT 번호 입력 (안 쓰면 노 기록) / [🌸 아니오 (탈출 안 함 -> 기본 펭귄으로 벚꽃마을 직행)]
+    // SCENE 1 (sceneIdx === 0 — Reference Image #1):
+    //   Clean empty UFO resting on crumbling Antarctica glacier cliffs (bg_ref_scene1.jpg).
     // ========================================================================
     if (MOTION_STATE.sceneIdx === 0) {
       ctx.save();
-      // Subtle glacier tremor
       ctx.translate(Math.sin(now * 0.045) * 1.4, Math.cos(now * 0.04) * 1.0);
       drawRefScene1ChoiceBackground(ctx, now);
-
-      // Top Reference Scene 1 Status Banner
-      const alW = 620;
-      const alH = 34;
-      const alX = 480 - alW / 2;
-      const alY = 12;
-      ctx.fillStyle = 'rgba(9, 13, 26, 0.88)';
-      ctx.fillRect(alX - 2, alY - 2, alW + 4, alH + 4);
-      ctx.strokeStyle = '#38bdf8';
-      ctx.lineWidth = 1.8;
-      ctx.strokeRect(alX, alY, alW, alH);
-      ctx.fillStyle = '#fde047';
-      ctx.font = '900 12.5px "Pretendard", "Malgun Gothic", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(
-        CURRENT_LANG === 'ko'
-          ? '🚨 SCENE 1 · 남극 붕괴 위기! [예] 옆에 NFT 번호를 입력해 탈출하거나, [아니오]로 벚꽃마을에 바로 가세요!'
-          : '🚨 SCENE 1 · Antarctica Crumbling! Click [YES] (+ optional NFT #) to escape, or [NO] for Cherry Blossom Town!',
-        480,
-        alY + alH / 2 + 1
-      );
-
-      drawRetroDialogueBar(
-        ctx,
-        'SCENE 1/5 · 🚨 탈출 선택 (레퍼런스 1번)',
-        CURRENT_LANG === 'ko'
-          ? '탈출하시겠습니까? [🚀 예] 옆에 NFT 번호를 넣으면 랭킹에 기록되고(안 쓰면 노 기록), [🌸 아니오]를 누르면 가장 기본 펭귄으로 벚꽃마을에 바로 도착합니다!'
-          : 'Will you escape? Enter your NFT # beside [YES] to record your score (blank = no record), or click [NO] to go straight to Cherry Blossom Town!'
-      );
       ctx.restore();
     }
 
     // ========================================================================
-    // SCENE 2 (sceneIdx === 1 · "2. 🚀 이륙모션" — Reference Image #2):
+    // SCENE 2 (sceneIdx === 1 — Reference Image #2):
     //   Motion graphic of the Penguin inside the UFO dome blasting off from crumbling Antarctica
-    //   toward the sky with radial anime speed lines, sweat drops, and urgent speech bubble:
-    //   "큰일이야! 남극이 무너지고 있어! 지금 당장 탈출해야 해!!"
+    //   toward the sky with radial anime speed lines and speech bubble.
     // ========================================================================
     else if (MOTION_STATE.sceneIdx === 1) {
       ctx.save();
@@ -3236,7 +3062,7 @@ function initPixelMotionStudio() {
 
       drawRefVortexBackground(ctx, now);
 
-      // Dynamic Anime Radial White Speed Lines (Matching Reference Image #2!)
+      // Dynamic Anime Radial White Speed Lines (Matching Reference Image #2)
       const ufoX = 240 + p * 165;
       const ufoY = 335 - p * 85 + Math.sin(now * 0.025) * 4;
       const ufoTilt = -0.22;
@@ -3269,7 +3095,7 @@ function initPixelMotionStudio() {
       }
       ctx.restore();
 
-      // Draw Giant UFO with Penguin Pilot inside (stationary in cockpit, shocked/urgent expression!)
+      // Draw Giant UFO with Penguin Pilot inside (stationary in cockpit)
       drawUfoSpaceshipWithPilot(
         ctx,
         ufoX,
@@ -3287,7 +3113,7 @@ function initPixelMotionStudio() {
         }
       );
 
-      // Cute anime sweat drops (💦) flying off near the dome like Reference Image #2
+      // Anime droplets flying off near the dome like Reference Image #2
       ctx.save();
       ctx.fillStyle = '#7dd3fc';
       ctx.strokeStyle = '#0284c7';
@@ -3304,8 +3130,6 @@ function initPixelMotionStudio() {
       }
       ctx.restore();
 
-      // Dramatic Comic Speech Bubble from Reference Image #2:
-      // "큰일이야! 남극이 무너지고 있어! 지금 당장 탈출해야 해!!"
       drawRetroSpeechBubble(
         ctx,
         Math.min(460, ufoX + 15),
@@ -3317,34 +3141,17 @@ function initPixelMotionStudio() {
         now
       );
 
-      const pilotTag =
-        UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null
-          ? `Pixel Penguin #${UFO_GAME.pilotTokenId} (${UFO_GAME.pilotSpeciesLabel})`
-          : CURRENT_LANG === 'ko'
-          ? '기본 파란 펭귄 (노 기록)'
-          : 'Default Blue Penguin (No Record)';
-
-      drawRetroDialogueBar(
-        ctx,
-        'SCENE 2/5 · 🚀 긴급 이륙 모션 그래픽 (레퍼런스 2번)',
-        CURRENT_LANG === 'ko'
-          ? `"큰일이야! 남극이 무너지고 있어! 지금 당장 탈출해야 해!!" — ${pilotTag} 대원을 태운 우주선이 하늘로 솟구칩니다!`
-          : `"Antarctica is collapsing! We must escape right now!!" — The UFO blasts off into the sky with Pilot ${pilotTag}!`
-      );
-
       ctx.restore();
 
-      // Auto-advance from Scene 2 Motion Graphic to Scene 3 Sky Game after 3.2s!
+      // Auto-advance from Scene 2 Motion Graphic to Scene 3 Sky Game after 2.5s
       if (elapsed >= curDuration) {
         setIntroScene(2, true);
       }
     }
 
     // ========================================================================
-    // SCENE 3 (sceneIdx === 2 · "3. 🎮 하늘게임" — Reference Image #3):
-    //   Actual Playable Sky Game Stage!
-    //   Floating crystal sky-islands, clouds, Golden Stars (⭐), Pink Neon Warp Rings (⭕),
-    //   3D Neon Wireframe Cubes (🧊), and Dark Purple Spiked Mines (💣)!
+    // SCENE 3 (sceneIdx === 2 — Reference Image #3):
+    //   Actual Playable Sky Game Stage (15 seconds)!
     // ========================================================================
     else if (MOTION_STATE.sceneIdx === 2) {
       const dt = Math.min(32, Math.max(8, now - (UFO_GAME.lastTickAt || now))) / 16.67;
@@ -3359,8 +3166,9 @@ function initPixelMotionStudio() {
       drawRefSkyGameBackground(ctx, now);
 
       const combatElapsed = now - UFO_GAME.phaseStartTime;
+      const remainSec = Math.max(0, (curDuration - combatElapsed) / 1000);
 
-      // 1. Update Giant UFO Position (Keyboard OR Touch/Mouse Target OR Smart AI Autopilot)
+      // 1. Update Giant UFO Position (Keyboard OR Touch/Mouse Target)
       const keySpd = 5.8 * dt;
       let keyMoved = false;
       if (UFO_GAME.keys['ArrowLeft'] || UFO_GAME.keys['KeyA']) {
@@ -3382,11 +3190,6 @@ function initPixelMotionStudio() {
       if (keyMoved) {
         UFO_GAME.targetX = Math.max(125, Math.min(680, UFO_GAME.targetX));
         UFO_GAME.targetY = Math.max(92, Math.min(390, UFO_GAME.targetY));
-      }
-
-      if (!UFO_GAME.userControlled) {
-        UFO_GAME.targetX = 250 + Math.sin(now * 0.0026) * 70;
-        UFO_GAME.targetY = 265 + Math.sin(now * 0.0048) * 55;
       }
 
       const dx = UFO_GAME.targetX - UFO_GAME.x;
@@ -3411,14 +3214,13 @@ function initPixelMotionStudio() {
       //    - Vertical Glowing Pink Neon Warp Rings ('ring', +500 PTS)
       //    - 3D Neon Wireframe Voxel Cubes ('cube', +350 PTS)
       //    - Dark Purple Spiked Naval Mines ('mine', +250 PTS on laser kill or -1 shield on hit)
-      const spawnInterval = UFO_GAME.userControlled ? 460 : 420;
+      const spawnInterval = 440;
       if (now - UFO_GAME.lastSpawnAt >= spawnInterval) {
         UFO_GAME.lastSpawnAt = now;
         const roll = Math.random();
         const baseY = 115 + Math.random() * 245;
 
         if (roll < 0.34) {
-          // Spawn a 3-Star Golden Arc like Reference Image #3!
           for (let s = 0; s < 3; s++) {
             UFO_GAME.entities.push({
               type: 'star',
@@ -3433,7 +3235,6 @@ function initPixelMotionStudio() {
             });
           }
         } else if (roll < 0.54) {
-          // Spawn a Vertical Pink Neon Warp Ring!
           UFO_GAME.entities.push({
             type: 'ring',
             x: 940,
@@ -3446,7 +3247,6 @@ function initPixelMotionStudio() {
             vrot: 0,
           });
         } else if (roll < 0.74) {
-          // Spawn a 3D Neon Wireframe Voxel Cube (Cyan or Pink)!
           UFO_GAME.entities.push({
             type: 'cube',
             colorMode: Math.random() < 0.5 ? 'cyan' : 'pink',
@@ -3460,7 +3260,6 @@ function initPixelMotionStudio() {
             vrot: 0.05,
           });
         } else {
-          // Spawn a Dark Purple Spiked Naval Mine!
           UFO_GAME.entities.push({
             type: 'mine',
             x: 940,
@@ -3524,7 +3323,7 @@ function initPixelMotionStudio() {
                   x: ent.x,
                   y: ent.y - 10,
                   vy: -1.4,
-                  text: `💣 +${pts}`,
+                  text: `+${pts}`,
                   col: '#67e8f9',
                   alpha: 1,
                 });
@@ -3560,13 +3359,11 @@ function initPixelMotionStudio() {
             const pts = baseVal * UFO_GAME.combo;
             UFO_GAME.score += pts;
             UFO_GAME.combo = Math.min(8, UFO_GAME.combo + 1);
-            const icon =
-              ent.type === 'ring' ? '⭕' : ent.type === 'cube' ? '🧊' : '⭐';
             UFO_GAME.popups.push({
               x: ent.x,
               y: ent.y - 14,
               vy: -1.8,
-              text: `${icon} +${pts}!`,
+              text: `+${pts}`,
               col: ent.type === 'ring' ? '#f472b6' : '#fde047',
               alpha: 1,
             });
@@ -3577,20 +3374,18 @@ function initPixelMotionStudio() {
             UFO_GAME.hitFlashUntil = now + 520;
             UFO_GAME.shakeUntil = now + 260;
             UFO_GAME.combo = 1;
-            if (UFO_GAME.userControlled) {
-              UFO_GAME.shields -= 1;
-              UFO_GAME.popups.push({
-                x: UFO_GAME.x,
-                y: UFO_GAME.y - 48,
-                vy: -1.5,
-                text: UFO_GAME.shields > 0 ? '🛡️ SHIELD HIT!' : '✨ PIXEL BEAM ENTRY!!',
-                col: '#fb7185',
-                alpha: 1,
-              });
-              if (UFO_GAME.shields <= 0) {
-                triggerUfoShotDown(now);
-                break;
-              }
+            UFO_GAME.shields -= 1;
+            UFO_GAME.popups.push({
+              x: UFO_GAME.x,
+              y: UFO_GAME.y - 48,
+              vy: -1.5,
+              text: UFO_GAME.shields > 0 ? 'SHIELD -1' : 'BEAM ENTRY',
+              col: '#fb7185',
+              alpha: 1,
+            });
+            if (UFO_GAME.shields <= 0) {
+              triggerUfoShotDown(now);
+              break;
             }
             continue;
           }
@@ -3599,12 +3394,12 @@ function initPixelMotionStudio() {
         drawUfoEntity(ctx, ent, now);
       }
 
-      // Passive auto-cinematic mode: after 5.6s of sky game demo, transition to Scene 4 Voxel Beam Pixelation!
-      if (!UFO_GAME.userControlled && MOTION_STATE.autoPlay && combatElapsed >= curDuration) {
+      // Stage Clear after 15 seconds -> Enter Scene 4 Voxel Beam Pixelation
+      if (combatElapsed >= curDuration) {
         triggerUfoShotDown(now);
       }
 
-      // 6. Trailing Cyan & Yellow Pixel Squares behind the UFO (Matching Reference Image #3!)
+      // 6. Trailing Cyan & Yellow Pixel Squares behind the UFO (Matching Reference Image #3)
       ctx.save();
       for (let t = 0; t < 8; t++) {
         const trailP = ((now * 0.005 + t * 0.125) % 1);
@@ -3638,19 +3433,7 @@ function initPixelMotionStudio() {
         }
       );
 
-      drawUfoCombatHud(ctx, now);
-
-      const recordStatusKo =
-        UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null
-          ? `NFT #${UFO_GAME.pilotTokenId} 랭킹 기록 ON`
-          : '노 기록 (NFT 미입력)';
-      drawRetroDialogueBar(
-        ctx,
-        'SCENE 3/5 · 🎮 실제 하늘 탈출 게임 (레퍼런스 3번)',
-        CURRENT_LANG === 'ko'
-          ? `황금 별(⭐)·핑크 워프링(⭕)·네온 큐브(🧊)를 획득하고 가시 기뢰(💣)를 격파하세요! (${UFO_GAME.score.toLocaleString()}점 · ${recordStatusKo})`
-          : `Collect Golden Stars (⭐), Pink Warp Rings (⭕) & Neon Cubes (🧊) and blast Spiked Mines (💣)! (${UFO_GAME.score.toLocaleString()} PTS)`
-      );
+      drawUfoCombatHud(ctx, now, remainSec);
 
       // Render Explosion Particles & Floating Score Popups
       for (let i = UFO_GAME.particles.length - 1; i >= 0; i--) {
@@ -3694,11 +3477,10 @@ function initPixelMotionStudio() {
     }
 
     // ========================================================================
-    // SCENE 4 (sceneIdx === 3 · "4. ✨ 픽셀화" — Reference Image #4):
+    // SCENE 4 (sceneIdx === 3 — Reference Image #4):
     //   Right before arriving at Cherry Blossom Town:
     //   The UFO is pulled into the towering vertical Cyan-Magenta-Blue Voxel Beam Vortex
-    //   (with curved cyan tractor-stream lines & upper cyan halo ring) and transforms
-    //   into a 16-Bit Pixel UFO + Pixel Penguin!
+    //   and transforms into a 16-Bit Pixel UFO + Pixel Penguin.
     // ========================================================================
     else if (MOTION_STATE.sceneIdx === 3) {
       ctx.save();
@@ -3710,7 +3492,6 @@ function initPixelMotionStudio() {
       const scanRatio = subP < 0.14 ? 0 : Math.min(1, (subP - 0.14) / 0.68);
       const completeP = subP > 0.82 ? (subP - 0.82) / 0.18 : 0;
 
-      // UFO glides along curved tractor-stream lines into the right-side Voxel Beam Pillar (x = 665, y = 268)
       const startX = 310;
       const startY = 305;
       const targetBeamX = 665;
@@ -3723,7 +3504,7 @@ function initPixelMotionStudio() {
       const ufoScale = 1.44;
       const ufoTilt = (1 - smoothPull) * -0.18 + Math.sin(now * 0.02) * 0.04;
 
-      // Upper Glowing Cyan Halo Ring high in the Voxel Beam (Matches Reference Image #4!)
+      // Upper Glowing Cyan Halo Ring high in the Voxel Beam (Matches Reference Image #4)
       ctx.save();
       ctx.strokeStyle = 'rgba(103, 232, 249, 0.85)';
       ctx.lineWidth = 5;
@@ -3737,7 +3518,7 @@ function initPixelMotionStudio() {
       ctx.stroke();
       ctx.restore();
 
-      // Curved Cyan Tractor-Stream Energy Ribbons pulling the UFO into the Voxel Beam (Matches Reference Image #4!)
+      // Curved Cyan Tractor-Stream Energy Ribbons pulling the UFO into the Voxel Beam
       ctx.save();
       for (let s = 0; s < 5; s++) {
         const yOff = (s - 2) * 18;
@@ -3750,14 +3531,13 @@ function initPixelMotionStudio() {
       }
       ctx.restore();
 
-      // Bounding vertical span of the Giant UFO
       const topEdge = ufoY - 112;
       const botEdge = ufoY + 52;
       const totalSpanH = botEdge - topEdge;
       const scanY = topEdge + scanRatio * totalSpanH;
       const pixelBlinkDuringBeam = scanRatio > 0.05 && scanRatio < 0.58;
 
-      // 1. Top Portion (Above Laser Scan Line): GIANT 16-BIT PIXEL UFO + PIXEL PENGUIN PILOT!
+      // 1. Top Portion (Above Laser Scan Line): GIANT 16-BIT PIXEL UFO + PIXEL PENGUIN PILOT
       if (scanRatio > 0) {
         ctx.save();
         ctx.beginPath();
@@ -3774,7 +3554,7 @@ function initPixelMotionStudio() {
         ctx.restore();
       }
 
-      // 2. Bottom Portion (Below Laser Scan Line): GIANT 2D UFO + 2D PENGUIN PILOT!
+      // 2. Bottom Portion (Below Laser Scan Line): GIANT 2D UFO + 2D PENGUIN PILOT
       if (scanRatio < 1) {
         ctx.save();
         ctx.beginPath();
@@ -3799,7 +3579,7 @@ function initPixelMotionStudio() {
         ctx.restore();
       }
 
-      // 3. Voxel Matrix Scan Beam & Disintegrating Pixel Blocks (Matching Reference Image #4!)
+      // 3. Voxel Matrix Scan Beam & Disintegrating Pixel Blocks
       if (scanRatio > 0 && scanRatio < 1) {
         ctx.save();
         const beamHalfW = 138;
@@ -3848,29 +3628,7 @@ function initPixelMotionStudio() {
       }
 
       const pct = Math.min(100, Math.round(scanRatio * 100));
-      drawRetroSpeechBubble(
-        ctx,
-        Math.min(540, ufoX - 30),
-        Math.max(54, topEdge - 10),
-        pct < 92
-          ? CURRENT_LANG === 'ko'
-            ? '우와아?! 차원 광선에 빨려들어가며 우주선이 픽셀화되고 있어!!'
-            : 'Whoa?! Pulled into the Voxel Beam—my UFO is pixelating!!'
-          : CURRENT_LANG === 'ko'
-          ? '픽셀 우주선 변신 완료!! 이제 벚꽃 픽셀마을로 간다!!'
-          : 'Pixel UFO complete!! Heading to Cherry Blossom Town!!',
-        pct < 92 ? '#38bdf8' : '#34d399',
-        now
-      );
       drawPixelScanHudPill(ctx, ufoX, Math.min(488, botEdge + 18), pct);
-
-      drawRetroDialogueBar(
-        ctx,
-        'SCENE 4/5 · ✨ 우주선 차원 광선 픽셀화 (레퍼런스 4번)',
-        CURRENT_LANG === 'ko'
-          ? `벚꽃마을로 가기 직전! 거대한 차원 광선 기둥에 우주선이 끌려들어가며 통째로 16비트 픽셀로 변신합니다! (${pct}%)`
-          : `Right before Cherry Blossom Town! The UFO is pulled into the towering Voxel Beam and pixelates into 16-bit art! (${pct}%)`
-      );
 
       ctx.restore();
 
@@ -3880,20 +3638,15 @@ function initPixelMotionStudio() {
     }
 
     // ========================================================================
-    // SCENE 5 (sceneIdx === 4 · "5. 🌸 벚꽃마을"):
-    //   - If user clicked "[아니오 (탈출 안 함)]" in Scene 1 (MOTION_STATE.skippedEscape === true):
-    //     Arrives directly in Cherry Blossom Town as the most basic default blue penguin ('01')!
-    //   - If user escaped via UFO:
-    //     Giant 16-Bit Pixel UFO lands in Cherry Blossom Town, pops open its top glass dome hatch,
-    //     and is welcomed by the 4 colorful pixel penguin friends!
+    // SCENE 5 (sceneIdx === 4 — Cherry Blossom Pixel Town):
     // ========================================================================
     else {
       drawScene2PixelWorldBackground(ctx, now);
       ctx.imageSmoothingEnabled = false;
 
-      // 1. Top Arcade Landing Score & Leaderboard Banner (Clickable to open #tab-ranking!)
+      // 1. Top Arcade Landing Score & Leaderboard Banner (Clickable to open #tab-ranking)
       const finalPts = UFO_GAME.lastFinalScore || UFO_GAME.score || 3450;
-      const banW = 610;
+      const banW = 560;
       const banH = 32;
       const banX = 480 - banW / 2;
       const banY = 10;
@@ -3911,8 +3664,8 @@ function initPixelMotionStudio() {
       if (MOTION_STATE.skippedEscape) {
         ctx.fillText(
           CURRENT_LANG === 'ko'
-            ? '🌸 탈출 안 함 선택! 가장 기본 파란 펭귄으로 벚꽃 픽셀마을에 바로 도착했습니다!  [게임 순위 보기 ▶]'
-            : '🌸 Skipped Escape! Arrived directly at Cherry Blossom Town as Default Blue Penguin!  [Rankings ▶]',
+            ? '기본 펭귄으로 벚꽃 픽셀마을 도착  |  [게임 순위 보기]'
+            : 'Arrived at Cherry Blossom Town (Default Penguin)  |  [Rankings]',
           480,
           banY + banH / 2 + 1
         );
@@ -3921,16 +3674,16 @@ function initPixelMotionStudio() {
         const rankTag = UFO_GAME.lastRank ? ` · RANK #${UFO_GAME.lastRank}` : '';
         ctx.fillText(
           CURRENT_LANG === 'ko'
-            ? `🏆 벚꽃마을 도착! NFT #${UFO_GAME.pilotTokenId} (${pilotCode}) · ${finalPts.toLocaleString()} PTS${rankTag} 기록 완료!  [게임 순위 ▶]`
-            : `🏆 Arrived! NFT #${UFO_GAME.pilotTokenId} (${pilotCode}) · ${finalPts.toLocaleString()} PTS${rankTag} Recorded!  [Rankings ▶]`,
+            ? `NFT #${UFO_GAME.pilotTokenId} (${pilotCode}) · ${finalPts.toLocaleString()} PTS${rankTag} 기록 완료  |  [게임 순위 보기]`
+            : `NFT #${UFO_GAME.pilotTokenId} (${pilotCode}) · ${finalPts.toLocaleString()} PTS${rankTag} Recorded  |  [Rankings]`,
           480,
           banY + banH / 2 + 1
         );
       } else {
         ctx.fillText(
           CURRENT_LANG === 'ko'
-            ? `🛸 벚꽃마을 도착! 기본 파란 펭귄 (NFT 미입력 · 노 기록) · ${finalPts.toLocaleString()} PTS  [전체 순위 보기 ▶]`
-            : `🛸 Arrived! Default Blue Penguin (No NFT · Unrecorded) · ${finalPts.toLocaleString()} PTS  [Rankings ▶]`,
+            ? `기본 펭귄 (기록 미저장) · ${finalPts.toLocaleString()} PTS  |  [게임 순위 보기]`
+            : `Default Penguin (Unrecorded) · ${finalPts.toLocaleString()} PTS  |  [Rankings]`,
           480,
           banY + banH / 2 + 1
         );
@@ -3964,8 +3717,8 @@ function initPixelMotionStudio() {
 
       const menuItems =
         CURRENT_LANG === 'ko'
-          ? ['START WORLD · 10K 도감도', 'REPLAY GAME · 다시 탈출하기']
-          : ['START WORLD · 10K CODEX', 'REPLAY GAME · PLAY AGAIN'];
+          ? ['10,000 도감도 보러가기', '다시 플레이하기']
+          : ['10,000 CODEX', 'PLAY AGAIN'];
 
       menuItems.forEach((mText, idx) => {
         const rowY = menuY + 24 + idx * 30;
@@ -3985,7 +3738,6 @@ function initPixelMotionStudio() {
       const spriteSize = 124;
 
       if (MOTION_STATE.skippedEscape) {
-        // User selected "[아니오 (탈출 안 함)]" in Scene 1 -> Most Basic Default Blue Penguin ('01') in Cherry Blossom Town!
         const defaultEntry = ensureSpeciesSprite('01');
         const heroX = Math.round(210 + Math.sin(now * 0.0022) * 18);
         const heroY = 338;
@@ -3996,7 +3748,6 @@ function initPixelMotionStudio() {
           flipX: false,
         });
       } else {
-        // User escaped via UFO -> Giant 16-Bit Pixel UFO lands on left stone promenade & opens top hatch!
         const crashP = Math.min(1, p / 0.14);
         const bounceOffset =
           p >= 0.14 && p < 0.24 ? -Math.abs(Math.sin(((p - 0.14) / 0.10) * Math.PI)) * 18 : 0;
@@ -4023,12 +3774,12 @@ function initPixelMotionStudio() {
         });
       }
 
-      // 4 Colorful Pixel Penguin Friends on the Right Walking Up & Welcoming the Protagonist!
+      // 4 Colorful Pixel Penguin Friends on the Right Walking Up & Welcoming the Protagonist
       const colorfulFriends = [
-        { sp: '05', baseX: 432, y: 342, seed: 2, amp: 18, speed: 0.0026 }, // Rose Pink
-        { sp: '04', baseX: 544, y: 336, seed: 3, amp: 20, speed: 0.0023 }, // Apricot Orange
-        { sp: '09', baseX: 656, y: 342, seed: 4, amp: 18, speed: 0.0027 }, // Mint Glacier
-        { sp: '06', baseX: 768, y: 336, seed: 5, amp: 16, speed: 0.0024 }, // Lavender Frost
+        { sp: '05', baseX: 432, y: 342, seed: 2, amp: 18, speed: 0.0026 },
+        { sp: '04', baseX: 544, y: 336, seed: 3, amp: 20, speed: 0.0023 },
+        { sp: '09', baseX: 656, y: 342, seed: 4, amp: 18, speed: 0.0027 },
+        { sp: '06', baseX: 768, y: 336, seed: 5, amp: 16, speed: 0.0024 },
       ];
 
       const walkInP = Math.min(1, p / 0.20);
@@ -4049,68 +3800,6 @@ function initPixelMotionStudio() {
 
         renderedFriends.push({ fx, fy });
       });
-
-      // Speech Bubbles in Scene 5
-      if (MOTION_STATE.skippedEscape) {
-        drawPixelHeart(ctx, 275, 315 - ((now * 0.03) % 18), 2.8, '#ff4d6d');
-        drawRetroSpeechBubble(
-          ctx,
-          268,
-          292,
-          CURRENT_LANG === 'ko'
-            ? '탈출 안 하고 기본 펭귄으로 바로 벚꽃마을에 왔어! 평화롭다~ ♪'
-            : 'Skipped the escape and came straight to Cherry Blossom Town! So peaceful~ ♪',
-          '#38bdf8',
-          now
-        );
-        drawRetroDialogueBar(
-          ctx,
-          'SCENE 5/5 · 🌸 벚꽃 픽셀마을 (기본 펭귄 직행)',
-          CURRENT_LANG === 'ko'
-            ? '탈출 안 함([아니오])을 선택하여 가장 기본 파란 펭귄 모습으로 벚꽃나무가 있는 픽셀마을에 바로 도착했습니다!'
-            : 'You chose [NO] to skip the escape and arrived straight in Cherry Blossom Town as the classic Default Blue Penguin!'
-        );
-      } else if (p < 0.44) {
-        drawPixelHeart(ctx, 304, 348 - ((now * 0.03) % 18), 2.8, '#38bdf8');
-        drawRetroSpeechBubble(
-          ctx,
-          252,
-          278,
-          CURRENT_LANG === 'ko'
-            ? '푸슈욱—! 우주선 해치 오픈! 드디어 벚꽃 픽셀마을에 도착했어!!'
-            : 'Psssh—! UFO Hatch Open! Finally arrived in Cherry Blossom Pixel Town!!',
-          '#38bdf8',
-          now
-        );
-        drawRetroDialogueBar(
-          ctx,
-          'SCENE 5/5 · 🌸 벚꽃 픽셀마을 불시착 & 해치 오픈!',
-          CURRENT_LANG === 'ko'
-            ? '"푸슈욱—!" 차원 광선을 통과해 픽셀화된 우주선이 벚꽃 강변에 착륙하며 유리 해치가 열립니다!'
-            : '"Psssh—!" After passing through the Voxel Beam, the Pixel UFO lands by the cherry blossom river and opens its hatch!'
-        );
-      } else {
-        const speaker1 = renderedFriends[0] || { fx: 432, fy: 342 };
-        drawPixelHeart(ctx, 512, 318 - ((now * 0.03) % 20), 2.8, '#ff4d6d');
-        drawPixelHeart(ctx, 684, 314 - ((now * 0.03) % 20), 2.8, '#fbbf24');
-        drawRetroSpeechBubble(
-          ctx,
-          speaker1.fx + spriteSize / 2 + 18,
-          speaker1.fy - 8,
-          CURRENT_LANG === 'ko'
-            ? 'ㅋㅋㅋ 남극 탈출 성공 축하해!! 벚꽃 픽셀마을에 온 걸 환영해!'
-            : 'Haha congrats on escaping Antarctica!! Welcome to Cherry Blossom Pixel Town!',
-          '#ff4d6d',
-          now
-        );
-        drawRetroDialogueBar(
-          ctx,
-          'SCENE 5/5 · 🐧 벚꽃 픽셀마을 친구들 환영식',
-          CURRENT_LANG === 'ko'
-            ? '"남극 탈출 성공 축하해!!" 벚꽃나무 아래 알록달록 픽셀 펭귄 친구들이 모두 모여 환영해 줍니다!'
-            : '"Congrats on escaping Antarctica!!" Colorful Pixel Penguin friends gather under the cherry blossoms to welcome you!'
-        );
-      }
 
       // Bottom-Left Retro Arcade Corner Tag
       const tagX = 16;

@@ -12,7 +12,7 @@
   <meta property="og:image" content="https://ppeng.verycloud.io/assets/logo_4441_1024.png?v=v322" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" type="image/png" href="/img/P4441.png?v=v322" />
-  <link rel="stylesheet" href="/styles.css?v=5.3.0" />
+  <link rel="stylesheet" href="/styles.css?v=5.4.0" />
 </head>
 <body>
   <!-- Full-Viewport Stepped Pixel Ambient Particle Canvas -->
@@ -58,156 +58,72 @@
     <!-- TAB PAGE 1: 컬렉션 소개 (COLLECTION INTRO) -->
     <div id="tab-page-intro" class="tab-page active">
 
-      <!-- 1. TOPMOST: RETRO 16-BIT PIXEL GAME INTRO TRAILER & UFO MINI-GAME -->
+      <!-- 1. TOPMOST: MINIMAL, CLEAN UFO MINI-GAME STAGE (Zero Scene Explanations, Zero Clutter) -->
       <section class="section-block motion-showcase-section" id="sec-motion">
-        <div class="section-header intro-header-bar">
-          <div class="intro-title-group">
-            <h2 class="section-title" data-ko="PIXEL PENGUIN WORLD" data-en="PIXEL PENGUIN WORLD">PIXEL PENGUIN WORLD</h2>
-            <p class="section-sub" data-ko="파괴되는 남극에서 우주선을 타고 탈출하다 격추되어 픽셀 월드에 불시착한 펭귄 이야기" data-en="Escape crumbling Antarctica in a UFO, get pixelated in the sky battle, and crash-land in Pixel World">파괴되는 남극에서 우주선을 타고 탈출하다 격추되어 픽셀 월드에 불시착한 펭귄 이야기</p>
-          </div>
-
-          <div class="motion-mode-bar" role="group" aria-label="Intro Cutscene Chapter">
-            <button type="button" class="motion-mode-btn active" data-scene="0" data-ko="1. 🚨 탈출선택" data-en="1. 🚨 Escape?">1. 🚨 탈출선택</button>
-            <button type="button" class="motion-mode-btn" data-scene="1" data-ko="2. 🚀 이륙모션" data-en="2. 🚀 Liftoff">2. 🚀 이륙모션</button>
-            <button type="button" class="motion-mode-btn" data-scene="2" data-ko="3. 🎮 하늘게임" data-en="3. 🎮 Sky Game">3. 🎮 하늘게임</button>
-            <button type="button" class="motion-mode-btn" data-scene="3" data-ko="4. ✨ 픽셀화" data-en="4. ✨ Pixelate">4. ✨ 픽셀화</button>
-            <button type="button" class="motion-mode-btn" data-scene="4" data-ko="5. 🌸 벚꽃마을" data-en="5. 🌸 Pixel Town">5. 🌸 벚꽃마을</button>
-          </div>
-        </div>
-
         <div class="retro-intro-theater" id="retro-intro-theater">
-          <!-- FULLSCREEN MODE TOP BAR (Shown only when Fullscreen Game Mode is active) -->
-          <div class="fullscreen-game-topbar" id="fullscreen-game-topbar">
-            <div class="fs-topbar-left">
-              <span class="boarding-alert-pill" data-ko="🎮 전체화면 게임 모드" data-en="🎮 FULLSCREEN GAME">🎮 전체화면 게임 모드</span>
-              <span class="fs-pilot-status" id="fs-pilot-status-label">탑승: 기본 파란 펭귄 (노 기록)</span>
+          <!-- Clean Minimal Top Bar (Shown in both normal & fullscreen modes) -->
+          <div class="game-minimal-topbar" id="game-minimal-topbar">
+            <div class="game-topbar-left">
+              <span class="game-title-tag">PIXEL PENGUIN GAME</span>
+              <span class="pilot-skin-badge" id="ufo-pilot-skin-badge" data-ko="기본 파란 펭귄 (미기록)" data-en="Default Penguin (Unrecorded)">기본 파란 펭귄 (미기록)</span>
             </div>
-            <div class="fs-topbar-right">
-              <button type="button" class="fs-scene-btn" onclick="setIntroScene(0, true)" data-ko="1.선택" data-en="1.Select">1.선택</button>
-              <button type="button" class="fs-scene-btn" onclick="setIntroScene(1, true)" data-ko="2.이륙" data-en="2.Liftoff">2.이륙</button>
-              <button type="button" class="fs-scene-btn" onclick="setIntroScene(2, true)" data-ko="3.게임" data-en="3.Game">3.게임</button>
-              <button type="button" class="fs-scene-btn" onclick="setIntroScene(3, true)" data-ko="4.픽셀화" data-en="4.Pixel">4.픽셀화</button>
-              <button type="button" class="fs-scene-btn" onclick="setIntroScene(4, true)" data-ko="5.벚꽃마을" data-en="5.Town">5.벚꽃마을</button>
-              <button type="button" class="fs-exit-btn" id="btn-exit-fullscreen-top" data-ko="✕ 게임 종료 (나가기)" data-en="✕ Exit Fullscreen">✕ 게임 종료 (나가기)</button>
+            <div class="game-topbar-right">
+              <button type="button" class="game-top-btn" id="btn-open-leaderboard" data-ko="게임 순위" data-en="Ranking">게임 순위</button>
+              <button type="button" class="game-top-btn primary" id="btn-dock-fullscreen-play" data-ko="전체화면" data-en="Fullscreen">전체화면</button>
+              <button type="button" class="game-top-btn exit-fs-only" id="btn-exit-fullscreen-top" data-ko="전체화면 닫기" data-en="Exit">전체화면 닫기</button>
             </div>
-          </div>
-
-          <!-- UFO ESCAPE DECISION & BOARDING DOCK: "탈출하시겠습니까? [예] 옆에 NFT 번호 입력 (미입력 시 노 기록) / [아니오] 클릭 시 기본 펭귄으로 5번 벚꽃마을 직행" -->
-          <div class="ufo-boarding-dock" id="ufo-boarding-dock">
-            <div class="boarding-dock-left">
-              <span class="boarding-alert-pill" data-ko="🚨 남극 탈출 선택" data-en="🚨 Escape Choice">🚨 남극 탈출 선택</span>
-              <span class="boarding-prompt-text" data-ko="탈출하시겠습니까?" data-en="Escape in UFO?">탈출하시겠습니까?</span>
-              <div class="boarding-input-group">
-                <button type="button" class="boarding-apply-btn" id="btn-ufo-board-nft" data-ko="🚀 예 (탈출하기)" data-en="🚀 YES (Escape)">🚀 예 (탈출하기)</button>
-                <input type="number" id="ufo-pilot-id-input" class="pilot-id-input" min="0" max="9999" value="" data-placeholder-ko="NFT 번호 (안쓰면 노기록)" data-placeholder-en="NFT # (Blank = No Record)" placeholder="NFT 번호 (안쓰면 노기록)" />
-                <button type="button" class="pilot-mini-btn" id="btn-ufo-random-id" title="랜덤 NFT 번호">🎲</button>
-                <button type="button" class="boarding-none-btn" id="btn-ufo-board-none" data-ko="🌸 아니오 (탈출 안함·벚꽃마을)" data-en="🌸 NO (Skip to Cherry Town)">🌸 아니오 (탈출 안함·벚꽃마을)</button>
-              </div>
-            </div>
-            <div class="boarding-dock-right">
-              <span class="pilot-skin-badge" id="ufo-pilot-skin-badge">🎨 기본 파란 펭귄 (NFT 미입력 · 노 기록)</span>
-              <button type="button" class="boarding-fullscreen-btn" id="btn-dock-fullscreen-play" data-ko="🎮 게임 참여 (전체화면)" data-en="🎮 Join Game (Fullscreen)">🎮 게임 참여 (전체화면)</button>
-              <button type="button" class="pilot-rank-btn" id="btn-open-leaderboard">
-                <span data-ko="🏆 랭킹보기" data-en="🏆 Leaderboard">🏆 랭킹보기</span>
-              </button>
-            </div>
-          </div>
-
-          <div class="motion-hud-topbar">
-            <div class="hud-left-status">
-              <span class="hud-rec-dot"></span>
-              <span id="motion-hud-mode-label">SCENE 1/5 · 🚨 남극이 파괴되고 있어요! 탈출하시겠습니까?</span>
-            </div>
-          </div>
-
-          <!-- 5-Segment Real-Time Chapter Progress Track -->
-          <div class="intro-progress-track" aria-hidden="true">
-            <div class="intro-progress-seg"><div class="intro-progress-fill" id="intro-prog-0"></div></div>
-            <div class="intro-progress-seg"><div class="intro-progress-fill" id="intro-prog-1"></div></div>
-            <div class="intro-progress-seg"><div class="intro-progress-fill" id="intro-prog-2"></div></div>
-            <div class="intro-progress-seg"><div class="intro-progress-fill" id="intro-prog-3"></div></div>
-            <div class="intro-progress-seg"><div class="intro-progress-fill" id="intro-prog-4"></div></div>
           </div>
 
           <div class="retro-screen-wrap" id="motion-canvas-wrap">
             <canvas id="pixel-stage-canvas" width="1920" height="1080"></canvas>
             <div class="motion-scanline-overlay" aria-hidden="true"></div>
+          </div>
 
-            <!-- SCENE 1 ON-SCREEN ESCAPE PROMPT OVERLAY ("탈출하시겠습니까? [예] 옆에 NFT 번호 입력 / [아니오] 벚꽃마을 직행") -->
-            <div class="scene1-escape-overlay" id="scene1-escape-overlay">
-              <div class="s1-overlay-card">
-                <div class="s1-overlay-title" data-ko="🚨 남극이 무너지고 있습니다! 우주선을 타고 탈출하시겠습니까?" data-en="🚨 Antarctica is crumbling! Will you board the UFO and escape?">
-                  🚨 남극이 무너지고 있습니다! 우주선을 타고 탈출하시겠습니까?
+          <!-- SCENE 1 ON-SCREEN START PROMPT (Clean, No Emojis, No Dice, Never Clipped) -->
+          <div class="scene1-escape-overlay" id="scene1-escape-overlay">
+            <div class="s1-overlay-card">
+              <div class="s1-overlay-title" data-ko="남극이 무너지고 있습니다. 탈출하시겠습니까?" data-en="Antarctica is crumbling. Will you escape?">
+                남극이 무너지고 있습니다. 탈출하시겠습니까?
+              </div>
+              <div class="s1-overlay-controls">
+                <div class="s1-yes-group">
+                  <input type="number" id="scene1-nft-input" class="s1-nft-input" min="0" max="9999" value="" data-placeholder-ko="내 NFT 번호 (0~9999 · 선택)" data-placeholder-en="My NFT # (0~9999 · Optional)" placeholder="내 NFT 번호 (0~9999 · 선택)" />
+                  <button type="button" class="s1-yes-btn" id="btn-scene1-yes" data-ko="게임 시작 (예)" data-en="Start Game (Yes)">게임 시작 (예)</button>
                 </div>
-                <div class="s1-overlay-controls">
-                  <div class="s1-yes-group">
-                    <button type="button" class="s1-yes-btn" id="btn-scene1-yes" data-ko="🚀 예 (탈출하기)" data-en="🚀 YES (Escape)">🚀 예 (탈출하기)</button>
-                    <input type="number" id="scene1-nft-input" class="s1-nft-input" min="0" max="9999" value="" data-placeholder-ko="NFT 번호 입력 (안 쓰면 노 기록)" data-placeholder-en="NFT # (Blank = No Record)" placeholder="NFT 번호 입력 (안 쓰면 노 기록)" />
-                    <button type="button" class="pilot-mini-btn" id="btn-scene1-random" title="랜덤 NFT 번호">🎲</button>
-                  </div>
-                  <button type="button" class="s1-no-btn" id="btn-scene1-no" data-ko="🌸 아니오 (탈출 안 함 → 기본 펭귄으로 벚꽃마을 바로가기)" data-en="🌸 NO (Don't Escape → Go to Cherry Blossom Town)">
-                    🌸 아니오 (탈출 안 함 → 기본 펭귄으로 벚꽃마을 바로가기)
-                  </button>
-                </div>
-                <div class="s1-overlay-sub" id="s1-overlay-sub" data-ko="💡 [예] 옆에 NFT 번호를 입력하면 해당 깃털스킨으로 탑승해 순위가 기록되고, 안 쓰면 노 기록(기본 파란 펭귄)으로 출발합니다." data-en="💡 Enter your NFT # next to [YES] to record your rank with its Feather Skin, or leave blank for No Record.">
-                  💡 [예] 옆에 NFT 번호를 입력하면 해당 깃털스킨으로 탑승해 순위가 기록되고, 안 쓰면 노 기록(기본 파란 펭귄)으로 출발합니다.
-                </div>
+                <button type="button" class="s1-no-btn" id="btn-scene1-no" data-ko="아니오 (벚꽃마을 이동)" data-en="No (Skip to Town)">
+                  아니오 (벚꽃마을 이동)
+                </button>
+              </div>
+              <div class="s1-overlay-sub" id="s1-overlay-sub" data-ko="NFT 번호 입력 시 내 펭귄 스킨이 적용되고 점수가 순위에 기록됩니다. (미입력 시 기본 펭귄 플레이)" data-en="Enter your NFT # to play with your penguin skin and record your score.">
+                NFT 번호 입력 시 내 펭귄 스킨이 적용되고 점수가 순위에 기록됩니다. (미입력 시 기본 펭귄 플레이)
               </div>
             </div>
-
-            <!-- Floating "🎮 게임 참여 (전체화면)" CTA Button on Canvas (Hidden once in Fullscreen) -->
-            <button type="button" class="canvas-fullscreen-cta" id="btn-canvas-fullscreen-play">
-              <span data-ko="🎮 게임 참여 (전체화면 · 스크롤 고정)" data-en="🎮 Join Game (Fullscreen · Lock Scroll)">🎮 게임 참여 (전체화면 · 스크롤 고정)</span>
-            </button>
           </div>
 
-          <!-- Dedicated Mobile Touch-Drag Steering Pad (Shown in Fullscreen Mode so thumb never blocks UFO & page never scrolls) -->
+          <!-- Dedicated Mobile Touch-Drag Steering Pad (Shown only in Fullscreen Mode) -->
           <div class="mobile-fullscreen-touchpad" id="mobile-fullscreen-touchpad">
             <div class="touchpad-inner-guide">
-              <span class="touchpad-icon">🕹️</span>
-              <span class="touchpad-text" data-ko="이 패드나 위 게임 화면을 손가락으로 터치·드래그하여 우주선을 조종하세요! (화면 스크롤 완전 고정됨)" data-en="Touch &amp; drag here or on the game screen above to steer the UFO! (Page scroll locked)">이 패드나 위 게임 화면을 손가락으로 터치·드래그하여 우주선을 조종하세요! (화면 스크롤 완전 고정됨)</span>
+              <span class="touchpad-text" data-ko="여기를 터치·드래그하여 우주선을 조종하세요" data-en="Touch and drag here to steer the UFO">여기를 터치·드래그하여 우주선을 조종하세요</span>
             </div>
-          </div>
-
-          <!-- Mobile-Friendly Crisp HTML RPG Dialogue Box -->
-          <div class="intro-dialogue-card" id="intro-dialogue-card">
-            <span class="intro-dialogue-badge" id="intro-dialogue-speaker">SCENE 1 · 🚨 남극 탈출</span>
-            <p class="intro-dialogue-text" id="intro-dialogue-text">남극이 파괴되고 있어요! 내 NFT 번호(0~9999)를 입력하거나 '없음'을 눌러 대형 우주선에 탑승해 탈출하세요!</p>
-            <button type="button" class="intro-dialogue-next" id="intro-dialogue-next-btn" data-ko="다음 장면 ▶" data-en="Next ▶">다음 장면 ▶</button>
-          </div>
-
-          <div class="retro-controls-bar">
-            <button type="button" class="btn-primary ctrl-btn" id="btn-pixel-burst">
-              <span data-ko="🎮 게임 참여 (전체화면 시작)" data-en="🎮 Join Game (Fullscreen)">🎮 게임 참여 (전체화면 시작)</span>
-            </button>
-            <button type="button" class="btn-secondary ctrl-btn gold-outline" id="btn-open-leaderboard-bottom">
-              <span data-ko="🏆 게임 순위 보기" data-en="🏆 Game Ranking">🏆 게임 순위 보기</span>
-            </button>
-            <button type="button" class="btn-secondary active-toggle ctrl-btn" id="btn-motion-autoplay">
-              <span data-ko="자동진행: ON" data-en="Auto: ON" id="autoplay-label">자동진행: ON</span>
-            </button>
-            <button type="button" class="btn-secondary ctrl-btn" id="btn-exit-or-codex" onclick="handleExitOrCodexClick()">
-              <span id="btn-exit-or-codex-label" data-ko="10,000마리 도감도 구경하기" data-en="Explore 10K Codex">10,000마리 도감도 구경하기</span>
-            </button>
           </div>
         </div>
       </section>
 
       <!-- 2. BELOW INTRO: B-GRADE COLLECTION INTRO + VERYCHAT HEXAGON PFP STUDIO -->
       <section class="hero-section">
-        <!-- Left Card: Wide B-Grade Intro + 4x1 KPIs + 4x1 Featured Quick-Select -->
+        <!-- Left Card: Compact Collection Intro + 4x1 KPIs -->
         <div class="hero-left pixel-frame-glow">
           <div class="hero-top-block">
             <div class="hero-eyebrow">
               <span class="pill-tag very">VERY MAINNET · PPENG</span>
-              <span class="pill-tag">100% 프사(PFP) 전용</span>
+              <span class="pill-tag">PFP ONLY</span>
             </div>
             <h1 class="hero-title">
               <span class="grad">PIXEL PENGUIN 10K</span><br />
               <span data-ko="베리챗에 펭귄이 난무하는 세상을 위하여" data-en="For a VeryChat World Overflowing with Penguins">베리챗에 펭귄이 난무하는 세상을 위하여</span>
             </h1>
-            <p class="hero-desc" data-ko="VERY CHAT 고인물 @happy Ahndoge가 찍어낸 픽셀 펭귄 10,000마리입니다. 사신다고 돈 드리거나 뭐 해드리는 거 일절 없습니다. 등급 나누라길래 나누긴 했는데 높다고 뭐 더 주는 것도 없습니다. 그냥 내 눈에 제일 이쁜 자식 골라서 베리챗 프사로 쓰세요!" data-en="10,000 pixel penguins by VeryChat OG @happy Ahndoge. Zero roadmap, zero money or perks, and higher tiers give nothing extra. Just pick whichever penguin looks cutest to you and rock it as your VeryChat PFP!">
-              VERY CHAT 고인물 @happy Ahndoge가 찍어낸 픽셀 펭귄 10,000마리입니다. 사신다고 돈 드리거나 뭐 해드리는 거 일절 없습니다. 등급 나누라길래 나누긴 했는데 높다고 뭐 더 주는 것도 없습니다. 그냥 내 눈에 제일 이쁜 자식 골라서 베리챗 프사로 쓰세요!
+            <p class="hero-desc" data-ko="VERY CHAT 고인물 @happy Ahndoge가 찍어낸 픽셀 펭귄 10,000마리입니다. 사신다고 돈 드리거나 뭐 해드리는 거 일절 없습니다. 등급 나누라길래 나누긴 했는데 높다고 뭐 더 주는 것도 없습니다. 그냥 내 눈에 제일 이쁜 자식 골라서 베리챗 프사로 쓰세요." data-en="10,000 pixel penguins by VeryChat OG @happy Ahndoge. Zero roadmap, zero perks. Just pick whichever penguin looks cutest to you and use it as your VeryChat PFP.">
+              VERY CHAT 고인물 @happy Ahndoge가 찍어낸 픽셀 펭귄 10,000마리입니다. 사신다고 돈 드리거나 뭐 해드리는 거 일절 없습니다. 등급 나누라길래 나누긴 했는데 높다고 뭐 더 주는 것도 없습니다. 그냥 내 눈에 제일 이쁜 자식 골라서 베리챗 프사로 쓰세요.
             </p>
           </div>
 
@@ -226,52 +142,8 @@
             </div>
             <div class="kpi-box">
               <div class="kpi-label" data-ko="로드맵 / 혜택" data-en="Perks">로드맵 / 혜택</div>
-              <div class="kpi-val" data-ko="일절 없음" data-en="ZERO">일절 없음</div>
+              <div class="kpi-val" data-ko="없음" data-en="NONE">없음</div>
             </div>
-          </div>
-
-          <!-- 4x1 Featured Penguins Quick-Try Grid -->
-          <div class="hero-featured-block">
-            <div class="hero-featured-label" data-ko="눌러서 우측 베리챗 6각형 프사에 바로 장착해보기" data-en="Tap to preview in the VeryChat Hexagon Frame">눌러서 우측 베리챗 6각형 프사에 바로 장착해보기</div>
-            <div class="hero-beauty-trio">
-              <button type="button" class="trio-sprite-card" onclick="loadPfpPreview(4441)">
-                <img src="/img/P4441.png?v=v322" alt="#4441" class="pixelated" />
-                <div class="trio-meta">
-                  <span class="trio-tag tier-Common">COMMON · #9,811</span>
-                  <strong data-ko="#4441 선글라스 펭귄" data-en="#4441 Pixel Shades">#4441 선글라스 펭귄</strong>
-                </div>
-              </button>
-              <button type="button" class="trio-sprite-card" onclick="loadPfpPreview(962)">
-                <img src="/img/P0962.png?v=v322" alt="#962" class="pixelated" />
-                <div class="trio-meta">
-                  <span class="trio-tag tier-Mythic">MYTHIC · RANK #12</span>
-                  <strong data-ko="#962 여우 잠옷 펭귄" data-en="#962 Fox Onesie">#962 여우 잠옷 펭귄</strong>
-                </div>
-              </button>
-              <button type="button" class="trio-sprite-card" onclick="loadPfpPreview(6521)">
-                <img src="/img/P6521.png?v=v322" alt="#6521" class="pixelated" />
-                <div class="trio-meta">
-                  <span class="trio-tag tier-Mythic">MYTHIC · RANK #15</span>
-                  <strong data-ko="#6521 도마뱀 후드" data-en="#6521 Gecko Onesie">#6521 도마뱀 후드</strong>
-                </div>
-              </button>
-              <button type="button" class="trio-sprite-card" onclick="loadPfpPreview(499)">
-                <img src="/img/P0499.png?v=v322" alt="#499" class="pixelated" />
-                <div class="trio-meta">
-                  <span class="trio-tag tier-Mythic">MYTHIC · RANK #46</span>
-                  <strong data-ko="#499 크리스탈 나이트" data-en="#499 Crystal Knight">#499 크리스탈 나이트</strong>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          <div class="hero-cta-row">
-            <button type="button" class="btn-primary" onclick="scrollToSection('tab-codex')">
-              <span data-ko="10,000마리 도감도 구경하기" data-en="Browse 10,000 Codex">10,000마리 도감도 구경하기</span>
-            </button>
-            <button type="button" class="btn-secondary" onclick="scrollToSection('tab-notices')">
-              <span data-ko="공지사항" data-en="Notices">공지사항</span>
-            </button>
           </div>
         </div>
 
@@ -292,7 +164,6 @@
                 <div class="pfp-art-box shape-hex" id="pfp-preview-box">
                   <img id="pfp-preview-img" src="/img/P4441.png?v=v322" alt="PFP Preview" class="pixelated" />
                 </div>
-                <!-- Explicit Pointy-Top (50,1) & Pointy-Bottom (50,99) Hexagon Border Overlay -->
                 <svg class="pfp-hex-outline" id="pfp-hex-outline" viewBox="0 0 100 100" aria-hidden="true">
                   <polygon points="50,1.2 93.3,25 93.3,75 50,98.8 6.7,75 6.7,25" fill="none" stroke="url(#vcHexGrad)" stroke-width="2.4" stroke-linejoin="round" />
                   <defs>
@@ -334,11 +205,10 @@
                 <div class="pfp-meta-line">
                   <span><strong data-ko="순위:" data-en="Rank:">순위:</strong> <span id="pfp-sim-rank">#9,811</span></span>
                 </div>
-                <div class="pfp-meta-check" data-ko="✓ 위·아래가 뾰족한 베리챗 6각형 프사 정중앙 맞춤 완료" data-en="✓ Centered for VeryChat Pointy-Top Hexagon PFP">✓ 위·아래가 뾰족한 베리챗 6각형 프사 정중앙 맞춤 완료</div>
               </div>
 
               <div class="pfp-jump-row">
-                <input type="text" id="pfp-jump-input" class="search-input" data-placeholder-ko="번호 입력 (0 ~ 9999)" data-placeholder-en="Enter ID (0 ~ 9999)" placeholder="번호 입력 (0 ~ 9999)" />
+                <input type="text" id="pfp-jump-input" class="search-input" data-placeholder-ko="NFT 번호 (0 ~ 9999)" data-placeholder-en="NFT ID (0 ~ 9999)" placeholder="NFT 번호 (0 ~ 9999)" />
                 <button type="button" class="btn-primary pfp-action-btn" id="pfp-jump-btn" data-ko="장착" data-en="Try">장착</button>
                 <button type="button" class="btn-secondary pfp-action-btn" id="pfp-detail-btn" data-ko="상세" data-en="Info">상세</button>
               </div>
@@ -347,8 +217,7 @@
 
           <div class="pfp-preset-box">
             <div class="pfp-preset-header">
-              <span data-ko="인기 픽셀 펭귄 14선 빠른 장착 (7×2)" data-en="Quick-Try 14 Featured Penguins (7×2)">인기 픽셀 펭귄 14선 빠른 장착 (7×2)</span>
-              <span class="pfp-preset-sub" data-ko="클릭 시 즉시 적용" data-en="Tap to preview">클릭 시 즉시 적용</span>
+              <span data-ko="추천 펭귄 빠른 장착" data-en="Quick-Try Penguins">추천 펭귄 빠른 장착</span>
             </div>
             <div class="pfp-Mini-selector" id="pfp-preset-strip"></div>
           </div>
@@ -363,14 +232,14 @@
         <div class="section-header" style="margin-bottom:12px;">
           <div>
             <h2 class="section-title" data-ko="10,000마리 도감도 (P0000 ~ P9999)" data-en="10,000 Penguins Codex (P0000 – P9999)">10,000마리 도감도 (P0000 ~ P9999)</h2>
-            <p class="section-sub" data-ko="희귀도 순위는 rarity.tools 희귀도 알고리즘(Rarity Score)으로 매깁니다 — 특성마다 '전체 수 ÷ 그 특성을 가진 수'를 더하고, 특성이 없는 것과 특성 개수도 함께 셉니다." data-en="Rarity Rank uses the rarity.tools Rarity Score algorithm — summing (Total Supply ÷ Trait Count) across all traits including 'None' and active trait count.">희귀도 순위는 rarity.tools 희귀도 알고리즘(Rarity Score)으로 매깁니다 — 특성마다 '전체 수 ÷ 그 특성을 가진 수'를 더하고, 특성이 없는 것과 특성 개수도 함께 셉니다.</p>
+            <p class="section-sub" data-ko="카드를 누르면 베리챗 6각형 프사 장착 및 고해상도 PNG 원본 저장이 가능합니다." data-en="Tap any card to preview in the VeryChat Hexagon frame or download the high-res PNG.">카드를 누르면 베리챗 6각형 프사 장착 및 고해상도 PNG 원본 저장이 가능합니다.</p>
           </div>
         </div>
 
         <div class="explorer-toolbar">
           <div class="toolbar-top">
             <div class="search-input-wrap">
-              <input type="search" id="exp-search" class="search-input" data-placeholder-ko="번호(#0 ~ #9999) 또는 파츠 이름 검색..." data-placeholder-en="Search by ID (#0 ~ #9999) or trait name..." placeholder="번호(#0 ~ #9999) 또는 파츠 이름 검색..." />
+              <input type="search" id="exp-search" class="search-input" data-placeholder-ko="번호(#0 ~ #9999) 또는 파츠 검색" data-placeholder-en="Search by ID (#0 ~ #9999) or trait" placeholder="번호(#0 ~ #9999) 또는 파츠 검색" />
             </div>
 
             <select id="exp-tier" class="filter-select" aria-label="Filter by Rarity Tier">
@@ -400,23 +269,21 @@
             </div>
           </div>
 
-          <!-- 9 Category Trait Filters (Collapsible on Mobile so cards appear immediately) -->
           <div class="toolbar-traits-grid" id="exp-trait-filters"></div>
 
           <div class="explorer-status-bar">
             <div id="exp-result-count">총 <strong>10,000</strong>마리</div>
-            <div class="explorer-status-hint" data-ko="카드를 누르면 베리챗 6각형 프사 장착 및 3072×3072 PNG 저장이 가능합니다." data-en="Tap any card to preview PFP or download 3072×3072 PNG.">카드를 누르면 베리챗 6각형 프사 장착 및 3072×3072 PNG 저장이 가능합니다.</div>
           </div>
         </div>
 
         <div class="explorer-grid" id="explorer-grid"></div>
 
         <div class="pagination-bar">
-          <button type="button" class="page-btn" id="page-first-btn" data-ko="≪ 처음" data-en="≪ First">≪ 처음</button>
-          <button type="button" class="page-btn" id="page-prev-btn" data-ko="‹ 이전" data-en="‹ Prev">‹ 이전</button>
+          <button type="button" class="page-btn" id="page-first-btn" data-ko="처음" data-en="First">처음</button>
+          <button type="button" class="page-btn" id="page-prev-btn" data-ko="이전" data-en="Prev">이전</button>
           <span id="page-indicator" style="font-size:13.5px; font-weight:700; padding:0 12px;">1 / 250</span>
-          <button type="button" class="page-btn" id="page-next-btn" data-ko="다음 ›" data-en="Next ›">다음 ›</button>
-          <button type="button" class="page-btn" id="page-last-btn" data-ko="끝 ≫" data-en="Last ≫">끝 ≫</button>
+          <button type="button" class="page-btn" id="page-next-btn" data-ko="다음" data-en="Next">다음</button>
+          <button type="button" class="page-btn" id="page-last-btn" data-ko="끝" data-en="Last">끝</button>
         </div>
       </section>
 
@@ -424,7 +291,7 @@
       <section class="section-block" id="sec-traits">
         <div class="verychat-panel">
           <div class="verychat-panel-header trait-dir-header">
-            <div class="verychat-panel-title" data-ko="210종 파츠 도감 · rarity.tools 점수 (누르면 해당 파츠 펭귄 검색)" data-en="210 Traits · rarity.tools Score (Tap to filter)">210종 파츠 도감 · rarity.tools 점수 (누르면 해당 파츠 펭귄 검색)</div>
+            <div class="verychat-panel-title" data-ko="210종 파츠 도감 (선택 시 해당 파츠 필터링)" data-en="210 Traits Directory (Tap to filter)">210종 파츠 도감 (선택 시 해당 파츠 필터링)</div>
             <div class="trait-cat-tabs-bar" id="trait-cat-tabs"></div>
           </div>
           <div class="trait-catalog-grid" id="trait-catalog-grid"></div>
@@ -437,15 +304,15 @@
       <section class="section-block" id="sec-ranking">
         <div class="section-header" style="margin-bottom:14px;">
           <div>
-            <h2 class="section-title" data-ko="🏆 우주선 미니게임 NFT 순위 (Pixel Penguin #0 ~ #9999)" data-en="🏆 UFO Mini-Game NFT Leaderboard (Pixel Penguin #0 – #9999)">🏆 우주선 미니게임 NFT 순위 (Pixel Penguin #0 ~ #9999)</h2>
-            <p class="section-sub" data-ko="우주선 탑승기에 내 NFT 번호(#0 ~ #9999)를 입력하고 플레이한 Pixel Penguin NFT 이름별 최고 점수 순위입니다. NFT 이름을 누르면 해당 NFT의 도감 상세 정보 및 6각형 프사 착용기로 이동합니다." data-en="Live high-score rankings by Pixel Penguin NFT Name (#0 – #9999) from the UFO Escape Mini-Game. Click any NFT to inspect its traits or board it in the UFO!">우주선 탑승기에 내 NFT 번호(#0 ~ #9999)를 입력하고 플레이한 Pixel Penguin NFT 이름별 최고 점수 순위입니다. NFT 이름을 누르면 해당 NFT의 도감 상세 정보 및 6각형 프사 착용기로 이동합니다.</p>
+            <h2 class="section-title" data-ko="게임 순위 (TOP 100)" data-en="Game Leaderboard (TOP 100)">게임 순위 (TOP 100)</h2>
+            <p class="section-sub" data-ko="내 NFT 번호(0 ~ 9999)를 입력하고 플레이한 최고 기록 순위입니다." data-en="High-score rankings by Pixel Penguin NFT (#0 – #9999).">내 NFT 번호(0 ~ 9999)를 입력하고 플레이한 최고 기록 순위입니다.</p>
           </div>
           <div class="ranking-header-actions" style="display:flex; gap:8px; flex-wrap:wrap;">
             <button type="button" class="btn-primary" onclick="scrollToSection('tab-intro')">
-              <span data-ko="🛸 내 NFT로 우주선 게임 도전하기" data-en="🛸 Play UFO Game with My NFT">🛸 내 NFT로 우주선 게임 도전하기</span>
+              <span data-ko="게임 하러 가기" data-en="Play Game">게임 하러 가기</span>
             </button>
             <button type="button" class="btn-secondary" id="btn-refresh-ranking-page">
-              <span data-ko="🔄 순위 새로고침" data-en="🔄 Refresh Ranking">🔄 순위 새로고침</span>
+              <span data-ko="새로고침" data-en="Refresh">새로고침</span>
             </button>
           </div>
         </div>
@@ -453,15 +320,15 @@
         <!-- Ranking KPI Summary Strip -->
         <div class="ranking-kpi-strip" id="ranking-kpi-strip">
           <div class="kpi-box">
-            <div class="kpi-label" data-ko="순위표 표시 범위 (페이지당 10명)" data-en="Leaderboard Scope (10 / Page)">순위표 표시 범위 (페이지당 10명)</div>
-            <div class="kpi-val highlight" id="ranking-kpi-total">TOP 100 (10페이지)</div>
+            <div class="kpi-label" data-ko="표시 범위" data-en="Scope">표시 범위</div>
+            <div class="kpi-val highlight" id="ranking-kpi-total">1위 ~ 100위 (10페이지)</div>
           </div>
           <div class="kpi-box">
-            <div class="kpi-label" data-ko="🥇 현재 1위 NFT 이름" data-en="🥇 #1 Ranked NFT Name">🥇 현재 1위 NFT 이름</div>
+            <div class="kpi-label" data-ko="현재 1위 NFT" data-en="#1 Ranked NFT">현재 1위 NFT</div>
             <div class="kpi-val gold" id="ranking-kpi-top-name" style="font-size:15px;">Pixel Penguin #0</div>
           </div>
           <div class="kpi-box">
-            <div class="kpi-label" data-ko="최고 기록 (HIGH SCORE)" data-en="High Score">최고 기록 (HIGH SCORE)</div>
+            <div class="kpi-label" data-ko="최고 기록" data-en="High Score">최고 기록</div>
             <div class="kpi-val" id="ranking-kpi-top-score">9,850 PTS</div>
           </div>
         </div>
@@ -469,11 +336,11 @@
         <div class="verychat-panel" style="margin-top:14px;">
           <div class="verychat-panel-header ranking-toolbar-header" style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
             <div>
-              <div class="verychat-panel-title" data-ko="NFT 이름별 실시간 게임 순위 TOP 100 (10명씩 · 총 10페이지)" data-en="Live Game Rankings TOP 100 by NFT Name (10 per Page · 10 Pages)">NFT 이름별 실시간 게임 순위 TOP 100 (10명씩 · 총 10페이지)</div>
-              <div id="ranking-range-indicator" style="font-size:12px; color:#67e8f9; font-weight:800; margin-top:3px;">현재 표시: 1위 ~ 10위 (1 / 10 페이지)</div>
+              <div class="verychat-panel-title" data-ko="NFT별 실시간 순위 (페이지당 10명)" data-en="Live Rankings by NFT (10 per Page)">NFT별 실시간 순위 (페이지당 10명)</div>
+              <div id="ranking-range-indicator" style="font-size:12px; color:#67e8f9; font-weight:800; margin-top:3px;">1위 ~ 10위 (1 / 10 페이지)</div>
             </div>
-            <div style="min-width:240px; flex:0 1 320px;">
-              <input type="search" id="ranking-search-input" class="search-input" data-placeholder-ko="NFT 이름(Pixel Penguin #4441) 또는 번호 검색..." data-placeholder-en="Search by NFT Name (Pixel Penguin #4441) or ID..." placeholder="NFT 이름(Pixel Penguin #4441) 또는 번호 검색..." />
+            <div style="min-width:220px; flex:0 1 280px;">
+              <input type="search" id="ranking-search-input" class="search-input" data-placeholder-ko="NFT 번호 또는 이름 검색" data-placeholder-en="Search by NFT ID or Name" placeholder="NFT 번호 또는 이름 검색" />
             </div>
           </div>
 
@@ -481,11 +348,11 @@
 
           <!-- 10-Page Pagination Bar (10 Ranks per Page × 10 Pages = 1st ~ 100th Place) -->
           <div class="pagination-bar ranking-pagination-bar" id="ranking-pagination-bar" style="margin-top:16px; flex-wrap:wrap; gap:6px;">
-            <button type="button" class="page-btn" id="rank-page-first-btn" data-ko="≪ 처음" data-en="≪ First">≪ 처음</button>
-            <button type="button" class="page-btn" id="rank-page-prev-btn" data-ko="‹ 이전" data-en="‹ Prev">‹ 이전</button>
+            <button type="button" class="page-btn" id="rank-page-first-btn" data-ko="처음" data-en="First">처음</button>
+            <button type="button" class="page-btn" id="rank-page-prev-btn" data-ko="이전" data-en="Prev">이전</button>
             <div class="rank-page-numbers" id="rank-page-numbers" style="display:flex; align-items:center; gap:5px; flex-wrap:wrap; justify-content:center;"></div>
-            <button type="button" class="page-btn" id="rank-page-next-btn" data-ko="다음 ›" data-en="Next ›">다음 ›</button>
-            <button type="button" class="page-btn" id="rank-page-last-btn" data-ko="끝 ≫" data-en="Last ≫">끝 ≫</button>
+            <button type="button" class="page-btn" id="rank-page-next-btn" data-ko="다음" data-en="Next">다음</button>
+            <button type="button" class="page-btn" id="rank-page-last-btn" data-ko="끝" data-en="Last">끝</button>
           </div>
         </div>
       </section>
@@ -523,23 +390,8 @@
   <!-- TOKEN INSPECTOR MODAL -->
   <div class="modal-backdrop" id="token-modal" role="dialog" aria-modal="true" aria-labelledby="modal-token-title">
     <div class="modal-card">
-      <button type="button" class="modal-close-btn" id="close-token-modal" data-ko="✕ 닫기" data-en="✕ Close">✕ 닫기</button>
+      <button type="button" class="modal-close-btn" id="close-token-modal" data-ko="닫기" data-en="Close">닫기</button>
       <div class="modal-detail-grid" id="modal-detail-body"></div>
-    </div>
-  </div>
-
-  <!-- UFO SPACE GAME — NFT NUMBER (#0 ~ #9999) LEADERBOARD MODAL -->
-  <div class="modal-backdrop" id="leaderboard-modal" role="dialog" aria-modal="true" aria-labelledby="leaderboard-modal-title">
-    <div class="modal-card leaderboard-modal-card">
-      <button type="button" class="modal-close-btn" id="close-leaderboard-modal" data-ko="✕ 닫기" data-en="✕ Close">✕ 닫기</button>
-      <div class="leaderboard-modal-header">
-        <div class="leaderboard-title-wrap">
-          <span class="pill-tag very">UFO ARCADE RANKING</span>
-          <h3 id="leaderboard-modal-title" data-ko="🏆 우주선 게임 NFT 번호 랭킹보드" data-en="🏆 UFO Game NFT Number Leaderboard">🏆 우주선 게임 NFT 번호 랭킹보드</h3>
-          <p data-ko="랭킹의 NFT 번호(#0~#9999)를 클릭하면 즉시 해당 NFT의 육각형 프사 착용기 & 도감 상세정보로 이동합니다!" data-en="Click any ranked NFT (#0~#9999) to immediately inspect that Penguin in the Hexagon PFP Studio & Codex!">랭킹의 NFT 번호(#0~#9999)를 클릭하면 즉시 해당 NFT의 육각형 프사 착용기 &amp; 도감 상세정보로 이동합니다!</p>
-        </div>
-      </div>
-      <div class="leaderboard-list-wrap" id="leaderboard-list-body"></div>
     </div>
   </div>
 
@@ -557,6 +409,6 @@
     </div>
   </footer>
 
-  <script src="/app.js?v=5.3.0"></script>
+  <script src="/app.js?v=5.4.0"></script>
 </body>
 </html>
