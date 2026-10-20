@@ -11,8 +11,11 @@
   <meta property="og:description" content="펭귄이 난무하는 세상을 위하여! 픽셀 펭귄 10,000마리. 사신다고 뭐 안 드립니다. 철저히 베리챗 PFP 전용." />
   <meta property="og:image" content="https://ppeng.verycloud.io/assets/logo_4441_1024.png?v=v322" />
   <meta name="twitter:card" content="summary_large_image" />
+  <meta name="theme-color" content="#0e0d13" />
   <link rel="icon" type="image/png" href="/img/P4441.png?v=v322" />
-  <link rel="stylesheet" href="/styles.css?v=5.5.2" />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+  <link rel="stylesheet" href="/styles.css?v=5.6.0" />
 </head>
 <body>
   <!-- Full-Viewport Stepped Pixel Ambient Particle Canvas -->
@@ -45,10 +48,10 @@
     <!-- 4 Main Navigation Menus: 컬렉션 소개 / 10,000 도감도 / 게임 순위 / 공지사항 -->
     <nav class="market-tabs-bar" aria-label="Collection Sections">
       <div class="market-tabs-inner">
-        <button type="button" class="market-tab active" data-target="tab-intro" data-ko="컬렉션 소개" data-en="Intro">컬렉션 소개</button>
-        <button type="button" class="market-tab" data-target="tab-codex" data-ko="10,000 도감도" data-en="10K Codex">10,000 도감도</button>
-        <button type="button" class="market-tab" data-target="tab-ranking" data-ko="게임 순위" data-en="Ranking">게임 순위</button>
-        <button type="button" class="market-tab" data-target="tab-notices" data-ko="공지사항" data-en="Notices">공지사항</button>
+        <button type="button" class="market-tab active" data-target="tab-intro"><span class="tab-long" data-ko="컬렉션 소개" data-en="Intro">컬렉션 소개</span><span class="tab-short" data-ko="소개" data-en="Intro">소개</span></button>
+        <button type="button" class="market-tab" data-target="tab-codex"><span class="tab-long" data-ko="10,000 도감" data-en="10K Codex">10,000 도감</span><span class="tab-short" data-ko="도감" data-en="Codex">도감</span></button>
+        <button type="button" class="market-tab" data-target="tab-ranking"><span class="tab-long" data-ko="게임 순위" data-en="Ranking">게임 순위</span><span class="tab-short" data-ko="순위" data-en="Ranking">순위</span></button>
+        <button type="button" class="market-tab" data-target="tab-notices"><span class="tab-long" data-ko="공지사항" data-en="Notices">공지사항</span><span class="tab-short" data-ko="공지" data-en="News">공지</span></button>
       </div>
     </nav>
   </header>
@@ -64,8 +67,8 @@
           <!-- Clean Minimal Top Bar (Shown in both normal & fullscreen modes) -->
           <div class="game-minimal-topbar" id="game-minimal-topbar">
             <div class="game-topbar-left">
-              <span class="game-title-tag">PIXEL PENGUIN GAME</span>
-              <span class="pilot-skin-badge" id="ufo-pilot-skin-badge" data-ko="기본 파란 펭귄 (미기록)" data-en="Default Penguin (Unrecorded)">기본 파란 펭귄 (미기록)</span>
+              <span class="game-title-tag">PENGUIN ESCAPE</span>
+              <span class="pilot-skin-badge" id="ufo-pilot-skin-badge">기본 펭귄 · 기록 안 됨</span>
             </div>
             <div class="game-topbar-right">
               <button type="button" class="game-top-btn" id="btn-open-leaderboard" data-ko="게임 순위" data-en="Ranking">게임 순위</button>
@@ -87,16 +90,12 @@
               </div>
               <div class="s1-overlay-controls">
                 <div class="s1-yes-group">
-                  <input type="number" id="scene1-nft-input" class="s1-nft-input" min="0" max="9999" value="" data-placeholder-ko="내 NFT 번호 (0~9999 · 선택)" data-placeholder-en="My NFT # (0~9999 · Optional)" placeholder="내 NFT 번호 (0~9999 · 선택)" />
-                  <button type="button" class="s1-yes-btn" id="btn-scene1-yes" data-ko="게임 시작 (예)" data-en="Start Game (Yes)">게임 시작 (예)</button>
+                  <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" id="scene1-nft-input" class="s1-nft-input" value="" aria-label="NFT number" data-placeholder-ko="내 NFT 번호 (선택)" data-placeholder-en="NFT # (optional)" placeholder="내 NFT 번호 (선택)" />
+                  <button type="button" class="s1-yes-btn" id="btn-scene1-yes" data-ko="탈출하기" data-en="Escape">탈출하기</button>
                 </div>
-                <button type="button" class="s1-no-btn" id="btn-scene1-no" data-ko="아니오 (벚꽃마을 이동)" data-en="No (Skip to Town)">
-                  아니오 (벚꽃마을 이동)
-                </button>
+                <button type="button" class="s1-no-btn" id="btn-scene1-no" data-ko="안 해요, 벚꽃마을로" data-en="No, skip to town">안 해요, 벚꽃마을로</button>
               </div>
-              <div class="s1-overlay-sub" id="s1-overlay-sub" data-ko="번호(0~9999)를 직접 입력해야 해당 번호의 최고점이 기록됩니다. (미입력 시 미기록 · NFT 희귀도 순위와 무관한 유희용 게임)" data-en="Enter your NFT # (0~9999) explicitly to record your high score. (Blank = unrecorded · Just for fun, unrelated to NFT rarity)">
-                번호(0~9999)를 직접 입력해야 해당 번호의 최고점이 기록됩니다. (미입력 시 미기록 · NFT 희귀도 순위와 무관한 유희용 게임)
-              </div>
+              <div class="s1-overlay-sub" id="s1-overlay-sub">번호를 넣으면 그 번호로 최고점이 남습니다. 비워두면 기록 없이 플레이.</div>
             </div>
           </div>
 
@@ -112,45 +111,42 @@
       <!-- 2. BELOW INTRO: B-GRADE COLLECTION INTRO + VERYCHAT HEXAGON PFP STUDIO -->
       <section class="hero-section">
         <!-- Left Card: Compact Collection Intro + 4x1 KPIs -->
-        <div class="hero-left pixel-frame-glow">
+        <div class="hero-left">
           <div class="hero-top-block">
-            <div class="hero-eyebrow">
-              <span class="pill-tag very">VERY MAINNET · PPENG</span>
-              <span class="pill-tag">PFP ONLY</span>
-            </div>
+            <div class="hero-eyebrow">VERY Mainnet · 10.23 Mint</div>
             <h1 class="hero-title">
-              <span class="grad">PIXEL PENGUIN 10K</span><br />
-              <span data-ko="베리챗에 펭귄이 난무하는 세상을 위하여" data-en="For a VeryChat World Overflowing with Penguins">베리챗에 펭귄이 난무하는 세상을 위하여</span>
+              <span class="hero-title-main">PIXEL PENGUIN 10K</span>
+              <span class="hero-title-sub" data-ko="베리챗에 펭귄이 난무하는 세상을 위하여" data-en="For a VeryChat world overflowing with penguins">베리챗에 펭귄이 난무하는 세상을 위하여</span>
             </h1>
             <p class="hero-desc" data-ko="VERY CHAT 고인물 @happy Ahndoge가 찍어낸 픽셀 펭귄 10,000마리입니다. 사신다고 돈 드리거나 뭐 해드리는 거 일절 없습니다. 등급 나누라길래 나누긴 했는데 높다고 뭐 더 주는 것도 없습니다. 그냥 내 눈에 제일 이쁜 자식 골라서 베리챗 프사로 쓰세요." data-en="10,000 pixel penguins by VeryChat OG @happy Ahndoge. Zero roadmap, zero perks. Just pick whichever penguin looks cutest to you and use it as your VeryChat PFP.">
               VERY CHAT 고인물 @happy Ahndoge가 찍어낸 픽셀 펭귄 10,000마리입니다. 사신다고 돈 드리거나 뭐 해드리는 거 일절 없습니다. 등급 나누라길래 나누긴 했는데 높다고 뭐 더 주는 것도 없습니다. 그냥 내 눈에 제일 이쁜 자식 골라서 베리챗 프사로 쓰세요.
             </p>
           </div>
 
-          <div class="hero-kpis">
+          <dl class="hero-kpis">
             <div class="kpi-box">
-              <div class="kpi-label" data-ko="총 발행량" data-en="Supply">총 발행량</div>
-              <div class="kpi-val">10,000</div>
+              <dt class="kpi-label" data-ko="발행량" data-en="Supply">발행량</dt>
+              <dd class="kpi-val">10,000</dd>
             </div>
             <div class="kpi-box">
-              <div class="kpi-label" data-ko="심볼" data-en="Symbol">심볼</div>
-              <div class="kpi-val highlight">PPENG</div>
+              <dt class="kpi-label" data-ko="심볼" data-en="Symbol">심볼</dt>
+              <dd class="kpi-val">PPENG</dd>
             </div>
             <div class="kpi-box">
-              <div class="kpi-label" data-ko="희귀도 기준" data-en="Rarity Model">희귀도 기준</div>
-              <div class="kpi-val gold">rarity.tools</div>
+              <dt class="kpi-label" data-ko="희귀도" data-en="Rarity">희귀도</dt>
+              <dd class="kpi-val">rarity.tools</dd>
             </div>
             <div class="kpi-box">
-              <div class="kpi-label" data-ko="로드맵 / 혜택" data-en="Perks">로드맵 / 혜택</div>
-              <div class="kpi-val" data-ko="없음" data-en="NONE">없음</div>
+              <dt class="kpi-label" data-ko="로드맵·혜택" data-en="Roadmap">로드맵·혜택</dt>
+              <dd class="kpi-val" data-ko="없음" data-en="None">없음</dd>
             </div>
-          </div>
+          </dl>
         </div>
 
         <!-- Right Card: VeryChat Verified PFP Simulator (Pointy-Top / Pointy-Bottom Hexagon) -->
-        <div class="hero-right pixel-frame-glow">
+        <div class="hero-right">
           <div class="pfp-studio-header">
-            <span class="pfp-studio-title" data-ko="베리챗 6각형 프사 착용기" data-en="VERYCHAT HEX PFP PREVIEW">베리챗 6각형 프사 착용기</span>
+            <span class="pfp-studio-title" data-ko="베리챗 프사 미리보기" data-en="VeryChat PFP preview">베리챗 프사 미리보기</span>
             <div class="shape-toggles" role="group" aria-label="PFP Frame Shape">
               <button type="button" class="shape-btn active" data-shape="hex" data-ko="6각형" data-en="Hex">6각형</button>
               <button type="button" class="shape-btn" data-shape="circle" data-ko="원형" data-en="Circle">원형</button>
@@ -165,14 +161,7 @@
                   <img id="pfp-preview-img" src="/img/P4441.png?v=v322" alt="PFP Preview" class="pixelated" />
                 </div>
                 <svg class="pfp-hex-outline" id="pfp-hex-outline" viewBox="0 0 100 100" aria-hidden="true">
-                  <polygon points="50,1.2 93.3,25 93.3,75 50,98.8 6.7,75 6.7,25" fill="none" stroke="url(#vcHexGrad)" stroke-width="2.4" stroke-linejoin="round" />
-                  <defs>
-                    <linearGradient id="vcHexGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                      <stop offset="0%" stop-color="#67e8f9" />
-                      <stop offset="50%" stop-color="#ff4d6d" />
-                      <stop offset="100%" stop-color="#fbbf24" />
-                    </linearGradient>
-                  </defs>
+                  <polygon points="50,1.2 93.3,25 93.3,75 50,98.8 6.7,75 6.7,25" fill="none" stroke="#ff4d6d" stroke-width="2.2" stroke-linejoin="round" />
                 </svg>
               </div>
               <div class="verychat-profile-pills" aria-label="VeryChat KYC & NFT Badges">
@@ -191,7 +180,7 @@
                 </div>
                 <div class="sim-user-meta">
                   <div class="sim-user-name"><span id="pfp-sim-title">Pixel Penguin #4441</span> <span class="vc-star-v inline-v">V</span></div>
-                  <div class="sim-user-badge">@happy · VeryChat Verified PFP</div>
+                  <div class="sim-user-badge">@happy · NFT PFP</div>
                 </div>
               </div>
 
@@ -208,7 +197,7 @@
               </div>
 
               <div class="pfp-jump-row">
-                <input type="text" id="pfp-jump-input" class="search-input" data-placeholder-ko="NFT 번호 (0 ~ 9999)" data-placeholder-en="NFT ID (0 ~ 9999)" placeholder="NFT 번호 (0 ~ 9999)" />
+                <input type="text" inputmode="numeric" maxlength="5" autocomplete="off" id="pfp-jump-input" class="search-input" aria-label="NFT number" data-placeholder-ko="번호 0~9999" data-placeholder-en="No. 0–9999" placeholder="번호 0~9999" />
                 <button type="button" class="btn-primary pfp-action-btn" id="pfp-jump-btn" data-ko="장착" data-en="Try">장착</button>
                 <button type="button" class="btn-secondary pfp-action-btn" id="pfp-detail-btn" data-ko="상세" data-en="Info">상세</button>
               </div>
@@ -217,7 +206,7 @@
 
           <div class="pfp-preset-box">
             <div class="pfp-preset-header">
-              <span data-ko="추천 펭귄 빠른 장착" data-en="Quick-Try Penguins">추천 펭귄 빠른 장착</span>
+              <span data-ko="골라서 써보기" data-en="Try one of these">골라서 써보기</span>
             </div>
             <div class="pfp-Mini-selector" id="pfp-preset-strip"></div>
           </div>
@@ -229,41 +218,41 @@
     <!-- TAB PAGE 2: 도감도 (10,000 CODEX & 210 TRAITS) -->
     <div id="tab-page-codex" class="tab-page" style="display:none;">
       <section class="section-block" id="sec-explorer">
-        <div class="section-header" style="margin-bottom:12px;">
+        <div class="section-header">
           <div>
-            <h2 class="section-title" data-ko="10,000마리 도감도 (P0000 ~ P9999)" data-en="10,000 Penguins Codex (P0000 – P9999)">10,000마리 도감도 (P0000 ~ P9999)</h2>
-            <p class="section-sub" data-ko="카드를 누르면 베리챗 6각형 프사 장착 및 고해상도 PNG 원본 저장이 가능합니다." data-en="Tap any card to preview in the VeryChat Hexagon frame or download the high-res PNG.">카드를 누르면 베리챗 6각형 프사 장착 및 고해상도 PNG 원본 저장이 가능합니다.</p>
+            <h2 class="section-title" data-ko="10,000마리 도감" data-en="10,000 penguins">10,000마리 도감</h2>
+            <p class="section-sub" data-ko="카드를 누르면 상세 정보, 프사 미리보기, 고해상도 저장이 있습니다." data-en="Tap a card for details, a PFP preview and a high-res download.">카드를 누르면 상세 정보, 프사 미리보기, 고해상도 저장이 있습니다.</p>
           </div>
         </div>
 
         <div class="explorer-toolbar">
           <div class="toolbar-top">
             <div class="search-input-wrap">
-              <input type="search" id="exp-search" class="search-input" data-placeholder-ko="번호(#0 ~ #9999) 또는 파츠 검색" data-placeholder-en="Search by ID (#0 ~ #9999) or trait" placeholder="번호(#0 ~ #9999) 또는 파츠 검색" />
+              <input type="search" id="exp-search" class="search-input" aria-label="Search" data-placeholder-ko="번호 또는 파츠 이름" data-placeholder-en="Number or trait name" placeholder="번호 또는 파츠 이름" />
             </div>
 
             <select id="exp-tier" class="filter-select" aria-label="Filter by Rarity Tier">
-              <option value="" data-ko="전체 등급 (10,000)" data-en="All Tiers (10,000)">전체 등급 (10,000)</option>
-              <option value="Genesis" data-ko="Genesis (11 · Rank #1~#11)" data-en="Genesis (11 · Rank #1~#11)">Genesis (11 · Rank #1~#11)</option>
-              <option value="Mythic" data-ko="Mythic (39 · Rank #12~#50)" data-en="Mythic (39 · Rank #12~#50)">Mythic (39 · Rank #12~#50)</option>
-              <option value="Legendary" data-ko="Legendary (200 · Rank #51~#250)" data-en="Legendary (200 · Rank #51~#250)">Legendary (200 · Rank #51~#250)</option>
-              <option value="Epic" data-ko="Epic (450 · Rank #251~#700)" data-en="Epic (450 · Rank #251~#700)">Epic (450 · Rank #251~#700)</option>
-              <option value="Rare" data-ko="Rare (1,300 · Rank #701~#2,000)" data-en="Rare (1,300 · Rank #701~#2,000)">Rare (1,300 · Rank #701~#2,000)</option>
-              <option value="Uncommon" data-ko="Uncommon (2,500 · Rank #2,001~#4,500)" data-en="Uncommon (2,500 · Rank #2,001~#4,500)">Uncommon (2,500 · Rank #2,001~#4,500)</option>
-              <option value="Common" data-ko="Common (5,500 · Rank #4,501~#10,000)" data-en="Common (5,500 · Rank #4,501~#10,000)">Common (5,500 · Rank #4,501~#10,000)</option>
+              <option value="" data-ko="전체 등급" data-en="All tiers">전체 등급</option>
+              <option value="Genesis" data-ko="Genesis · 11" data-en="Genesis · 11">Genesis · 11</option>
+              <option value="Mythic" data-ko="Mythic · 39" data-en="Mythic · 39">Mythic · 39</option>
+              <option value="Legendary" data-ko="Legendary · 200" data-en="Legendary · 200">Legendary · 200</option>
+              <option value="Epic" data-ko="Epic · 450" data-en="Epic · 450">Epic · 450</option>
+              <option value="Rare" data-ko="Rare · 1,300" data-en="Rare · 1,300">Rare · 1,300</option>
+              <option value="Uncommon" data-ko="Uncommon · 2,500" data-en="Uncommon · 2,500">Uncommon · 2,500</option>
+              <option value="Common" data-ko="Common · 5,500" data-en="Common · 5,500">Common · 5,500</option>
             </select>
 
             <select id="exp-sort" class="filter-select" aria-label="Sort Order">
-              <option value="id_asc" data-ko="번호순 (#0 → #9,999)" data-en="ID Order (#0 → #9,999)" selected>번호순 (#0 → #9,999)</option>
-              <option value="id_desc" data-ko="역순 (#9,999 → #0)" data-en="Reverse ID (#9,999 → #0)">역순 (#9,999 → #0)</option>
-              <option value="rank_asc" data-ko="희귀도 순위 (Rank #1 → #10,000)" data-en="Rarity Rank (Rank #1 → #10,000)">희귀도 순위 (Rank #1 → #10,000)</option>
-              <option value="rank_desc" data-ko="희귀도 낮은순 (#10,000 → #1)" data-en="Lowest Rarity (#10,000 → #1)">희귀도 낮은순 (#10,000 → #1)</option>
-              <option value="tier_desc" data-ko="등급별 모아보기" data-en="Group by Tier">등급별 모아보기</option>
+              <option value="id_asc" data-ko="번호순" data-en="Number" selected>번호순</option>
+              <option value="id_desc" data-ko="번호 역순" data-en="Number, reversed">번호 역순</option>
+              <option value="rank_asc" data-ko="희귀한 순" data-en="Rarest first">희귀한 순</option>
+              <option value="rank_desc" data-ko="흔한 순" data-en="Most common first">흔한 순</option>
+              <option value="tier_desc" data-ko="등급별" data-en="By tier">등급별</option>
             </select>
 
             <div class="toolbar-btn-group">
               <button type="button" class="btn-secondary mobile-filter-toggle-btn" id="btn-toggle-trait-filters">
-                <span data-ko="파츠 필터 (9종)" data-en="Trait Filters (9)">파츠 필터 (9종)</span>
+                <span>파츠 필터</span>
               </button>
               <button type="button" class="btn-secondary" id="exp-reset-btn" data-ko="초기화" data-en="Reset">초기화</button>
             </div>
@@ -281,7 +270,7 @@
         <div class="pagination-bar">
           <button type="button" class="page-btn" id="page-first-btn" data-ko="처음" data-en="First">처음</button>
           <button type="button" class="page-btn" id="page-prev-btn" data-ko="이전" data-en="Prev">이전</button>
-          <span id="page-indicator" style="font-size:13.5px; font-weight:700; padding:0 12px;">1 / 250</span>
+          <span id="page-indicator" class="page-indicator">1 / 250</span>
           <button type="button" class="page-btn" id="page-next-btn" data-ko="다음" data-en="Next">다음</button>
           <button type="button" class="page-btn" id="page-last-btn" data-ko="끝" data-en="Last">끝</button>
         </div>
@@ -291,7 +280,7 @@
       <section class="section-block" id="sec-traits">
         <div class="verychat-panel">
           <div class="verychat-panel-header trait-dir-header">
-            <div class="verychat-panel-title" data-ko="210종 파츠 도감 (선택 시 해당 파츠 필터링)" data-en="210 Traits Directory (Tap to filter)">210종 파츠 도감 (선택 시 해당 파츠 필터링)</div>
+            <div class="verychat-panel-title" data-ko="파츠 목록 · 누르면 그 파츠만 보기" data-en="Traits · tap to filter">파츠 목록 · 누르면 그 파츠만 보기</div>
             <div class="trait-cat-tabs-bar" id="trait-cat-tabs"></div>
           </div>
           <div class="trait-catalog-grid" id="trait-catalog-grid"></div>
@@ -302,14 +291,14 @@
     <!-- TAB PAGE 3: 게임 순위 (HIGH-SCORE ONLY · FOR FUN ONLY, UNRELATED TO NFT RARITY) -->
     <div id="tab-page-ranking" class="tab-page" style="display:none;">
       <section class="section-block" id="sec-ranking">
-        <div class="section-header" style="margin-bottom:14px;">
+        <div class="section-header">
           <div>
-            <h2 class="section-title" data-ko="미니게임 최고점 기록 (TOP 100 · 유희용)" data-en="Mini-Game High Scores (TOP 100 · For Fun)">미니게임 최고점 기록 (TOP 100 · 유희용)</h2>
-            <p class="section-sub" data-ko="이 게임 포인트는 단순 유희용이며 NFT 등급·희귀도 순위와 무관합니다. 번호(0~9999)를 직접 입력하고 달성한 최고점만 표시됩니다." data-en="Game points are purely for fun and unrelated to NFT rarity rank. Only the single highest score per explicitly entered number (0–9999) is shown.">이 게임 포인트는 단순 유희용이며 NFT 등급·희귀도 순위와 무관합니다. 번호(0~9999)를 직접 입력하고 달성한 최고점만 표시됩니다.</p>
+            <h2 class="section-title" data-ko="게임 최고점 TOP 100" data-en="Game high scores · TOP 100">게임 최고점 TOP 100</h2>
+            <p class="section-sub" data-ko="번호를 넣고 플레이한 기록 중 번호별 최고점만 남깁니다. 재미로 하는 게임이라 NFT 희귀도와는 상관없습니다." data-en="Best score per NFT number entered before playing. Just for fun, it has nothing to do with rarity.">번호를 넣고 플레이한 기록 중 번호별 최고점만 남깁니다. 재미로 하는 게임이라 NFT 희귀도와는 상관없습니다.</p>
           </div>
-          <div class="ranking-header-actions" style="display:flex; gap:8px; flex-wrap:wrap;">
+          <div class="ranking-header-actions">
             <button type="button" class="btn-primary" onclick="scrollToSection('tab-intro')">
-              <span data-ko="게임 하러 가기" data-en="Play Game">게임 하러 가기</span>
+              <span data-ko="게임 하러 가기" data-en="Play">게임 하러 가기</span>
             </button>
             <button type="button" class="btn-secondary" id="btn-refresh-ranking-page">
               <span data-ko="새로고침" data-en="Refresh">새로고침</span>
@@ -320,37 +309,37 @@
         <!-- Ranking KPI Summary Strip -->
         <div class="ranking-kpi-strip" id="ranking-kpi-strip">
           <div class="kpi-box">
-            <div class="kpi-label" data-ko="표시 기준" data-en="Display Rule">표시 기준</div>
-            <div class="kpi-val highlight" id="ranking-kpi-total" data-ko="최고점만 표시 (1~100위)" data-en="High Score Only (TOP 100)">최고점만 표시 (1~100위)</div>
+            <div class="kpi-label" data-ko="집계" data-en="Board">집계</div>
+            <div class="kpi-val" id="ranking-kpi-total">TOP 100</div>
           </div>
           <div class="kpi-box">
-            <div class="kpi-label" data-ko="현재 최고점 1위" data-en="#1 High Score">현재 최고점 1위</div>
-            <div class="kpi-val gold" id="ranking-kpi-top-name" style="font-size:15px;">Pixel Penguin #4441 (P4441)</div>
+            <div class="kpi-label" data-ko="1위" data-en="#1">1위</div>
+            <div class="kpi-val" id="ranking-kpi-top-name">#4441</div>
           </div>
           <div class="kpi-box">
-            <div class="kpi-label" data-ko="1위 최고 기록" data-en="Top High Score">1위 최고 기록</div>
+            <div class="kpi-label" data-ko="1위 점수" data-en="#1 score">1위 점수</div>
             <div class="kpi-val" id="ranking-kpi-top-score">3,600 PTS</div>
           </div>
         </div>
 
-        <div class="verychat-panel" style="margin-top:14px;">
-          <div class="verychat-panel-header ranking-toolbar-header" style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
+        <div class="verychat-panel ranking-panel">
+          <div class="verychat-panel-header ranking-toolbar-header">
             <div>
-              <div class="verychat-panel-title" data-ko="번호별 최고점 순위 (페이지당 10명 · NFT 희귀도 무관)" data-en="High Scores by Number (10 per Page · Unrelated to Rarity)">번호별 최고점 순위 (페이지당 10명 · NFT 희귀도 무관)</div>
-              <div id="ranking-range-indicator" style="font-size:12px; color:#67e8f9; font-weight:800; margin-top:3px;">1위 ~ 10위 (1 / 10 페이지)</div>
+              <div class="verychat-panel-title" data-ko="번호별 최고점" data-en="Best score by number">번호별 최고점</div>
+              <div id="ranking-range-indicator" class="ranking-range">1–10위 · 1/10 페이지</div>
             </div>
-            <div style="min-width:220px; flex:0 1 280px;">
-              <input type="search" id="ranking-search-input" class="search-input" data-placeholder-ko="번호(0~9999) 또는 이름 검색" data-placeholder-en="Search by Number (0~9999)" placeholder="번호(0~9999) 또는 이름 검색" />
+            <div class="ranking-search-wrap">
+              <input type="search" id="ranking-search-input" class="search-input" aria-label="Search rankings" data-placeholder-ko="번호 또는 이름" data-placeholder-en="Number or name" placeholder="번호 또는 이름" />
             </div>
           </div>
 
-          <div class="ranking-page-list" id="ranking-page-list-body" style="display:flex; flex-direction:column; gap:10px; margin-top:12px;"></div>
+          <div class="ranking-page-list" id="ranking-page-list-body"></div>
 
           <!-- 10-Page Pagination Bar (10 Ranks per Page × 10 Pages = 1st ~ 100th Place) -->
-          <div class="pagination-bar ranking-pagination-bar" id="ranking-pagination-bar" style="margin-top:16px; flex-wrap:wrap; gap:6px;">
+          <div class="pagination-bar ranking-pagination-bar" id="ranking-pagination-bar">
             <button type="button" class="page-btn" id="rank-page-first-btn" data-ko="처음" data-en="First">처음</button>
             <button type="button" class="page-btn" id="rank-page-prev-btn" data-ko="이전" data-en="Prev">이전</button>
-            <div class="rank-page-numbers" id="rank-page-numbers" style="display:flex; align-items:center; gap:5px; flex-wrap:wrap; justify-content:center;"></div>
+            <div class="rank-page-numbers" id="rank-page-numbers"></div>
             <button type="button" class="page-btn" id="rank-page-next-btn" data-ko="다음" data-en="Next">다음</button>
             <button type="button" class="page-btn" id="rank-page-last-btn" data-ko="끝" data-en="Last">끝</button>
           </div>
@@ -361,18 +350,18 @@
     <!-- TAB PAGE 4: 공지사항 (SHORT B-GRADE NOTICES) -->
     <div id="tab-page-notices" class="tab-page" style="display:none;">
       <section class="section-block" id="sec-notices">
-        <div class="section-header" style="margin-bottom:14px;">
+        <div class="section-header">
           <div>
             <h2 class="section-title" data-ko="공지사항" data-en="Notices">공지사항</h2>
             <p class="section-sub" data-ko="트위터·텔레그램 귀찮아서 안 합니다. 공지는 여기에만 짧게 올립니다." data-en="No Twitter or Telegram. Short updates are posted right here.">트위터·텔레그램 귀찮아서 안 합니다. 공지는 여기에만 짧게 올립니다.</p>
           </div>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:12px;">
+        <div class="notice-list">
           <div class="verychat-panel notice-card">
             <div class="verychat-panel-header notice-card-header">
-              <div class="verychat-panel-title" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                <span class="pill-tag very">민팅</span>
+              <div class="verychat-panel-title notice-title">
+                <span class="pill-tag very" data-ko="민팅" data-en="Mint">민팅</span>
                 <span data-ko="10월 23일(금) PIXEL PENGUIN 10,000마리 민팅" data-en="Oct 23 (Fri) — PIXEL PENGUIN 10K Mint">10월 23일(금) PIXEL PENGUIN 10,000마리 민팅</span>
               </div>
               <span class="notice-date">2026.10.20</span>
@@ -401,14 +390,14 @@
   <footer class="site-footer">
     <div class="footer-inner">
       <div>
-        <strong style="color:#fff;">PIXEL PENGUIN (PPENG)</strong> · <span>by <strong>@happy Ahndoge</strong></span>
+        <strong class="footer-brand">PIXEL PENGUIN</strong> · <span>by @happy Ahndoge</span>
       </div>
       <div>
-        <span data-ko="10,000 PFP Penguins · rarity.tools · 사신다고 뭐 안 드립니다" data-en="10,000 PFP Penguins · rarity.tools · Zero Perks">10,000 PFP Penguins · rarity.tools · 사신다고 뭐 안 드립니다</span>
+        <span data-ko="펭귄 10,000마리 · 사신다고 뭐 안 드립니다" data-en="10,000 penguins · zero perks">펭귄 10,000마리 · 사신다고 뭐 안 드립니다</span>
       </div>
     </div>
   </footer>
 
-  <script src="/app.js?v=5.5.2"></script>
+  <script src="/app.js?v=5.6.0"></script>
 </body>
 </html>

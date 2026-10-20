@@ -508,7 +508,7 @@ function getFormattedLeaderboard(limit = 100) {
 loadLeaderboardData();
 
 app.get('/api/leaderboard', (req, res) => {
-  const limit = Math.min(100, Math.max(5, Number(req.query.limit || 100)));
+  const limit = Math.min(100, Math.max(5, parseInt(req.query.limit, 10) || 100));
   res.json({
     total_pilots: ufoLeaderboardMap.size,
     items: getFormattedLeaderboard(limit),
@@ -572,7 +572,14 @@ app.use(
   })
 );
 
+// Unknown API routes and missing files (anything with an extension) are real 404s, not the SPA page:
+// a missing part image must fail as an image instead of arriving as 200 text/html
+app.use('/api', (req, res) => res.status(404).json({ error: 'Not found' }));
+
 app.get('*', (req, res) => {
+  if (path.extname(req.path)) {
+    return res.status(404).send('Not found');
+  }
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');

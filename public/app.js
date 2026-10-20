@@ -401,6 +401,11 @@ function rgbToHex(r, g, b) {
 function initAmbientPixelCanvas() {
   const canvas = document.getElementById('pixel-ambient-canvas');
   if (!canvas) return;
+  // Phones and reduced-motion users get a still background (saves a full-screen 60fps loop on mobile)
+  if (window.matchMedia('(max-width: 768px), (prefers-reduced-motion: reduce)').matches) {
+    canvas.remove();
+    return;
+  }
   const ctx = canvas.getContext('2d');
 
   let w = (canvas.width = window.innerWidth);
@@ -420,7 +425,7 @@ function initAmbientPixelCanvas() {
     '#FFB3C1', // Maehwa blossom pink
   ];
 
-  const count = 42;
+  const count = 24;
   const particles = Array.from({ length: count }, (_, i) => ({
     x: Math.random() * w,
     y: Math.random() * h,
@@ -793,28 +798,24 @@ function updateUfoBoardingDockUI() {
       const summary = UFO_GAME.pilotTraitsSummary || UFO_GAME.pilotSpeciesLabel;
       badgeEl.textContent = `#${UFO_GAME.pilotTokenId} (${code}) · ${summary}`;
     } else {
-      badgeEl.textContent =
-        CURRENT_LANG === 'ko'
-          ? '기본 파란 펭귄 (미입력 · 기록 안 됨)'
-          : 'Default Penguin (Blank · Unrecorded)';
+      badgeEl.textContent = CURRENT_LANG === 'ko' ? '기본 펭귄 · 기록 안 됨' : 'Default penguin · not recorded';
     }
   }
 
   if (s1SubEl) {
     if (UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null) {
-      const code = `P${String(UFO_GAME.pilotTokenId).padStart(4, '0')}`;
       const summary = UFO_GAME.pilotTraitsSummary || UFO_GAME.pilotSpeciesLabel;
       s1SubEl.textContent =
         CURRENT_LANG === 'ko'
-          ? `내 번호 #${UFO_GAME.pilotTokenId} (${code} · ${summary}) 장착 완료 · 최고점만 기록 (유희용)`
-          : `#${UFO_GAME.pilotTokenId} (${code} · ${summary}) equipped · High Score Only (For Fun)`;
+          ? `#${UFO_GAME.pilotTokenId} 탑승 · ${summary}`
+          : `#${UFO_GAME.pilotTokenId} on board · ${summary}`;
       s1SubEl.style.color = '#fde047';
     } else {
       s1SubEl.textContent =
         CURRENT_LANG === 'ko'
-          ? '번호(0~9999)를 직접 입력해야 해당 번호의 최고점이 기록됩니다. (미입력 시 미기록 · NFT 희귀도 순위와 무관한 유희용 게임)'
-          : 'Enter your number (0~9999) explicitly to record your high score. (Blank = unrecorded · Just for fun, unrelated to NFT rarity)';
-      s1SubEl.style.color = '#94a3b8';
+          ? '번호를 넣으면 그 번호로 최고점이 남습니다. 비워두면 기록 없이 플레이.'
+          : 'Enter your NFT number to keep a high score. Leave it blank to play unrecorded.';
+      s1SubEl.style.color = '';
     }
   }
 
@@ -830,34 +831,57 @@ function updateUfoBoardingDockUI() {
 // ============================================================================
 let PARTS_MANIFEST_PROMISE = null;
 let PARTS_MANIFEST_DATA = null;
+const PARTS_ASSET_VER = '5.5.3';
 const PILOT_PART_IMG_CACHE = new Map();
-const PILOT_COMPOSED_CACHE = new Map(); // key -> { sheet2D, sheetPixel }
+const PILOT_COMPOSED_CACHE = new Map(); // key -> { sheet2D, sheetPixel } (complete composites only)
+// Pilot rectangle inside the UFO cockpit (48x48 / 288x288 frame -> local units). Bottom row tucks behind the
+// collar at y = +9 and the tallest hats / flame crests stay under the y = -68 dome arch (FQL dome-fit audit).
+const PILOT_DRAW_RECT = { x: -44, y: -70, size: 79 };
 
 function ensurePartsManifest() {
   if (PARTS_MANIFEST_DATA) return Promise.resolve(PARTS_MANIFEST_DATA);
   if (PARTS_MANIFEST_PROMISE) return PARTS_MANIFEST_PROMISE;
-  PARTS_MANIFEST_PROMISE = fetch('/assets/parts_manifest.json?v=5.5.0')
+  PARTS_MANIFEST_PROMISE = fetch(`/assets/parts_manifest.json?v=${PARTS_ASSET_VER}`)
     .then((r) => (r.ok ? r.json() : null))
+    .catch(() => null)
     .then((data) => {
       PARTS_MANIFEST_DATA = data;
+      // Never pin a failed fetch: the next pilot build asks again
+      if (!data) PARTS_MANIFEST_PROMISE = null;
       return data;
-    })
-    .catch(() => null);
+    });
   return PARTS_MANIFEST_PROMISE;
 }
 
+// A part that fails to load (flaky mobile network, server restart) is retried and never cached as missing;
+// a cached null species base is what made pilots render as "invisible" (only eyes, clothes and hat).
 function loadPilotPartImg(url) {
   if (PILOT_PART_IMG_CACHE.has(url)) {
     return PILOT_PART_IMG_CACHE.get(url);
   }
   const p = new Promise((resolve) => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => resolve(null);
-    img.src = `${url}?v=5.5.0`;
+    const tryLoad = (attempt) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => {
+        if (attempt < 2) {
+          setTimeout(() => tryLoad(attempt + 1), 350 * (attempt + 1));
+        } else {
+          PILOT_PART_IMG_CACHE.delete(url);
+          resolve(null);
+        }
+      };
+      img.src = `${url}?v=${PARTS_ASSET_VER}${attempt ? `&retry=${attempt}` : ''}`;
+    };
+    tryLoad(0);
   });
   PILOT_PART_IMG_CACHE.set(url, p);
   return p;
+}
+
+function hexToRgbArr(hex) {
+  const h = String(hex).replace('#', '');
+  return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
 }
 
 async function buildModularPilotSheets(tokenNum, traitsObj = null) {
@@ -872,11 +896,10 @@ async function buildModularPilotSheets(tokenNum, traitsObj = null) {
       loadPilotPartImg(`/assets/parts_2d/specials/sp_2d_${tokenNum}.png`),
       loadPilotPartImg(`/assets/parts_pixel/specials/sp_px_${tokenNum}.png`),
     ]);
-    if (sh2D && shPx) {
-      const res = { sheet2D: sh2D, sheetPixel: shPx };
-      PILOT_COMPOSED_CACHE.set(cacheKey, res);
-      return res;
-    }
+    if (!sh2D || !shPx) return null;
+    const res = { sheet2D: sh2D, sheetPixel: shPx };
+    PILOT_COMPOSED_CACHE.set(cacheKey, res);
+    return res;
   }
 
   const manifest = await ensurePartsManifest();
@@ -910,9 +933,13 @@ async function buildModularPilotSheets(tokenNum, traitsObj = null) {
     }
   }
 
+  const lensTint = (rules.lens_tint_eyewear || {})[eywCode] || null;
+  const mouthFrontRow = Number.isFinite(rules.mouth_front_from_row) ? rules.mouth_front_from_row : 28;
+
   async function composeModeSheet(mode) {
     const size = mode === '2d' ? 288 : 48;
     const baseDir = mode === '2d' ? '/assets/parts_2d' : '/assets/parts_pixel';
+    const want = (cond, path) => (cond ? loadPilotPartImg(`${baseDir}/${path}`) : Promise.resolve(null));
 
     const [
       spcImg,
@@ -924,40 +951,63 @@ async function buildModularPilotSheets(tokenNum, traitsObj = null) {
       hoodImg,
       mthImg,
       eywImg,
+      eywTintImg,
       hatImg,
     ] = await Promise.all([
-      loadPilotPartImg(`${baseDir}/species/${spcCode}.png`),
-      keepsAddon ? loadPilotPartImg(`${baseDir}/species/${addonCode}.png`) : Promise.resolve(null),
-      loadPilotPartImg(`${baseDir}/eyes/${eyeCode}.png`),
-      loadPilotPartImg(`${baseDir}/eyes/EYE-BLINK.png`),
-      loadPilotPartImg(`${baseDir}/eyes/EYE-SHOCK.png`),
-      cloCode !== 'None' ? loadPilotPartImg(`${baseDir}/clothes/${cloCode}.png`) : Promise.resolve(null),
-      isHood ? loadPilotPartImg(`${baseDir}/clothes/${cloCode}__hood.png`) : Promise.resolve(null),
-      mthCode !== 'None' ? loadPilotPartImg(`${baseDir}/mouth/${mthCode}.png`) : Promise.resolve(null),
-      eywCode !== 'None' ? loadPilotPartImg(`${baseDir}/eyewear/${eywCode}.png`) : Promise.resolve(null),
-      hatFile ? loadPilotPartImg(`${baseDir}/hat/${hatFile}`) : Promise.resolve(null),
+      want(true, `species/${spcCode}.png`),
+      want(keepsAddon, `species/${addonCode}.png`),
+      want(true, `eyes/${eyeCode}.png`),
+      want(true, 'eyes/EYE-BLINK.png'),
+      want(true, 'eyes/EYE-SHOCK.png'),
+      want(cloCode !== 'None', `clothes/${cloCode}.png`),
+      want(isHood, `clothes/${cloCode}__hood.png`),
+      want(mthCode !== 'None', `mouth/${mthCode}.png`),
+      want(eywCode !== 'None', `eyewear/${eywCode}.png`),
+      want(Boolean(lensTint) && mode === '2d', `eyewear/${eywCode}__tint.png`),
+      want(Boolean(hatFile), `hat/${hatFile}`),
     ]);
+
+    // Every selected layer must be present, otherwise the sheet is not used or cached (caller retries)
+    const complete =
+      Boolean(spcImg && eyeNormImg) &&
+      (!keepsAddon || Boolean(addonImg)) &&
+      (cloCode === 'None' || Boolean(cloImg)) &&
+      (!isHood || Boolean(hoodImg)) &&
+      (mthCode === 'None' || Boolean(mthImg)) &&
+      (eywCode === 'None' || Boolean(eywImg)) &&
+      (!lensTint || mode !== '2d' || Boolean(eywTintImg)) &&
+      (!hatFile || Boolean(hatImg));
+    if (!complete) return null;
 
     const canvas = document.createElement('canvas');
     canvas.width = size * 3;
     canvas.height = size;
-    const cctx = canvas.getContext('2d');
+    // Pixel sheets with a clear lens are read back once per frame for the lens tint
+    const cctx = canvas.getContext('2d', { willReadFrequently: Boolean(lensTint) && mode === 'pixel' });
     cctx.imageSmoothingEnabled = mode === '2d';
 
     const eyeFrames = [eyeNormImg, eyeBlinkImg || eyeNormImg, eyeShockImg || eyeNormImg];
     const isOpaqueEyw2D = mode === '2d' && (rules.opaque_eyewear_2d || []).includes(eywCode);
     const isLeftOccluded2D =
       mode === '2d' && (rules.left_eye_occluding_eyewear_2d || []).includes(eywCode);
+    const skinSet = new Set(rules.species_skin_rgb?.[spcCode] || ['#E8D0AC', '#FCF2DC']);
+    const tintRgb = lensTint ? hexToRgbArr(lensTint.tint) : null;
+    const tintScratch = eywTintImg ? document.createElement('canvas') : null;
+    if (tintScratch) {
+      tintScratch.width = size;
+      tintScratch.height = size;
+    }
 
     for (let f = 0; f < 3; f++) {
       const ox = f * size;
-      // 1. Species base
-      if (spcImg) cctx.drawImage(spcImg, ox, 0, size, size);
-      // 2. Species add-on (Rule R4)
+      // 1. Species add-on (traits_v3 category "back": behind the base so the head outline stays on top)
       if (addonImg) cctx.drawImage(addonImg, ox, 0, size, size);
+      // 2. Species base
+      cctx.drawImage(spcImg, ox, 0, size, size);
       // 3. Eyes
       const eImg = eyeFrames[f];
-      if (eImg && !isOpaqueEyw2D) {
+      const eyesDrawn = Boolean(eImg) && !isOpaqueEyw2D;
+      if (eyesDrawn) {
         if (isLeftOccluded2D) {
           cctx.drawImage(eImg, 174, 0, size - 174, size, ox + 174, 0, size - 174, size);
         } else {
@@ -968,15 +1018,40 @@ async function buildModularPilotSheets(tokenNum, traitsObj = null) {
       if (cloImg) cctx.drawImage(cloImg, ox, 0, size, size);
       // 5. Mouth prop
       if (mthImg) cctx.drawImage(mthImg, ox, 0, size, size);
-      // 6. Eyewear
+      // 6. Eyewear (clear lenses: only face skin seen through the glass takes the lens tint, eyes stay clear)
+      if (tintScratch) {
+        const tctx = tintScratch.getContext('2d');
+        tctx.globalCompositeOperation = 'copy';
+        tctx.drawImage(eywTintImg, 0, 0, size, size);
+        if (eyesDrawn) {
+          tctx.globalCompositeOperation = 'destination-out';
+          tctx.drawImage(eImg, 0, 0, size, size);
+        }
+        tctx.globalCompositeOperation = 'source-over';
+        cctx.drawImage(tintScratch, ox, 0);
+      }
       if (eywImg) cctx.drawImage(eywImg, ox, 0, size, size);
+      if (tintRgb && mode === 'pixel') {
+        const frame = cctx.getImageData(ox, 0, size, size);
+        const px = frame.data;
+        for (const [hx, hy] of lensTint.holes) {
+          const i = (hy * size + hx) * 4;
+          if (skinSet.has(rgbToHex(px[i], px[i + 1], px[i + 2]))) {
+            px[i] = tintRgb[0];
+            px[i + 1] = tintRgb[1];
+            px[i + 2] = tintRgb[2];
+            px[i + 3] = 255;
+          }
+        }
+        cctx.putImageData(frame, ox, 0);
+      }
       // 7. Hood companion layer (above eyewear, below hat)
       if (hoodImg) cctx.drawImage(hoodImg, ox, 0, size, size);
       // 8. Hat
       if (hatImg) cctx.drawImage(hatImg, ox, 0, size, size);
-      // 9. Mouth lower half (y >= 180 in 2D / y >= 30 in Pixel) drawn over hat/hood flaps!
+      // 9. Mouth prop again from the first mouth-zone row down, over hat/hood side pieces (harness.compose)
       if (mthImg && (hatImg || hoodImg)) {
-        const topY = mode === '2d' ? 180 : 30;
+        const topY = mode === '2d' ? mouthFrontRow * 6 : mouthFrontRow;
         cctx.drawImage(mthImg, 0, topY, size, size - topY, ox, topY, size, size - topY);
       }
     }
@@ -987,6 +1062,7 @@ async function buildModularPilotSheets(tokenNum, traitsObj = null) {
     composeModeSheet('2d'),
     composeModeSheet('pixel'),
   ]);
+  if (!sheet2D || !sheetPixel) return null;
   const res = { sheet2D, sheetPixel };
   PILOT_COMPOSED_CACHE.set(cacheKey, res);
   return res;
@@ -994,15 +1070,20 @@ async function buildModularPilotSheets(tokenNum, traitsObj = null) {
 
 function ensureDefaultPilotSheets() {
   if (MOTION_STATE.defaultPilotSheetsLoaded) return;
+  if (performance.now() < (MOTION_STATE.defaultPilotRetryAt || 0)) return;
   MOTION_STATE.defaultPilotSheetsLoaded = true;
   buildModularPilotSheets(null, null).then((res) => {
-    if (res) {
-      MOTION_STATE.defaultPilot2DSheet = res.sheet2D;
-      MOTION_STATE.defaultPilotPixelSheet = res.sheetPixel;
-      if (!UFO_GAME.hasNft) {
-        UFO_GAME.pilot2DSheet = res.sheet2D;
-        UFO_GAME.pilotPixelSheet = res.sheetPixel;
-      }
+    if (!res) {
+      // Allow another attempt in a few seconds instead of leaving the default pilot missing for the session
+      MOTION_STATE.defaultPilotSheetsLoaded = false;
+      MOTION_STATE.defaultPilotRetryAt = performance.now() + 3000;
+      return;
+    }
+    MOTION_STATE.defaultPilot2DSheet = res.sheet2D;
+    MOTION_STATE.defaultPilotPixelSheet = res.sheetPixel;
+    if (!UFO_GAME.hasNft) {
+      UFO_GAME.pilot2DSheet = res.sheet2D;
+      UFO_GAME.pilotPixelSheet = res.sheetPixel;
     }
   });
 }
@@ -1106,27 +1187,16 @@ function boardUfoWithoutNft(startEscape = true) {
   }
 }
 
-async function setUfoPilotTokenId(tokenNum, triggerPfp = true, startEscape = false) {
-  if (tokenNum === null || tokenNum === undefined) {
-    boardUfoWithoutNft(startEscape);
-    return;
-  }
-  const raw = String(tokenNum).trim().replace(/^#/, '').replace(/^P/i, '');
-  if (raw === '' || !/^\d+$/.test(raw)) {
-    boardUfoWithoutNft(startEscape);
-    return;
-  }
-  MOTION_STATE.skippedEscape = false;
-  const num = Math.max(0, Math.min(9999, parseInt(raw, 10)));
-  UFO_GAME.hasNft = true;
-  UFO_GAME.pilotTokenId = num;
-
-  // Fetch token metadata to extract all 6 character categories (Species, Clothes, Eyes, Mouth, Eyewear, Hat)
-  // Excludes Background, Aura, Back in game mode
+// Fetch token metadata (Species, Clothes, Eyes, Mouth, Eyewear, Hat; Background/Aura/Back are not worn in the
+// cockpit) and compose the pilot. Incomplete loads are retried a few times instead of showing a partial pilot.
+async function loadPilotForToken(num, attempt = 0) {
+  if (UFO_GAME.pilotTokenId !== num) return;
+  let sheets = null;
   try {
     const res = await fetch(`/api/token/${num}`);
     if (res.ok) {
       const tok = await res.json();
+      if (UFO_GAME.pilotTokenId !== num) return;
       const traits = tok?.traits || {};
       const spName = traits.Species || 'Classic';
       const mappedId = SPECIES_NAME_TO_ID[spName] || '01';
@@ -1145,16 +1215,49 @@ async function setUfoPilotTokenId(tokenNum, triggerPfp = true, startEscape = fal
 
       ensureSpeciesSprite(mappedId);
       getHero2DSheetForSpecies(mappedId);
-
-      const sheets = await buildModularPilotSheets(num, traits);
-      if (sheets && UFO_GAME.pilotTokenId === num) {
-        UFO_GAME.pilot2DSheet = sheets.sheet2D;
-        UFO_GAME.pilotPixelSheet = sheets.sheetPixel;
-      }
+      sheets = await buildModularPilotSheets(num, traits);
     }
   } catch (e) {
-    // Fallback to '01' if offline
+    sheets = null;
   }
+  if (UFO_GAME.pilotTokenId !== num) return;
+  if (sheets) {
+    UFO_GAME.pilot2DSheet = sheets.sheet2D;
+    UFO_GAME.pilotPixelSheet = sheets.sheetPixel;
+  } else if (attempt < 3) {
+    setTimeout(() => {
+      loadPilotForToken(num, attempt + 1).then(() => updateUfoBoardingDockUI());
+    }, 1200 * (attempt + 1));
+  }
+}
+
+async function setUfoPilotTokenId(tokenNum, triggerPfp = true, startEscape = false) {
+  if (tokenNum === null || tokenNum === undefined) {
+    boardUfoWithoutNft(startEscape);
+    return;
+  }
+  const raw = String(tokenNum).trim().replace(/^#/, '').replace(/^P/i, '');
+  if (raw === '' || !/^\d+$/.test(raw)) {
+    boardUfoWithoutNft(startEscape);
+    return;
+  }
+  const num = parseInt(raw, 10);
+  if (num > 9999) {
+    // Out of range must never be clamped onto someone else's number (e.g. 12345 -> #9999)
+    boardUfoWithoutNft(startEscape);
+    return;
+  }
+  MOTION_STATE.skippedEscape = false;
+  UFO_GAME.hasNft = true;
+  UFO_GAME.pilotTokenId = num;
+
+  // Show the new pilot immediately when cached; otherwise drop the previous token's sheets so the cockpit
+  // never shows another NFT's parts while this one loads (the species-coloured hero sprite fills in)
+  const cachedSheets = PILOT_COMPOSED_CACHE.get(`NFT_${num}`);
+  UFO_GAME.pilot2DSheet = cachedSheets ? cachedSheets.sheet2D : null;
+  UFO_GAME.pilotPixelSheet = cachedSheets ? cachedSheets.sheetPixel : null;
+
+  await loadPilotForToken(num, 0);
 
   updateUfoBoardingDockUI();
 
@@ -1185,23 +1288,22 @@ function getNftDisplayName(item) {
 
 function buildLeaderboardRowsHtml(items, showBoardAction = true) {
   if (!items || items.length === 0) {
-    return `<div style="padding:32px; text-align:center; color:#94a3b8; font-weight:800;">${
-      CURRENT_LANG === 'ko'
-        ? '검색 조건에 해당하는 최고점 기록이 없습니다.'
-        : 'No matching high-score records found.'
+    return `<div class="empty-state">${
+      CURRENT_LANG === 'ko' ? '조건에 맞는 기록이 없습니다.' : 'No matching records.'
     }</div>`;
   }
   return items
     .map((item) => {
-      const medal = `${item.rank}위`;
+      const medal = CURRENT_LANG === 'ko' ? `${item.rank}위` : `#${item.rank}`;
       const topClass = item.rank <= 3 ? `rank-top-${item.rank}` : '';
       const nftName = getNftDisplayName(item);
+      // "Pixel Penguin " is shared by every entry; phones hide it so the number stays visible
+      const namePrefix = nftName.startsWith('Pixel Penguin ') ? 'Pixel Penguin ' : '';
+      const nameRest = nftName.slice(namePrefix.length);
       const spText = item.species || 'Classic';
-      const subText =
-        CURRENT_LANG === 'ko'
-          ? `캐릭터 스킨: ${spText} · 개인 최고점 기록 (NFT 희귀도 무관 · 유희용)`
-          : `Character Skin: ${spText} · Personal High Score (Unrelated to NFT Rarity)`;
-      const goLabel = CURRENT_LANG === 'ko' ? '캐릭터 보기' : 'View';
+      const subText = spText;
+      const scoreText = `${Number(item.score).toLocaleString()} PTS`;
+      const goLabel = CURRENT_LANG === 'ko' ? '보기' : 'View';
       const boardLabel = CURRENT_LANG === 'ko' ? '이 번호로 플레이' : 'Play';
 
       return `
@@ -1210,12 +1312,12 @@ function buildLeaderboardRowsHtml(items, showBoardAction = true) {
           <img src="${item.image_url}" alt="${escapeHtml(nftName)}" class="rank-avatar-thumb" loading="lazy" />
           <div class="rank-nft-info">
             <div class="rank-nft-title">
-              <span>${escapeHtml(nftName)}</span>
-              <span class="pill-tag" style="font-size:10.5px; padding:2px 6px;">${escapeHtml(item.id)}</span>
+              <span><span class="rank-name-prefix">${escapeHtml(namePrefix)}</span>${escapeHtml(nameRest)}</span>
+              <span class="pill-tag">${escapeHtml(item.id)}</span>
             </div>
             <div class="rank-nft-sub">${escapeHtml(subText)}</div>
           </div>
-          <div class="rank-score-val">최고점 ${Number(item.score).toLocaleString()} PTS</div>
+          <div class="rank-score-val">${scoreText}</div>
           ${
             showBoardAction
               ? `<div class="rank-action-group">
@@ -1281,11 +1383,10 @@ function renderRankingPageList() {
       const lastRank = pageItems[pageItems.length - 1].rank;
       rangeEl.textContent =
         CURRENT_LANG === 'ko'
-          ? `현재 표시: ${firstRank}위 ~ ${lastRank}위 (${CURRENT_RANKING_PAGE} / ${RANKING_TOTAL_PAGES} 페이지 · 10명씩 표시)`
-          : `Showing Rank #${firstRank} – #${lastRank} (Page ${CURRENT_RANKING_PAGE} / ${RANKING_TOTAL_PAGES} · 10 per page)`;
+          ? `${firstRank}–${lastRank}위 · ${CURRENT_RANKING_PAGE}/${RANKING_TOTAL_PAGES} 페이지`
+          : `#${firstRank}–${lastRank} · Page ${CURRENT_RANKING_PAGE}/${RANKING_TOTAL_PAGES}`;
     } else {
-      rangeEl.textContent =
-        CURRENT_LANG === 'ko' ? '검색 결과: 0명' : 'Search Results: 0';
+      rangeEl.textContent = CURRENT_LANG === 'ko' ? '결과 없음' : 'No results';
     }
   }
 
@@ -1317,14 +1418,11 @@ function renderRankingPageList() {
   const topScoreEl = document.getElementById('ranking-kpi-top-score');
   const topCount = Math.min(100, RANKING_PAGE_CACHE.length);
   if (totalEl) {
-    totalEl.textContent =
-      CURRENT_LANG === 'ko'
-        ? `최고점만 표시 (1위 ~ ${topCount}위)`
-        : `High Score Only (TOP ${topCount})`;
+    totalEl.textContent = `TOP ${topCount}`;
   }
   if (RANKING_PAGE_CACHE.length > 0) {
     const first = RANKING_PAGE_CACHE[0];
-    if (topNameEl) topNameEl.textContent = `${getNftDisplayName(first)} (${first.id})`;
+    if (topNameEl) topNameEl.textContent = getNftDisplayName(first).replace(/^Pixel Penguin /, '');
     if (topScoreEl) topScoreEl.textContent = `${Number(first.score).toLocaleString()} PTS`;
   }
 }
@@ -1332,8 +1430,8 @@ function renderRankingPageList() {
 async function fetchAndRenderRankingPage() {
   const listEl = document.getElementById('ranking-page-list-body');
   if (listEl && RANKING_PAGE_CACHE.length === 0) {
-    listEl.innerHTML = `<div style="padding:32px; text-align:center; color:#94a3b8; font-weight:800;">${
-      CURRENT_LANG === 'ko' ? '번호별 최고점 순위를 불러오는 중...' : 'Loading High Scores...'
+    listEl.innerHTML = `<div class="empty-state">${
+      CURRENT_LANG === 'ko' ? '불러오는 중…' : 'Loading…'
     }</div>`;
   }
   try {
@@ -1345,7 +1443,9 @@ async function fetchAndRenderRankingPage() {
     }
   } catch (e) {
     if (listEl) {
-      listEl.innerHTML = `<div style="padding:32px; text-align:center; color:#fb7185;">게임 순위 로드 실패</div>`;
+      listEl.innerHTML = `<div class="empty-state error">${
+        CURRENT_LANG === 'ko' ? '순위를 불러오지 못했습니다. 잠시 후 새로고침해 주세요.' : 'Could not load rankings. Try refreshing.'
+      }</div>`;
     }
   }
 }
@@ -1445,10 +1545,14 @@ function drawUfoSpaceshipWithPilot(
   ctx.stroke();
 
   // 3. UPPER-BODY PENGUIN PILOT (Non-Pixel 2D Smooth Cartoon with All 6 Character Part Categories!)
-  //    Aligned in 288x288 (48x48 * 6) space at (-44, -71, 80, 80) so Waist (y=288) tucks cleanly behind Cockpit Collar (y=+9)
-  //    and Head + Tallest Hats fit 100% inside the -72 Glass Dome Arch!
+  //    288x288 frame drawn into PILOT_DRAW_RECT so the waist tucks behind the cockpit collar (y=+9)
+  //    and the tallest hats stay under the glass dome arch.
+  //    An NFT pilot whose sheet is still loading falls back to its species-coloured hero sprite, never to
+  //    another penguin's parts.
   ensureDefaultPilotSheets();
-  const custom2D = UFO_GAME.pilot2DSheet || MOTION_STATE.defaultPilot2DSheet;
+  const custom2D = UFO_GAME.hasNft
+    ? UFO_GAME.pilot2DSheet
+    : UFO_GAME.pilot2DSheet || MOTION_STATE.defaultPilot2DSheet;
   const f3 =
     anim.frameIdx === 6
       ? 2
@@ -1463,7 +1567,8 @@ function drawUfoSpaceshipWithPilot(
 
   ctx.imageSmoothingEnabled = true;
   if (custom2D) {
-    ctx.drawImage(custom2D, f3 * 288, 0, 288, 288, -44, -71, 80, 80);
+    const r = PILOT_DRAW_RECT;
+    ctx.drawImage(custom2D, f3 * 288, 0, 288, 288, r.x, r.y, r.size, r.size);
   } else if (sheet2D) {
     const pilotSize = 86;
     const srcCropH = 220;
@@ -1649,21 +1754,14 @@ function drawPixelUfoSpaceshipWithPilot(
   ctx.clip();
 
   ensureDefaultPilotSheets();
-  const customPx = UFO_GAME.pilotPixelSheet || MOTION_STATE.defaultPilotPixelSheet;
-  const f3 = isShocked ? 2 : anim.isBlinking ? 1 : 0;
+  const customPx = UFO_GAME.hasNft
+    ? UFO_GAME.pilotPixelSheet
+    : UFO_GAME.pilotPixelSheet || MOTION_STATE.defaultPilotPixelSheet;
+  const f3 = isShocked ? 2 : anim.frameIdx === 1 ? 1 : 0;
 
   if (customPx) {
-    ctx.drawImage(
-      customPx,
-      f3 * 48,
-      0,
-      48,
-      48,
-      -44,
-      -71,
-      80,
-      80
-    );
+    const r = PILOT_DRAW_RECT;
+    ctx.drawImage(customPx, f3 * 48, 0, 48, 48, r.x, r.y, r.size, r.size);
   } else {
     const pilotSize = 86;
     const srcCropH = 220;
@@ -3024,14 +3122,21 @@ function initPixelMotionStudio() {
     const raw = (sourceInput ? sourceInput.value : s1Input?.value || pilotInput?.value || '').trim();
     if (raw === '') {
       boardUfoWithoutNft(true);
-    } else {
-      const n = parseInt(raw, 10);
-      if (!Number.isNaN(n)) {
-        setUfoPilotTokenId(n, true, true);
-      } else {
-        boardUfoWithoutNft(true);
-      }
+      return;
     }
+    const n = /^\d+$/.test(raw) ? parseInt(raw, 10) : NaN;
+    if (Number.isNaN(n) || n > 9999) {
+      // Keep the prompt open: an invalid number must not start an unrecorded run silently
+      const subEl = document.getElementById('s1-overlay-sub');
+      if (subEl) {
+        subEl.textContent =
+          CURRENT_LANG === 'ko' ? '0~9999 사이 번호만 기록됩니다.' : 'Only numbers 0–9999 can be recorded.';
+        subEl.style.color = '#fb7185';
+      }
+      sourceInput?.focus();
+      return;
+    }
+    setUfoPilotTokenId(n, true, true);
   };
 
   if (pilotInput) {
@@ -3055,22 +3160,28 @@ function initPixelMotionStudio() {
   }
 
   if (s1Input) {
+    let s1InputTimer = null;
     s1Input.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
         e.preventDefault();
+        clearTimeout(s1InputTimer);
         handleEscapeYesWithOptionalNft(s1Input);
       }
     });
+    // Preview the typed number once typing pauses (not one compose per keystroke: 9 -> 99 -> 998 -> 9985)
     s1Input.addEventListener('input', () => {
       if (pilotInput && pilotInput.value !== s1Input.value) {
         pilotInput.value = s1Input.value;
       }
-      const raw = s1Input.value.trim();
-      if (raw !== '' && !Number.isNaN(parseInt(raw, 10))) {
-        setUfoPilotTokenId(parseInt(raw, 10), false, false);
-      } else {
-        boardUfoWithoutNft(false);
-      }
+      clearTimeout(s1InputTimer);
+      s1InputTimer = setTimeout(() => {
+        const raw = s1Input.value.trim();
+        if (raw !== '' && !Number.isNaN(parseInt(raw, 10))) {
+          setUfoPilotTokenId(parseInt(raw, 10), false, false);
+        } else {
+          boardUfoWithoutNft(false);
+        }
+      }, 260);
     });
   }
 
@@ -4307,6 +4418,10 @@ function applyLanguage(lang) {
   updateUfoBoardingDockUI();
   updateFullscreenExitOrCodexButton();
   renderRankingPageList();
+  if (APP_CONFIG) {
+    renderTraitDirectory();
+    fetchExplorerTokens();
+  }
   setIntroScene(MOTION_STATE.sceneIdx, false);
 }
 
@@ -4455,13 +4570,9 @@ function updateMobileTraitFilterBtnLabel() {
   });
   const span = toggleBtn.querySelector('span');
   if (span) {
-    if (activeCount > 0) {
-      span.textContent = CURRENT_LANG === 'ko' ? `파츠 필터 (${activeCount}개 적용)` : `Filters (${activeCount})`;
-      toggleBtn.classList.add('active-toggle');
-    } else {
-      span.textContent = CURRENT_LANG === 'ko' ? '파츠 필터 (9종)' : 'Trait Filters (9)';
-      toggleBtn.classList.remove('active-toggle');
-    }
+    const base = CURRENT_LANG === 'ko' ? '파츠 필터' : 'Filters';
+    span.textContent = activeCount > 0 ? `${base} · ${activeCount}` : base;
+    toggleBtn.classList.toggle('active-toggle', activeCount > 0);
   }
 }
 
@@ -4484,7 +4595,7 @@ function buildExplorerTraitDropdowns() {
     return `
       <div class="trait-select-box">
         <label for="filter-cat-${cat}" data-ko="${escapeHtml(labelKo)}" data-en="${escapeHtml(cat)}">${escapeHtml(labelText)}</label>
-        <select id="filter-cat-${cat}" data-cat="${cat}" class="filter-select exp-cat-select" style="padding:7px 8px; font-size:12px;">
+        <select id="filter-cat-${cat}" data-cat="${cat}" class="filter-select exp-cat-select">
           <option value="" data-ko="전체" data-en="All">${allText}</option>
           ${optionsHtml}
         </select>
@@ -4534,8 +4645,8 @@ async function fetchExplorerTokens() {
     if (countEl) {
       countEl.innerHTML =
         CURRENT_LANG === 'ko'
-          ? `총 <strong>${data.total.toLocaleString()}</strong>마리 검색됨 (페이지 ${data.page} / ${TOTAL_PAGES})`
-          : `Showing <strong>${data.total.toLocaleString()}</strong> Penguins (Page ${data.page} of ${TOTAL_PAGES})`;
+          ? `<strong>${data.total.toLocaleString()}</strong>마리 · ${data.page}/${TOTAL_PAGES} 페이지`
+          : `<strong>${data.total.toLocaleString()}</strong> penguins · Page ${data.page}/${TOTAL_PAGES}`;
     }
 
     document.getElementById('page-indicator').textContent = `${data.page} / ${TOTAL_PAGES}`;
@@ -4545,9 +4656,9 @@ async function fetchExplorerTokens() {
     document.getElementById('page-last-btn').disabled = data.page >= TOTAL_PAGES;
 
     if (!data.items || data.items.length === 0) {
-      grid.innerHTML = `<div style="grid-column:1/-1; text-align:center; padding:48px 20px; color:var(--text-secondary);">
-        검색 조건에 일치하는 픽셀 펭귄이 없습니다. 필터를 초기화해 보세요.
-      </div>`;
+      grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">${
+        CURRENT_LANG === 'ko' ? '맞는 펭귄이 없습니다. 필터를 초기화해 보세요.' : 'No penguins match. Try resetting the filters.'
+      }</div>`;
       return;
     }
 
@@ -4571,8 +4682,8 @@ async function fetchExplorerTokens() {
           </div>
           <div class="nft-card-title" data-ko="${escapeHtml(subKo)}" data-en="${escapeHtml(subEn)}">${escapeHtml(subtitle)}</div>
           <div class="nft-card-footer">
-            <span class="score-tag" style="font-weight:800; color:#e2e8f0;">${item.id}</span>
-            <span class="score-tag" style="color:var(--accent-cyan); font-weight:800;">${Number(item.rarity_score).toLocaleString()} pts</span>
+            <span class="score-tag" style="color:var(--text);">${item.id}</span>
+            <span class="score-tag">${Number(item.rarity_score).toLocaleString()} pts</span>
           </div>
         </button>
       `;
@@ -4617,8 +4728,8 @@ function renderTraitDirectory() {
 
   tabsWrap.innerHTML = NINE_CATS.map(
     (cat) => `
-    <button type="button" class="lang-btn ${cat === ACTIVE_TRAIT_TAB ? 'active' : ''}" data-tcat="${cat}" style="border:1px solid var(--border-subtle);">
-      ${cat} (${(APP_CONFIG.trait_summary[cat] || []).length})
+    <button type="button" class="trait-tab-btn ${cat === ACTIVE_TRAIT_TAB ? 'active' : ''}" data-tcat="${cat}">
+      ${escapeHtml(catLabel(cat))} <span class="trait-tab-count">${(APP_CONFIG.trait_summary[cat] || []).length}</span>
     </button>
   `
   ).join('');
@@ -4634,17 +4745,26 @@ function renderTraitDirectory() {
   gridWrap.innerHTML = rows
     .map(
       (r) => `
-    <div class="trait-b-item" style="cursor:pointer;" onclick="filterExplorerByTrait('${escapeHtml(ACTIVE_TRAIT_TAB)}', '${escapeHtml(r.value).replace(/'/g, "\\'")}')">
-      <div class="trait-b-cat">${escapeHtml(ACTIVE_TRAIT_TAB)}</div>
+    <button type="button" class="trait-b-item is-link" onclick="filterExplorerByTrait('${escapeHtml(ACTIVE_TRAIT_TAB)}', '${escapeHtml(r.value).replace(/'/g, "\\'")}')">
       <div class="trait-b-val">${escapeHtml(r.value)}</div>
-      <div class="trait-b-score" style="display:flex; justify-content:space-between; align-items:center;">
-        <span>${r.count.toLocaleString()}마리 (${r.pct}%)</span>
-        <strong style="color:var(--accent-cyan);">+${Number(r.score).toLocaleString()} pts</strong>
+      <div class="trait-b-score">
+        <span>${formatTraitCount(r.count, r.pct)}</span>
+        <strong>+${Number(r.score).toLocaleString()}</strong>
       </div>
-    </div>
+    </button>
   `
     )
     .join('');
+}
+
+function catLabel(cat) {
+  return CURRENT_LANG === 'ko' ? CAT_LABELS_KO[cat] || cat : cat;
+}
+
+function formatTraitCount(count, pct) {
+  return CURRENT_LANG === 'ko'
+    ? `${Number(count).toLocaleString()}마리 · ${pct}%`
+    : `${Number(count).toLocaleString()} · ${pct}%`;
 }
 
 // High-Res 3072x3072 PNG Download via 64x NEAREST Integer Upscale
@@ -4679,7 +4799,9 @@ async function openTokenModal(tokenNum) {
   if (!modal || !body) return;
 
   modal.classList.add('open');
-  body.innerHTML = `<div style="grid-column:1/-1; padding:40px; text-align:center;">Loading Token #${tokenNum}...</div>`;
+  body.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">#${Number(tokenNum)} ${
+    CURRENT_LANG === 'ko' ? '불러오는 중…' : 'loading…'
+  }</div>`;
 
   try {
     const res = await fetch(`/api/token/${tokenNum}`);
@@ -4689,26 +4811,25 @@ async function openTokenModal(tokenNum) {
     const traitsHtml = tok.trait_breakdown
       .map(
         (b) => `
-      <div class="trait-b-item" style="cursor:pointer;" onclick="closeTokenModal(); filterExplorerByTrait('${escapeHtml(b.trait_type)}', '${escapeHtml(b.value).replace(/'/g, "\\'")}')">
-        <div class="trait-b-cat">${escapeHtml(b.trait_type)}</div>
+      <button type="button" class="trait-b-item is-link" onclick="closeTokenModal(); filterExplorerByTrait('${escapeHtml(b.trait_type)}', '${escapeHtml(b.value).replace(/'/g, "\\'")}')">
+        <div class="trait-b-cat">${escapeHtml(catLabel(b.trait_type))}</div>
         <div class="trait-b-val">${escapeHtml(b.value)}</div>
-        <div class="trait-b-score" style="display:flex; justify-content:space-between; align-items:center;">
-          <span>${b.count.toLocaleString()}마리 (${b.pct}%)</span>
-          <strong style="color:var(--accent-cyan);">+${Number(b.score).toLocaleString()} pts</strong>
+        <div class="trait-b-score">
+          <span>${formatTraitCount(b.count, b.pct)}</span>
+          <strong>+${Number(b.score).toLocaleString()}</strong>
         </div>
-      </div>
+      </button>
     `
       )
       .join('');
 
+    const dlIcon = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
     const downloadBtnHtml = isSpecial
-      ? `<a href="${tok.full_image_url}" download="${tok.id}.gif" class="btn-primary" style="text-decoration:none; width:100%; justify-content:center;">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          <span data-ko="1254×1254 원본 이미지 다운로드" data-en="Download 1254×1254 Original GIF">${CURRENT_LANG === 'ko' ? '1254×1254 원본 이미지 다운로드' : 'Download 1254×1254 Original GIF'}</span>
+      ? `<a href="${tok.full_image_url}" download="${tok.id}.gif" class="btn-primary" style="text-decoration:none; width:100%;">
+          ${dlIcon}<span>${CURRENT_LANG === 'ko' ? '원본 GIF 저장' : 'Save original GIF'}</span>
          </a>`
-      : `<button type="button" class="btn-primary" style="width:100%; justify-content:center;" onclick="downloadHighRes3072('${tok.id}', '${tok.pixel_48_url}')">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          <span data-ko="3072×3072 고해상도 PNG 다운로드 (64× NEAREST)" data-en="Download 3072×3072 High-Res PNG (64× NEAREST)">${CURRENT_LANG === 'ko' ? '3072×3072 고해상도 PNG 다운로드 (64× NEAREST)' : 'Download 3072×3072 High-Res PNG (64× NEAREST)'}</span>
+      : `<button type="button" class="btn-primary" style="width:100%;" onclick="downloadHighRes3072('${tok.id}', '${tok.pixel_48_url}')">
+          ${dlIcon}<span>${CURRENT_LANG === 'ko' ? '고해상도 PNG 저장 (3072px)' : 'Save PNG (3072px)'}</span>
          </button>`;
 
     const titleKo = tok.name_ko || tok.name;
@@ -4723,11 +4844,11 @@ async function openTokenModal(tokenNum) {
         <div style="display:flex; flex-direction:column; gap:8px; margin-top:12px;">
           ${downloadBtnHtml}
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-            <button type="button" class="btn-secondary" style="justify-content:center; padding:9px;" onclick="loadPfpPreview(${tok.edition}); closeTokenModal(); scrollToSection('top');" data-ko="PFP 시뮬레이터 장착" data-en="Try in PFP Simulator">
-              ${CURRENT_LANG === 'ko' ? 'PFP 시뮬레이터 장착' : 'Try in PFP Simulator'}
+            <button type="button" class="btn-secondary" style="padding:9px;" onclick="loadPfpPreview(${tok.edition}); closeTokenModal(); scrollToSection('top');">
+              ${CURRENT_LANG === 'ko' ? '프사로 써보기' : 'Try as PFP'}
             </button>
-            <a href="/api/metadata/${tok.id}.json" target="_blank" rel="noopener" class="btn-secondary" style="text-decoration:none; justify-content:center; padding:9px;" data-ko="{ } 온체인 JSON 보기" data-en="{ } View On-Chain JSON">
-              ${CURRENT_LANG === 'ko' ? '{ } 온체인 JSON 보기' : '{ } View On-Chain JSON'}
+            <a href="/api/metadata/${tok.id}.json" target="_blank" rel="noopener" class="btn-secondary" style="text-decoration:none; padding:9px;">
+              ${CURRENT_LANG === 'ko' ? '메타데이터' : 'Metadata'}
             </a>
           </div>
         </div>
@@ -4740,39 +4861,41 @@ async function openTokenModal(tokenNum) {
           <span class="pill-tag gold">${Number(tok.rarity_score).toLocaleString()} pts</span>
         </div>
 
-        <h2 id="modal-token-title" style="font-size:22px; font-weight:900; margin-bottom:10px;" data-ko="${escapeHtml(titleKo)}" data-en="${escapeHtml(titleEn)}">${escapeHtml(titleText)}</h2>
+        <h2 id="modal-token-title" style="margin-bottom:12px;" data-ko="${escapeHtml(titleKo)}" data-en="${escapeHtml(titleEn)}">${escapeHtml(titleText)}</h2>
 
         <div class="spec-rows-stack" style="margin-bottom:12px;">
           <div class="spec-row">
-            <span class="spec-label" data-ko="번호 (Token ID)" data-en="Token ID">${CURRENT_LANG === 'ko' ? '번호 (Token ID)' : 'Token ID'}</span>
-            <span class="spec-value">${tok.id} (#${tok.edition})</span>
+            <span class="spec-label">${CURRENT_LANG === 'ko' ? '번호' : 'Token ID'}</span>
+            <span class="spec-value">${tok.id} · #${tok.edition}</span>
           </div>
           <div class="spec-row">
-            <span class="spec-label" data-ko="희귀도 순위 · 점수 (rarity.tools)" data-en="Rarity Rank · Score (rarity.tools)">${CURRENT_LANG === 'ko' ? '희귀도 순위 · 점수 (rarity.tools)' : 'Rarity Rank · Score (rarity.tools)'}</span>
-            <span class="spec-value" style="color:var(--accent-cyan);">Rank #${tok.rarity_rank} (${Number(tok.rarity_score).toLocaleString()} pts)</span>
+            <span class="spec-label">${CURRENT_LANG === 'ko' ? '희귀도 순위' : 'Rarity rank'}</span>
+            <span class="spec-value">#${Number(tok.rarity_rank).toLocaleString()} · ${Number(tok.rarity_score).toLocaleString()} pts</span>
           </div>
           <div class="spec-row">
-            <span class="spec-label" data-ko="장착 파츠 수 (특성 개수 점수)" data-en="Active Traits (Trait Count Score)">${CURRENT_LANG === 'ko' ? '장착 파츠 수 (특성 개수 점수)' : 'Active Traits (Trait Count Score)'}</span>
-            <span class="spec-value">${tok.active_trait_stat.active_count} (${tok.active_trait_stat.pct}% · +${Number(tok.active_trait_stat.score).toLocaleString()} pts)</span>
+            <span class="spec-label">${CURRENT_LANG === 'ko' ? '착용 파츠 수' : 'Traits worn'}</span>
+            <span class="spec-value">${tok.active_trait_stat.active_count} · +${Number(tok.active_trait_stat.score).toLocaleString()} pts</span>
           </div>
           ${
             isSpecial && tok.genesis_bonus > 0
               ? `<div class="spec-row">
-            <span class="spec-label" data-ko="Genesis 1-of-1 Origin 가산점 (#0~#10 순번)" data-en="Genesis 1-of-1 Origin Bonus (#0~#10)">${CURRENT_LANG === 'ko' ? 'Genesis 1-of-1 Origin 가산점 (#0~#10 순번)' : 'Genesis 1-of-1 Origin Bonus (#0~#10)'}</span>
+            <span class="spec-label">${CURRENT_LANG === 'ko' ? 'Genesis 가산점' : 'Genesis bonus'}</span>
             <span class="spec-value" style="color:var(--tier-genesis);">+${Number(tok.genesis_bonus).toLocaleString()} pts</span>
           </div>`
               : ''
           }
         </div>
 
-        <h4 style="font-size:13.5px; font-weight:800; margin-bottom:6px;" data-ko="파츠별 rarity.tools 점수 (전체 수 10,000 ÷ 보유 수)" data-en="Trait Breakdown · rarity.tools Score (10,000 ÷ Count)">${CURRENT_LANG === 'ko' ? '파츠별 rarity.tools 점수 (전체 수 10,000 ÷ 보유 수)' : 'Trait Breakdown · rarity.tools Score (10,000 ÷ Count)'}</h4>
+        <h4 class="modal-sub-title">${CURRENT_LANG === 'ko' ? '파츠별 점수' : 'Trait scores'} <span>rarity.tools · 10,000 ÷ ${CURRENT_LANG === 'ko' ? '보유 수' : 'count'}</span></h4>
         <div class="trait-breakdown-list">
           ${traitsHtml}
         </div>
       </div>
     `;
   } catch (err) {
-    body.innerHTML = `<div style="padding:24px; color:var(--accent-very);">Failed to load token details.</div>`;
+    body.innerHTML = `<div class="empty-state error" style="grid-column:1/-1;">${
+      CURRENT_LANG === 'ko' ? '정보를 불러오지 못했습니다.' : 'Could not load this token.'
+    }</div>`;
   }
 }
 
