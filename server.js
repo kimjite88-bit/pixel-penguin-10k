@@ -407,20 +407,23 @@ app.get('/api/metadata/:id', (req, res) => {
 });
 
 // ============================================================================
-// API: UFO SPACE GAME — NFT NUMBER (#0 ~ #9999) LIVE LEADERBOARD
+// API: UFO SPACE GAME — NFT NUMBER (#0 ~ #9999) HIGH-SCORE ONLY LEADERBOARD
+//      (Purely for fun/entertainment; completely independent of NFT rarity rank!)
+//      IMPORTANT: Blank input never defaults to #0. Only explicit "0"~"9999" records!
 // ============================================================================
 const LEADERBOARD_JSON_PATH = path.join(DATA_DIR, 'ufo_leaderboard.json');
 let ufoLeaderboardMap = new Map();
 
 function seedDefaultLeaderboard() {
-  // Featured & diverse 100 NFT editions across #0 ~ #9999 so TOP 100 (10 per page × 10 pages) is always populated
+  // Diverse 100 NFT editions across #11 ~ #9999 (excluding #0 by default so #0 only appears when explicitly played with "0")
+  // Modest baseline high scores (1,150 ~ 3,600 PTS) so real players easily beat #1!
   const featuredEditions = [
-    0, 7, 195, 777, 1004, 4441, 962, 6521, 499, 8888,
-    1, 2, 3, 4, 5, 6, 8, 9, 10, 20,
+    4441, 777, 1004, 195, 962, 6521, 499, 8888, 2026, 333,
+    12, 15, 19, 24, 28, 31, 36, 42, 48, 20,
     33, 55, 77, 88, 100, 111, 123, 144, 168, 200,
-    222, 250, 288, 300, 333, 365, 404, 444, 500, 512,
+    222, 250, 288, 300, 315, 365, 404, 444, 500, 512,
     555, 600, 666, 700, 720, 750, 800, 828, 888, 900,
-    999, 1024, 1111, 1234, 1337, 1500, 1777, 1888, 2000, 2026,
+    999, 1024, 1111, 1234, 1337, 1500, 1777, 1888, 2000, 2100,
     2222, 2468, 2500, 2777, 3000, 3141, 3333, 3500, 3777, 4000,
     4200, 4321, 4500, 4777, 4888, 5000, 5150, 5555, 5888, 6000,
     6174, 6292, 6666, 6888, 7000, 7272, 7500, 7777, 8000, 8080,
@@ -430,14 +433,12 @@ function seedDefaultLeaderboard() {
   const nowIso = new Date().toISOString();
   for (let i = 0; i < featuredEditions.length; i++) {
     const ed = featuredEditions[i];
-    const seedScore = 9850 - i * 88 + ((i * 17) % 35);
-    const seedKills = Math.max(4, Math.round(seedScore / 310));
+    const seedScore = 3600 - i * 24 + ((i * 11) % 19);
     const existing = ufoLeaderboardMap.get(ed);
     if (!existing || existing.score < seedScore) {
       ufoLeaderboardMap.set(ed, {
         edition: ed,
         score: seedScore,
-        kills: Math.max(existing?.kills || 0, seedKills),
         updated_at: existing?.updated_at || nowIso,
       });
     }
@@ -451,12 +452,14 @@ function loadLeaderboardData() {
       if (Array.isArray(raw) && raw.length > 0) {
         ufoLeaderboardMap.clear();
         for (const row of raw) {
+          if (row.edition === null || row.edition === undefined || String(row.edition).trim() === '') continue;
           const ed = parseTokenNumber(row.edition);
           if (ed !== null && Number(row.score) > 0) {
+            const prev = ufoLeaderboardMap.get(ed);
+            const bestScore = Math.max(prev?.score || 0, Math.floor(Number(row.score)));
             ufoLeaderboardMap.set(ed, {
               edition: ed,
-              score: Math.floor(Number(row.score)),
-              kills: Math.floor(Number(row.kills || 0)),
+              score: bestScore,
               updated_at: row.updated_at || new Date().toISOString(),
             });
           }
@@ -466,7 +469,6 @@ function loadLeaderboardData() {
   } catch (e) {
     console.warn('[Leaderboard] Using default seed:', e.message);
   }
-  // Always ensure at least 100 ranked NFTs exist for the 10-page (10 per page) Top 100 Ranking board
   seedDefaultLeaderboard();
   saveLeaderboardData();
 }
@@ -495,15 +497,9 @@ function getFormattedLeaderboard(limit = 100) {
       name: summary ? summary.name : `Pixel Penguin #${row.edition}`,
       name_ko: summary ? summary.name_ko : `Pixel Penguin #${row.edition}`,
       name_en: summary ? summary.name_en : `Pixel Penguin #${row.edition}`,
-      tier: summary ? summary.tier : 'Common',
-      rarity_rank: summary ? summary.rarity_rank : row.edition + 1,
-      rarity_score: summary ? summary.rarity_score : 0,
       species: summary?.traits?.Species || 'Classic',
-      hat: summary?.traits?.Hat || 'None',
-      clothes: summary?.traits?.Clothes || 'None',
       image_url: summary ? summary.image_url : `/img/${idCode}.png`,
       score: row.score,
-      kills: row.kills,
       updated_at: row.updated_at,
     };
   });
@@ -520,20 +516,25 @@ app.get('/api/leaderboard', (req, res) => {
 });
 
 app.post('/api/leaderboard', (req, res) => {
-  const ed = parseTokenNumber(req.body?.tokenId ?? req.body?.edition ?? 0);
+  // CRITICAL: Never default to 0 (`?? 0`) when tokenId is blank/missing!
+  // Score is recorded ONLY when the user explicitly entered a number ("0" ~ "9999").
+  const rawTokenId = req.body?.tokenId ?? req.body?.edition;
+  if (rawTokenId === null || rawTokenId === undefined || String(rawTokenId).trim() === '') {
+    return res.status(400).json({ error: 'Explicit NFT number (0~9999) is required to record score' });
+  }
+  const ed = parseTokenNumber(rawTokenId);
   const rawScore = Math.floor(Number(req.body?.score || 0));
-  const rawKills = Math.floor(Number(req.body?.kills || 0));
   if (ed === null || rawScore <= 0 || rawScore > 999999) {
     return res.status(400).json({ error: 'Invalid tokenId or score' });
   }
 
+  // HIGH SCORE ONLY: Never add/accumulate scores; only update if new score > previous best score!
   const prev = ufoLeaderboardMap.get(ed);
   const isNewBest = !prev || rawScore > prev.score;
   if (isNewBest) {
     ufoLeaderboardMap.set(ed, {
       edition: ed,
       score: rawScore,
-      kills: Math.max(rawKills, prev?.kills || 0),
       updated_at: new Date().toISOString(),
     });
     saveLeaderboardData();

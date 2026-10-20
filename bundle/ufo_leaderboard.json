@@ -1,602 +1,502 @@
 [
   {
-    "edition": 0,
-    "score": 9850,
-    "kills": 32,
-    "updated_at": "2026-10-20T12:42:07.351Z"
-  },
-  {
-    "edition": 7,
-    "score": 9779,
-    "kills": 32,
-    "updated_at": "2026-10-20T12:42:07.354Z"
-  },
-  {
-    "edition": 195,
-    "score": 9708,
-    "kills": 31,
-    "updated_at": "2026-10-20T12:42:07.354Z"
+    "edition": 4441,
+    "score": 3600,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 777,
-    "score": 9602,
-    "kills": 31,
-    "updated_at": "2026-10-20T12:42:07.354Z"
+    "score": 3587,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 1004,
-    "score": 9531,
-    "kills": 31,
-    "updated_at": "2026-10-20T12:42:07.354Z"
+    "score": 3555,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
-    "edition": 4441,
-    "score": 9425,
-    "kills": 30,
-    "updated_at": "2026-10-20T12:42:11.741Z"
+    "edition": 195,
+    "score": 3542,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 962,
-    "score": 9354,
-    "kills": 30,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 3510,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 6521,
-    "score": 9248,
-    "kills": 30,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 3497,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 499,
-    "score": 9177,
-    "kills": 30,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 3465,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 8888,
-    "score": 9071,
-    "kills": 29,
-    "updated_at": "2026-10-20T12:42:07.354Z"
-  },
-  {
-    "edition": 1,
-    "score": 9000,
-    "kills": 29,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 2,
-    "score": 8894,
-    "kills": 29,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 3,
-    "score": 8823,
-    "kills": 28,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 4,
-    "score": 8717,
-    "kills": 28,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 5,
-    "score": 8646,
-    "kills": 28,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 6,
-    "score": 8540,
-    "kills": 28,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 8,
-    "score": 8469,
-    "kills": 27,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 9,
-    "score": 8363,
-    "kills": 27,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 10,
-    "score": 8292,
-    "kills": 27,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 20,
-    "score": 8186,
-    "kills": 26,
-    "updated_at": "2026-10-20T13:32:40.963Z"
-  },
-  {
-    "edition": 33,
-    "score": 8115,
-    "kills": 26,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 55,
-    "score": 8009,
-    "kills": 26,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 77,
-    "score": 7938,
-    "kills": 26,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 88,
-    "score": 7832,
-    "kills": 25,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 100,
-    "score": 7761,
-    "kills": 25,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 111,
-    "score": 7655,
-    "kills": 25,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 123,
-    "score": 7584,
-    "kills": 24,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 144,
-    "score": 7478,
-    "kills": 24,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 168,
-    "score": 7407,
-    "kills": 24,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 200,
-    "score": 7301,
-    "kills": 24,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 222,
-    "score": 7230,
-    "kills": 23,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 250,
-    "score": 7124,
-    "kills": 23,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 288,
-    "score": 7053,
-    "kills": 23,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 300,
-    "score": 6947,
-    "kills": 22,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 333,
-    "score": 6876,
-    "kills": 22,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 365,
-    "score": 6770,
-    "kills": 22,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 404,
-    "score": 6699,
-    "kills": 22,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 444,
-    "score": 6628,
-    "kills": 21,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 500,
-    "score": 6522,
-    "kills": 21,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 512,
-    "score": 6451,
-    "kills": 21,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 555,
-    "score": 6345,
-    "kills": 20,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 600,
-    "score": 6274,
-    "kills": 20,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 666,
-    "score": 6168,
-    "kills": 20,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 700,
-    "score": 6097,
-    "kills": 20,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 720,
-    "score": 5991,
-    "kills": 19,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 750,
-    "score": 5920,
-    "kills": 19,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 800,
-    "score": 5814,
-    "kills": 19,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 828,
-    "score": 5743,
-    "kills": 19,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 888,
-    "score": 5637,
-    "kills": 18,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 900,
-    "score": 5566,
-    "kills": 18,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 999,
-    "score": 5460,
-    "kills": 18,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 1024,
-    "score": 5389,
-    "kills": 17,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 1111,
-    "score": 5283,
-    "kills": 17,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 1234,
-    "score": 5212,
-    "kills": 17,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 1337,
-    "score": 5106,
-    "kills": 16,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 1500,
-    "score": 5035,
-    "kills": 16,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 1777,
-    "score": 4929,
-    "kills": 16,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 1888,
-    "score": 4858,
-    "kills": 16,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 2000,
-    "score": 4752,
-    "kills": 15,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 3433,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 2026,
-    "score": 4681,
-    "kills": 15,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 3420,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 333,
+    "score": 3388,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 12,
+    "score": 3375,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 15,
+    "score": 3343,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 19,
+    "score": 3330,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 24,
+    "score": 3298,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 28,
+    "score": 3266,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 31,
+    "score": 3253,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 36,
+    "score": 3221,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 42,
+    "score": 3208,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 48,
+    "score": 3176,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 20,
+    "score": 3144,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 33,
+    "score": 3131,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 55,
+    "score": 3099,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 77,
+    "score": 3086,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 88,
+    "score": 3054,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 100,
+    "score": 3041,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 111,
+    "score": 3009,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 123,
+    "score": 2977,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 144,
+    "score": 2964,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 168,
+    "score": 2932,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 200,
+    "score": 2919,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 222,
+    "score": 2887,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 250,
+    "score": 2874,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 288,
+    "score": 2842,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 300,
+    "score": 2810,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 315,
+    "score": 2797,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 365,
+    "score": 2765,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 404,
+    "score": 2752,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 444,
+    "score": 2720,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 500,
+    "score": 2688,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 512,
+    "score": 2675,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 555,
+    "score": 2643,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 600,
+    "score": 2630,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 666,
+    "score": 2598,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 700,
+    "score": 2585,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 720,
+    "score": 2553,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 750,
+    "score": 2521,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 800,
+    "score": 2508,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 828,
+    "score": 2476,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 888,
+    "score": 2463,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 900,
+    "score": 2431,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 999,
+    "score": 2418,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 1024,
+    "score": 2386,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 1111,
+    "score": 2354,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 1234,
+    "score": 2341,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 1337,
+    "score": 2309,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 1500,
+    "score": 2296,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 1777,
+    "score": 2264,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 1888,
+    "score": 2232,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 2000,
+    "score": 2219,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 2100,
+    "score": 2187,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 2222,
-    "score": 4575,
-    "kills": 15,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 2174,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 2468,
-    "score": 4504,
-    "kills": 15,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 2142,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 2500,
-    "score": 4398,
-    "kills": 14,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 2129,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 2777,
-    "score": 4327,
-    "kills": 14,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 2097,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 3000,
-    "score": 4221,
-    "kills": 14,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 2065,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 3141,
-    "score": 4150,
-    "kills": 13,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 2052,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 3333,
-    "score": 4044,
-    "kills": 13,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 2020,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 3500,
-    "score": 3973,
-    "kills": 13,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 2007,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 3777,
-    "score": 3867,
-    "kills": 12,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1975,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 4000,
-    "score": 3796,
-    "kills": 12,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1962,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 4200,
-    "score": 3690,
-    "kills": 12,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1930,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 4321,
-    "score": 3619,
-    "kills": 12,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1898,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 4500,
-    "score": 3548,
-    "kills": 11,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1885,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 4777,
-    "score": 3442,
-    "kills": 11,
-    "updated_at": "2026-10-20T14:29:16.794Z"
-  },
-  {
-    "edition": 9999,
-    "score": 3420,
-    "kills": 10,
-    "updated_at": "2026-10-20T12:42:07.354Z"
+    "score": 1853,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 4888,
-    "score": 3371,
-    "kills": 11,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1840,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 5000,
-    "score": 3265,
-    "kills": 11,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1808,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 5150,
-    "score": 3194,
-    "kills": 10,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1776,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 5555,
-    "score": 3088,
-    "kills": 10,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1763,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 5888,
-    "score": 3017,
-    "kills": 10,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1731,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 6000,
-    "score": 2911,
-    "kills": 9,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1718,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 6174,
-    "score": 2840,
-    "kills": 9,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1686,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 6292,
-    "score": 2734,
-    "kills": 9,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1673,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 6666,
-    "score": 2663,
-    "kills": 9,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1641,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 6888,
-    "score": 2557,
-    "kills": 8,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1609,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 7000,
-    "score": 2486,
-    "kills": 8,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1596,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 7272,
-    "score": 2380,
-    "kills": 8,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1564,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 7500,
-    "score": 2309,
-    "kills": 7,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1551,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 7777,
-    "score": 2203,
-    "kills": 7,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1519,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 8000,
-    "score": 2132,
-    "kills": 7,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1506,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 8080,
-    "score": 2026,
-    "kills": 7,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1474,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 8282,
-    "score": 1955,
-    "kills": 6,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1442,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 8500,
-    "score": 1849,
-    "kills": 6,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1429,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 8765,
-    "score": 1778,
-    "kills": 6,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1397,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 9000,
-    "score": 1672,
-    "kills": 5,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1384,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 9090,
-    "score": 1601,
-    "kills": 5,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1352,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 9250,
-    "score": 1495,
-    "kills": 5,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1320,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 9500,
-    "score": 1424,
-    "kills": 5,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1307,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 9777,
-    "score": 1318,
-    "kills": 4,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1275,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   },
   {
     "edition": 9888,
-    "score": 1247,
-    "kills": 4,
-    "updated_at": "2026-10-20T14:29:16.794Z"
+    "score": 1262,
+    "updated_at": "2026-10-20T15:38:31.237Z"
+  },
+  {
+    "edition": 9999,
+    "score": 1230,
+    "updated_at": "2026-10-20T15:38:31.237Z"
   }
 ]

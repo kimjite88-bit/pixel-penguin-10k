@@ -749,17 +749,28 @@ function triggerUfoShotDown(now = performance.now()) {
 }
 
 async function submitUfoScoreToServer(tokenId, score, kills) {
-  if (!UFO_GAME.hasNft || tokenId === null || UFO_GAME.scoreSubmitted || score <= 0) return;
+  if (
+    !UFO_GAME.hasNft ||
+    tokenId === null ||
+    tokenId === undefined ||
+    !/^\d+$/.test(String(tokenId).trim()) ||
+    UFO_GAME.scoreSubmitted ||
+    score <= 0
+  ) {
+    return;
+  }
   UFO_GAME.scoreSubmitted = true;
   try {
     const res = await fetch('/api/leaderboard', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tokenId, score, kills }),
+      body: JSON.stringify({ tokenId: Number(String(tokenId).trim()), score, kills }),
     });
     if (res.ok) {
       const data = await res.json();
       UFO_GAME.lastRank = data.rank || null;
+      UFO_GAME.lastBestScore = data.best_score || score;
+      UFO_GAME.lastIsNewBest = Boolean(data.is_new_best);
       if (Array.isArray(data.items)) {
         RANKING_PAGE_CACHE = data.items;
         renderRankingPageList();
@@ -785,8 +796,8 @@ function updateUfoBoardingDockUI() {
     } else {
       badgeEl.textContent =
         CURRENT_LANG === 'ko'
-          ? '기본 파란 펭귄 (미기록)'
-          : 'Default Penguin (Unrecorded)';
+          ? '기본 파란 펭귄 (미입력 · 기록 안 됨)'
+          : 'Default Penguin (Blank · Unrecorded)';
     }
   }
 
@@ -795,14 +806,14 @@ function updateUfoBoardingDockUI() {
       const code = `P${String(UFO_GAME.pilotTokenId).padStart(4, '0')}`;
       s1SubEl.textContent =
         CURRENT_LANG === 'ko'
-          ? `내 NFT #${UFO_GAME.pilotTokenId} (${code} · ${UFO_GAME.pilotSpeciesLabel}) 적용됨 · 점수 순위 기록`
-          : `NFT #${UFO_GAME.pilotTokenId} (${code} · ${UFO_GAME.pilotSpeciesLabel}) active · Score Ranked`;
+          ? `내 번호 #${UFO_GAME.pilotTokenId} (${code} · ${UFO_GAME.pilotSpeciesLabel}) 선택됨 · 최고점만 기록 (유희용)`
+          : `#${UFO_GAME.pilotTokenId} (${code} · ${UFO_GAME.pilotSpeciesLabel}) selected · High Score Only (For Fun)`;
       s1SubEl.style.color = '#fde047';
     } else {
       s1SubEl.textContent =
         CURRENT_LANG === 'ko'
-          ? 'NFT 번호 입력 시 내 펭귄 스킨이 적용되고 점수가 순위에 기록됩니다. (미입력 시 기본 펭귄 플레이)'
-          : 'Enter your NFT # to play with your penguin skin and record your score.';
+          ? '번호(0~9999)를 직접 입력해야 해당 번호의 최고점이 기록됩니다. (미입력 시 미기록 · NFT 희귀도 순위와 무관한 유희용 게임)'
+          : 'Enter your number (0~9999) explicitly to record your high score. (Blank = unrecorded · Just for fun, unrelated to NFT rarity)';
       s1SubEl.style.color = '#94a3b8';
     }
   }
@@ -905,13 +916,17 @@ function boardUfoWithoutNft(startEscape = true) {
 }
 
 async function setUfoPilotTokenId(tokenNum, triggerPfp = true, startEscape = false) {
-  const raw = String(tokenNum ?? '').trim().replace(/^#/, '').replace(/^P/i, '');
-  if (raw === '' || Number.isNaN(Number(raw))) {
+  if (tokenNum === null || tokenNum === undefined) {
+    boardUfoWithoutNft(startEscape);
+    return;
+  }
+  const raw = String(tokenNum).trim().replace(/^#/, '').replace(/^P/i, '');
+  if (raw === '' || !/^\d+$/.test(raw)) {
     boardUfoWithoutNft(startEscape);
     return;
   }
   MOTION_STATE.skippedEscape = false;
-  const num = Math.max(0, Math.min(9999, Math.floor(Number(raw))));
+  const num = Math.max(0, Math.min(9999, parseInt(raw, 10)));
   UFO_GAME.hasNft = true;
   UFO_GAME.pilotTokenId = num;
 
@@ -951,7 +966,7 @@ let CURRENT_RANKING_PAGE = 1;
 let RANKING_TOTAL_PAGES = 10;
 
 function getNftDisplayName(item) {
-  if (!item) return 'Pixel Penguin #0';
+  if (!item) return 'Pixel Penguin';
   if (CURRENT_LANG === 'ko') {
     return item.name_ko || item.name || `Pixel Penguin #${item.edition}`;
   }
@@ -962,8 +977,8 @@ function buildLeaderboardRowsHtml(items, showBoardAction = true) {
   if (!items || items.length === 0) {
     return `<div style="padding:32px; text-align:center; color:#94a3b8; font-weight:800;">${
       CURRENT_LANG === 'ko'
-        ? '검색 조건에 해당하는 NFT 게임 순위 기록이 없습니다.'
-        : 'No matching NFT ranking records found.'
+        ? '검색 조건에 해당하는 최고점 기록이 없습니다.'
+        : 'No matching high-score records found.'
     }</div>`;
   }
   return items
@@ -974,10 +989,10 @@ function buildLeaderboardRowsHtml(items, showBoardAction = true) {
       const spText = item.species || 'Classic';
       const subText =
         CURRENT_LANG === 'ko'
-          ? `깃털스킨: ${spText} · 희귀도 순위 #${Number(item.rarity_rank).toLocaleString()} · 장애물 격파 ${item.kills || 0}기`
-          : `Feather Skin: ${spText} · Rarity Rank #${Number(item.rarity_rank).toLocaleString()} · ${item.kills || 0} Hits`;
-      const goLabel = CURRENT_LANG === 'ko' ? '상세 보기' : 'Details';
-      const boardLabel = CURRENT_LANG === 'ko' ? '이 NFT로 플레이' : 'Play with NFT';
+          ? `캐릭터 스킨: ${spText} · 개인 최고점 기록 (NFT 희귀도 무관 · 유희용)`
+          : `Character Skin: ${spText} · Personal High Score (Unrelated to NFT Rarity)`;
+      const goLabel = CURRENT_LANG === 'ko' ? '캐릭터 보기' : 'View';
+      const boardLabel = CURRENT_LANG === 'ko' ? '이 번호로 플레이' : 'Play';
 
       return `
         <div class="rank-row-card ${topClass}" onclick="jumpToRankedNft(${item.edition})">
@@ -987,11 +1002,10 @@ function buildLeaderboardRowsHtml(items, showBoardAction = true) {
             <div class="rank-nft-title">
               <span>${escapeHtml(nftName)}</span>
               <span class="pill-tag" style="font-size:10.5px; padding:2px 6px;">${escapeHtml(item.id)}</span>
-              <span class="tier-pill tier-${item.tier}" style="font-size:10.5px; padding:2px 7px;">${item.tier}</span>
             </div>
             <div class="rank-nft-sub">${escapeHtml(subText)}</div>
           </div>
-          <div class="rank-score-val">${Number(item.score).toLocaleString()} PTS</div>
+          <div class="rank-score-val">최고점 ${Number(item.score).toLocaleString()} PTS</div>
           ${
             showBoardAction
               ? `<div class="rank-action-group">
@@ -1095,8 +1109,8 @@ function renderRankingPageList() {
   if (totalEl) {
     totalEl.textContent =
       CURRENT_LANG === 'ko'
-        ? `1위 ~ ${topCount}위 (${Math.ceil(topCount / 10)}페이지)`
-        : `TOP ${topCount} (${Math.ceil(topCount / 10)} Pages)`;
+        ? `최고점만 표시 (1위 ~ ${topCount}위)`
+        : `High Score Only (TOP ${topCount})`;
   }
   if (RANKING_PAGE_CACHE.length > 0) {
     const first = RANKING_PAGE_CACHE[0];
@@ -1109,7 +1123,7 @@ async function fetchAndRenderRankingPage() {
   const listEl = document.getElementById('ranking-page-list-body');
   if (listEl && RANKING_PAGE_CACHE.length === 0) {
     listEl.innerHTML = `<div style="padding:32px; text-align:center; color:#94a3b8; font-weight:800;">${
-      CURRENT_LANG === 'ko' ? 'NFT 이름별 게임 순위를 불러오는 중...' : 'Loading NFT Game Rankings...'
+      CURRENT_LANG === 'ko' ? '번호별 최고점 순위를 불러오는 중...' : 'Loading High Scores...'
     }</div>`;
   }
   try {
@@ -1130,7 +1144,9 @@ function boardRankedNftAndPlay(edition, event) {
   if (event && typeof event.stopPropagation === 'function') {
     event.stopPropagation();
   }
-  const num = Math.max(0, Math.min(9999, Number(edition) || 0));
+  const parsed = parseInt(String(edition), 10);
+  if (Number.isNaN(parsed)) return;
+  const num = Math.max(0, Math.min(9999, parsed));
   closeLeaderboardModal();
   setUfoPilotTokenId(num, true, true);
   scrollToSection('tab-intro');
@@ -1138,7 +1154,6 @@ function boardRankedNftAndPlay(edition, event) {
 }
 
 async function openLeaderboardModal() {
-  // Navigate directly to the dedicated "게임 순위" (tab-ranking) menu tab between 도감도 & 공지사항!
   scrollToSection('tab-ranking');
 }
 
@@ -1147,9 +1162,10 @@ function closeLeaderboardModal() {
 }
 
 function jumpToRankedNft(edition) {
-  const num = Math.max(0, Math.min(9999, Number(edition) || 0));
+  const parsed = parseInt(String(edition), 10);
+  if (Number.isNaN(parsed)) return;
+  const num = Math.max(0, Math.min(9999, parsed));
   closeLeaderboardModal();
-  setUfoPilotTokenId(num, false, false);
   loadPfpPreview(num, false);
   openTokenModal(num);
 }
@@ -3671,19 +3687,20 @@ function initPixelMotionStudio() {
         );
       } else if (UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null) {
         const pilotCode = `P${String(UFO_GAME.pilotTokenId).padStart(4, '0')}`;
-        const rankTag = UFO_GAME.lastRank ? ` · RANK #${UFO_GAME.lastRank}` : '';
+        const bestPts = Math.max(finalPts, UFO_GAME.lastBestScore || finalPts);
+        const rankTag = UFO_GAME.lastRank ? ` · 순위 #${UFO_GAME.lastRank}` : '';
         ctx.fillText(
           CURRENT_LANG === 'ko'
-            ? `NFT #${UFO_GAME.pilotTokenId} (${pilotCode}) · ${finalPts.toLocaleString()} PTS${rankTag} 기록 완료  |  [게임 순위 보기]`
-            : `NFT #${UFO_GAME.pilotTokenId} (${pilotCode}) · ${finalPts.toLocaleString()} PTS${rankTag} Recorded  |  [Rankings]`,
+            ? `#${UFO_GAME.pilotTokenId} (${pilotCode}) · 최고점 ${bestPts.toLocaleString()} PTS${rankTag}  |  [게임 순위 보기]`
+            : `#${UFO_GAME.pilotTokenId} (${pilotCode}) · High Score ${bestPts.toLocaleString()} PTS${rankTag}  |  [Rankings]`,
           480,
           banY + banH / 2 + 1
         );
       } else {
         ctx.fillText(
           CURRENT_LANG === 'ko'
-            ? `기본 펭귄 (기록 미저장) · ${finalPts.toLocaleString()} PTS  |  [게임 순위 보기]`
-            : `Default Penguin (Unrecorded) · ${finalPts.toLocaleString()} PTS  |  [Rankings]`,
+            ? `번호 미입력 (기록 미저장) · 이번 점수 ${finalPts.toLocaleString()} PTS  |  [게임 순위 보기]`
+            : `No Number (Unrecorded) · Score ${finalPts.toLocaleString()} PTS  |  [Rankings]`,
           480,
           banY + banH / 2 + 1
         );

@@ -12,7 +12,7 @@
   <meta property="og:image" content="https://ppeng.verycloud.io/assets/logo_4441_1024.png?v=v322" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" type="image/png" href="/img/P4441.png?v=v322" />
-  <link rel="stylesheet" href="/styles.css?v=5.4.0" />
+  <link rel="stylesheet" href="/styles.css?v=5.4.1" />
 </head>
 <body>
   <!-- Full-Viewport Stepped Pixel Ambient Particle Canvas -->
@@ -94,8 +94,8 @@
                   아니오 (벚꽃마을 이동)
                 </button>
               </div>
-              <div class="s1-overlay-sub" id="s1-overlay-sub" data-ko="NFT 번호 입력 시 내 펭귄 스킨이 적용되고 점수가 순위에 기록됩니다. (미입력 시 기본 펭귄 플레이)" data-en="Enter your NFT # to play with your penguin skin and record your score.">
-                NFT 번호 입력 시 내 펭귄 스킨이 적용되고 점수가 순위에 기록됩니다. (미입력 시 기본 펭귄 플레이)
+              <div class="s1-overlay-sub" id="s1-overlay-sub" data-ko="번호(0~9999)를 직접 입력해야 해당 번호의 최고점이 기록됩니다. (미입력 시 미기록 · NFT 희귀도 순위와 무관한 유희용 게임)" data-en="Enter your NFT # (0~9999) explicitly to record your high score. (Blank = unrecorded · Just for fun, unrelated to NFT rarity)">
+                번호(0~9999)를 직접 입력해야 해당 번호의 최고점이 기록됩니다. (미입력 시 미기록 · NFT 희귀도 순위와 무관한 유희용 게임)
               </div>
             </div>
           </div>
@@ -299,13 +299,13 @@
       </section>
     </div><!-- /#tab-page-codex -->
 
-    <!-- TAB PAGE 3: 게임 순위 (UFO GAME NFT NAME LEADERBOARD) -->
+    <!-- TAB PAGE 3: 게임 순위 (HIGH-SCORE ONLY · FOR FUN ONLY, UNRELATED TO NFT RARITY) -->
     <div id="tab-page-ranking" class="tab-page" style="display:none;">
       <section class="section-block" id="sec-ranking">
         <div class="section-header" style="margin-bottom:14px;">
           <div>
-            <h2 class="section-title" data-ko="게임 순위 (TOP 100)" data-en="Game Leaderboard (TOP 100)">게임 순위 (TOP 100)</h2>
-            <p class="section-sub" data-ko="내 NFT 번호(0 ~ 9999)를 입력하고 플레이한 최고 기록 순위입니다." data-en="High-score rankings by Pixel Penguin NFT (#0 – #9999).">내 NFT 번호(0 ~ 9999)를 입력하고 플레이한 최고 기록 순위입니다.</p>
+            <h2 class="section-title" data-ko="미니게임 최고점 기록 (TOP 100 · 유희용)" data-en="Mini-Game High Scores (TOP 100 · For Fun)">미니게임 최고점 기록 (TOP 100 · 유희용)</h2>
+            <p class="section-sub" data-ko="이 게임 포인트는 단순 유희용이며 NFT 등급·희귀도 순위와 무관합니다. 번호(0~9999)를 직접 입력하고 달성한 최고점만 표시됩니다." data-en="Game points are purely for fun and unrelated to NFT rarity rank. Only the single highest score per explicitly entered number (0–9999) is shown.">이 게임 포인트는 단순 유희용이며 NFT 등급·희귀도 순위와 무관합니다. 번호(0~9999)를 직접 입력하고 달성한 최고점만 표시됩니다.</p>
           </div>
           <div class="ranking-header-actions" style="display:flex; gap:8px; flex-wrap:wrap;">
             <button type="button" class="btn-primary" onclick="scrollToSection('tab-intro')">
@@ -320,27 +320,27 @@
         <!-- Ranking KPI Summary Strip -->
         <div class="ranking-kpi-strip" id="ranking-kpi-strip">
           <div class="kpi-box">
-            <div class="kpi-label" data-ko="표시 범위" data-en="Scope">표시 범위</div>
-            <div class="kpi-val highlight" id="ranking-kpi-total">1위 ~ 100위 (10페이지)</div>
+            <div class="kpi-label" data-ko="표시 기준" data-en="Display Rule">표시 기준</div>
+            <div class="kpi-val highlight" id="ranking-kpi-total" data-ko="최고점만 표시 (1~100위)" data-en="High Score Only (TOP 100)">최고점만 표시 (1~100위)</div>
           </div>
           <div class="kpi-box">
-            <div class="kpi-label" data-ko="현재 1위 NFT" data-en="#1 Ranked NFT">현재 1위 NFT</div>
-            <div class="kpi-val gold" id="ranking-kpi-top-name" style="font-size:15px;">Pixel Penguin #0</div>
+            <div class="kpi-label" data-ko="현재 최고점 1위" data-en="#1 High Score">현재 최고점 1위</div>
+            <div class="kpi-val gold" id="ranking-kpi-top-name" style="font-size:15px;">Pixel Penguin #4441 (P4441)</div>
           </div>
           <div class="kpi-box">
-            <div class="kpi-label" data-ko="최고 기록" data-en="High Score">최고 기록</div>
-            <div class="kpi-val" id="ranking-kpi-top-score">9,850 PTS</div>
+            <div class="kpi-label" data-ko="1위 최고 기록" data-en="Top High Score">1위 최고 기록</div>
+            <div class="kpi-val" id="ranking-kpi-top-score">3,600 PTS</div>
           </div>
         </div>
 
         <div class="verychat-panel" style="margin-top:14px;">
           <div class="verychat-panel-header ranking-toolbar-header" style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
             <div>
-              <div class="verychat-panel-title" data-ko="NFT별 실시간 순위 (페이지당 10명)" data-en="Live Rankings by NFT (10 per Page)">NFT별 실시간 순위 (페이지당 10명)</div>
+              <div class="verychat-panel-title" data-ko="번호별 최고점 순위 (페이지당 10명 · NFT 희귀도 무관)" data-en="High Scores by Number (10 per Page · Unrelated to Rarity)">번호별 최고점 순위 (페이지당 10명 · NFT 희귀도 무관)</div>
               <div id="ranking-range-indicator" style="font-size:12px; color:#67e8f9; font-weight:800; margin-top:3px;">1위 ~ 10위 (1 / 10 페이지)</div>
             </div>
             <div style="min-width:220px; flex:0 1 280px;">
-              <input type="search" id="ranking-search-input" class="search-input" data-placeholder-ko="NFT 번호 또는 이름 검색" data-placeholder-en="Search by NFT ID or Name" placeholder="NFT 번호 또는 이름 검색" />
+              <input type="search" id="ranking-search-input" class="search-input" data-placeholder-ko="번호(0~9999) 또는 이름 검색" data-placeholder-en="Search by Number (0~9999)" placeholder="번호(0~9999) 또는 이름 검색" />
             </div>
           </div>
 
@@ -409,6 +409,6 @@
     </div>
   </footer>
 
-  <script src="/app.js?v=5.4.0"></script>
+  <script src="/app.js?v=5.4.1"></script>
 </body>
 </html>
