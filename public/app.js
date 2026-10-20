@@ -489,14 +489,14 @@ function ensureHero2DSprite() {
   img.onload = () => {
     MOTION_STATE.hero2DLoaded = true;
   };
-  img.src = '/assets/motion_sprites/hero_2d.png?v=4.9.3';
+  img.src = '/assets/motion_sprites/hero_2d.png?v=5.0.7';
   MOTION_STATE.hero2DImg = img;
 
   const sheet = new Image();
   sheet.onload = () => {
     MOTION_STATE.hero2DSheetLoaded = true;
   };
-  sheet.src = '/assets/motion_sprites/hero_2d_sheet.png?v=4.9.3';
+  sheet.src = '/assets/motion_sprites/hero_2d_sheet.png?v=5.0.7';
   MOTION_STATE.hero2DSheet = sheet;
   return img;
 }
@@ -532,14 +532,14 @@ function ensureSpeciesSprite(spId = '01') {
     entry.img = img;
     entry.loaded = true;
   };
-  img.src = `/assets/motion_sprites/sp_${key}.png?v=4.9.3`;
+  img.src = `/assets/motion_sprites/sp_${key}.png?v=5.0.7`;
 
   const sheet = new Image();
   sheet.onload = () => {
     entry.sheet = sheet;
     entry.sheetLoaded = true;
   };
-  sheet.src = `/assets/motion_sprites/sp_${key}_sheet.png?v=4.9.3`;
+  sheet.src = `/assets/motion_sprites/sp_${key}_sheet.png?v=5.0.7`;
   return entry;
 }
 
@@ -621,22 +621,19 @@ function getPenguinAnimState(
   // 4-step alternating foot walk cycle: 0 (Left foot up) -> 1 (Pass) -> 2 (Right foot up) -> 3 (Pass)
   const stepPhase = Math.floor((now + seed * 190) / 145) % 4;
   let frameIdx = 0;
-  let stepBobY = 0;
-  let waddleRot = 0;
 
   if (stepPhase === 0) {
     frameIdx = isBlinking ? 4 : 2; // walkL
-    stepBobY = -3;
-    waddleRot = -0.036;
   } else if (stepPhase === 2) {
     frameIdx = isBlinking ? 5 : 3; // walkR
-    stepBobY = -3;
-    waddleRot = 0.036;
   } else {
     frameIdx = isBlinking ? 1 : 0; // mid-stride pass
-    stepBobY = 0;
-    waddleRot = 0;
   }
+
+  // Smooth 60fps continuous sinusoidal waddle bounce & tilt so walking never slides stiffly
+  const walkWave = ((now + seed * 190) / 145) * (Math.PI / 2);
+  const stepBobY = -Math.abs(Math.sin(walkWave)) * 5.2;
+  const waddleRot = Math.sin(walkWave) * 0.048;
 
   return { frameIdx, stepBobY, waddleRot };
 }
@@ -656,10 +653,11 @@ function drawUploaded2DPenguin(
 ) {
   const img = ensureHero2DSprite();
   const anim = getPenguinAnimState(now, 0, isWalking, false, isShocked);
+  const walkSquash = isWalking && !isShocked ? (anim.stepBobY / -5.2) * 0.024 : 0;
   ctx.save();
   ctx.translate(cx, cy + anim.stepBobY);
   ctx.rotate(angleRad + anim.waddleRot);
-  ctx.scale(scaleX, scaleY);
+  ctx.scale(scaleX * (1 - walkSquash), scaleY * (1 + walkSquash));
   ctx.imageSmoothingEnabled = true;
   if (MOTION_STATE.hero2DSheetLoaded && MOTION_STATE.hero2DSheet) {
     ctx.drawImage(
@@ -1452,23 +1450,43 @@ function initPixelMotionStudio() {
     ctx.clearRect(0, 0, 960, 540);
 
     // ========================================================================
-    // SCENE 0 ("1. 추락 & 도트변신"): 2D Snow Walk (Alternating Feet + Blink) -> Banana Slip -> Blue-to-Blue Pixel Scan!
+    // SCENE 0 ("1. 추락 & 픽셀변신"): 2D Snow Walk (Smooth Waddle + Blink) -> Banana Slip -> Holographic Pixel Matrix Scan!
     // ========================================================================
     if (MOTION_STATE.sceneIdx === 0) {
       const pitCenterX = 744;
       drawScene1Background(ctx, now);
 
-      const slipStartP = 0.32;
-      const scanStartP = 0.56;
+      const slipStartP = 0.30;
+      const scanStartP = 0.54;
 
-      // Banana Peel on the Snow Cliff Edge (x = 532, y = 355)
+      // Banana Peel on the Snow Cliff Edge (x = 532, y = 355) with subtle warning glint, then parabolic launch & fade
       if (p < slipStartP) {
-        drawCartoonBananaPeel(ctx, 532, 355, 0, 1.05);
-      } else if (p < 0.72) {
-        const flyP = Math.min(1, (p - slipStartP) / 0.34);
-        const bx = 532 - flyP * 125;
-        const by = 350 - Math.sin(flyP * Math.PI) * 145;
-        drawCartoonBananaPeel(ctx, bx, by, flyP * Math.PI * 5, 1.08);
+        drawCartoonBananaPeel(ctx, 532, 355, 0, 1.06);
+        const glintPulse = 0.45 + 0.55 * Math.abs(Math.sin(now * 0.006));
+        ctx.save();
+        ctx.translate(534, 338);
+        ctx.scale(glintPulse, glintPulse);
+        ctx.fillStyle = '#fef08a';
+        ctx.beginPath();
+        ctx.moveTo(0, -7);
+        ctx.lineTo(2, -2);
+        ctx.lineTo(7, 0);
+        ctx.lineTo(2, 2);
+        ctx.lineTo(0, 7);
+        ctx.lineTo(-2, 2);
+        ctx.lineTo(-7, 0);
+        ctx.lineTo(-2, -2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      } else if (p < scanStartP) {
+        const flyP = Math.min(1, (p - slipStartP) / (scanStartP - slipStartP));
+        const bx = 532 - flyP * 175;
+        const by = 352 - 195 * flyP + 360 * flyP * flyP;
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, 1 - Math.pow(flyP, 1.8));
+        drawCartoonBananaPeel(ctx, bx, by, -flyP * Math.PI * 4.5, 1.06);
+        ctx.restore();
       }
 
       let pengX = 100;
@@ -1479,31 +1497,50 @@ function initPixelMotionStudio() {
       const spriteSize = 148;
 
       if (p < slipStartP) {
-        // Phase A: Happy 2D Snow Walk along the cliff path with Real Alternating Foot Steps & Eye Blinking!
+        // Phase A: Happy 2D Snow Walk along the cliff path with Smooth Waddle Bounce, Alternating Feet & Eye Blinking!
         const subP = p / slipStartP;
-        pengX = 96 + subP * 428;
+        pengX = 96 + subP * 430;
         pengY = 288;
 
-        // Soft elliptical ground shadow on snow cliff
+        const walkAnim = getPenguinAnimState(now, 0, true, false, false);
+        const shadowScale = 1 - Math.abs(walkAnim.stepBobY) * 0.025;
+
+        // Soft elliptical ground shadow on snow cliff (reacts to waddle bounce)
         ctx.fillStyle = 'rgba(15, 23, 42, 0.20)';
         ctx.beginPath();
-        ctx.ellipse(pengX, 356, 36, 8, 0, 0, Math.PI * 2);
+        ctx.ellipse(pengX, 356, 36 * shadowScale, 8 * shadowScale, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Snow puff footsteps behind walking feet
+        // Crisp snow puff footsteps behind walking feet
         for (let d = 0; d < 3; d++) {
           const dp = (now * 0.004 + d * 0.33) % 1;
-          ctx.fillStyle = `rgba(255, 255, 255, ${(1 - dp) * 0.8})`;
+          ctx.fillStyle = `rgba(255, 255, 255, ${(1 - dp) * 0.82})`;
           ctx.beginPath();
-          ctx.arc(pengX - 36 - dp * 26, 352 - dp * 10, 7 - dp * 3.5, 0, Math.PI * 2);
+          ctx.arc(pengX - 36 - dp * 28, 352 - dp * 11, 7 - dp * 3.5, 0, Math.PI * 2);
           ctx.fill();
         }
 
         drawUploaded2DPenguin(ctx, pengX, pengY, spriteSize, pengRot, scaleX, scaleY, now, true);
+
+        // Floating musical notes rising gently beside the whistling penguin
+        ctx.save();
+        for (let m = 0; m < 2; m++) {
+          const mp = (now * 0.0014 + m * 0.5) % 1;
+          const mx = pengX + 44 + m * 16 + Math.sin(mp * Math.PI * 2) * 5;
+          const my = pengY - 26 - mp * 34;
+          ctx.globalAlpha = Math.sin(mp * Math.PI) * 0.92;
+          ctx.font = '900 18px "Pretendard", sans-serif';
+          ctx.fillStyle = '#0f172a';
+          ctx.fillText(m === 0 ? '♪' : '♫', mx + 1.5, my + 1.5);
+          ctx.fillStyle = m === 0 ? '#38bdf8' : '#f472b6';
+          ctx.fillText(m === 0 ? '♪' : '♫', mx, my);
+        }
+        ctx.restore();
+
         drawRetroSpeechBubble(
           ctx,
           pengX + 8,
-          pengY - 76,
+          pengY - 78,
           CURRENT_LANG === 'ko'
             ? '룰루랄라~ 눈밭 산책 날씨 죽인다~ ♪'
             : 'La-la-la~ Perfect day for a snow walk~ ♪',
@@ -1519,28 +1556,38 @@ function initPixelMotionStudio() {
             : 'Before Pixel World, our smooth 2D blue penguin waddles and blinks happily along the snowy cliff...'
         );
       } else if (p < scanStartP) {
-        // Phase B: Banana Slip Shock & High Arc into the Pixel Portal Chasm
+        // Phase B: Banana Slip Shock & Smooth 360° Tumble Arc into the Pixel Portal Chasm
         const subP = (p - slipStartP) / (scanStartP - slipStartP);
-        if (subP < 0.48) {
-          // Rear back in shock right as he steps on the banana peel so the shocked face (O_O) is crystal clear!
-          const shockP = subP / 0.48;
-          pengX = 524 + shockP * 42 + Math.sin(now * 0.09) * 2.5;
-          pengY = 284 - Math.sin(shockP * Math.PI * 0.5) * 36;
-          pengRot = -0.22 - shockP * 0.16;
-          scaleX = 0.95;
-          scaleY = 1.07;
+        if (subP < 0.44) {
+          // Rear back in shock right as he steps on the banana peel so the 4x supersampled shocked face (O_O) shines!
+          const shockP = subP / 0.44;
+          const easeOut = 1 - Math.pow(1 - shockP, 2);
+          pengX = 526 + easeOut * 36 + Math.sin(now * 0.085) * 2.0;
+          pengY = 286 - Math.sin(shockP * Math.PI * 0.5) * 42;
+          pengRot = -0.34 * Math.sin(shockP * Math.PI * 0.5);
+          scaleX = 0.94 + shockP * 0.04;
+          scaleY = 1.08 - shockP * 0.04;
         } else {
-          // Launch from the banana peel and tumble into the Pixel Portal Chasm
-          const fallP = (subP - 0.48) / 0.52;
-          pengX = 566 + fallP * (pitCenterX - 566);
-          pengY = 248 - Math.sin(fallP * Math.PI) * 82 + fallP * 26;
-          pengRot = -0.38 + fallP * Math.PI * 1.65;
-          scaleX = 1.04;
-          scaleY = 0.96;
+          // Smooth parabolic arc from cliff edge into the glowing Pixel Rift (completing a full 360° spin -> 0 rad at scanStartP!)
+          const fallP = (subP - 0.44) / 0.56;
+          const smoothFall = fallP * fallP * (3 - 2 * fallP);
+          pengX = 562 + smoothFall * (pitCenterX - 562);
+          pengY = 244 - Math.sin(fallP * Math.PI) * 68 + smoothFall * 30;
+          pengRot = -0.34 * (1 - smoothFall) + smoothFall * Math.PI * 2;
+          scaleX = 1.02;
+          scaleY = 0.98;
         }
 
-        if (subP < 0.72) {
-          drawComicStarburst(ctx, 534, 342, 18, 38, 10, '#fde047', '#e11d48', now * 0.006);
+        // Crisp snow/slip impact rings at the cliff edge instead of crude polygon spikes
+        if (subP < 0.55) {
+          const ringP = subP / 0.55;
+          ctx.save();
+          ctx.strokeStyle = `rgba(254, 240, 138, ${(1 - ringP) * 0.9})`;
+          ctx.lineWidth = 3 * (1 - ringP * 0.5);
+          ctx.beginPath();
+          ctx.ellipse(534, 352, 16 + ringP * 38, 6 + ringP * 14, 0, 0, Math.PI * 2);
+          ctx.stroke();
+          ctx.restore();
         }
 
         drawUploaded2DPenguin(
@@ -1556,28 +1603,15 @@ function initPixelMotionStudio() {
           true
         );
 
-        // Comic shock radiate lines above the penguin's head during the banana slip
-        if (subP < 0.56) {
-          ctx.save();
-          ctx.strokeStyle = '#fde047';
-          ctx.lineWidth = 3.5;
-          ctx.lineCap = 'round';
-          for (let k = -2; k <= 2; k++) {
-            const ang = -Math.PI / 2 + k * 0.34 + pengRot * 0.5;
-            const r1 = spriteSize * 0.48;
-            const r2 = spriteSize * 0.6;
-            ctx.beginPath();
-            ctx.moveTo(pengX + Math.cos(ang) * r1, pengY - 8 + Math.sin(ang) * r1);
-            ctx.lineTo(pengX + Math.cos(ang) * r2, pengY - 8 + Math.sin(ang) * r2);
-            ctx.stroke();
-          }
-          ctx.restore();
+        // Authentic 16-Bit Pixel "!!" Shock Emote Badge beside the startled penguin
+        if (subP < 0.62) {
+          drawPixelEmoteBubble(ctx, pengX + 64, pengY - 22, 'shock', now);
         }
 
         drawRetroSpeechBubble(
           ctx,
-          Math.min(790, pengX),
-          Math.max(68, pengY - 88),
+          Math.min(780, pengX - 10),
+          Math.max(58, pengY - 86),
           CURRENT_LANG === 'ko'
             ? '어익후?! 웬 바나나야!! 으아아아악~!!'
             : 'WHOA?! A banana peel?! AAAAAAH~!!',
@@ -1593,22 +1627,43 @@ function initPixelMotionStudio() {
             : 'WHOA?! Shocked as he slips on a banana peel, he tumbles into the glowing Pixel Rift!'
         );
       } else {
-        // Phase C: Real-Time Holographic Scan-Beam Transformation (2D Blue hero_2d -> Pixel Blue sp_01!)
+        // Phase C: Holographic Dimensional Tractor Field & 48x48 Voxel Matrix Scan Transformation (2D Blue -> Pixel Blue sp_01!)
         const subP = (p - scanStartP) / (1 - scanStartP);
-        const scanRatio = Math.min(1, subP / 0.78);
+        const scanRatio = Math.min(1, subP / 0.74);
+        const completeP = subP > 0.74 ? (subP - 0.74) / 0.26 : 0;
+        const happyHop =
+          completeP > 0 && completeP < 0.65
+            ? -Math.abs(Math.sin((completeP / 0.65) * Math.PI * 2)) * 18
+            : 0;
+        const dropOut = subP > 0.88 ? Math.pow((subP - 0.88) / 0.12, 2) * 320 : 0;
+
         pengX = pitCenterX;
-        pengY = 274 + Math.sin(now * 0.01) * 4 + (subP > 0.86 ? (subP - 0.86) * 420 : 0);
+        pengY = 274 + Math.sin(now * 0.01) * 3.5 + happyHop + dropOut;
 
         const topEdge = pengY - spriteSize / 2;
         const scanY = topEdge + scanRatio * spriteSize;
-        const isScanShocked = scanRatio < 0.82;
+        const isScanShocked = scanRatio < 0.88;
         const scanAnim = getPenguinAnimState(now, 1, true, false, isScanShocked);
 
-        // Top Portion (Above Laser Scan Line): Crisp 48x48 BLUE Pixel Penguin (sp_01_sheet.png)
+        // 1. Back Half of Holographic Dimensional Capture Rings around the Penguin
+        ctx.save();
+        for (let r = 0; r < 3; r++) {
+          const ry = pengY - 46 + r * 46 + Math.sin(now * 0.006 + r) * 5;
+          const rx = 78 - r * 6;
+          ctx.strokeStyle =
+            r % 2 === 0 ? 'rgba(103, 232, 249, 0.38)' : 'rgba(244, 114, 182, 0.34)';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.ellipse(pengX, ry, rx, 14, 0, Math.PI, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // 2. Top Portion (Above Laser Scan Line): Crisp 48x48 BLUE Pixel Penguin (sp_01_sheet.png)
         if (bluePixelPenguin.sheetLoaded && bluePixelPenguin.sheet) {
           ctx.save();
           ctx.beginPath();
-          ctx.rect(pengX - spriteSize, topEdge - 20, spriteSize * 2, scanY - topEdge + 20);
+          ctx.rect(pengX - spriteSize, topEdge - 24, spriteSize * 2, scanY - topEdge + 24);
           ctx.clip();
           ctx.imageSmoothingEnabled = false;
           ctx.drawImage(
@@ -1626,7 +1681,7 @@ function initPixelMotionStudio() {
         } else if (bluePixelPenguin.loaded && bluePixelPenguin.img) {
           ctx.save();
           ctx.beginPath();
-          ctx.rect(pengX - spriteSize, topEdge - 20, spriteSize * 2, scanY - topEdge + 20);
+          ctx.rect(pengX - spriteSize, topEdge - 24, spriteSize * 2, scanY - topEdge + 24);
           ctx.clip();
           ctx.imageSmoothingEnabled = false;
           ctx.drawImage(
@@ -1639,7 +1694,7 @@ function initPixelMotionStudio() {
           ctx.restore();
         }
 
-        // Bottom Portion (Below Laser Scan Line): Smooth 2D BLUE Penguin (hero_2d_sheet.png)
+        // 3. Bottom Portion (Below Laser Scan Line): Smooth 2D BLUE Penguin (hero_2d_sheet.png)
         if (scanRatio < 1 && MOTION_STATE.hero2DSheetLoaded && MOTION_STATE.hero2DSheet) {
           ctx.save();
           ctx.beginPath();
@@ -1647,7 +1702,7 @@ function initPixelMotionStudio() {
             pengX - spriteSize,
             scanY,
             spriteSize * 2,
-            topEdge + spriteSize - scanY + 20
+            topEdge + spriteSize - scanY + 24
           );
           ctx.clip();
           ctx.imageSmoothingEnabled = true;
@@ -1670,7 +1725,7 @@ function initPixelMotionStudio() {
             pengX - spriteSize,
             scanY,
             spriteSize * 2,
-            topEdge + spriteSize - scanY + 20
+            topEdge + spriteSize - scanY + 24
           );
           ctx.clip();
           ctx.imageSmoothingEnabled = true;
@@ -1684,44 +1739,98 @@ function initPixelMotionStudio() {
           ctx.restore();
         }
 
-        // Holographic Laser Scan Beam + Live 48x48 Blue Pixel Block Reconstruction Band
+        // 4. Front Half of Holographic Capture Rings
+        ctx.save();
+        for (let r = 0; r < 3; r++) {
+          const ry = pengY - 46 + r * 46 + Math.sin(now * 0.006 + r) * 5;
+          const rx = 78 - r * 6;
+          ctx.strokeStyle =
+            r % 2 === 0 ? 'rgba(103, 232, 249, 0.62)' : 'rgba(244, 114, 182, 0.52)';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.ellipse(pengX, ry, rx, 14, 0, 0, Math.PI);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // 5. High-Density 48x48 Voxel Matrix Scan Beam & Emitter Nodes
         if (scanRatio < 1) {
           ctx.save();
-          ctx.fillStyle = 'rgba(56, 189, 248, 0.28)';
-          ctx.fillRect(pengX - 88, scanY - 12, 176, 24);
+          // Outer cyan glow band
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.26)';
+          ctx.fillRect(pengX - 92, scanY - 14, 184, 28);
+          // Stepped 16-bit laser core
           ctx.fillStyle = '#0284c7';
-          ctx.fillRect(pengX - 90, scanY - 4, 180, 8);
+          ctx.fillRect(pengX - 94, scanY - 4, 188, 8);
           ctx.fillStyle = '#67e8f9';
-          ctx.fillRect(pengX - 86, scanY - 2, 172, 4);
+          ctx.fillRect(pengX - 90, scanY - 2, 180, 4);
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(pengX - 80, scanY - 1, 160, 2);
+          ctx.fillRect(pengX - 84, scanY - 1, 168, 2);
 
-          // Live Blue & Cyan Pixel Blocks snapping into place along the beam
-          for (let k = 0; k < 9; k++) {
-            const kx = Math.round(pengX - 64 + k * 16);
-            const ky = Math.round(scanY + Math.sin(now * 0.03 + k * 1.7) * 9);
-            ctx.fillStyle = k % 3 === 0 ? '#ffffff' : k % 2 === 0 ? '#3b82f6' : '#67e8f9';
+          // Left & Right Holographic Laser Emitter Diamonds
+          for (const ex of [pengX - 94, pengX + 94]) {
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(ex - 6, scanY - 6, 12, 12);
+            ctx.fillStyle = '#67e8f9';
+            ctx.fillRect(ex - 4, scanY - 4, 8, 8);
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(ex - 2, scanY - 2, 4, 4);
+          }
+
+          // Multi-row 16-bit Pixel Matrix Blocks snapping into the sprite along scanY
+          const cols = 15;
+          for (let k = 0; k < cols; k++) {
+            const kx = Math.round(pengX - 56 + k * 8);
+            const wave = Math.sin(now * 0.032 + k * 1.35);
+            const ky = Math.round(scanY + wave * 10);
+            const pCol =
+              k % 4 === 0
+                ? '#ffffff'
+                : k % 3 === 0
+                ? '#facc15'
+                : k % 2 === 0
+                ? '#2563eb'
+                : '#67e8f9';
+            ctx.fillStyle = '#090d1a';
+            ctx.fillRect(kx - 4, ky - 4, 8, 8);
+            ctx.fillStyle = pCol;
             ctx.fillRect(kx - 3, ky - 3, 6, 6);
+          }
+          ctx.restore();
+        } else if (completeP > 0 && completeP < 0.85) {
+          // 6. 100% Pixelation Completion Ring Burst (8 Golden & Cyan 16-Bit Pixel Stars!)
+          const burstR = 46 + completeP * 58;
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, 1 - completeP * 1.15);
+          for (let b = 0; b < 8; b++) {
+            const ba = (b * Math.PI) / 4 + completeP * 0.8;
+            const bx = Math.round(pengX + Math.cos(ba) * burstR);
+            const by = Math.round(pengY + Math.sin(ba) * burstR * 0.75);
+            ctx.fillStyle = '#090d1a';
+            ctx.fillRect(bx - 5, by - 5, 10, 10);
+            ctx.fillStyle = b % 2 === 0 ? '#facc15' : '#67e8f9';
+            ctx.fillRect(bx - 3, by - 3, 6, 6);
           }
           ctx.restore();
         }
 
         const pct = Math.min(100, Math.round(scanRatio * 100));
-        drawPixelScanHudPill(ctx, pengX, Math.max(20, topEdge - 92), pct);
+        // Speech bubble cleanly ABOVE the penguin, HUD Scanner Pill cleanly BELOW the penguin (Zero overlap!)
         drawRetroSpeechBubble(
           ctx,
-          pengX - 24,
-          Math.max(104, topEdge - 6),
+          pengX - 18,
+          Math.max(54, topEdge - 6),
           isScanShocked
             ? CURRENT_LANG === 'ko'
               ? '어어어?! 내 몸이 픽셀로 변하고 있어!!'
               : 'Whoa?! I am turning into pixels!!'
             : CURRENT_LANG === 'ko'
-              ? '우와아!! 파란 픽셀 펭귄으로 변신 완료!!'
-              : 'Woohoo!! Transformed into a Blue Pixel Penguin!!',
+            ? '우와아!! 파란 픽셀 펭귄으로 변신 완료!!'
+            : 'Woohoo!! Transformed into a Blue Pixel Penguin!!',
           isScanShocked ? '#38bdf8' : '#34d399',
           now
         );
+        drawPixelScanHudPill(ctx, pengX, Math.min(488, topEdge + spriteSize + 14), pct);
 
         drawRetroDialogueBar(
           ctx,
