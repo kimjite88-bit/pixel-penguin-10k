@@ -3339,36 +3339,67 @@ function initPixelMotionStudio() {
   // CRITICAL FIX: Never call setIntroScene(2, true) when sceneIdx !== 2 (prevents resetting score & blocking Scene 4/5 transition!)
   const touchpadEl = document.getElementById('mobile-fullscreen-touchpad');
   if (touchpadEl) {
-    const steerFromPad = (clientX, clientY, ev) => {
-      if (MOTION_STATE.sceneIdx !== 2) return;
-      if (ev && ev.cancelable) ev.preventDefault();
-      const rect = touchpadEl.getBoundingClientRect();
-      const rx = Math.max(0, Math.min(1, (clientX - rect.left) / Math.max(1, rect.width)));
-      const ry = Math.max(0, Math.min(1, (clientY - rect.top) / Math.max(1, rect.height)));
+    // Trackpad-style relative steering: the UFO moves by how far the finger travels, never jumps to where the
+    // finger lands (an absolute pad snapped it to mid-screen on every re-touch), and the gain follows the stage
+    // width so a tall pad is not sluggish vertically.
+    const PAD_GAIN = 1.15;
+    let padLast = null; // { id, x, y } of the finger currently steering
+    const padGain = () => {
+      const stage = canvas.getBoundingClientRect();
+      return (960 / Math.max(1, stage.width)) * PAD_GAIN;
+    };
+    const padMoveTo = (clientX, clientY) => {
+      if (!padLast) return;
+      const g = padGain();
       UFO_GAME.userControlled = true;
-      UFO_GAME.targetX = Math.round(125 + rx * (680 - 125));
-      UFO_GAME.targetY = Math.round(92 + ry * (390 - 92));
+      UFO_GAME.targetX = Math.max(125, Math.min(680, UFO_GAME.targetX + (clientX - padLast.x) * g));
+      UFO_GAME.targetY = Math.max(92, Math.min(390, UFO_GAME.targetY + (clientY - padLast.y) * g));
+      padLast.x = clientX;
+      padLast.y = clientY;
+    };
+    const findPadTouch = (list) => {
+      for (let i = 0; i < list.length; i++) if (padLast && list[i].identifier === padLast.id) return list[i];
+      return null;
     };
     touchpadEl.addEventListener(
       'touchstart',
       (e) => {
-        const t = e.touches[0];
-        if (t) steerFromPad(t.clientX, t.clientY, e);
+        if (MOTION_STATE.sceneIdx !== 2) return;
+        if (e.cancelable) e.preventDefault();
+        const t = e.changedTouches[0];
+        if (t && (!padLast || !findPadTouch(e.touches))) {
+          padLast = { id: t.identifier, x: t.clientX, y: t.clientY };
+        }
       },
       { passive: false }
     );
     touchpadEl.addEventListener(
       'touchmove',
       (e) => {
-        const t = e.touches[0];
-        if (t) steerFromPad(t.clientX, t.clientY, e);
+        if (MOTION_STATE.sceneIdx !== 2) return;
+        if (e.cancelable) e.preventDefault();
+        const t = findPadTouch(e.touches);
+        if (t) padMoveTo(t.clientX, t.clientY);
       },
       { passive: false }
     );
-    touchpadEl.addEventListener('mousemove', (e) => {
-      if (e.buttons === 1) {
-        steerFromPad(e.clientX, e.clientY, e);
+    const releasePad = (e) => {
+      if (padLast && !findPadTouch(e.touches)) {
+        // Another finger still on the pad takes over without a jump
+        const next = e.touches[0];
+        padLast = next ? { id: next.identifier, x: next.clientX, y: next.clientY } : null;
       }
+    };
+    touchpadEl.addEventListener('touchend', releasePad);
+    touchpadEl.addEventListener('touchcancel', releasePad);
+    touchpadEl.addEventListener('mousedown', (e) => {
+      padLast = { id: 'mouse', x: e.clientX, y: e.clientY };
+    });
+    touchpadEl.addEventListener('mousemove', (e) => {
+      if (e.buttons === 1 && MOTION_STATE.sceneIdx === 2) padMoveTo(e.clientX, e.clientY);
+    });
+    window.addEventListener('mouseup', () => {
+      if (padLast && padLast.id === 'mouse') padLast = null;
     });
   }
 
