@@ -12,7 +12,7 @@
   <meta property="og:image" content="https://ppeng.verycloud.io/assets/logo_4441_1024.png?v=v322" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" type="image/png" href="/img/P4441.png?v=v322" />
-  <link rel="stylesheet" href="/styles.css?v=5.2.5" />
+  <link rel="stylesheet" href="/styles.css?v=5.2.6" />
 </head>
 <body>
   <!-- Full-Viewport Stepped Pixel Ambient Particle Canvas -->
@@ -424,8 +424,8 @@
         <!-- Ranking KPI Summary Strip -->
         <div class="ranking-kpi-strip" id="ranking-kpi-strip">
           <div class="kpi-box">
-            <div class="kpi-label" data-ko="순위 등록 NFT 수" data-en="Ranked NFTs">순위 등록 NFT 수</div>
-            <div class="kpi-val highlight" id="ranking-kpi-total">8</div>
+            <div class="kpi-label" data-ko="순위표 표시 범위 (페이지당 10명)" data-en="Leaderboard Scope (10 / Page)">순위표 표시 범위 (페이지당 10명)</div>
+            <div class="kpi-val highlight" id="ranking-kpi-total">TOP 100 (10페이지)</div>
           </div>
           <div class="kpi-box">
             <div class="kpi-label" data-ko="🥇 현재 1위 NFT 이름" data-en="🥇 #1 Ranked NFT Name">🥇 현재 1위 NFT 이름</div>
@@ -433,19 +433,31 @@
           </div>
           <div class="kpi-box">
             <div class="kpi-label" data-ko="최고 기록 (HIGH SCORE)" data-en="High Score">최고 기록 (HIGH SCORE)</div>
-            <div class="kpi-val" id="ranking-kpi-top-score">8,450 PTS</div>
+            <div class="kpi-val" id="ranking-kpi-top-score">9,850 PTS</div>
           </div>
         </div>
 
         <div class="verychat-panel" style="margin-top:14px;">
           <div class="verychat-panel-header ranking-toolbar-header" style="display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap;">
-            <div class="verychat-panel-title" data-ko="NFT 이름별 실시간 게임 순위표 (클릭 시 해당 NFT 상세 &amp; 프사 이동)" data-en="Live Game Rankings by NFT Name (Click to Inspect NFT)">NFT 이름별 실시간 게임 순위표 (클릭 시 해당 NFT 상세 &amp; 프사 이동)</div>
+            <div>
+              <div class="verychat-panel-title" data-ko="NFT 이름별 실시간 게임 순위 TOP 100 (10명씩 · 총 10페이지)" data-en="Live Game Rankings TOP 100 by NFT Name (10 per Page · 10 Pages)">NFT 이름별 실시간 게임 순위 TOP 100 (10명씩 · 총 10페이지)</div>
+              <div id="ranking-range-indicator" style="font-size:12px; color:#67e8f9; font-weight:800; margin-top:3px;">현재 표시: 1위 ~ 10위 (1 / 10 페이지)</div>
+            </div>
             <div style="min-width:240px; flex:0 1 320px;">
               <input type="search" id="ranking-search-input" class="search-input" data-placeholder-ko="NFT 이름(Pixel Penguin #4441) 또는 번호 검색..." data-placeholder-en="Search by NFT Name (Pixel Penguin #4441) or ID..." placeholder="NFT 이름(Pixel Penguin #4441) 또는 번호 검색..." />
             </div>
           </div>
 
           <div class="ranking-page-list" id="ranking-page-list-body" style="display:flex; flex-direction:column; gap:10px; margin-top:12px;"></div>
+
+          <!-- 10-Page Pagination Bar (10 Ranks per Page × 10 Pages = 1st ~ 100th Place) -->
+          <div class="pagination-bar ranking-pagination-bar" id="ranking-pagination-bar" style="margin-top:16px; flex-wrap:wrap; gap:6px;">
+            <button type="button" class="page-btn" id="rank-page-first-btn" data-ko="≪ 처음" data-en="≪ First">≪ 처음</button>
+            <button type="button" class="page-btn" id="rank-page-prev-btn" data-ko="‹ 이전" data-en="‹ Prev">‹ 이전</button>
+            <div class="rank-page-numbers" id="rank-page-numbers" style="display:flex; align-items:center; gap:5px; flex-wrap:wrap; justify-content:center;"></div>
+            <button type="button" class="page-btn" id="rank-page-next-btn" data-ko="다음 ›" data-en="Next ›">다음 ›</button>
+            <button type="button" class="page-btn" id="rank-page-last-btn" data-ko="끝 ≫" data-en="Last ≫">끝 ≫</button>
+          </div>
         </div>
       </section>
     </div><!-- /#tab-page-ranking -->
@@ -516,6 +528,6 @@
     </div>
   </footer>
 
-  <script src="/app.js?v=5.2.5"></script>
+  <script src="/app.js?v=5.2.6"></script>
 </body>
 </html>

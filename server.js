@@ -413,23 +413,34 @@ const LEADERBOARD_JSON_PATH = path.join(DATA_DIR, 'ufo_leaderboard.json');
 let ufoLeaderboardMap = new Map();
 
 function seedDefaultLeaderboard() {
-  const starterSeeds = [
-    { edition: 0, score: 8450, kills: 28 },
-    { edition: 7, score: 7620, kills: 24 },
-    { edition: 195, score: 6890, kills: 21 },
-    { edition: 777, score: 5940, kills: 19 },
-    { edition: 1004, score: 5210, kills: 16 },
-    { edition: 4441, score: 4680, kills: 15 },
-    { edition: 8888, score: 3950, kills: 12 },
-    { edition: 9999, score: 3420, kills: 10 },
+  // Featured & diverse 100 NFT editions across #0 ~ #9999 so TOP 100 (10 per page × 10 pages) is always populated
+  const featuredEditions = [
+    0, 7, 195, 777, 1004, 4441, 962, 6521, 499, 8888,
+    1, 2, 3, 4, 5, 6, 8, 9, 10, 20,
+    33, 55, 77, 88, 100, 111, 123, 144, 168, 200,
+    222, 250, 288, 300, 333, 365, 404, 444, 500, 512,
+    555, 600, 666, 700, 720, 750, 800, 828, 888, 900,
+    999, 1024, 1111, 1234, 1337, 1500, 1777, 1888, 2000, 2026,
+    2222, 2468, 2500, 2777, 3000, 3141, 3333, 3500, 3777, 4000,
+    4200, 4321, 4500, 4777, 4888, 5000, 5150, 5555, 5888, 6000,
+    6174, 6292, 6666, 6888, 7000, 7272, 7500, 7777, 8000, 8080,
+    8282, 8500, 8765, 9000, 9090, 9250, 9500, 9777, 9888, 9999,
   ];
-  for (const s of starterSeeds) {
-    ufoLeaderboardMap.set(s.edition, {
-      edition: s.edition,
-      score: s.score,
-      kills: s.kills,
-      updated_at: new Date().toISOString(),
-    });
+
+  const nowIso = new Date().toISOString();
+  for (let i = 0; i < featuredEditions.length; i++) {
+    const ed = featuredEditions[i];
+    const seedScore = 9850 - i * 88 + ((i * 17) % 35);
+    const seedKills = Math.max(4, Math.round(seedScore / 310));
+    const existing = ufoLeaderboardMap.get(ed);
+    if (!existing || existing.score < seedScore) {
+      ufoLeaderboardMap.set(ed, {
+        edition: ed,
+        score: seedScore,
+        kills: Math.max(existing?.kills || 0, seedKills),
+        updated_at: existing?.updated_at || nowIso,
+      });
+    }
   }
 }
 
@@ -450,13 +461,14 @@ function loadLeaderboardData() {
             });
           }
         }
-        return;
       }
     }
   } catch (e) {
     console.warn('[Leaderboard] Using default seed:', e.message);
   }
+  // Always ensure at least 100 ranked NFTs exist for the 10-page (10 per page) Top 100 Ranking board
   seedDefaultLeaderboard();
+  saveLeaderboardData();
 }
 
 function saveLeaderboardData() {
@@ -468,7 +480,7 @@ function saveLeaderboardData() {
   }
 }
 
-function getFormattedLeaderboard(limit = 50) {
+function getFormattedLeaderboard(limit = 100) {
   if (!collection) loadCollectionData();
   const sorted = Array.from(ufoLeaderboardMap.values()).sort(
     (a, b) => b.score - a.score || a.edition - b.edition
@@ -500,7 +512,7 @@ function getFormattedLeaderboard(limit = 50) {
 loadLeaderboardData();
 
 app.get('/api/leaderboard', (req, res) => {
-  const limit = Math.min(100, Math.max(5, Number(req.query.limit || 30)));
+  const limit = Math.min(100, Math.max(5, Number(req.query.limit || 100)));
   res.json({
     total_pilots: ufoLeaderboardMap.size,
     items: getFormattedLeaderboard(limit),
@@ -540,7 +552,7 @@ app.post('/api/leaderboard', (req, res) => {
     best_score: ufoLeaderboardMap.get(ed).score,
     rank: myRank,
     total_pilots: ufoLeaderboardMap.size,
-    items: getFormattedLeaderboard(30),
+    items: getFormattedLeaderboard(100),
   });
 });
 

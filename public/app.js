@@ -941,6 +941,9 @@ async function setUfoPilotTokenId(tokenNum, triggerPfp = true, triggerLiftoff = 
 }
 
 let RANKING_PAGE_CACHE = [];
+const RANKING_PAGE_SIZE = 10;
+let CURRENT_RANKING_PAGE = 1;
+let RANKING_TOTAL_PAGES = 10;
 
 function getNftDisplayName(item) {
   if (!item) return 'Pixel Penguin #0';
@@ -967,7 +970,7 @@ function buildLeaderboardRowsHtml(items, showBoardAction = true) {
           ? '🥈 2위'
           : item.rank === 3
           ? '🥉 3위'
-          : `#${item.rank}`;
+          : `${item.rank}위`;
       const topClass = item.rank <= 3 ? `rank-top-${item.rank}` : '';
       const nftName = getNftDisplayName(item);
       const spText = item.species || 'Classic';
@@ -1005,36 +1008,98 @@ function buildLeaderboardRowsHtml(items, showBoardAction = true) {
     .join('');
 }
 
+function goToRankingPage(pageNum) {
+  CURRENT_RANKING_PAGE = Math.max(1, Math.min(RANKING_TOTAL_PAGES, Number(pageNum) || 1));
+  renderRankingPageList();
+}
+
 function renderRankingPageList() {
   const listEl = document.getElementById('ranking-page-list-body');
   if (!listEl) return;
   const q = (document.getElementById('ranking-search-input')?.value || '').trim().toLowerCase();
 
-  let filtered = RANKING_PAGE_CACHE;
+  let filtered = RANKING_PAGE_CACHE.slice(0, 100);
   if (q) {
-    filtered = RANKING_PAGE_CACHE.filter((item) => {
+    filtered = filtered.filter((item) => {
       const nameKo = String(item.name_ko || item.name || `Pixel Penguin #${item.edition}`).toLowerCase();
       const nameEn = String(item.name_en || item.name || `Pixel Penguin #${item.edition}`).toLowerCase();
       const idStr = String(item.id || '').toLowerCase();
       const edStr = String(item.edition);
       const spStr = String(item.species || '').toLowerCase();
+      const rankStr = String(item.rank);
       return (
         nameKo.includes(q) ||
         nameEn.includes(q) ||
         idStr.includes(q) ||
         edStr === q.replace(/^#/, '') ||
+        rankStr === q.replace(/위$/, '') ||
         spStr.includes(q)
       );
     });
   }
 
-  listEl.innerHTML = buildLeaderboardRowsHtml(filtered, true);
+  RANKING_TOTAL_PAGES = Math.max(1, Math.ceil(filtered.length / RANKING_PAGE_SIZE));
+  if (CURRENT_RANKING_PAGE > RANKING_TOTAL_PAGES) {
+    CURRENT_RANKING_PAGE = RANKING_TOTAL_PAGES;
+  }
+  if (CURRENT_RANKING_PAGE < 1) {
+    CURRENT_RANKING_PAGE = 1;
+  }
+
+  const startIdx = (CURRENT_RANKING_PAGE - 1) * RANKING_PAGE_SIZE;
+  const pageItems = filtered.slice(startIdx, startIdx + RANKING_PAGE_SIZE);
+
+  listEl.innerHTML = buildLeaderboardRowsHtml(pageItems, true);
+
+  // Update Range Indicator (e.g. "현재 표시: 1위 ~ 10위 (1 / 10 페이지 · 페이지당 10명)")
+  const rangeEl = document.getElementById('ranking-range-indicator');
+  if (rangeEl) {
+    if (pageItems.length > 0) {
+      const firstRank = pageItems[0].rank;
+      const lastRank = pageItems[pageItems.length - 1].rank;
+      rangeEl.textContent =
+        CURRENT_LANG === 'ko'
+          ? `현재 표시: ${firstRank}위 ~ ${lastRank}위 (${CURRENT_RANKING_PAGE} / ${RANKING_TOTAL_PAGES} 페이지 · 10명씩 표시)`
+          : `Showing Rank #${firstRank} – #${lastRank} (Page ${CURRENT_RANKING_PAGE} / ${RANKING_TOTAL_PAGES} · 10 per page)`;
+    } else {
+      rangeEl.textContent =
+        CURRENT_LANG === 'ko' ? '검색 결과: 0명' : 'Search Results: 0';
+    }
+  }
+
+  // Render 1~10 Page Number Buttons
+  const pageNumsWrap = document.getElementById('rank-page-numbers');
+  if (pageNumsWrap) {
+    const btns = [];
+    for (let p = 1; p <= RANKING_TOTAL_PAGES; p++) {
+      const activeCls = p === CURRENT_RANKING_PAGE ? 'active' : '';
+      btns.push(
+        `<button type="button" class="rank-page-num-btn ${activeCls}" onclick="goToRankingPage(${p})">${p}</button>`
+      );
+    }
+    pageNumsWrap.innerHTML = btns.join('');
+  }
+
+  const firstBtn = document.getElementById('rank-page-first-btn');
+  const prevBtn = document.getElementById('rank-page-prev-btn');
+  const nextBtn = document.getElementById('rank-page-next-btn');
+  const lastBtn = document.getElementById('rank-page-last-btn');
+  if (firstBtn) firstBtn.disabled = CURRENT_RANKING_PAGE <= 1;
+  if (prevBtn) prevBtn.disabled = CURRENT_RANKING_PAGE <= 1;
+  if (nextBtn) nextBtn.disabled = CURRENT_RANKING_PAGE >= RANKING_TOTAL_PAGES;
+  if (lastBtn) lastBtn.disabled = CURRENT_RANKING_PAGE >= RANKING_TOTAL_PAGES;
 
   // Update KPI summary cards
   const totalEl = document.getElementById('ranking-kpi-total');
   const topNameEl = document.getElementById('ranking-kpi-top-name');
   const topScoreEl = document.getElementById('ranking-kpi-top-score');
-  if (totalEl) totalEl.textContent = `${RANKING_PAGE_CACHE.length.toLocaleString()}마리`;
+  const topCount = Math.min(100, RANKING_PAGE_CACHE.length);
+  if (totalEl) {
+    totalEl.textContent =
+      CURRENT_LANG === 'ko'
+        ? `1위 ~ ${topCount}위 (${Math.ceil(topCount / 10)}페이지)`
+        : `TOP ${topCount} (${Math.ceil(topCount / 10)} Pages)`;
+  }
   if (RANKING_PAGE_CACHE.length > 0) {
     const first = RANKING_PAGE_CACHE[0];
     if (topNameEl) topNameEl.textContent = `${getNftDisplayName(first)} (${first.id})`;
@@ -1050,7 +1115,7 @@ async function fetchAndRenderRankingPage() {
     }</div>`;
   }
   try {
-    const res = await fetch('/api/leaderboard?limit=50');
+    const res = await fetch('/api/leaderboard?limit=100');
     if (res.ok) {
       const data = await res.json();
       RANKING_PAGE_CACHE = data.items || [];
@@ -4560,12 +4625,25 @@ document.addEventListener('DOMContentLoaded', async () => {
     tab.addEventListener('click', () => scrollToSection(tab.dataset.target));
   });
 
-  // Ranking Page Search & Refresh
+  // Ranking Page Search, Refresh & 10-Page Pagination (10 per page × 10 pages = Top 100)
   document.getElementById('btn-refresh-ranking-page')?.addEventListener('click', () => {
     fetchAndRenderRankingPage();
   });
   document.getElementById('ranking-search-input')?.addEventListener('input', () => {
+    CURRENT_RANKING_PAGE = 1;
     renderRankingPageList();
+  });
+  document.getElementById('rank-page-first-btn')?.addEventListener('click', () => {
+    goToRankingPage(1);
+  });
+  document.getElementById('rank-page-prev-btn')?.addEventListener('click', () => {
+    if (CURRENT_RANKING_PAGE > 1) goToRankingPage(CURRENT_RANKING_PAGE - 1);
+  });
+  document.getElementById('rank-page-next-btn')?.addEventListener('click', () => {
+    if (CURRENT_RANKING_PAGE < RANKING_TOTAL_PAGES) goToRankingPage(CURRENT_RANKING_PAGE + 1);
+  });
+  document.getElementById('rank-page-last-btn')?.addEventListener('click', () => {
+    goToRankingPage(RANKING_TOTAL_PAGES);
   });
 
   // Mobile 9-Category Filter Drawer Toggle
