@@ -489,14 +489,14 @@ function ensureHero2DSprite() {
   img.onload = () => {
     MOTION_STATE.hero2DLoaded = true;
   };
-  img.src = '/assets/motion_sprites/hero_2d.png?v=5.0.7';
+  img.src = '/assets/motion_sprites/hero_2d.png?v=5.0.8';
   MOTION_STATE.hero2DImg = img;
 
   const sheet = new Image();
   sheet.onload = () => {
     MOTION_STATE.hero2DSheetLoaded = true;
   };
-  sheet.src = '/assets/motion_sprites/hero_2d_sheet.png?v=5.0.7';
+  sheet.src = '/assets/motion_sprites/hero_2d_sheet.png?v=5.0.8';
   MOTION_STATE.hero2DSheet = sheet;
   return img;
 }
@@ -1558,15 +1558,21 @@ function initPixelMotionStudio() {
       } else if (p < scanStartP) {
         // Phase B: Banana Slip Shock & Smooth 360° Tumble Arc into the Pixel Portal Chasm
         const subP = (p - slipStartP) / (scanStartP - slipStartP);
+        // Natural breakdown: first 10% of slip (subP < 0.10) is a tight impact blink (Frame 1) + squash before eyes open wide (Frame 6)!
+        const isImpactBlink = subP < 0.10;
         if (subP < 0.44) {
-          // Rear back in shock right as he steps on the banana peel so the 4x supersampled shocked face (O_O) shines!
           const shockP = subP / 0.44;
           const easeOut = 1 - Math.pow(1 - shockP, 2);
-          pengX = 526 + easeOut * 36 + Math.sin(now * 0.085) * 2.0;
+          pengX = 526 + easeOut * 36 + Math.sin(now * 0.085) * 1.8;
           pengY = 286 - Math.sin(shockP * Math.PI * 0.5) * 42;
           pengRot = -0.34 * Math.sin(shockP * Math.PI * 0.5);
-          scaleX = 0.94 + shockP * 0.04;
-          scaleY = 1.08 - shockP * 0.04;
+          if (isImpactBlink) {
+            scaleX = 1.06;
+            scaleY = 0.94;
+          } else {
+            scaleX = 0.95 + shockP * 0.04;
+            scaleY = 1.06 - shockP * 0.04;
+          }
         } else {
           // Smooth parabolic arc from cliff edge into the glowing Pixel Rift (completing a full 360° spin -> 0 rad at scanStartP!)
           const fallP = (subP - 0.44) / 0.56;
@@ -1578,7 +1584,7 @@ function initPixelMotionStudio() {
           scaleY = 0.98;
         }
 
-        // Crisp snow/slip impact rings at the cliff edge instead of crude polygon spikes
+        // Crisp snow/slip impact rings at the cliff edge
         if (subP < 0.55) {
           const ringP = subP / 0.55;
           ctx.save();
@@ -1598,13 +1604,13 @@ function initPixelMotionStudio() {
           pengRot,
           scaleX,
           scaleY,
-          now,
+          isImpactBlink ? 320 : now,
           false,
-          true
+          !isImpactBlink
         );
 
         // Authentic 16-Bit Pixel "!!" Shock Emote Badge beside the startled penguin
-        if (subP < 0.62) {
+        if (subP >= 0.08 && subP < 0.62) {
           drawPixelEmoteBubble(ctx, pengX + 64, pengY - 22, 'shock', now);
         }
 
@@ -1642,8 +1648,21 @@ function initPixelMotionStudio() {
 
         const topEdge = pengY - spriteSize / 2;
         const scanY = topEdge + scanRatio * spriteSize;
-        const isScanShocked = scanRatio < 0.88;
-        const scanAnim = getPenguinAnimState(now, 1, true, false, isScanShocked);
+
+        // Natural Expression Transition across the Scan Line:
+        // 1) Below the laser beam (unscanned 2D Penguin): still surprised (hero2D Frame 6) while being scanned!
+        // 2) Above the laser beam (newly materialized Pixel Penguin):
+        //    - While the bright laser beam is crossing the head/eyes (scanRatio < 0.58), eyes are closed in a gentle blink (Frame 1: ^ ^).
+        //    - Once the laser beam passes below the face (scanRatio >= 0.58), the Pixel Penguin naturally opens its eyes from the blink into its normal cute face (Frame 0/2/3)!
+        const pixelBlinkDuringBeam = scanRatio < 0.58;
+        const topPixelAnim = getPenguinAnimState(
+          now,
+          1,
+          scanRatio >= 0.72,
+          pixelBlinkDuringBeam,
+          false
+        );
+        const bot2DFrameIdx = 6; // Unscanned 2D lower half remains surprised until the laser beam wipes past it
 
         // 1. Back Half of Holographic Dimensional Capture Rings around the Penguin
         ctx.save();
@@ -1668,7 +1687,7 @@ function initPixelMotionStudio() {
           ctx.imageSmoothingEnabled = false;
           ctx.drawImage(
             bluePixelPenguin.sheet,
-            scanAnim.frameIdx * 256,
+            topPixelAnim.frameIdx * 256,
             0,
             256,
             256,
@@ -1708,7 +1727,7 @@ function initPixelMotionStudio() {
           ctx.imageSmoothingEnabled = true;
           ctx.drawImage(
             MOTION_STATE.hero2DSheet,
-            scanAnim.frameIdx * 256,
+            bot2DFrameIdx * 256,
             0,
             256,
             256,
@@ -1815,19 +1834,20 @@ function initPixelMotionStudio() {
         }
 
         const pct = Math.min(100, Math.round(scanRatio * 100));
+        const isStillScanning = scanRatio < 0.92;
         // Speech bubble cleanly ABOVE the penguin, HUD Scanner Pill cleanly BELOW the penguin (Zero overlap!)
         drawRetroSpeechBubble(
           ctx,
           pengX - 18,
           Math.max(54, topEdge - 6),
-          isScanShocked
+          isStillScanning
             ? CURRENT_LANG === 'ko'
               ? '어어어?! 내 몸이 픽셀로 변하고 있어!!'
               : 'Whoa?! I am turning into pixels!!'
             : CURRENT_LANG === 'ko'
             ? '우와아!! 파란 픽셀 펭귄으로 변신 완료!!'
             : 'Woohoo!! Transformed into a Blue Pixel Penguin!!',
-          isScanShocked ? '#38bdf8' : '#34d399',
+          isStillScanning ? '#38bdf8' : '#34d399',
           now
         );
         drawPixelScanHudPill(ctx, pengX, Math.min(488, topEdge + spriteSize + 14), pct);
