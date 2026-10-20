@@ -334,6 +334,10 @@ function scrollToSection(id) {
     tabKey = 'tab-notices';
   }
 
+  if (tabKey !== 'tab-intro' && typeof exitUfoFullscreenGame === 'function') {
+    exitUfoFullscreenGame();
+  }
+
   const pageMap = {
     'tab-intro': 'tab-page-intro',
     'tab-codex': 'tab-page-codex',
@@ -483,6 +487,7 @@ const SCENE_DURATIONS = [4300, 9200, 6800]; // 0: 남극탈출 & 탑승, 1: 하�
 const MOTION_STATE = {
   sceneIdx: 0,
   autoPlay: true,
+  isFullscreen: false,
   sceneStartTime: performance.now(),
   hero2DImg: null,
   hero2DLoaded: false,
@@ -755,13 +760,13 @@ function updateUfoBoardingDockUI() {
       const code = `P${String(UFO_GAME.pilotTokenId).padStart(4, '0')}`;
       badgeEl.textContent =
         CURRENT_LANG === 'ko'
-          ? `🎨 1번 파츠(깃털스킨): #${UFO_GAME.pilotTokenId} (${code}) ${UFO_GAME.pilotSpeciesLabel} · 🏆 랭킹 기록 ON`
-          : `🎨 Part #1 (Feather Skin): #${UFO_GAME.pilotTokenId} (${code}) ${UFO_GAME.pilotSpeciesLabel} · 🏆 Leaderboard ON`;
+          ? `🎨 #${UFO_GAME.pilotTokenId}(${code}) ${UFO_GAME.pilotSpeciesLabel} · 랭킹 ON`
+          : `🎨 #${UFO_GAME.pilotTokenId}(${code}) ${UFO_GAME.pilotSpeciesLabel} · Ranked`;
     } else {
       badgeEl.textContent =
         CURRENT_LANG === 'ko'
-          ? '🎨 1번 파츠(깃털스킨): 기본 파란 펭귄 (없음 선택 · 랭킹 기록 안 남음)'
-          : '🎨 Part #1 (Feather Skin): Default Blue Penguin (No NFT · Score Not Recorded)';
+          ? '🎨 기본 파란 펭귄 (없음 · 기록 안 남음)'
+          : '🎨 Default Blue Penguin (Unrecorded)';
     }
   }
   if (inputEl) {
@@ -770,6 +775,95 @@ function updateUfoBoardingDockUI() {
     } else {
       inputEl.value = '';
     }
+  }
+  const fsLabelEl = document.getElementById('fs-pilot-status-label');
+  if (fsLabelEl) {
+    if (UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null) {
+      fsLabelEl.textContent =
+        CURRENT_LANG === 'ko'
+          ? `탑승: Pixel Penguin #${UFO_GAME.pilotTokenId} (기록 ON)`
+          : `Pilot: Pixel Penguin #${UFO_GAME.pilotTokenId}`;
+    } else {
+      fsLabelEl.textContent =
+        CURRENT_LANG === 'ko' ? '탑승: 기본 파란 펭귄 (미기록)' : 'Pilot: Default Blue (No Record)';
+    }
+  }
+}
+
+function updateFullscreenExitOrCodexButton() {
+  const lbl = document.getElementById('btn-exit-or-codex-label');
+  if (lbl) {
+    if (MOTION_STATE.isFullscreen) {
+      lbl.textContent =
+        CURRENT_LANG === 'ko' ? '✕ 전체화면 종료 (나가기)' : '✕ Exit Fullscreen';
+    } else {
+      lbl.textContent =
+        CURRENT_LANG === 'ko' ? '10,000마리 도감도 구경하기' : 'Explore 10K Codex';
+    }
+  }
+  const burstBtnSpan = document.querySelector('#btn-pixel-burst span');
+  if (burstBtnSpan) {
+    if (MOTION_STATE.isFullscreen) {
+      burstBtnSpan.textContent =
+        CURRENT_LANG === 'ko' ? '🔄 게임 다시 시작 (교전 리셋)' : '🔄 Restart UFO Battle';
+    } else {
+      burstBtnSpan.textContent =
+        CURRENT_LANG === 'ko' ? '🎮 게임 참여 (전체화면 시작)' : '🎮 Join Game (Fullscreen)';
+    }
+  }
+}
+
+function enterUfoFullscreenGame(startCombatImmediately = true) {
+  const theaterEl = document.getElementById('retro-intro-theater');
+  if (!theaterEl) return;
+  MOTION_STATE.isFullscreen = true;
+  document.documentElement.classList.add('ufo-fullscreen-lock');
+  document.body.classList.add('ufo-fullscreen-lock');
+  theaterEl.classList.add('is-fullscreen-mode');
+  updateUfoBoardingDockUI();
+  updateFullscreenExitOrCodexButton();
+
+  // Progressive Native Fullscreen API (Android Chrome & Desktop; iPhone iOS Safari & VeryChat WebView use the 100dvh fixed lock-shell!)
+  try {
+    if (theaterEl.requestFullscreen && !document.fullscreenElement) {
+      theaterEl.requestFullscreen().catch(() => {});
+    } else if (theaterEl.webkitRequestFullscreen && !document.webkitFullscreenElement) {
+      theaterEl.webkitRequestFullscreen();
+    }
+  } catch (e) {
+    // Fallback to CSS 100dvh lock-shell
+  }
+
+  if (startCombatImmediately) {
+    setIntroScene(1, true);
+    UFO_GAME.userControlled = true;
+  }
+}
+
+function exitUfoFullscreenGame() {
+  const theaterEl = document.getElementById('retro-intro-theater');
+  MOTION_STATE.isFullscreen = false;
+  document.documentElement.classList.remove('ufo-fullscreen-lock');
+  document.body.classList.remove('ufo-fullscreen-lock');
+  theaterEl?.classList.remove('is-fullscreen-mode');
+  updateFullscreenExitOrCodexButton();
+
+  try {
+    if (document.fullscreenElement && document.exitFullscreen) {
+      document.exitFullscreen().catch(() => {});
+    } else if (document.webkitFullscreenElement && document.webkitExitFullscreen) {
+      document.webkitExitFullscreen();
+    }
+  } catch (e) {
+    // Ignore
+  }
+}
+
+function handleExitOrCodexClick() {
+  if (MOTION_STATE.isFullscreen) {
+    exitUfoFullscreenGame();
+  } else {
+    scrollToSection('tab-codex');
   }
 }
 
@@ -957,6 +1051,7 @@ function boardRankedNftAndPlay(edition, event) {
   closeLeaderboardModal();
   setUfoPilotTokenId(num, true, true);
   scrollToSection('tab-intro');
+  enterUfoFullscreenGame(true);
 }
 
 async function openLeaderboardModal() {
@@ -2581,16 +2676,29 @@ function initPixelMotionStudio() {
     setIntroScene((MOTION_STATE.sceneIdx + 1) % 3, true);
   });
 
-  // Launch UFO Game / Replay Full Intro Button
-  document.getElementById('btn-pixel-burst')?.addEventListener('click', () => {
-    MOTION_STATE.autoPlay = true;
-    const autoBtn = document.getElementById('btn-motion-autoplay');
-    autoBtn?.classList.add('active-toggle');
-    const lblEl = document.getElementById('autoplay-label');
-    if (lblEl) {
-      lblEl.textContent = CURRENT_LANG === 'ko' ? '자동진행: ON' : 'Auto: ON';
+  // Launch Fullscreen UFO Game ("🎮 게임 참여 (전체화면)") Buttons
+  const handleEnterFullscreenClick = () => {
+    // Sync NFT input if user typed a number before clicking 게임 참여
+    const raw = pilotInput ? pilotInput.value.trim() : '';
+    if (raw !== '' && !Number.isNaN(parseInt(raw, 10))) {
+      setUfoPilotTokenId(parseInt(raw, 10), true, false);
     }
-    setIntroScene(0, true);
+    enterUfoFullscreenGame(true);
+  };
+
+  document.getElementById('btn-pixel-burst')?.addEventListener('click', handleEnterFullscreenClick);
+  document.getElementById('btn-dock-fullscreen-play')?.addEventListener('click', handleEnterFullscreenClick);
+  document.getElementById('btn-canvas-fullscreen-play')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    handleEnterFullscreenClick();
+  });
+  document.getElementById('btn-exit-fullscreen-top')?.addEventListener('click', () => {
+    exitUfoFullscreenGame();
+  });
+  document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement && MOTION_STATE.isFullscreen) {
+      // Keep CSS lock-shell unless user pressed ESC on desktop native fullscreen
+    }
   });
 
   // Autoplay Toggle Button
@@ -2676,10 +2784,19 @@ function initPixelMotionStudio() {
     }
   });
 
-  // Mobile-First Touch Drag Steering for Giant UFO Spaceship (with -38px thumb offset so finger never blocks UFO!)
+  // Mobile-First Touch Drag Steering for Giant UFO Spaceship (Zero Page Scroll in Fullscreen / Combat!)
   const handleTouchSteer = (e) => {
     const touch = e.touches[0];
     if (!touch) return;
+
+    // When in Fullscreen Mode OR actively steering in Scene 1 Combat, block page scroll 100%!
+    if (
+      MOTION_STATE.isFullscreen ||
+      (MOTION_STATE.sceneIdx === 1 && UFO_GAME.phase === 'combat' && UFO_GAME.userControlled)
+    ) {
+      if (e.cancelable) e.preventDefault();
+    }
+
     const { mx, my } = getLogicalCoords(touch.clientX, touch.clientY);
 
     if (MOTION_STATE.sceneIdx === 1 && UFO_GAME.phase === 'combat') {
@@ -2692,8 +2809,48 @@ function initPixelMotionStudio() {
       UFO_GAME.targetY = Math.max(96, Math.min(325, my - 38));
     }
   };
-  canvas.addEventListener('touchstart', handleTouchSteer, { passive: true });
-  canvas.addEventListener('touchmove', handleTouchSteer, { passive: true });
+  canvas.addEventListener('touchstart', handleTouchSteer, { passive: false });
+  canvas.addEventListener('touchmove', handleTouchSteer, { passive: false });
+
+  // Dedicated Mobile Fullscreen Touchpad Below Canvas (Maps relative pad coordinates to UFO flight zone!)
+  const touchpadEl = document.getElementById('mobile-fullscreen-touchpad');
+  if (touchpadEl) {
+    const steerFromPad = (clientX, clientY, ev) => {
+      if (ev && ev.cancelable) ev.preventDefault();
+      if (MOTION_STATE.sceneIdx === 0) {
+        setIntroScene(1, true);
+      }
+      if (MOTION_STATE.sceneIdx === 1 && UFO_GAME.phase === 'combat') {
+        const rect = touchpadEl.getBoundingClientRect();
+        const rx = Math.max(0, Math.min(1, (clientX - rect.left) / Math.max(1, rect.width)));
+        const ry = Math.max(0, Math.min(1, (clientY - rect.top) / Math.max(1, rect.height)));
+        UFO_GAME.userControlled = true;
+        UFO_GAME.targetX = Math.round(125 + rx * (580 - 125));
+        UFO_GAME.targetY = Math.round(96 + ry * (325 - 96));
+      }
+    };
+    touchpadEl.addEventListener(
+      'touchstart',
+      (e) => {
+        const t = e.touches[0];
+        if (t) steerFromPad(t.clientX, t.clientY, e);
+      },
+      { passive: false }
+    );
+    touchpadEl.addEventListener(
+      'touchmove',
+      (e) => {
+        const t = e.touches[0];
+        if (t) steerFromPad(t.clientX, t.clientY, e);
+      },
+      { passive: false }
+    );
+    touchpadEl.addEventListener('mousemove', (e) => {
+      if (e.buttons === 1) {
+        steerFromPad(e.clientX, e.clientY, e);
+      }
+    });
+  }
 
   setIntroScene(0, true);
 
@@ -3747,6 +3904,7 @@ function applyLanguage(lang) {
 
   updateMobileTraitFilterBtnLabel();
   updateUfoBoardingDockUI();
+  updateFullscreenExitOrCodexButton();
   renderRankingPageList();
   setIntroScene(MOTION_STATE.sceneIdx, false);
 }
@@ -4271,6 +4429,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       closeTokenModal();
+      closeLeaderboardModal();
+      if (MOTION_STATE.isFullscreen) exitUfoFullscreenGame();
     }
   });
 

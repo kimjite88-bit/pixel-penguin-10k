@@ -12,7 +12,7 @@
   <meta property="og:image" content="https://ppeng.verycloud.io/assets/logo_4441_1024.png?v=v322" />
   <meta name="twitter:card" content="summary_large_image" />
   <link rel="icon" type="image/png" href="/img/P4441.png?v=v322" />
-  <link rel="stylesheet" href="/styles.css?v=5.2.2" />
+  <link rel="stylesheet" href="/styles.css?v=5.2.3" />
 </head>
 <body>
   <!-- Full-Viewport Stepped Pixel Ambient Particle Canvas -->
@@ -73,7 +73,21 @@
           </div>
         </div>
 
-        <div class="retro-intro-theater">
+        <div class="retro-intro-theater" id="retro-intro-theater">
+          <!-- FULLSCREEN MODE TOP BAR (Shown only when Fullscreen Game Mode is active) -->
+          <div class="fullscreen-game-topbar" id="fullscreen-game-topbar">
+            <div class="fs-topbar-left">
+              <span class="boarding-alert-pill" data-ko="🎮 전체화면 게임 모드" data-en="🎮 FULLSCREEN GAME">🎮 전체화면 게임 모드</span>
+              <span class="fs-pilot-status" id="fs-pilot-status-label">탑승: 기본 파란 펭귄</span>
+            </div>
+            <div class="fs-topbar-right">
+              <button type="button" class="fs-scene-btn" onclick="setIntroScene(0, true)" data-ko="1.탈출" data-en="1.Escape">1.탈출</button>
+              <button type="button" class="fs-scene-btn" onclick="setIntroScene(1, true)" data-ko="2.교전게임" data-en="2.Battle">2.교전게임</button>
+              <button type="button" class="fs-scene-btn" onclick="setIntroScene(2, true)" data-ko="3.불시착" data-en="3.Land">3.불시착</button>
+              <button type="button" class="fs-exit-btn" id="btn-exit-fullscreen-top" data-ko="✕ 게임 종료 (나가기)" data-en="✕ Exit Fullscreen">✕ 게임 종료 (나가기)</button>
+            </div>
+          </div>
+
           <!-- UFO BOARDING DOCK: Enter My NFT Number (#0~#9999) OR "없음 (No NFT / No Record)" -->
           <div class="ufo-boarding-dock" id="ufo-boarding-dock">
             <div class="boarding-dock-left">
@@ -88,6 +102,7 @@
             </div>
             <div class="boarding-dock-right">
               <span class="pilot-skin-badge" id="ufo-pilot-skin-badge">탑승: #4441 · 깃털스킨: 기본 블루 (랭킹 기록 ON)</span>
+              <button type="button" class="boarding-fullscreen-btn" id="btn-dock-fullscreen-play" data-ko="🎮 게임 참여 (전체화면)" data-en="🎮 Join Game (Fullscreen)">🎮 게임 참여 (전체화면)</button>
               <button type="button" class="pilot-rank-btn" id="btn-open-leaderboard">
                 <span data-ko="🏆 랭킹보기" data-en="🏆 Leaderboard">🏆 랭킹보기</span>
               </button>
@@ -111,6 +126,18 @@
           <div class="retro-screen-wrap" id="motion-canvas-wrap">
             <canvas id="pixel-stage-canvas" width="1920" height="1080"></canvas>
             <div class="motion-scanline-overlay" aria-hidden="true"></div>
+            <!-- Floating "🎮 게임 참여 (전체화면)" CTA Button on Canvas (Hidden once in Fullscreen) -->
+            <button type="button" class="canvas-fullscreen-cta" id="btn-canvas-fullscreen-play">
+              <span data-ko="🎮 게임 참여 (전체화면 · 스크롤 고정)" data-en="🎮 Join Game (Fullscreen · Lock Scroll)">🎮 게임 참여 (전체화면 · 스크롤 고정)</span>
+            </button>
+          </div>
+
+          <!-- Dedicated Mobile Touch-Drag Steering Pad (Shown in Fullscreen Mode so thumb never blocks UFO & page never scrolls) -->
+          <div class="mobile-fullscreen-touchpad" id="mobile-fullscreen-touchpad">
+            <div class="touchpad-inner-guide">
+              <span class="touchpad-icon">🕹️</span>
+              <span class="touchpad-text" data-ko="이 패드나 위 게임 화면을 손가락으로 터치·드래그하여 우주선을 조종하세요! (화면 스크롤 완전 고정됨)" data-en="Touch &amp; drag here or on the game screen above to steer the UFO! (Page scroll locked)">이 패드나 위 게임 화면을 손가락으로 터치·드래그하여 우주선을 조종하세요! (화면 스크롤 완전 고정됨)</span>
+            </div>
           </div>
 
           <!-- Mobile-Friendly Crisp HTML RPG Dialogue Box -->
@@ -122,16 +149,16 @@
 
           <div class="retro-controls-bar">
             <button type="button" class="btn-primary ctrl-btn" id="btn-pixel-burst">
-              <span data-ko="🚨 1번 남극탈출부터 시작" data-en="🚨 Start Scene 1 Escape">🚨 1번 남극탈출부터 시작</span>
+              <span data-ko="🎮 게임 참여 (전체화면 시작)" data-en="🎮 Join Game (Fullscreen)">🎮 게임 참여 (전체화면 시작)</span>
             </button>
             <button type="button" class="btn-secondary ctrl-btn gold-outline" id="btn-open-leaderboard-bottom">
-              <span data-ko="🏆 NFT 랭킹보기 (클릭 시 이동)" data-en="🏆 NFT Leaderboard">🏆 NFT 랭킹보기 (클릭 시 이동)</span>
+              <span data-ko="🏆 게임 순위 보기" data-en="🏆 Game Ranking">🏆 게임 순위 보기</span>
             </button>
             <button type="button" class="btn-secondary active-toggle ctrl-btn" id="btn-motion-autoplay">
               <span data-ko="자동진행: ON" data-en="Auto: ON" id="autoplay-label">자동진행: ON</span>
             </button>
-            <button type="button" class="btn-secondary ctrl-btn" onclick="scrollToSection('tab-codex')">
-              <span data-ko="10,000마리 도감도 구경하기" data-en="Explore 10K Codex">10,000마리 도감도 구경하기</span>
+            <button type="button" class="btn-secondary ctrl-btn" id="btn-exit-or-codex" onclick="handleExitOrCodexClick()">
+              <span id="btn-exit-or-codex-label" data-ko="10,000마리 도감도 구경하기" data-en="Explore 10K Codex">10,000마리 도감도 구경하기</span>
             </button>
           </div>
         </div>
@@ -489,6 +516,6 @@
     </div>
   </footer>
 
-  <script src="/app.js?v=5.2.2"></script>
+  <script src="/app.js?v=5.2.3"></script>
 </body>
 </html>
