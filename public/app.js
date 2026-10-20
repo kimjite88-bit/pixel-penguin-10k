@@ -789,10 +789,8 @@ function updateUfoBoardingDockUI() {
   if (badgeEl) {
     if (UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null) {
       const code = `P${String(UFO_GAME.pilotTokenId).padStart(4, '0')}`;
-      badgeEl.textContent =
-        CURRENT_LANG === 'ko'
-          ? `#${UFO_GAME.pilotTokenId} (${code}) · ${UFO_GAME.pilotSpeciesLabel}`
-          : `#${UFO_GAME.pilotTokenId} (${code}) · ${UFO_GAME.pilotSpeciesLabel}`;
+      const summary = UFO_GAME.pilotTraitsSummary || UFO_GAME.pilotSpeciesLabel;
+      badgeEl.textContent = `#${UFO_GAME.pilotTokenId} (${code}) · ${summary}`;
     } else {
       badgeEl.textContent =
         CURRENT_LANG === 'ko'
@@ -804,10 +802,11 @@ function updateUfoBoardingDockUI() {
   if (s1SubEl) {
     if (UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null) {
       const code = `P${String(UFO_GAME.pilotTokenId).padStart(4, '0')}`;
+      const summary = UFO_GAME.pilotTraitsSummary || UFO_GAME.pilotSpeciesLabel;
       s1SubEl.textContent =
         CURRENT_LANG === 'ko'
-          ? `내 번호 #${UFO_GAME.pilotTokenId} (${code} · ${UFO_GAME.pilotSpeciesLabel}) 선택됨 · 최고점만 기록 (유희용)`
-          : `#${UFO_GAME.pilotTokenId} (${code} · ${UFO_GAME.pilotSpeciesLabel}) selected · High Score Only (For Fun)`;
+          ? `내 번호 #${UFO_GAME.pilotTokenId} (${code} · ${summary}) 장착 완료 · 최고점만 기록 (유희용)`
+          : `#${UFO_GAME.pilotTokenId} (${code} · ${summary}) equipped · High Score Only (For Fun)`;
       s1SubEl.style.color = '#fde047';
     } else {
       s1SubEl.textContent =
@@ -822,6 +821,189 @@ function updateUfoBoardingDockUI() {
   if (s1InputEl && document.activeElement !== s1InputEl) {
     s1InputEl.value = valStr;
   }
+}
+
+// ============================================================================
+// MODULAR 6-PART (SPECIES, CLOTHES, EYES, MOUTH, EYEWEAR, HAT) 2D & PIXEL COMPOSITOR
+// Excludes Background, Aura, Back; supports #0~#10 Genesis & #11~#9999 Generative NFTs
+// ============================================================================
+let PARTS_MANIFEST_PROMISE = null;
+let PARTS_MANIFEST_DATA = null;
+const PILOT_PART_IMG_CACHE = new Map();
+const PILOT_COMPOSED_CACHE = new Map(); // key -> { sheet2D, sheetPixel }
+
+function ensurePartsManifest() {
+  if (PARTS_MANIFEST_DATA) return Promise.resolve(PARTS_MANIFEST_DATA);
+  if (PARTS_MANIFEST_PROMISE) return PARTS_MANIFEST_PROMISE;
+  PARTS_MANIFEST_PROMISE = fetch('/assets/parts_manifest.json?v=5.5.0')
+    .then((r) => (r.ok ? r.json() : null))
+    .then((data) => {
+      PARTS_MANIFEST_DATA = data;
+      return data;
+    })
+    .catch(() => null);
+  return PARTS_MANIFEST_PROMISE;
+}
+
+function loadPilotPartImg(url) {
+  if (PILOT_PART_IMG_CACHE.has(url)) {
+    return PILOT_PART_IMG_CACHE.get(url);
+  }
+  const p = new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null);
+    img.src = `${url}?v=5.5.0`;
+  });
+  PILOT_PART_IMG_CACHE.set(url, p);
+  return p;
+}
+
+async function buildModularPilotSheets(tokenNum, traitsObj = null) {
+  const cacheKey = tokenNum === null ? 'DEFAULT_CLASSIC' : `NFT_${tokenNum}`;
+  if (PILOT_COMPOSED_CACHE.has(cacheKey)) {
+    return PILOT_COMPOSED_CACHE.get(cacheKey);
+  }
+
+  // Case 1: Special Genesis #0 ~ #10 (Pre-built 3-frame sheets for 2D 864x288 & Pixel 144x48)
+  if (tokenNum !== null && tokenNum >= 0 && tokenNum <= 10) {
+    const [sh2D, shPx] = await Promise.all([
+      loadPilotPartImg(`/assets/parts_2d/specials/sp_2d_${tokenNum}.png`),
+      loadPilotPartImg(`/assets/parts_pixel/specials/sp_px_${tokenNum}.png`),
+    ]);
+    if (sh2D && shPx) {
+      const res = { sheet2D: sh2D, sheetPixel: shPx };
+      PILOT_COMPOSED_CACHE.set(cacheKey, res);
+      return res;
+    }
+  }
+
+  const manifest = await ensurePartsManifest();
+  if (!manifest) return null;
+
+  const d2c = manifest.display_to_code || {};
+  const rules = manifest.rules || {};
+
+  const spcCode = (traitsObj && d2c.Species?.[traitsObj.Species]) || 'SPC-05';
+  const cloCode = (traitsObj && d2c.Clothes?.[traitsObj.Clothes]) || 'None';
+  const eyeCode = (traitsObj && d2c.Eyes?.[traitsObj.Eyes]) || 'EYE-01';
+  const mthCode = (traitsObj && d2c.Mouth?.[traitsObj.Mouth]) || 'None';
+  const eywCode = (traitsObj && d2c.Eyewear?.[traitsObj.Eyewear]) || 'None';
+  const hatCode = (traitsObj && d2c.Hat?.[traitsObj.Hat]) || 'None';
+
+  const isHood = (rules.hood_clothes || []).includes(cloCode);
+  const addonCode = rules.addon_species?.[spcCode] || null;
+  const keepsAddon =
+    Boolean(addonCode) && !isHood && (rules.hat_keeps_addon || []).includes(hatCode);
+
+  let hatFile = null;
+  if (hatCode !== 'None') {
+    if (
+      isHood &&
+      (rules.hat_over_hood_Hats || []).includes(hatCode) &&
+      (rules.hat_over_hood_Clothes || []).includes(cloCode)
+    ) {
+      hatFile = `${hatCode}__over_hood.png`;
+    } else {
+      hatFile = `${hatCode}.png`;
+    }
+  }
+
+  async function composeModeSheet(mode) {
+    const size = mode === '2d' ? 288 : 48;
+    const baseDir = mode === '2d' ? '/assets/parts_2d' : '/assets/parts_pixel';
+
+    const [
+      spcImg,
+      addonImg,
+      eyeNormImg,
+      eyeBlinkImg,
+      eyeShockImg,
+      cloImg,
+      hoodImg,
+      mthImg,
+      eywImg,
+      hatImg,
+    ] = await Promise.all([
+      loadPilotPartImg(`${baseDir}/species/${spcCode}.png`),
+      keepsAddon ? loadPilotPartImg(`${baseDir}/species/${addonCode}.png`) : Promise.resolve(null),
+      loadPilotPartImg(`${baseDir}/eyes/${eyeCode}.png`),
+      loadPilotPartImg(`${baseDir}/eyes/EYE-BLINK.png`),
+      loadPilotPartImg(`${baseDir}/eyes/EYE-SHOCK.png`),
+      cloCode !== 'None' ? loadPilotPartImg(`${baseDir}/clothes/${cloCode}.png`) : Promise.resolve(null),
+      isHood ? loadPilotPartImg(`${baseDir}/clothes/${cloCode}__hood.png`) : Promise.resolve(null),
+      mthCode !== 'None' ? loadPilotPartImg(`${baseDir}/mouth/${mthCode}.png`) : Promise.resolve(null),
+      eywCode !== 'None' ? loadPilotPartImg(`${baseDir}/eyewear/${eywCode}.png`) : Promise.resolve(null),
+      hatFile ? loadPilotPartImg(`${baseDir}/hat/${hatFile}`) : Promise.resolve(null),
+    ]);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = size * 3;
+    canvas.height = size;
+    const cctx = canvas.getContext('2d');
+    cctx.imageSmoothingEnabled = mode === '2d';
+
+    const eyeFrames = [eyeNormImg, eyeBlinkImg || eyeNormImg, eyeShockImg || eyeNormImg];
+    const isOpaqueEyw2D = mode === '2d' && (rules.opaque_eyewear_2d || []).includes(eywCode);
+    const isLeftOccluded2D =
+      mode === '2d' && (rules.left_eye_occluding_eyewear_2d || []).includes(eywCode);
+
+    for (let f = 0; f < 3; f++) {
+      const ox = f * size;
+      // 1. Species base
+      if (spcImg) cctx.drawImage(spcImg, ox, 0, size, size);
+      // 2. Species add-on (Rule R4)
+      if (addonImg) cctx.drawImage(addonImg, ox, 0, size, size);
+      // 3. Eyes
+      const eImg = eyeFrames[f];
+      if (eImg && !isOpaqueEyw2D) {
+        if (isLeftOccluded2D) {
+          cctx.drawImage(eImg, 174, 0, size - 174, size, ox + 174, 0, size - 174, size);
+        } else {
+          cctx.drawImage(eImg, ox, 0, size, size);
+        }
+      }
+      // 4. Clothes body
+      if (cloImg) cctx.drawImage(cloImg, ox, 0, size, size);
+      // 5. Mouth prop
+      if (mthImg) cctx.drawImage(mthImg, ox, 0, size, size);
+      // 6. Eyewear
+      if (eywImg) cctx.drawImage(eywImg, ox, 0, size, size);
+      // 7. Hood companion layer (above eyewear, below hat)
+      if (hoodImg) cctx.drawImage(hoodImg, ox, 0, size, size);
+      // 8. Hat
+      if (hatImg) cctx.drawImage(hatImg, ox, 0, size, size);
+      // 9. Mouth lower half (y >= 180 in 2D / y >= 30 in Pixel) drawn over hat/hood flaps!
+      if (mthImg && (hatImg || hoodImg)) {
+        const topY = mode === '2d' ? 180 : 30;
+        cctx.drawImage(mthImg, 0, topY, size, size - topY, ox, topY, size, size - topY);
+      }
+    }
+    return canvas;
+  }
+
+  const [sheet2D, sheetPixel] = await Promise.all([
+    composeModeSheet('2d'),
+    composeModeSheet('pixel'),
+  ]);
+  const res = { sheet2D, sheetPixel };
+  PILOT_COMPOSED_CACHE.set(cacheKey, res);
+  return res;
+}
+
+function ensureDefaultPilotSheets() {
+  if (MOTION_STATE.defaultPilotSheetsLoaded) return;
+  MOTION_STATE.defaultPilotSheetsLoaded = true;
+  buildModularPilotSheets(null, null).then((res) => {
+    if (res) {
+      MOTION_STATE.defaultPilot2DSheet = res.sheet2D;
+      MOTION_STATE.defaultPilotPixelSheet = res.sheetPixel;
+      if (!UFO_GAME.hasNft) {
+        UFO_GAME.pilot2DSheet = res.sheet2D;
+        UFO_GAME.pilotPixelSheet = res.sheetPixel;
+      }
+    }
+  });
 }
 
 function updateFullscreenExitOrCodexButton() {
@@ -895,7 +1077,11 @@ function skipEscapeToCherryBlossomTown() {
   UFO_GAME.pilotTokenId = null;
   UFO_GAME.pilotSpeciesId = '01';
   UFO_GAME.pilotSpeciesLabel = '기본 파란 펭귄 (Classic)';
+  UFO_GAME.pilotTraitsSummary = 'Classic';
+  UFO_GAME.pilot2DSheet = MOTION_STATE.defaultPilot2DSheet || null;
+  UFO_GAME.pilotPixelSheet = MOTION_STATE.defaultPilotPixelSheet || null;
   UFO_GAME.lastRank = null;
+  ensureDefaultPilotSheets();
   ensureSpeciesSprite('01');
   updateUfoBoardingDockUI();
   setIntroScene(4, true);
@@ -907,7 +1093,11 @@ function boardUfoWithoutNft(startEscape = true) {
   UFO_GAME.pilotTokenId = null;
   UFO_GAME.pilotSpeciesId = '01';
   UFO_GAME.pilotSpeciesLabel = '기본 파란 펭귄 (Classic)';
+  UFO_GAME.pilotTraitsSummary = 'Classic';
+  UFO_GAME.pilot2DSheet = MOTION_STATE.defaultPilot2DSheet || null;
+  UFO_GAME.pilotPixelSheet = MOTION_STATE.defaultPilotPixelSheet || null;
   UFO_GAME.lastRank = null;
+  ensureDefaultPilotSheets();
   ensureSpeciesSprite('01');
   updateUfoBoardingDockUI();
   if (startEscape) {
@@ -930,17 +1120,36 @@ async function setUfoPilotTokenId(tokenNum, triggerPfp = true, startEscape = fal
   UFO_GAME.hasNft = true;
   UFO_GAME.pilotTokenId = num;
 
-  // Fetch token metadata to extract Category #1 (Species / 깃털스킨)
+  // Fetch token metadata to extract all 6 character categories (Species, Clothes, Eyes, Mouth, Eyewear, Hat)
+  // Excludes Background, Aura, Back in game mode
   try {
     const res = await fetch(`/api/token/${num}`);
     if (res.ok) {
       const tok = await res.json();
-      const spName = tok?.traits?.Species || 'Classic';
+      const traits = tok?.traits || {};
+      const spName = traits.Species || 'Classic';
       const mappedId = SPECIES_NAME_TO_ID[spName] || '01';
       UFO_GAME.pilotSpeciesId = mappedId;
       UFO_GAME.pilotSpeciesLabel = spName;
+
+      const equippedParts = [
+        spName,
+        traits.Clothes && traits.Clothes !== 'None' ? traits.Clothes : null,
+        traits.Eyes && traits.Eyes !== 'Classic' ? traits.Eyes : null,
+        traits.Mouth && traits.Mouth !== 'Classic' && traits.Mouth !== 'None' ? traits.Mouth : null,
+        traits.Eyewear && traits.Eyewear !== 'None' ? traits.Eyewear : null,
+        traits.Hat && traits.Hat !== 'None' ? traits.Hat : null,
+      ].filter(Boolean);
+      UFO_GAME.pilotTraitsSummary = equippedParts.slice(0, 3).join(' + ');
+
       ensureSpeciesSprite(mappedId);
       getHero2DSheetForSpecies(mappedId);
+
+      const sheets = await buildModularPilotSheets(num, traits);
+      if (sheets && UFO_GAME.pilotTokenId === num) {
+        UFO_GAME.pilot2DSheet = sheets.sheet2D;
+        UFO_GAME.pilotPixelSheet = sheets.sheetPixel;
+      }
     }
   } catch (e) {
     // Fallback to '01' if offline
@@ -1234,20 +1443,31 @@ function drawUfoSpaceshipWithPilot(
   ctx.fill();
   ctx.stroke();
 
-  // 3. UPPER-BODY PENGUIN PILOT (100% Stationary inside Cockpit + Zero Lower-Edge Gap!)
-  //    pilotSize = 86 (at scale 1.40 -> 120px on screen, matching normal penguin size!)
-  //    srcCropH = 220 (out of 256): includes Full Head + Full Upper Body/Chest/Wings, and tucks lower waist (y=0..+9) behind Cockpit Collar!
+  // 3. UPPER-BODY PENGUIN PILOT (Non-Pixel 2D Smooth Cartoon with All 6 Character Part Categories!)
+  //    Aligned in 288x288 (48x48 * 6) space at (-44, -71, 80, 80) so Waist (y=288) tucks cleanly behind Cockpit Collar (y=+9)
+  //    and Head + Tallest Hats fit 100% inside the -72 Glass Dome Arch!
+  ensureDefaultPilotSheets();
+  const custom2D = UFO_GAME.pilot2DSheet || MOTION_STATE.defaultPilot2DSheet;
+  const f3 =
+    anim.frameIdx === 6
+      ? 2
+      : anim.frameIdx === 1 || anim.frameIdx === 4 || anim.frameIdx === 5
+      ? 1
+      : 0;
+
   ctx.save();
   ctx.beginPath();
-  ctx.rect(-56, -86, 112, 95); // Clips at y = +9 (deep inside the opaque cockpit collar & saucer hull!)
+  ctx.rect(-58, -92, 116, 101); // Clips at y = +9 (deep inside the opaque cockpit collar & saucer hull!)
   ctx.clip();
 
-  const pilotSize = 86;
-  const srcCropH = 220;
-  const drawH = pilotSize * (srcCropH / 256); // 73.9px tall
-  const pilotTopY = 9 - drawH; // 100% FIXED constant! Never bobs or shifts when hatch opens!
   ctx.imageSmoothingEnabled = true;
-  if (sheet2D) {
+  if (custom2D) {
+    ctx.drawImage(custom2D, f3 * 288, 0, 288, 288, -44, -71, 80, 80);
+  } else if (sheet2D) {
+    const pilotSize = 86;
+    const srcCropH = 220;
+    const drawH = pilotSize * (srcCropH / 256);
+    const pilotTopY = 9 - drawH;
     ctx.drawImage(
       sheet2D,
       anim.frameIdx * 256,
@@ -1260,6 +1480,10 @@ function drawUfoSpaceshipWithPilot(
       drawH
     );
   } else if (MOTION_STATE.hero2DLoaded && MOTION_STATE.hero2DImg) {
+    const pilotSize = 86;
+    const srcCropH = 220;
+    const drawH = pilotSize * (srcCropH / 256);
+    const pilotTopY = 9 - drawH;
     ctx.drawImage(
       MOTION_STATE.hero2DImg,
       0,
@@ -1290,7 +1514,7 @@ function drawUfoSpaceshipWithPilot(
   ctx.fillStyle = '#38bdf8';
   ctx.fillRect(7, 3, 5, 3);
 
-  // 5. Top Glass Dome Hatch ("우주선 대가리" / 유리막): 100% Identical to Scene 3 (3번 우주선 유리막과 완전히 동일하게 맞춤)!
+  // 5. Top Glass Dome Hatch (Border & Reflection Glints ONLY — 0% Interior Color Tint so True Species & Part Colors Shine!)
   const P = 4;
   ctx.save();
   ctx.imageSmoothingEnabled = false;
@@ -1298,25 +1522,20 @@ function drawUfoSpaceshipWithPilot(
   ctx.rotate(-openHatchRatio * 0.95);
   ctx.translate(44, -3);
 
-  // Translucent cyan glass fill inside the dome arch
-  ctx.fillStyle = 'rgba(56, 189, 248, 0.16)';
-  ctx.fillRect(-32, -60, 64, 62);
-  ctx.fillRect(-40, -48, 80, 50);
-
   // Stepped 16-Bit Pixel Arch Outline (#7dd3fc)
   ctx.fillStyle = '#7dd3fc';
-  ctx.fillRect(-28, -64, 56, P);
-  ctx.fillRect(-36, -60, 8, P);
-  ctx.fillRect(28, -60, 8, P);
-  ctx.fillRect(-40, -56, P, 8);
-  ctx.fillRect(36, -56, P, 8);
-  ctx.fillRect(-44, -48, P, 48);
-  ctx.fillRect(40, -48, P, 48);
+  ctx.fillRect(-28, -72, 56, P);
+  ctx.fillRect(-36, -68, 8, P);
+  ctx.fillRect(28, -68, 8, P);
+  ctx.fillRect(-40, -64, P, 8);
+  ctx.fillRect(36, -64, P, 8);
+  ctx.fillRect(-44, -56, P, 56);
+  ctx.fillRect(40, -56, P, 56);
 
-  // Crisp white pixel glass reflection blocks
+  // Crisp white pixel glass reflection blocks at upper-left corner of dome
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(-28, -56, 12, P);
-  ctx.fillRect(-32, -52, P, 14);
+  ctx.fillRect(-28, -64, 12, P);
+  ctx.fillRect(-32, -60, P, 14);
   ctx.restore();
 
   // 6. Metallic UFO Saucer Main Hull (Completely covers y = 3..25, hiding only the feet!)
@@ -1423,41 +1642,57 @@ function drawPixelUfoSpaceshipWithPilot(
   ctx.fillRect(-22, -39, 9, 38);
 
   // 2. UPPER-BODY 16-BIT PIXEL PENGUIN PILOT (100% Stationary inside Cockpit + Zero Lower-Edge Gap!)
-  //    pilotSize = 86 (at scale 1.42 -> 122px on screen, identical to the 124px penguin friends!)
-  //    srcCropH = 220 (out of 256): shows Full Head + Full Upper Body/Chest/Wings, and tucks lower waist (y=0..+9) behind Cockpit Collar!
   ctx.save();
   ctx.beginPath();
   ctx.rect(-58, -88, 116, 97); // Clips at y = +9 (deep inside the opaque pixel cockpit collar & saucer hull!)
   ctx.clip();
 
-  const pilotSize = 86;
-  const srcCropH = 220;
-  const drawH = Math.round(pilotSize * (srcCropH / 256)); // 74px tall
-  const pilotTopY = 9 - drawH; // 100% FIXED constant (-65)! Protagonist penguin NEVER bobs up & down or exposes a cut edge!
-  if (spEntry && spEntry.sheetLoaded && spEntry.sheet) {
+  ensureDefaultPilotSheets();
+  const customPx = UFO_GAME.pilotPixelSheet || MOTION_STATE.defaultPilotPixelSheet;
+  const f3 = isShocked ? 2 : anim.isBlinking ? 1 : 0;
+
+  if (customPx) {
     ctx.drawImage(
-      spEntry.sheet,
-      anim.frameIdx * 256,
+      customPx,
+      f3 * 48,
       0,
-      256,
-      srcCropH,
-      -pilotSize / 2 + 2,
-      pilotTopY,
-      pilotSize,
-      drawH
+      48,
+      48,
+      -44,
+      -71,
+      80,
+      80
     );
-  } else if (spEntry && spEntry.loaded && spEntry.img) {
-    ctx.drawImage(
-      spEntry.img,
-      0,
-      0,
-      256,
-      srcCropH,
-      -pilotSize / 2 + 2,
-      pilotTopY,
-      pilotSize,
-      drawH
-    );
+  } else {
+    const pilotSize = 86;
+    const srcCropH = 220;
+    const drawH = Math.round(pilotSize * (srcCropH / 256)); // 74px tall
+    const pilotTopY = 9 - drawH;
+    if (spEntry && spEntry.sheetLoaded && spEntry.sheet) {
+      ctx.drawImage(
+        spEntry.sheet,
+        anim.frameIdx * 256,
+        0,
+        256,
+        srcCropH,
+        -pilotSize / 2 + 2,
+        pilotTopY,
+        pilotSize,
+        drawH
+      );
+    } else if (spEntry && spEntry.loaded && spEntry.img) {
+      ctx.drawImage(
+        spEntry.img,
+        0,
+        0,
+        256,
+        srcCropH,
+        -pilotSize / 2 + 2,
+        pilotTopY,
+        pilotSize,
+        drawH
+      );
+    }
   }
   ctx.restore();
 
@@ -1474,31 +1709,26 @@ function drawPixelUfoSpaceshipWithPilot(
   ctx.fillRect(10, 3, 6, 4);
 
   // 4. Stepped 16-Bit Pixel Glass Dome Hatch ("우주선 대가리" — Hinges open on left pivot (-44, 3)!)
-  //    Tinted glass interior rotates WITH the hatch so there is NEVER a dark box left behind the penguin's head when open!
+  //    NO interior color fill so true Species & Clothes colors are 100% unaltered — outline & reflection glints only!
   ctx.save();
   ctx.translate(-44, 3);
   ctx.rotate(-openHatchRatio * 0.95);
   ctx.translate(44, -3);
 
-  // Translucent cyan glass fill inside the dome arch
-  ctx.fillStyle = 'rgba(56, 189, 248, 0.16)';
-  ctx.fillRect(-32, -60, 64, 62);
-  ctx.fillRect(-40, -48, 80, 50);
-
   // Stepped 16-Bit Pixel Arch Outline (#7dd3fc)
   ctx.fillStyle = '#7dd3fc';
-  ctx.fillRect(-28, -64, 56, P);
-  ctx.fillRect(-36, -60, 8, P);
-  ctx.fillRect(28, -60, 8, P);
-  ctx.fillRect(-40, -56, P, 8);
-  ctx.fillRect(36, -56, P, 8);
-  ctx.fillRect(-44, -48, P, 48);
-  ctx.fillRect(40, -48, P, 48);
+  ctx.fillRect(-28, -72, 56, P);
+  ctx.fillRect(-36, -68, 8, P);
+  ctx.fillRect(28, -68, 8, P);
+  ctx.fillRect(-40, -64, P, 8);
+  ctx.fillRect(36, -64, P, 8);
+  ctx.fillRect(-44, -56, P, 56);
+  ctx.fillRect(40, -56, P, 56);
 
   // Crisp white pixel glass reflection blocks
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(-28, -56, 12, P);
-  ctx.fillRect(-32, -52, P, 14);
+  ctx.fillRect(-28, -64, 12, P);
+  ctx.fillRect(-32, -60, P, 14);
   ctx.restore();
 
   // 5. Stepped 16-Bit Pixel UFO Saucer Hull (Covers y = 3..27 completely!)
@@ -2770,9 +3000,10 @@ function initPixelMotionStudio() {
   if (!canvas) return;
   const ctx = canvas.getContext('2d');
 
-  // Preload Reference Backgrounds, 2D Hero Penguin (hero_2d_sheet.png), Hero Blue (sp_01), and Colorful Friends (04, 05, 06, 09, 15)
+  // Preload Reference Backgrounds, 2D Hero Penguin (hero_2d_sheet.png), Modular Parts Manifest, Hero Blue (sp_01), and Colorful Friends (04, 05, 06, 09, 15)
   ensureIntroBackgrounds();
   ensureHero2DSprite();
+  ensureDefaultPilotSheets();
   ['01', '04', '05', '06', '09', '15'].forEach((id) => ensureSpeciesSprite(id));
 
   const pilotInput = document.getElementById('ufo-pilot-id-input');
@@ -3118,7 +3349,7 @@ function initPixelMotionStudio() {
         ufoY,
         ufoTilt,
         now,
-        true,
+        false,
         false,
         3,
         {
@@ -3547,11 +3778,11 @@ function initPixelMotionStudio() {
       }
       ctx.restore();
 
-      const topEdge = ufoY - 112;
+      const topEdge = ufoY - 120;
       const botEdge = ufoY + 52;
       const totalSpanH = botEdge - topEdge;
       const scanY = topEdge + scanRatio * totalSpanH;
-      const pixelBlinkDuringBeam = scanRatio > 0.05 && scanRatio < 0.58;
+      const pixelBlinkDuringBeam = scanRatio > 0.30 && scanRatio < 0.38;
 
       // 1. Top Portion (Above Laser Scan Line): GIANT 16-BIT PIXEL UFO + PIXEL PENGUIN PILOT
       if (scanRatio > 0) {
@@ -3582,7 +3813,7 @@ function initPixelMotionStudio() {
           ufoY,
           ufoTilt,
           now,
-          true,
+          false,
           subP < 0.09,
           0,
           {
@@ -3753,6 +3984,7 @@ function initPixelMotionStudio() {
       });
 
       const spriteSize = 124;
+      const s5P = Math.min(1, Math.max(0, elapsed / 9000));
 
       if (MOTION_STATE.skippedEscape) {
         const defaultEntry = ensureSpeciesSprite('01');
@@ -3765,11 +3997,11 @@ function initPixelMotionStudio() {
           flipX: false,
         });
       } else {
-        const crashP = Math.min(1, p / 0.14);
+        const crashP = Math.min(1, s5P / 0.14);
         const bounceOffset =
-          p >= 0.14 && p < 0.24 ? -Math.abs(Math.sin(((p - 0.14) / 0.10) * Math.PI)) * 18 : 0;
+          s5P >= 0.14 && s5P < 0.24 ? -Math.abs(Math.sin(((s5P - 0.14) / 0.10) * Math.PI)) * 18 : 0;
         const openHatchRatio =
-          p < 0.16 ? 0 : Math.min(1, (p - 0.16) / 0.18);
+          s5P < 0.16 ? 0 : Math.min(1, (s5P - 0.16) / 0.18);
 
         const ufoLandX = 228;
         const ufoGroundY = 418;
@@ -3799,7 +4031,7 @@ function initPixelMotionStudio() {
         { sp: '06', baseX: 768, y: 336, seed: 5, amp: 16, speed: 0.0024 },
       ];
 
-      const walkInP = Math.min(1, p / 0.20);
+      const walkInP = Math.min(1, s5P / 0.20);
       const renderedFriends = [];
 
       colorfulFriends.forEach((fr, idx) => {
