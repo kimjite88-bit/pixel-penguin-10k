@@ -460,12 +460,12 @@ function initAmbientPixelCanvas() {
 }
 
 // ============================================================================
-// 2. RETRO 16-BIT PIXEL GAME INTRO CUTSCENE ENGINE (#pixel-stage-canvas 1920x1080 HiDPI, 960x540 Logical)
-//    Scene 0: Smooth 2D Blue Penguin walks on 2D snow cliff, slips on banana & pixelates into Blue Pixel Penguin (sp_01.png)
-//    Scene 1: Lands in 16-Bit Cherry Blossom Pixel World & bounces with Blue Pixel Penguin friends
-//    Scene 2: Authentic 16-Bit Arcade Title Screen (Sculpted Bitmap Pixel Logo + RPG Command Box + Centered 5-Penguin Crew)
+// 2. RETRO 16-BIT PIXEL GAME INTRO CUTSCENE & GIANT UFO ESCAPE ENGINE (v5.2.0)
+//    Scene 0 ("1. 🚨 남극탈출 & 탑승"): Antarctica is crumbling! Giant UFO on snow cliff -> Hatch closes -> Liftoff!
+//    Scene 1 ("2. 🛸 하늘교전 & 픽셀화"): Mobile-first Sky Battle in Giant UFO -> Shot Down -> Whole Giant UFO + Pilot Pixelates!
+//    Scene 2 ("3. 💥 불시착 & 환영"): Giant Pixel UFO crash-lands in Pixel World -> Only Top Hatch opens (zero lower body!) & Penguin Friends welcome!
 // ============================================================================
-const SCENE_DURATIONS = [8600, 5600, 5600]; // 3 Scenes: 0 (🛸 우주선 교전·격추·픽셀변신), 1 (픽셀월드 도착), 2 (타이틀)
+const SCENE_DURATIONS = [4300, 9200, 6800]; // 0: 남극탈출 & 탑승, 1: 하늘교전 & 우주선 통째 픽셀화, 2: 불시착 & 대가리 해치 오픈 환영
 
 const MOTION_STATE = {
   sceneIdx: 0,
@@ -475,6 +475,7 @@ const MOTION_STATE = {
   hero2DLoaded: false,
   hero2DSheet: null,
   hero2DSheetLoaded: false,
+  recolored2DSheets: new Map(), // spId -> offscreen canvas of hero_2d_sheet recolored to match Species feather skin
   bgScene1Img: null,
   bgScene1Loaded: false,
   bgScene2Img: null,
@@ -483,23 +484,142 @@ const MOTION_STATE = {
   menuHoverIdx: 0,
 };
 
+// Category #1 (깃털스킨 Species) -> 22 Sprite Sheet ID ('01' ~ '22') Mapping (100% Exact Match with collection_10k.json)
+const SPECIES_NAME_TO_ID = {
+  'Classic': '01',
+  'Cocoa Penguin (Brown)': '02',
+  'Midnight Penguin': '03',
+  'Apricot Penguin (Orange)': '04',
+  'Rose Penguin (Pink)': '05',
+  'Violet Penguin (Purple)': '06',
+  'Snow Penguin (Snow)': '07',
+  'Dune Penguin (Sand)': '08',
+  'Jade Penguin (Forest)': '09',
+  'Ember Penguin (Ember)': '10',
+  'Bone Penguin (Skeleton)': '11',
+  'Glacier Penguin (Ice)': '12',
+  'Reef Penguin (Sea)': '13',
+  'Chrome Penguin (Cyber)': '14',
+  'Gold Penguin (Golden)': '15',
+  'Ancient Stone Penguin (Ancient)': '16',
+  'Abyssal Penguin (Eldritch Horror)': '17',
+  'Stormcloud Penguin (Storm)': '18',
+  'Dreamglow Penguin (Dream)': '19',
+  'Demon Penguin (Demon)': '20',
+  'Blaze Penguin (Fire)': '21',
+  'Pearl Penguin (Lavender)': '22',
+  // 11 Special Genesis Species (#0 ~ #10)
+  'Abyssal Sapphire': '01',
+  'Celestial Azure': '12',
+  'Chronos Navy': '18',
+  'Cyber Neon Navy': '13',
+  'Glacier Sapphire': '12',
+  'Infernal Demon': '20',
+  'Midnight Slate': '03',
+  'Deep Sapphire': '01',
+  'Shadow Vigilante (Dark Hero)': '03',
+};
+
+// Exact Feather RGB Palettes [mainRGB, shadeRGB] sampled directly from sp_01.png ~ sp_22.png
+const SPECIES_FEATHER_RGB = {
+  '01': [[18, 82, 209], [4, 58, 164]],
+  '02': [[106, 63, 35], [79, 45, 24]],
+  '03': [[39, 39, 52], [27, 27, 38]],
+  '04': [[187, 101, 27], [138, 71, 17]],
+  '05': [[180, 66, 106], [133, 43, 76]],
+  '06': [[98, 55, 169], [70, 37, 127]],
+  '07': [[168, 181, 201], [121, 133, 154]],
+  '08': [[164, 132, 81], [122, 96, 55]],
+  '09': [[31, 130, 87], [21, 95, 62]],
+  '10': [[161, 44, 27], [118, 30, 19]],
+  '11': [[135, 129, 116], [97, 92, 82]],
+  '12': [[86, 150, 196], [57, 109, 149]],
+  '13': [[77, 81, 178], [55, 56, 136]],
+  '14': [[103, 113, 128], [73, 81, 93]],
+  '15': [[190, 134, 23], [141, 95, 14]],
+  '16': [[98, 102, 108], [71, 74, 80]],
+  '17': [[39, 109, 65], [27, 79, 47]],
+  '18': [[88, 105, 145], [61, 74, 108]],
+  '19': [[108, 61, 187], [77, 40, 142]],
+  '20': [[105, 24, 31], [73, 18, 23]],
+  '21': [[181, 57, 26], [134, 39, 18]],
+  '22': [[30, 123, 129], [21, 91, 96]],
+};
+
+function getHero2DSheetForSpecies(spId = '01') {
+  ensureHero2DSprite();
+  const key = String(spId).padStart(2, '0');
+  if (key === '01' || !MOTION_STATE.hero2DSheetLoaded || !MOTION_STATE.hero2DSheet) {
+    return MOTION_STATE.hero2DSheet;
+  }
+  if (MOTION_STATE.recolored2DSheets.has(key)) {
+    return MOTION_STATE.recolored2DSheets.get(key);
+  }
+  const pal = SPECIES_FEATHER_RGB[key];
+  if (!pal) return MOTION_STATE.hero2DSheet;
+
+  try {
+    const srcSheet = MOTION_STATE.hero2DSheet;
+    const w = srcSheet.naturalWidth || 1792;
+    const h = srcSheet.naturalHeight || 256;
+    const off = document.createElement('canvas');
+    off.width = w;
+    off.height = h;
+    const octx = off.getContext('2d');
+    octx.drawImage(srcSheet, 0, 0);
+    const imgData = octx.getImageData(0, 0, w, h);
+    const d = imgData.data;
+    const [mainRGB, shadeRGB] = pal;
+
+    for (let i = 0; i < d.length; i += 4) {
+      const a = d[i + 3];
+      if (a < 25) continue;
+      const r = d[i];
+      const g = d[i + 1];
+      const b = d[i + 2];
+      // Detect blue feather pixels of hero_2d_sheet while preserving white belly/eyes, dark outlines, and orange/yellow beak
+      if (b > r + 26 && b > g + 10) {
+        const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 96;
+        const t = Math.max(0, Math.min(1.35, lum));
+        if (t <= 1) {
+          d[i] = Math.round(shadeRGB[0] + (mainRGB[0] - shadeRGB[0]) * t);
+          d[i + 1] = Math.round(shadeRGB[1] + (mainRGB[1] - shadeRGB[1]) * t);
+          d[i + 2] = Math.round(shadeRGB[2] + (mainRGB[2] - shadeRGB[2]) * t);
+        } else {
+          const boost = t - 1;
+          d[i] = Math.min(255, Math.round(mainRGB[0] + (255 - mainRGB[0]) * boost * 0.55));
+          d[i + 1] = Math.min(255, Math.round(mainRGB[1] + (255 - mainRGB[1]) * boost * 0.55));
+          d[i + 2] = Math.min(255, Math.round(mainRGB[2] + (255 - mainRGB[2]) * boost * 0.55));
+        }
+      }
+    }
+    octx.putImageData(imgData, 0, 0);
+    MOTION_STATE.recolored2DSheets.set(key, off);
+    return off;
+  } catch (e) {
+    return MOTION_STATE.hero2DSheet;
+  }
+}
+
 // ============================================================================
-// OPEN-SOURCE HYBRID UFO ARCADE ENGINE (bcastell/starfighter + radarhere/spacegame)
-// Protagonist: Default Blue Penguin (Upper-Body Pilot in UFO Glass Cockpit)
-// Flow: UFO Space Combat -> Shot Down (격추!) -> Parabolic Fall into Portal -> Pixel Scan -> Pixel World!
+// OPEN-SOURCE HYBRID GIANT UFO ARCADE ENGINE
+// Protagonist: Selected NFT Penguin (Category #1 Feather Skin) OR Default Blue Penguin ('없음')
 // ============================================================================
 const UFO_GAME = {
-  phase: 'combat', // 'combat' | 'ejected' | 'scan'
+  phase: 'combat', // 'combat' | 'scan' (in Scene 1)
   phaseStartTime: 0,
   lastTickAt: 0,
   userControlled: false,
-  pilotTokenId: 0,
-  x: 210,
-  y: 205,
+  hasNft: false, // false = '없음 (기록 안 남음)', true = NFT #0~#9999 boarded & records score!
+  pilotTokenId: null,
+  pilotSpeciesId: '01',
+  pilotSpeciesLabel: '기본 파란 펭귄 (Adelie Classic)',
+  x: 225,
+  y: 215,
   vx: 0,
   vy: 0,
-  targetX: 210,
-  targetY: 205,
+  targetX: 225,
+  targetY: 215,
   tiltRad: 0,
   shields: 3,
   maxShields: 3,
@@ -512,18 +632,18 @@ const UFO_GAME = {
   lastSpawnAt: 0,
   hitFlashUntil: 0,
   shakeUntil: 0,
-  ejectedFromX: 280,
-  ejectedFromY: 205,
+  shotDownX: 480,
+  shotDownY: 250,
   scoreSubmitted: false,
   keys: {},
   lasers: [],
   entities: [], // { type: 'banana'|'meteor'|'mine'|'fish'|'core', x, y, vx, vy, r, hp, rot, vrot }
   particles: [], // { x, y, vx, vy, col, sz, alpha, decay }
   popups: [], // { x, y, vy, text, col, alpha }
-  stars: Array.from({ length: 28 }, (_, i) => ({
+  stars: Array.from({ length: 32 }, (_, i) => ({
     x: (i * 73) % 960,
-    y: 18 + ((i * 41) % 280),
-    spd: 1.4 + (i % 4) * 0.85,
+    y: 18 + ((i * 41) % 340),
+    spd: 1.5 + (i % 4) * 0.85,
     sz: i % 3 === 0 ? 3 : 2,
   })),
 };
@@ -533,12 +653,12 @@ function resetUfoGame(now = performance.now(), keepUserControl = false) {
   UFO_GAME.phaseStartTime = now;
   UFO_GAME.lastTickAt = now;
   UFO_GAME.userControlled = keepUserControl;
-  UFO_GAME.x = 200;
-  UFO_GAME.y = 200;
+  UFO_GAME.x = 225;
+  UFO_GAME.y = 215;
   UFO_GAME.vx = 0;
   UFO_GAME.vy = 0;
-  UFO_GAME.targetX = 200;
-  UFO_GAME.targetY = 200;
+  UFO_GAME.targetX = 225;
+  UFO_GAME.targetY = 215;
   UFO_GAME.tiltRad = 0;
   UFO_GAME.shields = 3;
   UFO_GAME.score = 0;
@@ -557,33 +677,37 @@ function resetUfoGame(now = performance.now(), keepUserControl = false) {
 
 function triggerUfoShotDown(now = performance.now()) {
   if (UFO_GAME.phase !== 'combat') return;
-  UFO_GAME.phase = 'ejected';
+  UFO_GAME.phase = 'scan';
   UFO_GAME.phaseStartTime = now;
   UFO_GAME.shields = 0;
-  UFO_GAME.ejectedFromX = Math.max(140, Math.min(540, UFO_GAME.x));
-  UFO_GAME.ejectedFromY = Math.max(95, Math.min(295, UFO_GAME.y));
-  UFO_GAME.shakeUntil = now + 420;
-  UFO_GAME.lastFinalScore = Math.max(350, UFO_GAME.score);
-  // Spawn dramatic shot-down explosion burst
-  for (let i = 0; i < 24; i++) {
-    const a = (i / 24) * Math.PI * 2 + (Math.random() - 0.5) * 0.25;
-    const sp = 2.2 + Math.random() * 5.2;
+  UFO_GAME.shotDownX = Math.max(240, Math.min(680, UFO_GAME.x));
+  UFO_GAME.shotDownY = Math.max(170, Math.min(290, UFO_GAME.y));
+  UFO_GAME.shakeUntil = now + 520;
+  UFO_GAME.lastFinalScore = Math.max(450, UFO_GAME.score);
+  // Spawn dramatic shot-down explosion & EMP sparks around the Giant UFO
+  for (let i = 0; i < 28; i++) {
+    const a = (i / 28) * Math.PI * 2 + (Math.random() - 0.5) * 0.25;
+    const sp = 2.4 + Math.random() * 5.6;
     UFO_GAME.particles.push({
       x: UFO_GAME.x,
       y: UFO_GAME.y,
       vx: Math.cos(a) * sp,
       vy: Math.sin(a) * sp,
       col: i % 3 === 0 ? '#facc15' : i % 2 === 0 ? '#fb7185' : '#67e8f9',
-      sz: 4 + (i % 3) * 2,
+      sz: 5 + (i % 3) * 2,
       alpha: 1,
       decay: 0.022,
     });
   }
-  submitUfoScoreToServer(UFO_GAME.pilotTokenId, UFO_GAME.lastFinalScore, UFO_GAME.kills);
+  if (UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null) {
+    submitUfoScoreToServer(UFO_GAME.pilotTokenId, UFO_GAME.lastFinalScore, UFO_GAME.kills);
+  } else {
+    UFO_GAME.lastRank = null;
+  }
 }
 
 async function submitUfoScoreToServer(tokenId, score, kills) {
-  if (UFO_GAME.scoreSubmitted || score <= 0) return;
+  if (!UFO_GAME.hasNft || tokenId === null || UFO_GAME.scoreSubmitted || score <= 0) return;
   UFO_GAME.scoreSubmitted = true;
   try {
     const res = await fetch('/api/leaderboard', {
@@ -597,6 +721,91 @@ async function submitUfoScoreToServer(tokenId, score, kills) {
     }
   } catch (e) {
     // Non-blocking fallback
+  }
+}
+
+function updateUfoBoardingDockUI() {
+  const nftBtn = document.getElementById('btn-ufo-board-nft');
+  const noneBtn = document.getElementById('btn-ufo-board-none');
+  const badgeEl = document.getElementById('ufo-pilot-skin-badge');
+  const inputEl = document.getElementById('ufo-pilot-id-input');
+
+  if (nftBtn) nftBtn.classList.toggle('active-mode', UFO_GAME.hasNft);
+  if (noneBtn) noneBtn.classList.toggle('active-mode', !UFO_GAME.hasNft);
+
+  if (badgeEl) {
+    if (UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null) {
+      const code = `P${String(UFO_GAME.pilotTokenId).padStart(4, '0')}`;
+      badgeEl.textContent =
+        CURRENT_LANG === 'ko'
+          ? `🎨 1번 파츠(깃털스킨): #${UFO_GAME.pilotTokenId} (${code}) ${UFO_GAME.pilotSpeciesLabel} · 🏆 랭킹 기록 ON`
+          : `🎨 Part #1 (Feather Skin): #${UFO_GAME.pilotTokenId} (${code}) ${UFO_GAME.pilotSpeciesLabel} · 🏆 Leaderboard ON`;
+    } else {
+      badgeEl.textContent =
+        CURRENT_LANG === 'ko'
+          ? '🎨 1번 파츠(깃털스킨): 기본 파란 펭귄 (없음 선택 · 랭킹 기록 안 남음)'
+          : '🎨 Part #1 (Feather Skin): Default Blue Penguin (No NFT · Score Not Recorded)';
+    }
+  }
+  if (inputEl) {
+    if (UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null) {
+      inputEl.value = String(UFO_GAME.pilotTokenId);
+    } else {
+      inputEl.value = '';
+    }
+  }
+}
+
+function boardUfoWithoutNft(restartScene = true) {
+  UFO_GAME.hasNft = false;
+  UFO_GAME.pilotTokenId = null;
+  UFO_GAME.pilotSpeciesId = '01';
+  UFO_GAME.pilotSpeciesLabel = '기본 파란 펭귄 (Adelie Classic)';
+  UFO_GAME.lastRank = null;
+  ensureSpeciesSprite('01');
+  updateUfoBoardingDockUI();
+  if (restartScene) {
+    setIntroScene(0, true);
+  }
+}
+
+async function setUfoPilotTokenId(tokenNum, triggerPfp = true, restartScene = false) {
+  const raw = String(tokenNum ?? '').trim().replace(/^#/, '').replace(/^P/i, '');
+  if (raw === '' || Number.isNaN(Number(raw))) {
+    boardUfoWithoutNft(restartScene);
+    return;
+  }
+  const num = Math.max(0, Math.min(9999, Math.floor(Number(raw))));
+  UFO_GAME.hasNft = true;
+  UFO_GAME.pilotTokenId = num;
+
+  // Fetch token metadata to extract Category #1 (Species / 깃털스킨)
+  try {
+    const res = await fetch(`/api/token/${num}`);
+    if (res.ok) {
+      const tok = await res.json();
+      const spName = tok?.traits?.Species || 'Adelie Classic';
+      const mappedId = SPECIES_NAME_TO_ID[spName] || '01';
+      UFO_GAME.pilotSpeciesId = mappedId;
+      UFO_GAME.pilotSpeciesLabel = spName;
+      ensureSpeciesSprite(mappedId);
+      getHero2DSheetForSpecies(mappedId);
+    }
+  } catch (e) {
+    // Fallback to '01' if offline
+  }
+
+  updateUfoBoardingDockUI();
+
+  const pfpInput = document.getElementById('pfp-jump-input');
+  if (pfpInput) {
+    pfpInput.value = String(num);
+  }
+  if (triggerPfp && typeof loadPfpPreview === 'function') {
+    loadPfpPreview(num, false);
+  }
+  if (restartScene) {
+    setIntroScene(0, true);
   }
 }
 
@@ -662,29 +871,13 @@ function closeLeaderboardModal() {
 function jumpToRankedNft(edition) {
   const num = Math.max(0, Math.min(9999, Number(edition) || 0));
   closeLeaderboardModal();
-  setUfoPilotTokenId(num, false);
-  loadPfpPreview(num);
+  setUfoPilotTokenId(num, false, false);
+  loadPfpPreview(num, false);
   openTokenModal(num);
 }
 
-function setUfoPilotTokenId(tokenNum, triggerPfp = true) {
-  const num = Math.max(0, Math.min(9999, Math.floor(Number(tokenNum) || 0)));
-  UFO_GAME.pilotTokenId = num;
-  const inputEl = document.getElementById('ufo-pilot-id-input');
-  if (inputEl && Number(inputEl.value) !== num) {
-    inputEl.value = String(num);
-  }
-  const pfpInput = document.getElementById('pfp-jump-input');
-  if (pfpInput) {
-    pfpInput.value = String(num);
-  }
-  if (triggerPfp && typeof loadPfpPreview === 'function') {
-    loadPfpPreview(num);
-  }
-}
-
-// Helper: Draw UFO Spaceship with Upper-Body Default Blue Penguin Pilot inside the Glass Canopy!
-// Hides lower body/legs 100% naturally inside the metallic saucer hull while showing head, blinking/shocked eyes & upper torso!
+// Helper: Draw GIANT 2D UFO Spaceship with Upper-Body Penguin Pilot (Normal Head Size + Full Upper Torso & Wings Visible!)
+// Cropped at srcH = 216 (out of 256) so Head + Neck + Chest + Both Side Flippers show 100%, hiding ONLY the feet inside the saucer hull!
 function drawUfoSpaceshipWithPilot(
   ctx,
   cx,
@@ -693,9 +886,17 @@ function drawUfoSpaceshipWithPilot(
   now = 0,
   isShocked = false,
   isImpactBlink = false,
-  shields = 3
+  shields = 3,
+  options = {}
 ) {
-  ensureHero2DSprite();
+  const {
+    scale = 1.40,
+    openHatchRatio = 0,
+    spId = UFO_GAME.pilotSpeciesId || '01',
+    thrusterBoost = 1,
+  } = options;
+
+  const sheet2D = getHero2DSheetForSpecies(spId);
   const anim = getPenguinAnimState(
     isImpactBlink ? 320 : now,
     0,
@@ -707,8 +908,9 @@ function drawUfoSpaceshipWithPilot(
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(tiltRad);
+  ctx.scale(scale, scale);
 
-  // 0. Outer Hexagonal Energy Shield Aura (when shields > 0)
+  // 0. Outer Energy Shield Aura (when shields > 0)
   if (shields > 0) {
     const pulse = 0.22 + 0.1 * Math.sin(now * 0.008);
     ctx.save();
@@ -718,70 +920,67 @@ function drawUfoSpaceshipWithPilot(
         : shields === 2
         ? `rgba(250, 204, 21, ${pulse + 0.22})`
         : `rgba(251, 113, 133, ${pulse + 0.28})`;
-    ctx.lineWidth = 2.4;
+    ctx.lineWidth = 2.2;
     ctx.beginPath();
-    ctx.ellipse(0, -6, 74, 46, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, -14, 76, 56, 0, 0, Math.PI * 2);
     ctx.stroke();
     ctx.restore();
   }
 
-  // 1. Rear Propulsion Plasma Flame (Left tail thruster) + Bottom Anti-Gravity Core Glow
-  const jetFlicker = 18 + Math.sin(now * 0.06) * 7;
-  ctx.fillStyle = 'rgba(56, 189, 248, 0.35)';
-  ctx.beginPath();
-  ctx.ellipse(-58 - jetFlicker * 0.4, 10, jetFlicker, 7, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#fde047';
-  ctx.beginPath();
-  ctx.ellipse(-56 - jetFlicker * 0.2, 10, jetFlicker * 0.55, 4, 0, 0, Math.PI * 2);
-  ctx.fill();
+  // 1. Rear Propulsion Plasma Flame + Bottom Anti-Gravity Core Glow
+  if (thrusterBoost > 0) {
+    const jetFlicker = (18 + Math.sin(now * 0.06) * 7) * thrusterBoost;
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.38)';
+    ctx.beginPath();
+    ctx.ellipse(-60 - jetFlicker * 0.4, 10, jetFlicker, 7.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fde047';
+    ctx.beginPath();
+    ctx.ellipse(-58 - jetFlicker * 0.2, 10, jetFlicker * 0.55, 4.2, 0, 0, Math.PI * 2);
+    ctx.fill();
 
-  // Bottom anti-gravity rings
-  const ringSpread = (now * 0.04) % 14;
-  ctx.strokeStyle = `rgba(103, 232, 249, ${0.65 - ringSpread / 22})`;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.ellipse(0, 24 + ringSpread * 0.6, 30 - ringSpread * 0.8, 5, 0, 0, Math.PI * 2);
-  ctx.stroke();
+    // Bottom anti-gravity rings
+    const ringSpread = (now * 0.04) % 14;
+    ctx.strokeStyle = `rgba(103, 232, 249, ${0.68 - ringSpread / 22})`;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.ellipse(0, 24 + ringSpread * 0.6 * thrusterBoost, 32 - ringSpread * 0.8, 5.5, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
 
-  // 2. Back of Glass Cockpit Dome & Pilot Seat Headrest (Taller, roomier dome so full face + beak + upper chest show clearly!)
-  ctx.fillStyle = 'rgba(15, 23, 42, 0.52)';
-  ctx.beginPath();
-  ctx.ellipse(0, 3, 45, 48, 0, Math.PI, Math.PI * 2);
-  ctx.fill();
-
-  // Pilot seat backrest behind penguin
+  // 2. Pilot Seat Backrest behind Penguin's Torso
   ctx.fillStyle = '#1e293b';
   ctx.strokeStyle = '#090d1a';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.roundRect(-22, -36, 14, 36, 5);
+  ctx.roundRect(-24, -42, 14, 44, 5);
   ctx.fill();
   ctx.stroke();
 
-  // 3. UPPER-BODY BLUE PENGUIN PILOT (Clipped cleanly to the Glass Cockpit Dome above y = +4!)
-  //    Shows full head, blinking/shocked eyes, orange beak, and upper blue chest/flippers while hiding lower belly & feet 100%!
+  // 3. UPPER-BODY PENGUIN PILOT (Normal Head Size + Full Chest, Belly & Both Wings Visible!)
+  //    pilotSize = 86 (at scale 1.40 -> 120px on screen, matching normal penguin size!)
+  //    srcH = 216 (out of 256): includes Full Head (y=15..156) + Full Upper Body/Chest/Wings (y=156..216), hiding ONLY the feet (y=220..248)!
   ctx.save();
   ctx.beginPath();
-  ctx.ellipse(0, 4, 44, 49, 0, Math.PI, Math.PI * 2);
-  ctx.lineTo(44, 4);
-  ctx.lineTo(-44, 4);
-  ctx.closePath();
+  ctx.rect(-56, -86, 112, 91); // Clips cleanly at y = +5 (cockpit rim)
   ctx.clip();
 
-  const pilotSize = 112;
+  const pilotSize = 86;
+  const srcCropH = 216;
+  const drawH = pilotSize * (srcCropH / 256); // 72.5px tall (Head ~44px + Torso/Wings ~28.5px!)
+  const pilotTopY = 5 - drawH - openHatchRatio * 4; // Bottom of torso sits at y = +5, so whole chest & wings are above rim!
   ctx.imageSmoothingEnabled = true;
-  if (MOTION_STATE.hero2DSheetLoaded && MOTION_STATE.hero2DSheet) {
+  if (sheet2D) {
     ctx.drawImage(
-      MOTION_STATE.hero2DSheet,
+      sheet2D,
       anim.frameIdx * 256,
       0,
       256,
-      172, // Upper 67% of sprite: Head + Eyes + Beak + Upper Blue Torso (zero legs/feet!)
+      srcCropH,
       -pilotSize / 2 + 1,
-      -62,
+      pilotTopY,
       pilotSize,
-      pilotSize * (172 / 256)
+      drawH
     );
   } else if (MOTION_STATE.hero2DLoaded && MOTION_STATE.hero2DImg) {
     ctx.drawImage(
@@ -789,65 +988,68 @@ function drawUfoSpaceshipWithPilot(
       0,
       0,
       256,
-      172,
+      srcCropH,
       -pilotSize / 2 + 1,
-      -62,
+      pilotTopY,
       pilotSize,
-      pilotSize * (172 / 256)
+      drawH
     );
   }
   ctx.restore();
 
-  // 4. Cockpit Control Yoke & Dashboard Collar (Wraps around the bottom of the glass dome at y = -1..+5)
+  // 4. Cockpit Control Collar (Wraps around the lower waist at y = +4..+8)
   ctx.fillStyle = '#0f172a';
   ctx.strokeStyle = '#67e8f9';
   ctx.lineWidth = 1.8;
   ctx.beginPath();
-  ctx.ellipse(0, 4, 45, 7.5, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 5, 45, 7, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 
-  // Glowing dashboard LEDs inside cockpit rim
   ctx.fillStyle = '#34d399';
-  ctx.fillRect(-14, 2, 5, 3);
+  ctx.fillRect(-14, 3, 5, 3);
   ctx.fillStyle = '#facc15';
-  ctx.fillRect(-4, 3, 5, 3);
+  ctx.fillRect(-4, 4, 5, 3);
   ctx.fillStyle = '#38bdf8';
-  ctx.fillRect(7, 2, 5, 3);
+  ctx.fillRect(7, 3, 5, 3);
 
-  // 5. Front Translucent Glass Dome Specular Glint & Rim Outline
-  const domeGrad = ctx.createLinearGradient(0, -45, 0, 4);
-  domeGrad.addColorStop(0, 'rgba(186, 230, 253, 0.25)');
-  domeGrad.addColorStop(0.6, 'rgba(56, 189, 248, 0.08)');
-  domeGrad.addColorStop(1, 'rgba(14, 116, 144, 0.22)');
+  // 5. Top Glass Dome Hatch ("우주선 대가리"): Hinges open on left pivot (-44, 4) when openHatchRatio > 0!
+  //    Encloses both the normal-sized head AND the upper torso/wings!
+  ctx.save();
+  ctx.translate(-44, 4);
+  ctx.rotate(-openHatchRatio * 0.92);
+  ctx.translate(44, -4);
+
+  const domeGrad = ctx.createLinearGradient(0, -68, 0, 4);
+  domeGrad.addColorStop(0, 'rgba(186, 230, 253, 0.26)');
+  domeGrad.addColorStop(0.6, 'rgba(56, 189, 248, 0.10)');
+  domeGrad.addColorStop(1, 'rgba(14, 116, 144, 0.24)');
   ctx.fillStyle = domeGrad;
   ctx.strokeStyle = 'rgba(125, 211, 252, 0.92)';
   ctx.lineWidth = 2.2;
   ctx.beginPath();
-  ctx.ellipse(0, 4, 44, 46, 0, Math.PI, Math.PI * 2);
+  ctx.ellipse(0, 4, 44, 68, 0, Math.PI, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 
-  // Curved white glass reflection highlight
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.78)';
   ctx.lineWidth = 3;
   ctx.lineCap = 'round';
   ctx.beginPath();
-  ctx.ellipse(0, 3, 37, 39, 0, Math.PI * 1.14, Math.PI * 1.48);
+  ctx.ellipse(0, 3, 37, 58, 0, Math.PI * 1.14, Math.PI * 1.48);
   ctx.stroke();
+  ctx.restore();
 
-  // 6. Metallic UFO Saucer Main Hull (Completely covers y = 2..24)
-  // Bottom engine pod
+  // 6. Metallic UFO Saucer Main Hull (Completely covers y = 3..25, hiding only the feet!)
   ctx.fillStyle = '#0f172a';
   ctx.strokeStyle = '#090d1a';
   ctx.lineWidth = 2.2;
   ctx.beginPath();
-  ctx.ellipse(0, 17, 32, 9, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 18, 32, 9, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 
-  // Main metallic saucer disc
-  const hullGrad = ctx.createLinearGradient(0, -2, 0, 22);
+  const hullGrad = ctx.createLinearGradient(0, -1, 0, 23);
   hullGrad.addColorStop(0, '#e2e8f0');
   hullGrad.addColorStop(0.35, '#38bdf8');
   hullGrad.addColorStop(0.75, '#0284c7');
@@ -856,22 +1058,21 @@ function drawUfoSpaceshipWithPilot(
   ctx.strokeStyle = '#090d1a';
   ctx.lineWidth = 2.6;
   ctx.beginPath();
-  ctx.ellipse(0, 10, 62, 14, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, 11, 64, 14, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
 
-  // Saucer equator metallic bevel line
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.ellipse(0, 8, 56, 9, 0, 0.1 * Math.PI, 0.9 * Math.PI);
+  ctx.ellipse(0, 9, 58, 9, 0, 0.1 * Math.PI, 0.9 * Math.PI);
   ctx.stroke();
 
-  // 5 Rotating Neon Rim Lights around the UFO Saucer
+  // 5 Rotating Neon Rim Lights
   const lightPhase = Math.floor(now / 110);
   const rimPositions = [-44, -22, 0, 22, 44];
   rimPositions.forEach((lx, idx) => {
-    const ly = 11 + Math.cos((lx / 50) * (Math.PI / 2)) * 3.5;
+    const ly = 12 + Math.cos((lx / 50) * (Math.PI / 2)) * 3.5;
     const isLit = (lightPhase + idx) % 2 === 0;
     ctx.fillStyle = '#090d1a';
     ctx.beginPath();
@@ -883,15 +1084,184 @@ function drawUfoSpaceshipWithPilot(
     ctx.fill();
   });
 
-  // Twin Front Plasma Laser Cannon Nozzles (Right-side nose of saucer)
+  // Twin Front Plasma Laser Cannon Nozzles
   ctx.fillStyle = '#facc15';
   ctx.strokeStyle = '#090d1a';
   ctx.lineWidth = 1.8;
   ctx.beginPath();
-  ctx.roundRect(54, 4, 13, 5, 2);
-  ctx.roundRect(50, 11, 13, 5, 2);
+  ctx.roundRect(56, 5, 13, 5, 2);
+  ctx.roundRect(52, 12, 13, 5, 2);
   ctx.fill();
   ctx.stroke();
+
+  ctx.restore();
+}
+
+// Helper: Draw GIANT 16-BIT PIXEL UFO Spaceship with Upper-Body Pixel Penguin Pilot (Normal Head Size + Full Upper Torso & Wings Visible!)
+function drawPixelUfoSpaceshipWithPilot(
+  ctx,
+  cx,
+  cy,
+  tiltRad = 0,
+  now = 0,
+  options = {}
+) {
+  const {
+    scale = 1.42,
+    openHatchRatio = 0,
+    spId = UFO_GAME.pilotSpeciesId || '01',
+    forceBlink = false,
+    isShocked = false,
+    showSmoke = false,
+  } = options;
+
+  const spEntry = ensureSpeciesSprite(spId);
+  const anim = getPenguinAnimState(now, 1, false, forceBlink, isShocked);
+  const P = 4; // Stepped 16-bit pixel block size
+
+  ctx.save();
+  ctx.translate(cx, cy);
+  ctx.rotate(tiltRad);
+  ctx.scale(scale, scale);
+  ctx.imageSmoothingEnabled = false;
+
+  // Optional cute pixel smoke puffs after crash-landing
+  if (showSmoke) {
+    for (let s = 0; s < 3; s++) {
+      const sp = ((now * 0.0022 + s * 0.33) % 1);
+      const sx = Math.round((-46 - sp * 18) / P) * P;
+      const sy = Math.round((-2 - sp * 28) / P) * P;
+      const sz = s % 2 === 0 ? 8 : 6;
+      ctx.fillStyle = s % 2 === 0 ? 'rgba(148, 163, 184, 0.65)' : 'rgba(250, 204, 21, 0.72)';
+      ctx.fillRect(sx, sy, sz, sz);
+    }
+  }
+
+  // 1. Stepped Pixel Pilot Seat Backrest behind Penguin's Torso
+  ctx.fillStyle = '#090d1a';
+  ctx.fillRect(-25, -42, 15, 44);
+  ctx.fillStyle = '#334155';
+  ctx.fillRect(-22, -39, 9, 38);
+
+  // 2. UPPER-BODY 16-BIT PIXEL PENGUIN PILOT (Normal Head Size + Full Chest, Belly & Both Wings Visible!)
+  //    pilotSize = 86 (at scale 1.42 -> 122px on screen, identical to the 124px penguin friends!)
+  //    srcCropH = 216 (out of 256): shows Full Head (15..156) + Full Upper Body/Chest/Wings (156..216), hiding ONLY the feet (220..245)!
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(-58, -88, 116, 92);
+  ctx.clip();
+
+  const pilotSize = 86;
+  const srcCropH = 216;
+  const drawH = Math.round(pilotSize * (srcCropH / 256)); // 73px tall (Head + Full Upper Torso & Wings!)
+  const happyBob = openHatchRatio > 0.6 ? (Math.floor(now / 260) % 2 === 0 ? 0 : -3) : 0;
+  const pilotTopY = 4 - drawH - Math.round(openHatchRatio * 4) + happyBob;
+  if (spEntry && spEntry.sheetLoaded && spEntry.sheet) {
+    ctx.drawImage(
+      spEntry.sheet,
+      anim.frameIdx * 256,
+      0,
+      256,
+      srcCropH,
+      -pilotSize / 2 + 2,
+      pilotTopY,
+      pilotSize,
+      drawH
+    );
+  } else if (spEntry && spEntry.loaded && spEntry.img) {
+    ctx.drawImage(
+      spEntry.img,
+      0,
+      0,
+      256,
+      srcCropH,
+      -pilotSize / 2 + 2,
+      pilotTopY,
+      pilotSize,
+      drawH
+    );
+  }
+  ctx.restore();
+
+  // 3. Stepped 16-Bit Pixel Cockpit Collar (y = 1..9)
+  ctx.fillStyle = '#090d1a';
+  ctx.fillRect(-46, 1, 92, 8);
+  ctx.fillStyle = '#1e293b';
+  ctx.fillRect(-42, 3, 84, 4);
+  ctx.fillStyle = '#34d399';
+  ctx.fillRect(-16, 3, 6, 4);
+  ctx.fillStyle = '#facc15';
+  ctx.fillRect(-3, 3, 6, 4);
+  ctx.fillStyle = '#38bdf8';
+  ctx.fillRect(10, 3, 6, 4);
+
+  // 4. Stepped 16-Bit Pixel Glass Dome Hatch ("우주선 대가리" — Hinges open on left pivot (-44, 3)!)
+  //    Tinted glass interior rotates WITH the hatch so there is NEVER a dark box left behind the penguin's head when open!
+  ctx.save();
+  ctx.translate(-44, 3);
+  ctx.rotate(-openHatchRatio * 0.95);
+  ctx.translate(44, -3);
+
+  // Translucent cyan glass fill inside the dome arch
+  ctx.fillStyle = 'rgba(56, 189, 248, 0.16)';
+  ctx.fillRect(-32, -60, 64, 62);
+  ctx.fillRect(-40, -48, 80, 50);
+
+  // Stepped 16-Bit Pixel Arch Outline (#7dd3fc)
+  ctx.fillStyle = '#7dd3fc';
+  ctx.fillRect(-28, -64, 56, P);
+  ctx.fillRect(-36, -60, 8, P);
+  ctx.fillRect(28, -60, 8, P);
+  ctx.fillRect(-40, -56, P, 8);
+  ctx.fillRect(36, -56, P, 8);
+  ctx.fillRect(-44, -48, P, 48);
+  ctx.fillRect(40, -48, P, 48);
+
+  // Crisp white pixel glass reflection blocks
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(-28, -56, 12, P);
+  ctx.fillRect(-32, -52, P, 14);
+  ctx.restore();
+
+  // 5. Stepped 16-Bit Pixel UFO Saucer Hull (Covers y = 3..27 completely!)
+  // Bottom dark pixel engine pod
+  ctx.fillStyle = '#090d1a';
+  ctx.fillRect(-32, 19, 64, 8);
+  ctx.fillStyle = '#1e293b';
+  ctx.fillRect(-28, 19, 56, 5);
+
+  // Main stepped pixel saucer body
+  ctx.fillStyle = '#090d1a';
+  ctx.fillRect(-56, 3, 112, 18);
+  ctx.fillRect(-64, 7, 128, 10);
+
+  // Top silver-white pixel bevel
+  ctx.fillStyle = '#e2e8f0';
+  ctx.fillRect(-52, 5, 104, 4);
+  // Mid cyan pixel band
+  ctx.fillStyle = '#38bdf8';
+  ctx.fillRect(-60, 9, 120, 5);
+  // Lower royal blue pixel shadow band
+  ctx.fillStyle = '#0284c7';
+  ctx.fillRect(-52, 14, 104, 5);
+
+  // 5 Blinking 16-Bit Pixel Neon Rim Lights
+  const lightPhase = Math.floor(now / 140);
+  const rimX = [-44, -22, 0, 22, 44];
+  rimX.forEach((lx, idx) => {
+    const isLit = (lightPhase + idx) % 2 === 0;
+    ctx.fillStyle = '#090d1a';
+    ctx.fillRect(lx - 5, 9, 10, 6);
+    ctx.fillStyle = isLit ? '#facc15' : '#67e8f9';
+    ctx.fillRect(lx - 3, 10, 6, 4);
+  });
+
+  // Stepped Pixel Twin Nose Laser Cannons
+  ctx.fillStyle = '#090d1a';
+  ctx.fillRect(54, 5, 14, 12);
+  ctx.fillStyle = '#facc15';
+  ctx.fillRect(56, 7, 10, 3);
+  ctx.fillRect(54, 12, 10, 3);
 
   ctx.restore();
 }
@@ -974,7 +1344,7 @@ function setIntroScene(sceneIdx, resetTimer = true) {
   MOTION_STATE.sceneIdx = ((sceneIdx % 3) + 3) % 3;
   if (resetTimer) {
     MOTION_STATE.sceneStartTime = performance.now();
-    if (MOTION_STATE.sceneIdx === 0) {
+    if (MOTION_STATE.sceneIdx === 1) {
       resetUfoGame(MOTION_STATE.sceneStartTime, false);
     }
   }
@@ -985,14 +1355,14 @@ function setIntroScene(sceneIdx, resetTimer = true) {
   const labelEl = document.getElementById('motion-hud-mode-label');
   if (labelEl) {
     const labelsKo = [
-      'SCENE 1/3 · 🛸 파란 펭귄 우주선 교전 → 격추 추락 & 픽셀 펭귄 변신',
-      'SCENE 2/3 · 16-BIT 픽셀 월드 불시착! 알록달록 픽셀 펭귄 친구들과 환영 산책',
-      'SCENE 3/3 · PIXEL PENGUIN WORLD — 베리챗 픽셀 펭귄 10,000마리',
+      'SCENE 1/3 · 🚨 남극이 파괴되고 있어요! 대형 우주선 탑승 & 긴급 탈출',
+      'SCENE 2/3 · 🛸 하늘 교전 미니게임 → 격추 시 우주선 통째 픽셀화 변신',
+      'SCENE 3/3 · 💥 픽셀월드 불시착! 우주선 해치 오픈 & 펭귄 친구들 환영',
     ];
     const labelsEn = [
-      'SCENE 1/3 · 🛸 Blue Penguin UFO Battle → Shot Down into Pixel Rift',
-      'SCENE 2/3 · Landed in 16-Bit Pixel World! Strolling with Penguin Friends',
-      'SCENE 3/3 · PIXEL PENGUIN WORLD — 10,000 VeryChat Pixel Penguins',
+      'SCENE 1/3 · 🚨 Antarctica is Crumbling! Board Giant UFO & Escape',
+      'SCENE 2/3 · 🛸 Sky Battle Mini-Game → Shot Down & Whole-UFO Pixelation',
+      'SCENE 3/3 · 💥 Crash-Landed in Pixel World! UFO Hatch Opens & Friends Welcome',
     ];
     labelEl.textContent =
       CURRENT_LANG === 'ko' ? labelsKo[MOTION_STATE.sceneIdx] : labelsEn[MOTION_STATE.sceneIdx];
@@ -1394,9 +1764,9 @@ function drawRetroSpeechBubble(
   const bw = Math.max(128, Math.round((textW + 32) / 4) * 4);
   const bh = 36;
 
-  // Clamp bubble horizontally & vertically so it never clips off-canvas
+  // Clamp bubble horizontally & vertically so it never clips off-canvas or overlaps top HUD bars (y=12..48)
   const bx = Math.max(18, Math.min(960 - bw - 18, Math.round(anchorX - bw / 2)));
-  const by = Math.max(14, Math.round(anchorY - bh - 10 + bob));
+  const by = Math.max(56, Math.round(anchorY - bh - 10 + bob));
   const tailX = Math.max(bx + 18, Math.min(bx + bw - 18, Math.round(anchorX)));
 
   // 16-bit Pixel Drop Shadow
@@ -1432,9 +1802,9 @@ function drawRetroSpeechBubble(
   ctx.restore();
 }
 
-// Helper: Sleek Cyber-Arcade HUD Scanner Pill (for Scene 0 Phase C Pixel Conversion)
+// Helper: Sleek Cyber-Arcade HUD Scanner Pill (for Scene 1 Phase B Whole-UFO Pixel Conversion)
 function drawPixelScanHudPill(ctx, cx, y, pct) {
-  const w = 228;
+  const w = 248;
   const h = 34;
   const x = Math.round(cx - w / 2);
   const topY = Math.round(y);
@@ -1458,7 +1828,7 @@ function drawPixelScanHudPill(ctx, cx, y, pct) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(
-    pct < 100 ? `BLUE PIXEL SCAN · ${pct}%` : 'PIXEL PENGUIN COMPLETE!',
+    pct < 100 ? `UFO & PILOT PIXEL SCAN · ${pct}%` : 'PIXEL UFO COMPLETE!',
     cx,
     topY + 12
   );
@@ -1909,13 +2279,12 @@ function drawUfoEntity(ctx, ent, now) {
   ctx.restore();
 }
 
-// Helper: Top Arcade HUD Bar inside Scene 0 Combat Phase
+// Helper: Top Arcade HUD Bar inside Scene 1 Combat Phase
 function drawUfoCombatHud(ctx, now) {
   ctx.save();
-  // Left HUD Pill: Score, Combo & Shields (Widened so zero overlap between shields & control hint!)
   const hx = 16;
   const hy = 12;
-  const hw = 436;
+  const hw = 452;
   const hh = 34;
   ctx.fillStyle = 'rgba(9, 13, 26, 0.88)';
   ctx.fillRect(hx - 2, hy - 2, hw + 4, hh + 4);
@@ -1923,26 +2292,35 @@ function drawUfoCombatHud(ctx, now) {
   ctx.lineWidth = 1.6;
   ctx.strokeRect(hx, hy, hw, hh);
 
-  // Pilot NFT Tag
-  const idCode = `P${String(UFO_GAME.pilotTokenId).padStart(4, '0')}`;
-  ctx.fillStyle = '#fde047';
-  ctx.font = '900 12.5px "Pretendard", "Malgun Gothic", sans-serif';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(`🛸 ${idCode}`, hx + 10, hy + hh / 2 + 1);
+  // Pilot NFT Tag OR Guest Tag ('없음')
+  if (UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null) {
+    const idCode = `P${String(UFO_GAME.pilotTokenId).padStart(4, '0')}`;
+    ctx.fillStyle = '#fde047';
+    ctx.font = '900 12.5px "Pretendard", "Malgun Gothic", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(`🛸 ${idCode}`, hx + 10, hy + hh / 2 + 1);
+  } else {
+    ctx.fillStyle = '#67e8f9';
+    ctx.font = '900 11.5px "Pretendard", "Malgun Gothic", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(CURRENT_LANG === 'ko' ? '🛸 없음(미기록)' : '🛸 NO-NFT', hx + 10, hy + hh / 2 + 1);
+  }
 
   // Score
   ctx.fillStyle = '#ffffff';
+  ctx.font = '900 12.5px "Pretendard", "Malgun Gothic", sans-serif';
   ctx.fillText(
     `SCORE ${UFO_GAME.score.toLocaleString()}`,
-    hx + 84,
+    hx + 96,
     hy + hh / 2 + 1
   );
 
   // Combo
   if (UFO_GAME.combo > 1) {
     ctx.fillStyle = '#34d399';
-    ctx.fillText(`x${UFO_GAME.combo}`, hx + 190, hy + hh / 2 + 1);
+    ctx.fillText(`x${UFO_GAME.combo}`, hx + 202, hy + hh / 2 + 1);
   }
 
   // 3 Shield Hearts
@@ -1950,14 +2328,14 @@ function drawUfoCombatHud(ctx, now) {
     const active = s < UFO_GAME.shields;
     drawPixelHeart(
       ctx,
-      hx + 236 + s * 22,
+      hx + 248 + s * 22,
       hy + hh / 2,
       2.1,
       active ? '#38bdf8' : '#334155'
     );
   }
 
-  // Control mode indicator (Cleanly separated on the right)
+  // Control mode indicator
   ctx.fillStyle = UFO_GAME.userControlled ? '#34d399' : '#bae6fd';
   ctx.font = '800 11.5px "Pretendard", "Malgun Gothic", sans-serif';
   ctx.textAlign = 'right';
@@ -1968,26 +2346,26 @@ function drawUfoCombatHud(ctx, now) {
         : '🎮 PLAYING'
       : CURRENT_LANG === 'ko'
       ? '터치·마우스 조종'
-      : 'MOVE TO PLAY',
+      : 'TOUCH / MOVE',
     hx + hw - 12,
     hy + hh / 2 + 1
   );
 
-  // Center-Right Interactive Action Pill: "[💥 격추 & 추락 ▶]" (x = 464..608, y = 12..46)
-  const bx = 464;
+  // Center-Right Interactive Action Pill: "[💥 격추 & 픽셀화 ▶]" (x = 478..636, y = 12..46)
+  const bx = 478;
   const by = 12;
-  const bw = 144;
+  const bw = 158;
   const bh = 34;
-  ctx.fillStyle = 'rgba(225, 29, 72, 0.88)';
+  ctx.fillStyle = 'rgba(225, 29, 72, 0.9)';
   ctx.fillRect(bx, by, bw, bh);
   ctx.strokeStyle = '#fda4af';
-  ctx.lineWidth = 1.5;
+  ctx.lineWidth = 1.6;
   ctx.strokeRect(bx, by, bw, bh);
   ctx.fillStyle = '#ffffff';
   ctx.font = '900 12px "Pretendard", "Malgun Gothic", sans-serif';
   ctx.textAlign = 'center';
   ctx.fillText(
-    CURRENT_LANG === 'ko' ? '💥 격추 & 추락 ▶' : '💥 Eject & Fall ▶',
+    CURRENT_LANG === 'ko' ? '💥 격추 & 픽셀화 ▶' : '💥 Shot Down & Scan ▶',
     bx + bw / 2,
     by + bh / 2 + 1
   );
@@ -2005,25 +2383,54 @@ function initPixelMotionStudio() {
   ensureHero2DSprite();
   ['01', '04', '05', '06', '09', '15'].forEach((id) => ensureSpeciesSprite(id));
 
-  // Pilot NFT ID Input & Random Button & Leaderboard Buttons
+  // UFO Boarding Dock Controls:
+  // 1) NFT Number Input + "[🚀 NFT 탑승]" button (Applies Category #1 Feather Skin & Enables Leaderboard Recording)
   const pilotInput = document.getElementById('ufo-pilot-id-input');
+  const boardNftBtn = document.getElementById('btn-ufo-board-nft');
+  const boardNoneBtn = document.getElementById('btn-ufo-board-none');
+
+  const handleBoardWithInput = () => {
+    const raw = pilotInput ? pilotInput.value.trim() : '';
+    if (raw === '') {
+      setUfoPilotTokenId(0, true, true);
+    } else {
+      const n = parseInt(raw, 10);
+      if (!Number.isNaN(n)) {
+        setUfoPilotTokenId(n, true, true);
+      }
+    }
+  };
+
   if (pilotInput) {
-    pilotInput.addEventListener('change', () => {
-      const n = parseInt(pilotInput.value, 10);
-      if (!Number.isNaN(n)) setUfoPilotTokenId(n, true);
-    });
     pilotInput.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
-        const n = parseInt(pilotInput.value, 10);
-        if (!Number.isNaN(n)) setUfoPilotTokenId(n, true);
+        e.preventDefault();
+        handleBoardWithInput();
+      }
+    });
+    pilotInput.addEventListener('change', () => {
+      const raw = pilotInput.value.trim();
+      if (raw !== '' && !Number.isNaN(parseInt(raw, 10))) {
+        setUfoPilotTokenId(parseInt(raw, 10), true, false);
       }
     });
   }
 
+  boardNftBtn?.addEventListener('click', handleBoardWithInput);
+
+  // 2) "[없음 (기록 안 남음)]" button (Plays with Default Blue Penguin '01' & Does NOT Record Score)
+  boardNoneBtn?.addEventListener('click', () => {
+    boardUfoWithoutNft(true);
+  });
+
+  // 3) "[🎲 랜덤 NFT]" button
   document.getElementById('btn-ufo-random-id')?.addEventListener('click', () => {
     const rnd = Math.floor(Math.random() * 10000);
-    setUfoPilotTokenId(rnd, true);
+    setUfoPilotTokenId(rnd, true, true);
   });
+
+  // Default initial state: '없음 (기록 안 남음)' with Default Blue Penguin ('01') until user enters an NFT number or clicks NFT 탑승!
+  updateUfoBoardingDockUI();
 
   document.getElementById('btn-open-leaderboard')?.addEventListener('click', () => {
     openLeaderboardModal();
@@ -2038,7 +2445,7 @@ function initPixelMotionStudio() {
     if (e.target.id === 'leaderboard-modal') closeLeaderboardModal();
   });
 
-  // Keyboard Controls for UFO Spaceship (Arrow Keys & WASD & Space)
+  // Keyboard Controls for Giant UFO Spaceship (Arrow Keys & WASD)
   window.addEventListener('keydown', (e) => {
     if (
       ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(
@@ -2048,9 +2455,9 @@ function initPixelMotionStudio() {
       const activeTag = document.activeElement?.tagName;
       if (activeTag === 'INPUT' || activeTag === 'SELECT' || activeTag === 'TEXTAREA') return;
       UFO_GAME.keys[e.code] = true;
-      if (MOTION_STATE.sceneIdx === 0 && UFO_GAME.phase === 'combat') {
+      if (MOTION_STATE.sceneIdx === 1 && UFO_GAME.phase === 'combat') {
         UFO_GAME.userControlled = true;
-        if ( e.code.startsWith('Arrow')) e.preventDefault();
+        if (e.code.startsWith('Arrow')) e.preventDefault();
       }
     }
   });
@@ -2058,7 +2465,7 @@ function initPixelMotionStudio() {
     UFO_GAME.keys[e.code] = false;
   });
 
-  // Scene Chapter Buttons (0: 우주선 & 추락, 1: 픽셀월드, 2: 타이틀)
+  // Scene Chapter Buttons (0: 남극탈출 & 탑승, 1: 하늘교전 & 픽셀화, 2: 불시착 & 환영)
   document.querySelectorAll('.motion-mode-btn[data-scene]').forEach((btn) => {
     btn.addEventListener('click', () => {
       setIntroScene(Number(btn.dataset.scene), true);
@@ -2067,7 +2474,7 @@ function initPixelMotionStudio() {
 
   // HTML Dialogue Next Scene Button
   document.getElementById('intro-dialogue-next-btn')?.addEventListener('click', () => {
-    if (MOTION_STATE.sceneIdx === 0 && UFO_GAME.phase === 'combat') {
+    if (MOTION_STATE.sceneIdx === 1 && UFO_GAME.phase === 'combat') {
       triggerUfoShotDown(performance.now());
       return;
     }
@@ -2115,33 +2522,37 @@ function initPixelMotionStudio() {
     const { mx, my } = getLogicalCoords(e.clientX, e.clientY);
 
     if (MOTION_STATE.sceneIdx === 0) {
-      // Clicking "[💥 격추 & 추락 ▶]" button on top HUD triggers immediate shot-down & portal fall!
-      if (UFO_GAME.phase === 'combat' && mx >= 460 && mx <= 612 && my >= 10 && my <= 50) {
+      // Clicking anywhere in Scene 0 launches straight into Scene 1 Sky Battle!
+      setIntroScene(1, true);
+      return;
+    }
+
+    if (MOTION_STATE.sceneIdx === 1) {
+      // Clicking "[💥 격추 & 픽셀화 ▶]" button on top HUD triggers immediate shot-down & whole-UFO pixel scan!
+      if (UFO_GAME.phase === 'combat' && mx >= 474 && mx <= 640 && my >= 10 && my <= 50) {
         triggerUfoShotDown(performance.now());
         return;
       }
       if (UFO_GAME.phase === 'combat') {
         UFO_GAME.userControlled = true;
-        UFO_GAME.targetX = Math.max(96, Math.min(565, mx));
-        UFO_GAME.targetY = Math.max(76, Math.min(312, my));
-        return;
-      }
-    }
-
-    if (MOTION_STATE.sceneIdx === 1) {
-      // Clicking the top Score/Leaderboard banner in Scene 1 opens the NFT Leaderboard Modal!
-      if (mx >= 210 && mx <= 750 && my >= 10 && my <= 52) {
-        openLeaderboardModal();
+        UFO_GAME.targetX = Math.max(125, Math.min(580, mx));
+        UFO_GAME.targetY = Math.max(96, Math.min(325, my));
         return;
       }
     }
 
     if (MOTION_STATE.sceneIdx === 2) {
-      if (mx >= 310 && mx <= 650 && my >= 180 && my <= 225) {
+      // Clicking the top Score/Leaderboard banner in Scene 2 opens the NFT Leaderboard Modal!
+      if (mx >= 160 && mx <= 800 && my >= 8 && my <= 48) {
+        openLeaderboardModal();
+        return;
+      }
+      // Clicking RPG Command Box options
+      if (mx >= 310 && mx <= 650 && my >= 176 && my <= 218) {
         scrollToSection('tab-codex');
         return;
       }
-      if (mx >= 310 && mx <= 650 && my >= 226 && my <= 272) {
+      if (mx >= 310 && mx <= 650 && my >= 219 && my <= 264) {
         setIntroScene(0, true);
         return;
       }
@@ -2151,64 +2562,64 @@ function initPixelMotionStudio() {
 
   canvas.addEventListener('mousemove', (e) => {
     const { mx, my } = getLogicalCoords(e.clientX, e.clientY);
-    if (MOTION_STATE.sceneIdx === 0 && UFO_GAME.phase === 'combat') {
-      if (my > 54 && mx < 680) {
+    if (MOTION_STATE.sceneIdx === 1 && UFO_GAME.phase === 'combat') {
+      if (my > 54 && mx < 700) {
         UFO_GAME.userControlled = true;
-        UFO_GAME.targetX = Math.max(96, Math.min(565, mx));
-        UFO_GAME.targetY = Math.max(76, Math.min(312, my));
+        UFO_GAME.targetX = Math.max(125, Math.min(580, mx));
+        UFO_GAME.targetY = Math.max(96, Math.min(325, my));
       }
       return;
     }
     if (MOTION_STATE.sceneIdx === 2) {
-      if (my >= 180 && my < 226) MOTION_STATE.menuHoverIdx = 0;
-      else if (my >= 226 && my <= 275) MOTION_STATE.menuHoverIdx = 1;
+      if (my >= 176 && my < 219) MOTION_STATE.menuHoverIdx = 0;
+      else if (my >= 219 && my <= 268) MOTION_STATE.menuHoverIdx = 1;
     }
   });
 
-  // Mobile Touch Drag Steering for UFO Spaceship
+  // Mobile-First Touch Drag Steering for Giant UFO Spaceship (with -38px thumb offset so finger never blocks UFO!)
   const handleTouchSteer = (e) => {
-    if (MOTION_STATE.sceneIdx !== 0 || UFO_GAME.phase !== 'combat') return;
     const touch = e.touches[0];
     if (!touch) return;
     const { mx, my } = getLogicalCoords(touch.clientX, touch.clientY);
-    if (mx >= 460 && mx <= 612 && my >= 10 && my <= 50) {
-      triggerUfoShotDown(performance.now());
-      return;
+
+    if (MOTION_STATE.sceneIdx === 1 && UFO_GAME.phase === 'combat') {
+      if (mx >= 474 && mx <= 640 && my >= 10 && my <= 50) {
+        triggerUfoShotDown(performance.now());
+        return;
+      }
+      UFO_GAME.userControlled = true;
+      UFO_GAME.targetX = Math.max(125, Math.min(580, mx));
+      UFO_GAME.targetY = Math.max(96, Math.min(325, my - 38));
     }
-    UFO_GAME.userControlled = true;
-    UFO_GAME.targetX = Math.max(96, Math.min(565, mx));
-    UFO_GAME.targetY = Math.max(76, Math.min(312, my - 24));
   };
   canvas.addEventListener('touchstart', handleTouchSteer, { passive: true });
   canvas.addEventListener('touchmove', handleTouchSteer, { passive: true });
 
   setIntroScene(0, true);
 
-  // Main 60 FPS Cutscene & UFO Arcade Loop (1920x1080 HiDPI Buffer, 960x540 Logical Space)
+  // Main 60 FPS Cutscene & Giant UFO Arcade Loop (1920x1080 HiDPI Buffer, 960x540 Logical Space)
   function renderIntroCutscene(now) {
-    const bluePixelPenguin = ensureSpeciesSprite('01');
-    const hero2DImg = ensureHero2DSprite();
+    const activeSpId = UFO_GAME.pilotSpeciesId || '01';
+    ensureSpeciesSprite(activeSpId);
+    ensureHero2DSprite();
 
     let elapsed = now - MOTION_STATE.sceneStartTime;
     const curDuration = SCENE_DURATIONS[MOTION_STATE.sceneIdx] || 5600;
 
-    // In Scene 0, scene transition is driven organically by the UFO -> Ejected -> Scan completion!
-    if (MOTION_STATE.sceneIdx !== 0 && MOTION_STATE.autoPlay && elapsed >= curDuration) {
+    // Scene 0 & Scene 2 auto-advance on timer; Scene 1 advances when Whole-UFO Pixel Scan finishes!
+    if (MOTION_STATE.sceneIdx !== 1 && MOTION_STATE.autoPlay && elapsed >= curDuration) {
       setIntroScene((MOTION_STATE.sceneIdx + 1) % 3, true);
       elapsed = 0;
     }
 
     let p = Math.min(1, Math.max(0, elapsed / curDuration));
-    if (MOTION_STATE.sceneIdx === 0) {
+    if (MOTION_STATE.sceneIdx === 1) {
       if (UFO_GAME.phase === 'combat') {
         const combatEl = now - UFO_GAME.phaseStartTime;
-        p = Math.min(0.45, (combatEl / 4500) * 0.45);
-      } else if (UFO_GAME.phase === 'ejected') {
-        const ejEl = now - UFO_GAME.phaseStartTime;
-        p = 0.45 + Math.min(0.22, (ejEl / 1450) * 0.22);
+        p = Math.min(0.55, (combatEl / 4800) * 0.55);
       } else {
         const scEl = now - UFO_GAME.phaseStartTime;
-        p = 0.67 + Math.min(0.33, (scEl / 2550) * 0.33);
+        p = 0.55 + Math.min(0.45, (scEl / 2900) * 0.45);
       }
     }
     updateIntroProgressBars(MOTION_STATE.sceneIdx, p);
@@ -2218,31 +2629,167 @@ function initPixelMotionStudio() {
     ctx.clearRect(0, 0, 960, 540);
 
     // ========================================================================
-    // SCENE 0 ("1. 🛸 우주선 & 추락"):
-    //   Phase A ('combat'): Blue Penguin Upper-Body Pilot in UFO Spaceship -> Dodges & Blasts Bananas/Meteors!
-    //   Phase B ('ejected'): Shot Down (격추!) -> Crippled UFO spirals away & 2D Blue Penguin arcs into Pixel Portal!
-    //   Phase C ('scan'): Holographic Laser Scan transforms 2D Blue Penguin -> Pixel Blue Penguin (sp_01) -> Scene 1!
+    // SCENE 0 ("1. 🚨 남극탈출 & 탑승"):
+    //   "남극이 파괴되고 있어요! 탈출하세요!"
+    //   Crumbling Antarctica snow cliff + Giant UFO parked on snow -> Open top hatch closes -> Blasts off into the sky!
     // ========================================================================
     if (MOTION_STATE.sceneIdx === 0) {
-      const pitCenterX = 744;
+      ctx.save();
+      // Subtle earthquake tremor as Antarctica crumbles!
+      const quakeMag = p < 0.7 ? 2.4 : 4.2;
+      ctx.translate(
+        Math.sin(now * 0.055) * quakeMag,
+        Math.cos(now * 0.048) * (quakeMag * 0.75)
+      );
+
+      drawScene1Background(ctx, now);
+
+      // Red Emergency Warning Strobe Overlay & Falling Ice Boulders into the Chasm
+      const redPulse = 0.08 + 0.07 * Math.max(0, Math.sin(now * 0.012));
+      ctx.fillStyle = `rgba(225, 29, 72, ${redPulse})`;
+      ctx.fillRect(0, 0, 960, 540);
+
+      // Crumbling ice boulders tumbling down the cliff edge (x = 575..665)
+      for (let b = 0; b < 6; b++) {
+        const fallT = ((now * 0.0016 + b * 0.19) % 1);
+        const bx = 575 + ((b * 23) % 75) + fallT * 28;
+        const by = 345 + fallT * fallT * 195;
+        const bSz = 10 + (b % 3) * 5;
+        ctx.fillStyle = '#bae6fd';
+        ctx.strokeStyle = '#0284c7';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(bx, by, bSz, bSz * 0.85, 3);
+        ctx.fill();
+        ctx.stroke();
+      }
+
+      // Top Emergency Alert Banner
+      const alW = 540;
+      const alH = 36;
+      const alX = 480 - alW / 2;
+      const alY = 14;
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+      ctx.fillRect(alX - 2, alY - 2, alW + 4, alH + 4);
+      ctx.strokeStyle = '#fb7185';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(alX, alY, alW, alH);
+      ctx.fillStyle = Math.floor(now / 260) % 2 === 0 ? '#fda4af' : '#fde047';
+      ctx.font = '900 13.5px "Pretendard", "Malgun Gothic", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      const pilotTag =
+        UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null
+          ? `NFT #${UFO_GAME.pilotTokenId} (${UFO_GAME.pilotSpeciesLabel})`
+          : CURRENT_LANG === 'ko'
+          ? '기본 파란 펭귄 (기록 안 남음)'
+          : 'Default Blue Penguin';
+      ctx.fillText(
+        CURRENT_LANG === 'ko'
+          ? `🚨 남극 붕괴 경보! 탈출 우주선 가동 · 탑승자: ${pilotTag}`
+          : `🚨 ANTARCTICA CRUMBLING! ESCAPE UFO READY · PILOT: ${pilotTag}`,
+        480,
+        alY + alH / 2 + 1
+      );
+
+      // Launchpad Rings under Giant UFO on the Antarctica Snow Cliff (x = 285, y = 352)
+      ctx.save();
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.35)';
+      ctx.beginPath();
+      ctx.ellipse(285, 356, 108, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = p < 0.62 ? '#facc15' : '#67e8f9';
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.ellipse(285, 356, 94, 14, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+
+      // Giant UFO Kinematics in Scene 0:
+      // p = 0.00..0.42: Parked on snow cliff, top glass dome hatch is OPEN (openHatchRatio = 1) showing penguin boarding!
+      // p = 0.42..0.64: Top glass dome hatch smoothly locks shut (openHatchRatio: 1 -> 0, "철컥!")
+      // p = 0.64..1.00: Plasma thrusters roar to life & Giant UFO blasts off into the upper-right sky!
+      const openHatchRatio =
+        p < 0.42 ? 1 : p < 0.64 ? Math.max(0, 1 - (p - 0.42) / 0.22) : 0;
+      const launchP = p < 0.64 ? 0 : Math.pow((p - 0.64) / 0.36, 2);
+      const ufoX = 285 + launchP * 260;
+      const ufoY = 324 - launchP * 390 + (p < 0.64 ? Math.sin(now * 0.015) * 3 : 0);
+      const ufoTilt = launchP > 0 ? -0.22 * Math.min(1, launchP * 1.8) : 0;
+      const thrusterBoost = p < 0.5 ? 0.4 : p < 0.64 ? 1.1 : 2.3;
+
+      drawUfoSpaceshipWithPilot(
+        ctx,
+        ufoX,
+        ufoY,
+        ufoTilt,
+        now,
+        p < 0.38, // Surprised expression at crumbling Antarctica initially, then determined pilot!
+        false,
+        3,
+        {
+          scale: 1.40,
+          openHatchRatio,
+          spId: activeSpId,
+          thrusterBoost,
+        }
+      );
+
+      // Speech Bubble above the Giant UFO
+      if (p < 0.88) {
+        drawRetroSpeechBubble(
+          ctx,
+          ufoX + 12,
+          Math.max(66, ufoY - 104),
+          p < 0.45
+            ? CURRENT_LANG === 'ko'
+              ? '으아악!! 남극이 파괴되고 있어요!! 어서 우주선 타고 탈출하자!!'
+              : 'AAAAH!! Antarctica is crumbling!! Board the Giant UFO and escape!!'
+            : p < 0.68
+            ? CURRENT_LANG === 'ko'
+              ? '철컥! 우주선 해치 잠금 완료! 엔진 점화— 하늘로 출격!!'
+              : 'CLANK! UFO Hatch Locked! Igniting plasma thrusters— LIFTOFF!!'
+            : CURRENT_LANG === 'ko'
+            ? '부우우웅—!! 남극 상공 돌파! 장애물을 피해 날아가자!!'
+            : 'VROOOOM—!! Blasting into the sky! Dodge the obstacles!!',
+          p < 0.45 ? '#fb7185' : '#38bdf8',
+          now
+        );
+      }
+
+      drawRetroDialogueBar(
+        ctx,
+        'SCENE 1 · 🚨 남극 붕괴 & 우주선 탑승',
+        CURRENT_LANG === 'ko'
+          ? `남극이 파괴되고 있어요! ${pilotTag} 대원이 대형 UFO 우주선에 탑승해 하늘로 긴급 탈출합니다! (클릭 시 즉시 교전 시작)`
+          : `Antarctica is crumbling! Pilot ${pilotTag} boards the Giant UFO on the snow cliff and blasts off into the sky!`
+      );
+
+      ctx.restore();
+    }
+
+    // ========================================================================
+    // SCENE 1 ("2. 🛸 하늘교전 & 픽셀화"):
+    //   Phase A ('combat'): Mobile-First Sky Battle in the Giant UFO (Scale 1.44x)!
+    //   Phase B ('scan'): Shot Down (격추!) -> The ENTIRE Giant UFO + Penguin Pilot inside get scanned into a 16-Bit Pixel UFO + Pixel Penguin!
+    // ========================================================================
+    else if (MOTION_STATE.sceneIdx === 1) {
       const dt = Math.min(32, Math.max(8, now - (UFO_GAME.lastTickAt || now))) / 16.67;
       UFO_GAME.lastTickAt = now;
 
-      // Apply subtle camera shake on impact
       ctx.save();
       if (now < UFO_GAME.shakeUntil) {
-        const mag = ((UFO_GAME.shakeUntil - now) / 420) * 7;
+        const mag = ((UFO_GAME.shakeUntil - now) / 520) * 8;
         ctx.translate((Math.random() - 0.5) * mag, (Math.random() - 0.5) * mag);
       }
 
       drawScene1Background(ctx, now);
 
-      // Cosmic speed lines & starfield in the upper sky for arcade flight feel
+      // Cosmic speed lines & starfield in the upper sky
       ctx.save();
       UFO_GAME.stars.forEach((st) => {
-        st.x -= st.spd * dt * (UFO_GAME.phase === 'combat' ? 2.1 : 0.7);
+        st.x -= st.spd * dt * (UFO_GAME.phase === 'combat' ? 2.3 : 0.8);
         if (st.x < 0) st.x += 960;
-        ctx.fillStyle = 'rgba(224, 242, 254, 0.72)';
+        ctx.fillStyle = 'rgba(224, 242, 254, 0.78)';
         ctx.fillRect(st.x, st.y, st.sz * 3, st.sz);
       });
       ctx.restore();
@@ -2250,8 +2797,8 @@ function initPixelMotionStudio() {
       if (UFO_GAME.phase === 'combat') {
         const combatElapsed = now - UFO_GAME.phaseStartTime;
 
-        // 1. Update UFO Position (Keyboard OR Pointer Target OR Smart AI Autopilot)
-        const keySpd = 5.4 * dt;
+        // 1. Update Giant UFO Position (Keyboard OR Touch/Mouse Target OR Smart AI Autopilot)
+        const keySpd = 5.6 * dt;
         let keyMoved = false;
         if (UFO_GAME.keys['ArrowLeft'] || UFO_GAME.keys['KeyA']) {
           UFO_GAME.targetX -= keySpd;
@@ -2270,14 +2817,13 @@ function initPixelMotionStudio() {
           keyMoved = true;
         }
         if (keyMoved) {
-          UFO_GAME.targetX = Math.max(96, Math.min(565, UFO_GAME.targetX));
-          UFO_GAME.targetY = Math.max(76, Math.min(312, UFO_GAME.targetY));
+          UFO_GAME.targetX = Math.max(125, Math.min(580, UFO_GAME.targetX));
+          UFO_GAME.targetY = Math.max(96, Math.min(325, UFO_GAME.targetY));
         }
 
         if (!UFO_GAME.userControlled) {
-          // Smart AI Autopilot weaves dynamically across the sky & aims at incoming targets
-          UFO_GAME.targetX = 215 + Math.sin(now * 0.0028) * 65;
-          UFO_GAME.targetY = 188 + Math.sin(now * 0.0052) * 76;
+          UFO_GAME.targetX = 245 + Math.sin(now * 0.0028) * 65;
+          UFO_GAME.targetY = 242 + Math.sin(now * 0.0052) * 48;
         }
 
         const dx = UFO_GAME.targetX - UFO_GAME.x;
@@ -2286,23 +2832,23 @@ function initPixelMotionStudio() {
         UFO_GAME.vy = dy * 0.16;
         UFO_GAME.x += UFO_GAME.vx * dt;
         UFO_GAME.y += UFO_GAME.vy * dt;
-        UFO_GAME.tiltRad = Math.max(-0.26, Math.min(0.26, UFO_GAME.vy * 0.032 + UFO_GAME.vx * 0.012));
+        UFO_GAME.tiltRad = Math.max(-0.24, Math.min(0.24, UFO_GAME.vy * 0.03 + UFO_GAME.vx * 0.01));
 
-        // 2. Auto-Fire Twin Plasma Lasers from UFO Nose Cannons every 175ms
+        // 2. Auto-Fire Twin Plasma Lasers from Giant UFO Nose Cannons every 175ms
         if (now - UFO_GAME.lastFireAt >= 175) {
           UFO_GAME.lastFireAt = now;
           UFO_GAME.lasers.push(
-            { x: UFO_GAME.x + 62, y: UFO_GAME.y + 4, vx: 13.5 },
-            { x: UFO_GAME.x + 58, y: UFO_GAME.y + 13, vx: 13.5 }
+            { x: UFO_GAME.x + 88, y: UFO_GAME.y + 5, vx: 14.0 },
+            { x: UFO_GAME.x + 82, y: UFO_GAME.y + 17, vx: 14.0 }
           );
         }
 
-        // 3. Spawn Incoming Obstacles (Bananas, Glitch Meteors, Plasma Mines) & Collectibles (Golden Ice-Fish, Cores)
+        // 3. Spawn Incoming Obstacles & Collectibles
         const spawnInterval = UFO_GAME.userControlled ? 420 : 380;
         if (now - UFO_GAME.lastSpawnAt >= spawnInterval) {
           UFO_GAME.lastSpawnAt = now;
           const roll = Math.random();
-          const spawnY = 78 + Math.random() * 235;
+          const spawnY = 86 + Math.random() * 235;
           if (roll < 0.28) {
             UFO_GAME.entities.push({
               type: 'banana',
@@ -2310,7 +2856,7 @@ function initPixelMotionStudio() {
               y: spawnY,
               vx: -(5.2 + Math.random() * 2.4),
               vy: (Math.random() - 0.5) * 1.4,
-              r: 22,
+              r: 23,
               hp: 1,
               rot: 0,
               vrot: -0.14,
@@ -2322,7 +2868,7 @@ function initPixelMotionStudio() {
               y: spawnY,
               vx: -(4.6 + Math.random() * 2.2),
               vy: (Math.random() - 0.5) * 1.1,
-              r: 21,
+              r: 22,
               hp: 2,
               rot: 0,
               vrot: 0.07,
@@ -2334,7 +2880,7 @@ function initPixelMotionStudio() {
               y: spawnY,
               vx: -(6.0 + Math.random() * 2.0),
               vy: Math.sin(now * 0.01) * 1.6,
-              r: 18,
+              r: 19,
               hp: 1,
               rot: 0,
               vrot: 0.12,
@@ -2346,7 +2892,7 @@ function initPixelMotionStudio() {
               y: spawnY,
               vx: -4.8,
               vy: 0,
-              r: 20,
+              r: 21,
               hp: 1,
               rot: 0,
               vrot: 0,
@@ -2358,7 +2904,7 @@ function initPixelMotionStudio() {
               y: spawnY,
               vx: -5.0,
               vy: 0,
-              r: 18,
+              r: 19,
               hp: 1,
               rot: 0,
               vrot: 0.08,
@@ -2376,11 +2922,11 @@ function initPixelMotionStudio() {
             continue;
           }
           ctx.fillStyle = '#0284c7';
-          ctx.fillRect(b.x - 2, b.y - 3, 22, 6);
+          ctx.fillRect(b.x - 2, b.y - 3, 24, 7);
           ctx.fillStyle = '#67e8f9';
-          ctx.fillRect(b.x, b.y - 2, 18, 4);
+          ctx.fillRect(b.x, b.y - 2, 20, 5);
           ctx.fillStyle = '#ffffff';
-          ctx.fillRect(b.x + 4, b.y - 1, 12, 2);
+          ctx.fillRect(b.x + 4, b.y - 1, 14, 2);
         }
         ctx.restore();
 
@@ -2398,12 +2944,11 @@ function initPixelMotionStudio() {
 
           const isCollectible = ent.type === 'fish' || ent.type === 'core';
 
-          // Check laser hit on obstacles
           if (!isCollectible) {
             let destroyedByLaser = false;
             for (let j = UFO_GAME.lasers.length - 1; j >= 0; j--) {
               const b = UFO_GAME.lasers[j];
-              if (Math.hypot(b.x - ent.x, b.y - ent.y) <= ent.r + 10) {
+              if (Math.hypot(b.x - ent.x, b.y - ent.y) <= ent.r + 12) {
                 UFO_GAME.lasers.splice(j, 1);
                 ent.hp -= 1;
                 if (ent.hp <= 0) {
@@ -2444,9 +2989,9 @@ function initPixelMotionStudio() {
             }
           }
 
-          // Check collision with UFO Spaceship
+          // Check collision with Giant UFO Spaceship
           const distToUfo = Math.hypot(ent.x - UFO_GAME.x, ent.y - UFO_GAME.y);
-          if (distToUfo <= ent.r + 42) {
+          if (distToUfo <= ent.r + 56) {
             if (isCollectible) {
               const pts = (ent.type === 'fish' ? 500 : 350) * UFO_GAME.combo;
               UFO_GAME.score += pts;
@@ -2462,7 +3007,6 @@ function initPixelMotionStudio() {
               UFO_GAME.entities.splice(i, 1);
               continue;
             } else {
-              // Obstacle hit the UFO!
               UFO_GAME.entities.splice(i, 1);
               UFO_GAME.hitFlashUntil = now + 520;
               UFO_GAME.shakeUntil = now + 260;
@@ -2471,7 +3015,7 @@ function initPixelMotionStudio() {
                 UFO_GAME.shields -= 1;
                 UFO_GAME.popups.push({
                   x: UFO_GAME.x,
-                  y: UFO_GAME.y - 38,
+                  y: UFO_GAME.y - 48,
                   vy: -1.5,
                   text: UFO_GAME.shields > 0 ? '🛡️ SHIELD HIT!' : '💥 SHOT DOWN!!',
                   col: '#fb7185',
@@ -2489,12 +3033,12 @@ function initPixelMotionStudio() {
           drawUfoEntity(ctx, ent, now);
         }
 
-        // Passive auto-cinematic mode: after 4.5s of exciting demo combat, trigger dramatic shot-down!
-        if (!UFO_GAME.userControlled && MOTION_STATE.autoPlay && combatElapsed >= 4500) {
+        // Passive auto-cinematic mode: after 4.8s of exciting demo combat, trigger dramatic shot-down!
+        if (!UFO_GAME.userControlled && MOTION_STATE.autoPlay && combatElapsed >= 4800) {
           triggerUfoShotDown(now);
         }
 
-        // 6. Draw the UFO Spaceship with Upper-Body Default Blue Penguin Pilot!
+        // 6. Draw the GIANT 2D UFO Spaceship (scale = 1.36) with Upper-Body Penguin Pilot (wearing Category #1 Feather Skin!)
         const isHitShocked = now < UFO_GAME.hitFlashUntil;
         const isHitImpactBlink = now < UFO_GAME.hitFlashUntil - 420;
         drawUfoSpaceshipWithPilot(
@@ -2505,14 +3049,19 @@ function initPixelMotionStudio() {
           now,
           isHitShocked,
           isHitImpactBlink,
-          UFO_GAME.shields
+          UFO_GAME.shields,
+          {
+            scale: 1.36,
+            openHatchRatio: 0,
+            spId: activeSpId,
+            thrusterBoost: 1.25,
+          }
         );
 
-        // Floating Speech Bubble above UFO Pilot
         drawRetroSpeechBubble(
           ctx,
-          UFO_GAME.x + 8,
-          UFO_GAME.y - 54,
+          UFO_GAME.x + 10,
+          Math.max(58, UFO_GAME.y - 96),
           isHitShocked
             ? CURRENT_LANG === 'ko'
               ? '으앗!! 운석에 맞았어!! 방어막 위험해!!'
@@ -2522,276 +3071,173 @@ function initPixelMotionStudio() {
               ? '삐비빅~ 우주 바나나랑 운석 다 부숴버리자!! ♪'
               : 'Pew-pew~ Blast the space bananas & collect Golden Fish!! ♪'
             : CURRENT_LANG === 'ko'
-            ? '우주선 순항 중~ 마우스·터치로 직접 조종해보세요! ♪'
-            : 'Cruising in my UFO~ Move mouse or touch to pilot! ♪',
+            ? '모바일 터치·마우스로 대형 우주선을 직접 조종해보세요! ♪'
+            : 'Touch or move mouse to steer the Giant UFO! ♪',
           isHitShocked ? '#fb7185' : '#38bdf8',
           now
         );
 
         drawUfoCombatHud(ctx, now);
 
+        const recordStatusKo =
+          UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null
+            ? `NFT #${UFO_GAME.pilotTokenId} 랭킹 기록 ON`
+            : 'NFT 없음 · 기록 안 남음';
         drawRetroDialogueBar(
           ctx,
-          'SCENE 1 · 🛸 우주선 교전',
+          'SCENE 2 · 🛸 하늘 교전 미니게임',
           CURRENT_LANG === 'ko'
-            ? `파란 펭귄이 상반신만 내밀고 UFO 우주선 탑승! 마우스/터치/방향키로 조종하세요. 격추되면 차원 포털로 추락해 픽셀 월드로 갑니다! (현재 ${UFO_GAME.score.toLocaleString()}점)`
-            : `Our Blue Penguin pilots the UFO! Steer with mouse/touch/arrows. When shot down, he falls into the Pixel Rift to Pixel World! (${UFO_GAME.score.toLocaleString()} PTS)`
+            ? `대형 우주선을 터치/마우스/방향키로 조종하세요! 격추되면 우주선 통째로 픽셀화되어 픽셀월드에 불시착합니다! (${UFO_GAME.score.toLocaleString()}점 · ${recordStatusKo})`
+            : `Steer the Giant UFO with touch/mouse/arrows! When shot down, the entire UFO + Pilot pixelates together! (${UFO_GAME.score.toLocaleString()} PTS)`
         );
-      } else if (UFO_GAME.phase === 'ejected') {
+      } else {
         // ====================================================================
-        // Phase B ('ejected'): UFO Shot Down (격추!) -> Crippled UFO Spirals Away &
-        // 2D Blue Penguin Ejects in a Parabolic 360° Arc into the Pixel Portal Chasm!
+        // Phase B ('scan'): SHOT DOWN (격추!) -> THE ENTIRE GIANT UFO + PENGUIN PILOT
+        // GET SCANNED TOGETHER INTO A 16-BIT PIXEL UFO + PIXEL PENGUIN!
+        // (Zero ejection -> lower body is NEVER exposed!)
         // ====================================================================
-        const ejElapsed = now - UFO_GAME.phaseStartTime;
-        const subP = Math.min(1, ejElapsed / 1450);
-        const isImpactBlink = subP < 0.11;
+        const scElapsed = now - UFO_GAME.phaseStartTime;
+        const subP = Math.min(1, scElapsed / 2900);
 
-        // 1. Crippled Empty UFO Saucer tilting & smoking as it falls away toward the lower-left cliff
-        const ufoCrashX = UFO_GAME.ejectedFromX - subP * 145;
-        const ufoCrashY = UFO_GAME.ejectedFromY + subP * 165;
-        if (subP < 0.92) {
-          ctx.save();
-          ctx.globalAlpha = subP < 0.65 ? 1 : Math.max(0, 1 - (subP - 0.65) / 0.27);
-          drawDamagedUfoSaucer(ctx, ufoCrashX, ufoCrashY, -0.35 - subP * 0.45, now);
-          ctx.restore();
-        }
+        // First 0.22 of subP: Giant UFO glides smoothly into the Dimensional Pixel Rift center (x = 580, y = 258)
+        const pullP = Math.min(1, subP / 0.22);
+        const smoothPull = pullP * pullP * (3 - 2 * pullP);
+        const scanRatio = subP < 0.14 ? 0 : Math.min(1, (subP - 0.14) / 0.66);
+        const completeP = subP > 0.80 ? (subP - 0.80) / 0.20 : 0;
+        const dropToWorld = subP > 0.88 ? Math.pow((subP - 0.88) / 0.12, 2) * 280 : 0;
 
-        // 2. Shot-Down Impact Starburst at Ejection Point
-        if (subP < 0.45) {
-          const burstP = subP / 0.45;
+        const ufoX = UFO_GAME.shotDownX + smoothPull * (580 - UFO_GAME.shotDownX);
+        const ufoY =
+          UFO_GAME.shotDownY +
+          smoothPull * (258 - UFO_GAME.shotDownY) +
+          Math.sin(now * 0.012) * 4 +
+          dropToWorld;
+        const ufoScale = 1.44;
+        const ufoTilt = (1 - smoothPull) * -0.22 + Math.sin(now * 0.02) * 0.04;
+
+        // Impact starburst right when shot down
+        if (subP < 0.24) {
+          const burstP = subP / 0.24;
           ctx.save();
           ctx.globalAlpha = 1 - burstP;
           drawComicStarburst(
             ctx,
-            UFO_GAME.ejectedFromX,
-            UFO_GAME.ejectedFromY,
-            18 + burstP * 24,
-            42 + burstP * 48,
+            ufoX,
+            ufoY,
+            24 + burstP * 32,
+            56 + burstP * 58,
             10,
             '#facc15',
             '#e11d48',
-            burstP * 0.6
+            burstP * 0.5
           );
           ctx.restore();
         }
 
-        // 3. Parabolic Arc of the Ejected 2D Blue Penguin into the Pixel Portal Chasm (x = 744, y = 274)
-        const smoothFall = subP * subP * (3 - 2 * subP);
-        const pengX = UFO_GAME.ejectedFromX + smoothFall * (pitCenterX - UFO_GAME.ejectedFromX);
-        const pengY =
-          UFO_GAME.ejectedFromY -
-          Math.sin(subP * Math.PI) * 92 +
-          smoothFall * (274 - UFO_GAME.ejectedFromY);
-        const pengRot = smoothFall * Math.PI * 2;
-        const scaleX = isImpactBlink ? 1.07 : 0.98;
-        const scaleY = isImpactBlink ? 0.93 : 1.02;
-        const spriteSize = 148;
+        // Bounding vertical span of the Giant UFO (from top of glass dome -112 to bottom of engine pod +52)
+        const topEdge = ufoY - 112;
+        const botEdge = ufoY + 52;
+        const totalSpanH = botEdge - topEdge;
+        const scanY = topEdge + scanRatio * totalSpanH;
 
-        drawUploaded2DPenguin(
-          ctx,
-          pengX,
-          pengY,
-          spriteSize,
-          pengRot,
-          scaleX,
-          scaleY,
-          isImpactBlink ? 320 : now,
-          false,
-          !isImpactBlink
-        );
+        // Natural eye-blink transition as the laser beam crosses the penguin's eyes inside the UFO!
+        const pixelBlinkDuringBeam = scanRatio > 0.05 && scanRatio < 0.58;
 
-        if (subP >= 0.08 && subP < 0.72) {
-          drawPixelEmoteBubble(ctx, pengX + 64, pengY - 22, 'shock', now);
-        }
-
-        drawRetroSpeechBubble(
-          ctx,
-          Math.min(780, pengX - 10),
-          Math.max(58, pengY - 86),
-          CURRENT_LANG === 'ko'
-            ? '콰과광?! 우주선이 격추당했다!! 으아아아악~!!'
-            : 'KABOOM?! My UFO got shot down!! AAAAAAH~!!',
-          '#fb7185',
-          now
-        );
-
-        drawRetroDialogueBar(
-          ctx,
-          'SCENE 1 · 💥 우주선 격추 & 추락!',
-          CURRENT_LANG === 'ko'
-            ? `콰과광—!! 우주선이 격추당해 비상 탈출한 파란 펭귄이 픽셀 차원 포털 속으로 추락합니다! (획득 점수: ${UFO_GAME.lastFinalScore.toLocaleString()}점)`
-            : `KABOOM—!! Shot down from his UFO, our blue penguin ejects and tumbles straight into the glowing Pixel Rift! (${UFO_GAME.lastFinalScore.toLocaleString()} PTS)`
-        );
-
-        if (ejElapsed >= 1450) {
-          UFO_GAME.phase = 'scan';
-          UFO_GAME.phaseStartTime = now;
-        }
-      } else {
-        // ====================================================================
-        // Phase C ('scan'): Holographic Dimensional Tractor Field & 48x48 Voxel Matrix Scan Transformation
-        // (2D Surprised Blue Penguin -> Laser Beam Wipe -> Pixel Closed-Eye Blink -> Pixel Normal Open Eyes!)
-        // ====================================================================
-        const scElapsed = now - UFO_GAME.phaseStartTime;
-        const subP = Math.min(1, scElapsed / 2550);
-        const scanRatio = Math.min(1, subP / 0.74);
-        const completeP = subP > 0.74 ? (subP - 0.74) / 0.26 : 0;
-        const happyHop =
-          completeP > 0 && completeP < 0.65
-            ? -Math.abs(Math.sin((completeP / 0.65) * Math.PI * 2)) * 18
-            : 0;
-        const dropOut = subP > 0.88 ? Math.pow((subP - 0.88) / 0.12, 2) * 320 : 0;
-
-        const spriteSize = 148;
-        const pengX = pitCenterX;
-        const pengY = 274 + Math.sin(now * 0.01) * 3.5 + happyHop + dropOut;
-
-        const topEdge = pengY - spriteSize / 2;
-        const scanY = topEdge + scanRatio * spriteSize;
-
-        // Natural Expression Transition across the Scan Line (v5.0.8 FQL verified):
-        const pixelBlinkDuringBeam = scanRatio < 0.58;
-        const topPixelAnim = getPenguinAnimState(
-          now,
-          1,
-          scanRatio >= 0.72,
-          pixelBlinkDuringBeam,
-          false
-        );
-        const bot2DFrameIdx = 6;
-
-        // 1. Back Half of Holographic Dimensional Capture Rings
+        // 1. Back Half of Wide Holographic Dimensional Capture Rings (Sized for the Giant UFO!)
         ctx.save();
         for (let r = 0; r < 3; r++) {
-          const ry = pengY - 46 + r * 46 + Math.sin(now * 0.006 + r) * 5;
-          const rx = 78 - r * 6;
+          const ry = ufoY - 52 + r * 48 + Math.sin(now * 0.006 + r) * 5;
+          const rx = 128 - r * 8;
           ctx.strokeStyle =
-            r % 2 === 0 ? 'rgba(103, 232, 249, 0.38)' : 'rgba(244, 114, 182, 0.34)';
-          ctx.lineWidth = 2.5;
+            r % 2 === 0 ? 'rgba(103, 232, 249, 0.42)' : 'rgba(244, 114, 182, 0.36)';
+          ctx.lineWidth = 2.8;
           ctx.beginPath();
-          ctx.ellipse(pengX, ry, rx, 14, 0, Math.PI, Math.PI * 2);
+          ctx.ellipse(ufoX, ry, rx, 18, 0, Math.PI, Math.PI * 2);
           ctx.stroke();
         }
         ctx.restore();
 
-        // 2. Top Portion (Above Laser Scan Line): Crisp 48x48 BLUE Pixel Penguin (sp_01_sheet.png)
-        if (bluePixelPenguin.sheetLoaded && bluePixelPenguin.sheet) {
+        // 2. Top Portion (Above Laser Scan Line): GIANT 16-BIT PIXEL UFO + PIXEL PENGUIN PILOT!
+        if (scanRatio > 0) {
           ctx.save();
           ctx.beginPath();
-          ctx.rect(pengX - spriteSize, topEdge - 24, spriteSize * 2, scanY - topEdge + 24);
+          ctx.rect(ufoX - 180, topEdge - 40, 360, scanY - topEdge + 40);
           ctx.clip();
-          ctx.imageSmoothingEnabled = false;
-          ctx.drawImage(
-            bluePixelPenguin.sheet,
-            topPixelAnim.frameIdx * 256,
-            0,
-            256,
-            256,
-            pengX - spriteSize / 2,
-            topEdge,
-            spriteSize,
-            spriteSize
-          );
-          ctx.restore();
-        } else if (bluePixelPenguin.loaded && bluePixelPenguin.img) {
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(pengX - spriteSize, topEdge - 24, spriteSize * 2, scanY - topEdge + 24);
-          ctx.clip();
-          ctx.imageSmoothingEnabled = false;
-          ctx.drawImage(
-            bluePixelPenguin.img,
-            pengX - spriteSize / 2,
-            topEdge,
-            spriteSize,
-            spriteSize
-          );
+          drawPixelUfoSpaceshipWithPilot(ctx, ufoX, ufoY, ufoTilt, now, {
+            scale: ufoScale,
+            openHatchRatio: 0,
+            spId: activeSpId,
+            forceBlink: pixelBlinkDuringBeam,
+            isShocked: false,
+            showSmoke: false,
+          });
           ctx.restore();
         }
 
-        // 3. Bottom Portion (Below Laser Scan Line): Smooth 2D BLUE Penguin (hero_2d_sheet.png)
-        if (scanRatio < 1 && MOTION_STATE.hero2DSheetLoaded && MOTION_STATE.hero2DSheet) {
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(
-            pengX - spriteSize,
-            scanY,
-            spriteSize * 2,
-            topEdge + spriteSize - scanY + 24
-          );
-          ctx.clip();
-          ctx.imageSmoothingEnabled = true;
-          ctx.drawImage(
-            MOTION_STATE.hero2DSheet,
-            bot2DFrameIdx * 256,
-            0,
-            256,
-            256,
-            pengX - spriteSize / 2,
-            topEdge,
-            spriteSize,
-            spriteSize
-          );
-          ctx.restore();
-        } else if (scanRatio < 1 && MOTION_STATE.hero2DLoaded && hero2DImg) {
-          ctx.save();
-          ctx.beginPath();
-          ctx.rect(
-            pengX - spriteSize,
-            scanY,
-            spriteSize * 2,
-            topEdge + spriteSize - scanY + 24
-          );
-          ctx.clip();
-          ctx.imageSmoothingEnabled = true;
-          ctx.drawImage(
-            hero2DImg,
-            pengX - spriteSize / 2,
-            topEdge,
-            spriteSize,
-            spriteSize
-          );
-          ctx.restore();
-        }
-
-        // 4. Front Half of Holographic Capture Rings
-        ctx.save();
-        for (let r = 0; r < 3; r++) {
-          const ry = pengY - 46 + r * 46 + Math.sin(now * 0.006 + r) * 5;
-          const rx = 78 - r * 6;
-          ctx.strokeStyle =
-            r % 2 === 0 ? 'rgba(103, 232, 249, 0.62)' : 'rgba(244, 114, 182, 0.52)';
-          ctx.lineWidth = 2.5;
-          ctx.beginPath();
-          ctx.ellipse(pengX, ry, rx, 14, 0, 0, Math.PI);
-          ctx.stroke();
-        }
-        ctx.restore();
-
-        // 5. High-Density 48x48 Voxel Matrix Scan Beam & Emitter Nodes
+        // 3. Bottom Portion (Below Laser Scan Line): GIANT 2D UFO + 2D PENGUIN PILOT!
         if (scanRatio < 1) {
           ctx.save();
-          ctx.fillStyle = 'rgba(56, 189, 248, 0.26)';
-          ctx.fillRect(pengX - 92, scanY - 14, 184, 28);
-          ctx.fillStyle = '#0284c7';
-          ctx.fillRect(pengX - 94, scanY - 4, 188, 8);
-          ctx.fillStyle = '#67e8f9';
-          ctx.fillRect(pengX - 90, scanY - 2, 180, 4);
-          ctx.fillStyle = '#ffffff';
-          ctx.fillRect(pengX - 84, scanY - 1, 168, 2);
+          ctx.beginPath();
+          ctx.rect(ufoX - 180, scanY, 360, botEdge - scanY + 50);
+          ctx.clip();
+          drawUfoSpaceshipWithPilot(
+            ctx,
+            ufoX,
+            ufoY,
+            ufoTilt,
+            now,
+            true, // Shocked 2D expression below the scan line!
+            subP < 0.09, // Brief impact blink at moment of shot-down
+            0,
+            {
+              scale: ufoScale,
+              openHatchRatio: 0,
+              spId: activeSpId,
+              thrusterBoost: 0.5,
+            }
+          );
+          ctx.restore();
+        }
 
-          for (const ex of [pengX - 94, pengX + 94]) {
+        // 4. Front Half of Wide Holographic Capture Rings
+        ctx.save();
+        for (let r = 0; r < 3; r++) {
+          const ry = ufoY - 52 + r * 48 + Math.sin(now * 0.006 + r) * 5;
+          const rx = 128 - r * 8;
+          ctx.strokeStyle =
+            r % 2 === 0 ? 'rgba(103, 232, 249, 0.68)' : 'rgba(244, 114, 182, 0.55)';
+          ctx.lineWidth = 2.8;
+          ctx.beginPath();
+          ctx.ellipse(ufoX, ry, rx, 18, 0, 0, Math.PI);
+          ctx.stroke();
+        }
+        ctx.restore();
+
+        // 5. Wide High-Density Voxel Matrix Scan Beam & Emitter Nodes (Spanning the full Giant UFO width = 276px!)
+        if (scanRatio > 0 && scanRatio < 1) {
+          ctx.save();
+          const beamHalfW = 138;
+          ctx.fillStyle = 'rgba(56, 189, 248, 0.28)';
+          ctx.fillRect(ufoX - beamHalfW, scanY - 14, beamHalfW * 2, 28);
+          ctx.fillStyle = '#0284c7';
+          ctx.fillRect(ufoX - beamHalfW - 2, scanY - 4, beamHalfW * 2 + 4, 8);
+          ctx.fillStyle = '#67e8f9';
+          ctx.fillRect(ufoX - beamHalfW + 2, scanY - 2, beamHalfW * 2 - 4, 4);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(ufoX - beamHalfW + 8, scanY - 1, beamHalfW * 2 - 16, 2);
+
+          for (const ex of [ufoX - beamHalfW - 2, ufoX + beamHalfW + 2]) {
             ctx.fillStyle = '#0f172a';
-            ctx.fillRect(ex - 6, scanY - 6, 12, 12);
+            ctx.fillRect(ex - 7, scanY - 7, 14, 14);
             ctx.fillStyle = '#67e8f9';
-            ctx.fillRect(ex - 4, scanY - 4, 8, 8);
+            ctx.fillRect(ex - 5, scanY - 5, 10, 10);
             ctx.fillStyle = '#ffffff';
             ctx.fillRect(ex - 2, scanY - 2, 4, 4);
           }
 
-          const cols = 15;
+          const cols = 21;
           for (let k = 0; k < cols; k++) {
-            const kx = Math.round(pengX - 56 + k * 8);
+            const kx = Math.round(ufoX - 100 + k * 10);
             const wave = Math.sin(now * 0.032 + k * 1.35);
             const ky = Math.round(scanY + wave * 10);
             const pCol =
@@ -2809,13 +3255,13 @@ function initPixelMotionStudio() {
           }
           ctx.restore();
         } else if (completeP > 0 && completeP < 0.85) {
-          const burstR = 46 + completeP * 58;
+          const burstR = 72 + completeP * 75;
           ctx.save();
           ctx.globalAlpha = Math.max(0, 1 - completeP * 1.15);
-          for (let b = 0; b < 8; b++) {
-            const ba = (b * Math.PI) / 4 + completeP * 0.8;
-            const bx = Math.round(pengX + Math.cos(ba) * burstR);
-            const by = Math.round(pengY + Math.sin(ba) * burstR * 0.75);
+          for (let b = 0; b < 10; b++) {
+            const ba = (b * Math.PI) / 5 + completeP * 0.8;
+            const bx = Math.round(ufoX + Math.cos(ba) * burstR);
+            const by = Math.round(ufoY + Math.sin(ba) * burstR * 0.65);
             ctx.fillStyle = '#090d1a';
             ctx.fillRect(bx - 5, by - 5, 10, 10);
             ctx.fillStyle = b % 2 === 0 ? '#facc15' : '#67e8f9';
@@ -2825,37 +3271,41 @@ function initPixelMotionStudio() {
         }
 
         const pct = Math.min(100, Math.round(scanRatio * 100));
-        const isStillScanning = scanRatio < 0.92;
+        const isStillScanning = scanRatio < 0.94;
         drawRetroSpeechBubble(
           ctx,
-          pengX - 18,
-          Math.max(54, topEdge - 6),
-          isStillScanning
+          ufoX - 10,
+          Math.max(54, topEdge - 8),
+          subP < 0.16
             ? CURRENT_LANG === 'ko'
-              ? '어어어?! 추락하면서 내 몸이 픽셀로 변하고 있어!!'
-              : 'Whoa?! As I fall, I am turning into pixels!!'
+              ? '콰과광?! 격추당했다!! 우주선째로 포털에 빨려들어가고 있어!!'
+              : 'KABOOM?! Shot down!! My whole UFO is pulled into the Pixel Rift!!'
+            : isStillScanning
+            ? CURRENT_LANG === 'ko'
+              ? '어어어?! 우주선이랑 내 몸이 통째로 픽셀로 변하고 있어!!'
+              : 'Whoa?! Both my Giant UFO and I are turning into 16-bit pixels!!'
             : CURRENT_LANG === 'ko'
-            ? '우와아!! 파란 픽셀 펭귄으로 변신 완료!! 픽셀월드로 착륙!!'
-            : 'Woohoo!! Transformed into a Blue Pixel Penguin!! Landing in Pixel World!!',
-          isStillScanning ? '#38bdf8' : '#34d399',
+            ? '우와아!! 픽셀 우주선 변신 완료!! 벚꽃 픽셀월드로 불시착한다!!'
+            : 'Woohoo!! Pixel UFO complete!! Crash-landing into Pixel World!!',
+          subP < 0.16 ? '#fb7185' : isStillScanning ? '#38bdf8' : '#34d399',
           now
         );
-        drawPixelScanHudPill(ctx, pengX, Math.min(488, topEdge + spriteSize + 14), pct);
+        drawPixelScanHudPill(ctx, ufoX, Math.min(488, botEdge + 18), pct);
 
         drawRetroDialogueBar(
           ctx,
-          'SCENE 1 · 픽셀 변환',
+          'SCENE 2 · 💥 격추 & 우주선 통째 픽셀화!',
           CURRENT_LANG === 'ko'
-            ? `삐리릭—! 격추되어 차원 포털로 추락하던 파란 펭귄이 픽셀 광선을 맞고 파란 픽셀 펭귄으로 변신 완료! (${pct}%)`
-            : `BEEP—! Falling through the dimensional portal, our blue penguin transforms into a Blue Pixel Penguin! (${pct}%)`
+            ? `콰과광—! 격추당한 대형 우주선이 차원 포털에 진입하며 우주선과 펭귄이 통째로 16비트 픽셀로 변신합니다! (${pct}%)`
+            : `KABOOM—! Shot down into the dimensional rift, the entire Giant UFO and Penguin Pilot transform into 16-Bit Pixels! (${pct}%)`
         );
 
-        if (scElapsed >= 2550) {
-          setIntroScene(1, true);
+        if (scElapsed >= 2900) {
+          setIntroScene(2, true);
         }
       }
 
-      // Render Explosion Particles & Floating Score Popups across all Scene 0 sub-stages
+      // Render Explosion Particles & Floating Score Popups
       for (let i = UFO_GAME.particles.length - 1; i >= 0; i--) {
         const pt = UFO_GAME.particles[i];
         pt.x += pt.vx * dt;
@@ -2897,173 +3347,67 @@ function initPixelMotionStudio() {
     }
 
     // ========================================================================
-    // SCENE 1 ("2. 픽셀월드"): Hero Blue Penguin + Colorful Friends Strolling, Blinking & Chatting!
-    // ========================================================================
-    else if (MOTION_STATE.sceneIdx === 1) {
-      drawScene2PixelWorldBackground(ctx, now);
-      ctx.imageSmoothingEnabled = false;
-
-      // Top Arcade Landing Score & Leaderboard Banner (Clickable to open #leaderboard-modal!)
-      const finalPts = UFO_GAME.lastFinalScore || UFO_GAME.score || 3450;
-      const pilotCode = `P${String(UFO_GAME.pilotTokenId).padStart(4, '0')}`;
-      const rankTag = UFO_GAME.lastRank ? ` · RANK #${UFO_GAME.lastRank}` : '';
-      const banW = 510;
-      const banH = 34;
-      const banX = 480 - banW / 2;
-      const banY = 12;
-      ctx.save();
-      ctx.fillStyle = 'rgba(9, 13, 26, 0.88)';
-      ctx.fillRect(banX - 2, banY - 2, banW + 4, banH + 4);
-      ctx.strokeStyle = '#facc15';
-      ctx.lineWidth = 1.8;
-      ctx.strokeRect(banX, banY, banW, banH);
-      ctx.fillStyle = '#fde047';
-      ctx.font = '900 13px "Pretendard", "Malgun Gothic", sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(
-        CURRENT_LANG === 'ko'
-          ? `🏆 픽셀월드 착륙! NFT #${UFO_GAME.pilotTokenId} (${pilotCode}) · ${finalPts.toLocaleString()} PTS${rankTag}  [랭킹보기 ▶]`
-          : `🏆 Landed! NFT #${UFO_GAME.pilotTokenId} (${pilotCode}) · ${finalPts.toLocaleString()} PTS${rankTag}  [Leaderboard ▶]`,
-        480,
-        banY + banH / 2 + 1
-      );
-      ctx.restore();
-
-      // Foreground Protagonist on Left: Default Blue Pixel Penguin (sp_01) Walking & Blinking on Stone Promenade!
-      const spriteSize = 128;
-      const heroGroundY = 338;
-      const landP = Math.min(1, p / 0.14);
-      const heroWalkOffset = landP >= 1 ? Math.sin(now * 0.0028) * 26 : 0;
-      const heroX = Math.round(166 + heroWalkOffset);
-      const heroY = landP < 1 ? Math.round(-130 + landP * (heroGroundY + 130)) : heroGroundY;
-
-      drawPixelGroundShadow(ctx, heroX + spriteSize / 2, heroGroundY + spriteSize - 6, 58, 0);
-      drawAnimatedPixelPenguin(ctx, bluePixelPenguin, heroX, heroY, spriteSize, now, {
-        seed: 1,
-        isWalking: true,
-        flipX: false, // Native sprite faces RIGHT toward his colorful friends!
-      });
-
-      // 4 Colorful Pixel Penguin Friends Strolling, Stepping & Blinking on the Stone Promenade (ZERO labels under feet!)
-      const colorfulFriends = [
-        { sp: '05', baseX: 356, y: 338, seed: 2, amp: 22, speed: 0.0026 }, // Rose Pink
-        { sp: '04', baseX: 476, y: 332, seed: 3, amp: 24, speed: 0.0023 }, // Apricot Orange
-        { sp: '09', baseX: 596, y: 338, seed: 4, amp: 22, speed: 0.0027 }, // Jade Green
-        { sp: '06', baseX: 716, y: 332, seed: 5, amp: 20, speed: 0.0024 }, // Violet Purple
-      ];
-
-      const walkInP = Math.min(1, p / 0.20);
-      const renderedFriends = [];
-
-      colorfulFriends.forEach((fr, idx) => {
-        const spEntry = ensureSpeciesSprite(fr.sp);
-        const strollX = walkInP >= 1 ? Math.sin(now * fr.speed + idx * 1.4) * fr.amp : 0;
-        const fx = Math.round(fr.baseX + (1 - walkInP) * 115 + strollX);
-        const fy = fr.y;
-
-        drawPixelGroundShadow(ctx, fx + spriteSize / 2, fy + spriteSize - 6, 58, 0);
-
-        // Friends on the right use flipX: true so they face LEFT toward the hero on the left!
-        drawAnimatedPixelPenguin(ctx, spEntry, fx, fy, spriteSize, now, {
-          seed: fr.seed,
-          isWalking: true,
-          flipX: true,
-        });
-
-        renderedFriends.push({ fx, fy });
-      });
-
-      // Funny Sequenced 16-Bit Speech Bubbles (1 active speaker at a time, zero overlap with hearts or heads!)
-      if (p < 0.36) {
-        drawPixelHeart(ctx, 668, 316 - ((now * 0.03) % 22), 2.8, '#ff4d6d');
-        drawRetroSpeechBubble(
-          ctx,
-          heroX + spriteSize / 2 + 24,
-          heroY - 4,
-          CURRENT_LANG === 'ko'
-            ? '헐 내 몸이 픽셀이 됐잖아?! 너네도 빠졌냐?!'
-            : 'Whoa, I am pixels now?! Did you guys fall in too?!',
-          '#38bdf8',
-          now
-        );
-        drawRetroDialogueBar(
-          ctx,
-          'SCENE 2 · 픽셀월드 도착',
-          CURRENT_LANG === 'ko'
-            ? '"헐?! 내 몸이 네모난 픽셀이 됐잖아?!" 벚꽃 날리는 16비트 픽셀 월드에 무사히 착지한 파란 펭귄!'
-            : '"Whoa?! I turned into a Blue Pixel Penguin?!" Safely landed in the 16-bit Cherry Blossom Pixel World!'
-        );
-      } else if (p < 0.68) {
-        const speaker1 = renderedFriends[0] || { fx: 356, fy: 338 };
-        drawPixelHeart(ctx, 738, 314 - ((now * 0.03) % 22), 2.8, '#fbbf24');
-        drawRetroSpeechBubble(
-          ctx,
-          speaker1.fx + spriteSize / 2,
-          speaker1.fy - 6,
-          CURRENT_LANG === 'ko'
-            ? 'ㅋㅋㅋ 어서와!! 여긴 사도 아무 혜택 없는 픽셀 천국이야!'
-            : 'Haha welcome!! This is the Zero-Perks Pixel Penguin Paradise!',
-          '#ff4d6d',
-          now
-        );
-        drawRetroDialogueBar(
-          ctx,
-          'SCENE 2 · 알록달록 친구들 환영식',
-          CURRENT_LANG === 'ko'
-            ? '"ㅋㅋㅋ 어서와!! 여긴 사도 아무 혜택 없는 순수 베리챗 프사(PFP) 픽셀 천국이야!"'
-            : '"Haha welcome!! This is the 100% Zero-Perks VeryChat PFP Pixel Penguin Paradise!"'
-        );
-      } else {
-        const speaker2 = renderedFriends[2] || { fx: 596, fy: 338 };
-        drawPixelHeart(ctx, 312, 318 - ((now * 0.03) % 22), 2.8, '#ff4d6d');
-        drawRetroSpeechBubble(
-          ctx,
-          speaker2.fx + spriteSize / 2 - 12,
-          speaker2.fy - 6,
-          CURRENT_LANG === 'ko'
-            ? '복잡한 로드맵 따위 없다! 다 같이 벚꽃길 산책하자!'
-            : 'No complicated roadmap here! Let us stroll the cherry blossom road!',
-          '#34d399',
-          now
-        );
-        drawRetroDialogueBar(
-          ctx,
-          'SCENE 2 · 벚꽃 강변 산책 파티',
-          CURRENT_LANG === 'ko'
-            ? '"거창한 로드맵 따위 없다! 알록달록 픽셀 펭귄 친구들과 다 같이 벚꽃 강변을 걸으며 놀자!"'
-            : '"No complicated roadmap here! Let\'s all stroll and party with our colorful penguin friends!"'
-        );
-      }
-    }
-
-    // ========================================================================
-    // SCENE 2 ("3. 타이틀"): Authentic LOVE ATTACK-Grade 16-Bit Arcade Title Screen!
+    // SCENE 2 ("3. 💥 불시착 & 환영"):
+    //   1) Giant 16-Bit Pixel UFO crash-lands on the Cherry Blossom Stone Promenade (x = 228, y = 408)!
+    //   2) ONLY the top glass dome hatch ("우주선 대가리") pops open (openHatchRatio: 0 -> 1) so the lower body is NEVER exposed!
+    //   3) 4 Colorful Pixel Penguin Friends on the right welcome the pilot under the sculpted PIXEL PENGUIN arcade title & RPG menu!
     // ========================================================================
     else {
       drawScene2PixelWorldBackground(ctx, now);
       ctx.imageSmoothingEnabled = false;
 
-      const titleBounce = Math.floor(now / 480) % 2 === 0 ? 0 : -4;
-      const logoTopY = 16 + titleBounce;
+      // 1. Top Arcade Landing Score & Leaderboard Banner (Clickable to open #leaderboard-modal!)
+      const finalPts = UFO_GAME.lastFinalScore || UFO_GAME.score || 3450;
+      const banW = 580;
+      const banH = 32;
+      const banX = 480 - banW / 2;
+      const banY = 10;
+      ctx.save();
+      ctx.fillStyle = 'rgba(9, 13, 26, 0.90)';
+      ctx.fillRect(banX - 2, banY - 2, banW + 4, banH + 4);
+      ctx.strokeStyle = UFO_GAME.hasNft ? '#facc15' : '#67e8f9';
+      ctx.lineWidth = 1.8;
+      ctx.strokeRect(banX, banY, banW, banH);
+      ctx.fillStyle = UFO_GAME.hasNft ? '#fde047' : '#bae6fd';
+      ctx.font = '900 12.5px "Pretendard", "Malgun Gothic", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
 
-      // Row 1: Sculpted 9-Row "PIXEL" + Outlined Golden Arcade Heart on Right
-      drawArcadePixelWord(ctx, 'PIXEL', 480, logoTopY, 5);
-      drawGoldenArcadeHeart(ctx, 646, logoTopY + 18, 3.5);
+      if (UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null) {
+        const pilotCode = `P${String(UFO_GAME.pilotTokenId).padStart(4, '0')}`;
+        const rankTag = UFO_GAME.lastRank ? ` · RANK #${UFO_GAME.lastRank}` : '';
+        ctx.fillText(
+          CURRENT_LANG === 'ko'
+            ? `🏆 불시착 성공! NFT #${UFO_GAME.pilotTokenId} (${pilotCode}) · ${finalPts.toLocaleString()} PTS${rankTag} 기록 완료!  [랭킹보기 ▶]`
+            : `🏆 Crash-Landed! NFT #${UFO_GAME.pilotTokenId} (${pilotCode}) · ${finalPts.toLocaleString()} PTS${rankTag} Recorded!  [Leaderboard ▶]`,
+          480,
+          banY + banH / 2 + 1
+        );
+      } else {
+        ctx.fillText(
+          CURRENT_LANG === 'ko'
+            ? `🛸 불시착 성공! 기본 파란 펭귄 (NFT 없음 · 기록 안 남음) · ${finalPts.toLocaleString()} PTS  [전체 랭킹보기 ▶]`
+            : `🛸 Crash-Landed! Default Blue Penguin (No NFT · Unrecorded) · ${finalPts.toLocaleString()} PTS  [Leaderboard ▶]`,
+          480,
+          banY + banH / 2 + 1
+        );
+      }
+      ctx.restore();
 
-      // Row 2: Sculpted 9-Row "PENGUIN"
-      drawArcadePixelWord(ctx, 'PENGUIN', 480, logoTopY + 52, 5);
+      // 2. Sculpted 16-Bit "PIXEL PENGUIN" Arcade Logo & RPG Command Box in Upper Sky
+      const titleBounce = Math.floor(now / 480) % 2 === 0 ? 0 : -3;
+      const logoTopY = 50 + titleBounce;
 
-      // Clean Pixel-Outlined Subtitle Floating Over Sky (Matches "RESCENE" in LOVE ATTACK!)
-      drawPixelOutlinedSubtitle(ctx, 'PPENG · 10,000 VERYCHAT PFP', 480, logoTopY + 124);
+      drawArcadePixelWord(ctx, 'PIXEL', 480, logoTopY, 4.5);
+      drawGoldenArcadeHeart(ctx, 636, logoTopY + 16, 3.2);
+      drawArcadePixelWord(ctx, 'PENGUIN', 480, logoTopY + 46, 4.5);
+      drawPixelOutlinedSubtitle(ctx, 'PPENG · 10,000 VERYCHAT PFP', 480, logoTopY + 108);
 
-      // Compact, Authentic Dark-Navy RPG Command Box (Matches LOVE ATTACK Reference: 332x84)
       const menuW = 332;
-      const menuH = 84;
+      const menuH = 78;
       const menuX = 480 - menuW / 2;
       const menuY = 176;
 
-      // Drop shadow + Notched 16-bit White/Slate Double Pixel Frame
       ctx.fillStyle = 'rgba(9, 11, 20, 0.55)';
       ctx.fillRect(menuX + 4, menuY + 6, menuW + 4, menuH + 4);
       ctx.fillStyle = '#090b14';
@@ -3077,55 +3421,130 @@ function initPixelMotionStudio() {
 
       const menuItems =
         CURRENT_LANG === 'ko'
-          ? ['START WORLD · 10K 도감도', 'REPLAY INTRO · 다시보기']
-          : ['START WORLD · 10K CODEX', 'REPLAY INTRO · WATCH AGAIN'];
+          ? ['START WORLD · 10K 도감도', 'REPLAY GAME · 다시 탈출하기']
+          : ['START WORLD · 10K CODEX', 'REPLAY GAME · PLAY AGAIN'];
 
       menuItems.forEach((mText, idx) => {
-        const rowY = menuY + 26 + idx * 32;
+        const rowY = menuY + 24 + idx * 30;
         const isSelected = (MOTION_STATE.menuHoverIdx % 2) === idx;
         if (isSelected) {
           ctx.fillStyle = 'rgba(255, 77, 109, 0.22)';
-          ctx.fillRect(menuX + 10, rowY - 13, menuW - 20, 26);
-          drawPixelHeart(ctx, menuX + 28, rowY, 2.4, '#ff4d6d');
+          ctx.fillRect(menuX + 10, rowY - 12, menuW - 20, 24);
+          drawPixelHeart(ctx, menuX + 28, rowY, 2.3, '#ff4d6d');
         }
         ctx.fillStyle = isSelected ? '#ffffff' : '#94a3b8';
-        ctx.font = '900 15.5px "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
+        ctx.font = '900 15px "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillText(mText, menuX + 46, rowY + 1);
       });
 
-      // Cozy Centered 5-Penguin Crew Strolling & Blinking on the Stone Walkway
-      // Center is Hero Default Blue ('01'), flanked by Rose Pink ('05'), Apricot ('04'), Jade Green ('09'), Violet ('06')!
-      const titleSquad = [
-        { sp: '05', baseX: 236, seed: 2 },
-        { sp: '04', baseX: 328, seed: 3 },
-        { sp: '01', baseX: 420, seed: 1 }, // Hero Blue in Center
-        { sp: '09', baseX: 512, seed: 4 },
-        { sp: '06', baseX: 604, seed: 5 },
-      ];
-      const pSize = 122;
-      const baseLineY = 342;
+      // 3. GIANT 16-BIT PIXEL UFO CRASH-LANDING ON LEFT STONE PROMENADE (x = 228, y = 412)
+      //    p = 0.00..0.14: Drops from sky & thuds onto the stone walkway with a bounce!
+      //    p = 0.16..0.34: ONLY the Top Glass Dome Hatch ("우주선 대가리") pops open (openHatchRatio: 0 -> 1)!
+      //    Lower body stays 100% inside the Pixel UFO hull while the upper-body Pixel Penguin greets the welcoming crew!
+      const crashP = Math.min(1, p / 0.14);
+      const bounceOffset =
+        p >= 0.14 && p < 0.24 ? -Math.abs(Math.sin(((p - 0.14) / 0.10) * Math.PI)) * 18 : 0;
+      const openHatchRatio =
+        p < 0.16 ? 0 : Math.min(1, (p - 0.16) / 0.18);
 
-      titleSquad.forEach((member, idx) => {
-        const spEntry = ensureSpeciesSprite(member.sp);
-        const strollWave = Math.sin(now * 0.0024 + idx * 1.1) * 14;
-        const lx = Math.round(member.baseX + strollWave);
-        const ly = baseLineY;
-        // Left 2 face right (flipX: false), Right 2 face left (flipX: true), Center Hero faces right (flipX: false)
-        const flipX = idx > 2;
+      const ufoLandX = 228;
+      const ufoGroundY = 418;
+      const ufoCurY =
+        crashP < 1
+          ? Math.round(90 + crashP * crashP * (ufoGroundY - 90))
+          : Math.round(ufoGroundY + bounceOffset);
+      // Slight cozy crash-landing tilt (+0.04 rad) on the stone promenade
+      const ufoCrashTilt = crashP < 1 ? 0.18 : 0.04;
 
-        drawPixelGroundShadow(ctx, lx + pSize / 2, baseLineY + pSize - 6, 54, 0);
-        drawAnimatedPixelPenguin(ctx, spEntry, lx, ly, pSize, now, {
-          seed: member.seed,
-          isWalking: true,
-          flipX,
-        });
+      // Wide stepped pixel ground shadow under the crash-landed Giant Pixel UFO
+      drawPixelGroundShadow(ctx, ufoLandX, ufoGroundY + 32, 162, bounceOffset);
+
+      drawPixelUfoSpaceshipWithPilot(ctx, ufoLandX, ufoCurY, ufoCrashTilt, now, {
+        scale: 1.42,
+        openHatchRatio,
+        spId: activeSpId,
+        forceBlink: false,
+        isShocked: crashP < 1,
+        showSmoke: true,
       });
 
-      // Bottom-Left Retro Arcade Corner Tag (Matches "FAN-MADE · 비공식" in LOVE ATTACK!)
+      // 4. 4 Colorful Pixel Penguin Friends on the Right Walking Up & Welcoming the Crash-Landed UFO Pilot!
+      const spriteSize = 124;
+      const colorfulFriends = [
+        { sp: '05', baseX: 432, y: 342, seed: 2, amp: 18, speed: 0.0026 }, // Rose Pink
+        { sp: '04', baseX: 544, y: 336, seed: 3, amp: 20, speed: 0.0023 }, // Apricot Orange
+        { sp: '09', baseX: 656, y: 342, seed: 4, amp: 18, speed: 0.0027 }, // Mint Glacier
+        { sp: '06', baseX: 768, y: 336, seed: 5, amp: 16, speed: 0.0024 }, // Lavender Frost
+      ];
+
+      const walkInP = Math.min(1, p / 0.20);
+      const renderedFriends = [];
+
+      colorfulFriends.forEach((fr, idx) => {
+        const spEntry = ensureSpeciesSprite(fr.sp);
+        const strollX = walkInP >= 1 ? Math.sin(now * fr.speed + idx * 1.4) * fr.amp : 0;
+        const fx = Math.round(fr.baseX + (1 - walkInP) * 95 + strollX);
+        const fy = fr.y;
+
+        drawPixelGroundShadow(ctx, fx + spriteSize / 2, fy + spriteSize - 6, 56, 0);
+        // Friends face LEFT (flipX: true) toward the crash-landed Pixel UFO on the left!
+        drawAnimatedPixelPenguin(ctx, spEntry, fx, fy, spriteSize, now, {
+          seed: fr.seed,
+          isWalking: true,
+          flipX: true,
+        });
+
+        renderedFriends.push({ fx, fy });
+      });
+
+      // 5. Sequenced 16-Bit Speech Bubbles (UFO Pilot pops open the top hatch -> Friends welcome him!)
+      if (p < 0.44) {
+        drawPixelHeart(ctx, ufoLandX + 76, ufoCurY - 68 - ((now * 0.03) % 18), 2.8, '#38bdf8');
+        drawRetroSpeechBubble(
+          ctx,
+          ufoLandX + 24,
+          ufoCurY - 94,
+          CURRENT_LANG === 'ko'
+            ? '푸슈욱—! 콜록콜록.. 우주선 해치 오픈! 여기가 픽셀월드야?!'
+            : 'Psssh—! *Cough* UFO Hatch Open! Is this Pixel World?!',
+          '#38bdf8',
+          now
+        );
+        drawRetroDialogueBar(
+          ctx,
+          'SCENE 3 · 💥 픽셀 우주선 불시착 & 해치 오픈!',
+          CURRENT_LANG === 'ko'
+            ? '"푸슈욱—!" 벚꽃 강변에 불시착한 픽셀 우주선의 윗부분 유리 해치(대가리)만 열리며 상반신 펭귄이 고개를 내밉니다!'
+            : '"Psssh—!" Only the top glass dome hatch of the crash-landed Pixel UFO pops open as our Penguin Pilot pokes his head out!'
+        );
+      } else {
+        const speaker1 = renderedFriends[0] || { fx: 432, fy: 342 };
+        drawPixelHeart(ctx, 512, 318 - ((now * 0.03) % 20), 2.8, '#ff4d6d');
+        drawPixelHeart(ctx, 684, 314 - ((now * 0.03) % 20), 2.8, '#fbbf24');
+        drawRetroSpeechBubble(
+          ctx,
+          speaker1.fx + spriteSize / 2 + 18,
+          speaker1.fy - 8,
+          CURRENT_LANG === 'ko'
+            ? 'ㅋㅋㅋ 우주선 타고 불시착한 대원 환영해!! 여긴 픽셀 천국이야!'
+            : 'Haha welcome UFO Pilot!! This is the 10,000 Pixel Penguin Paradise!',
+          '#ff4d6d',
+          now
+        );
+        drawRetroDialogueBar(
+          ctx,
+          'SCENE 3 · 🐧 픽셀 펭귄 친구들 총출동 환영식',
+          CURRENT_LANG === 'ko'
+            ? '"ㅋㅋㅋ 우주선 타고 불시착한 대원 어서와!!" 알록달록 픽셀 펭귄 친구들이 몰려와 해치가 열린 우주선 주변에서 격하게 환영합니다!'
+            : '"Haha welcome UFO Pilot!!" Colorful Pixel Penguin friends gather around the open-hatch Pixel UFO to celebrate your arrival!'
+        );
+      }
+
+      // Bottom-Left Retro Arcade Corner Tag
       const tagX = 16;
-      const tagY = 500;
+      const tagY = 504;
       const tagW = 192;
       const tagH = 24;
       ctx.fillStyle = '#090b14';
@@ -3139,14 +3558,6 @@ function initPixelMotionStudio() {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('PPENG · @happy Ahndoge', tagX + tagW / 2, tagY + tagH / 2 + 1);
-
-      drawRetroDialogueBar(
-        ctx,
-        'SCENE 3 · 타이틀',
-        CURRENT_LANG === 'ko'
-          ? '그렇게 시작된 베리챗 픽셀 펭귄 10,000마리 세상! 아래에서 내 마음에 드는 펭귄을 골라 6각형 프사로 장착해보세요.'
-          : 'And so begins the world of 10,000 VeryChat Pixel Penguins! Pick your favorite penguin below and rock it as your Hexagon PFP.'
-      );
     }
 
     // 16-Bit Pixel Mosaic Wipe Transition at the start of each scene
@@ -3235,20 +3646,19 @@ function applyLanguage(lang) {
   });
 
   updateMobileTraitFilterBtnLabel();
+  updateUfoBoardingDockUI();
   setIntroScene(MOTION_STATE.sceneIdx, false);
 }
 
 // PFP Simulator
-async function loadPfpPreview(tokenNum) {
+async function loadPfpPreview(tokenNum, syncUfoDock = false) {
   try {
     const res = await fetch(`/api/token/${tokenNum}`);
     if (!res.ok) return;
     const tok = await res.json();
     CURRENT_PFP_TOKEN = tok.edition;
-    UFO_GAME.pilotTokenId = tok.edition;
-    const ufoPilotInput = document.getElementById('ufo-pilot-id-input');
-    if (ufoPilotInput && Number(ufoPilotInput.value) !== tok.edition) {
-      ufoPilotInput.value = String(tok.edition);
+    if (syncUfoDock) {
+      setUfoPilotTokenId(tok.edition, false, false);
     }
 
     const imgUrl = tok.edition <= 10 ? tok.image_url : tok.pixel_48_url;
