@@ -1088,14 +1088,17 @@ body {
   border: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: 4px;
 }
 
-.pfp-meta-row {
+.pfp-meta-row,
+.pfp-meta-line {
   display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
+  flex-wrap: nowrap;
+  gap: 8px;
   align-items: center;
+  white-space: nowrap;
+  min-height: 20px;
 }
 
 .pfp-quick-Metadata strong {
@@ -1106,6 +1109,10 @@ body {
   font-size: 10px;
   color: var(--accent-ice);
   font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 16px;
 }
 
 .pfp-jump-row {
