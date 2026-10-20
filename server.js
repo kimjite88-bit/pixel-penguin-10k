@@ -4,9 +4,9 @@
  *
  * Serves:
  * - Bilingual (KO/EN) Official Collection Homepage & VeryChat NFT Market Specs
- * - 11 Special 1-of-1 Animated Mythic Originals (#1 ~ #11)
- * - Full 10,000 Token Explorer & rarity.tools Rarity Score Calculator (P00001 ~ P10000)
- * - Lossless 48x48 Pixel Art Binary Pack Streaming (/img/P00001.png ~ /img/P10000.png)
+ * - 11 Special 1-of-1 Animated Genesis Originals (#0 ~ #10)
+ * - Full 10,000 Token Explorer & rarity.tools Rarity Score Calculator (P00000 ~ P09999)
+ * - Lossless Pixel Art Binary Pack Streaming (/img/P00000.png ~ /img/P09999.png)
  * - FQL Cryptographic Provenance & SHA-256 Verification API
  */
 
@@ -36,7 +36,7 @@ let specialsByNum = new Map();
 let traitScoreLookup = {};
 
 const TIER_RANK_WEIGHT = {
-  Unranked: 7,
+  Genesis: 7,
   Mythic: 6,
   Legendary: 5,
   Epic: 4,
@@ -78,20 +78,20 @@ function loadCollectionData() {
 loadCollectionData();
 
 function parseTokenNumber(rawId) {
-  if (!rawId) return null;
+  if (rawId === null || rawId === undefined || rawId === '') return null;
   const s = String(rawId).trim().toUpperCase().replace(/^#/, '').replace(/^P/, '');
   if (!/^\d+$/.test(s)) return null;
   const n = Number(s);
-  if (n < 1 || n > 10000) return null;
+  if (n < 0 || n > 9999) return null;
   return n;
 }
 
 function expandTokenSummary(num) {
-  const idx = num - 1;
+  const idx = num;
   const row = collection.tokens[idx];
   const [tIndices, activeK, rarityScore, rarityRank, nativeSha16, imageSha16, jsonSha16] = row;
   const id = `P${String(num).padStart(5, '0')}`;
-  const isSpecial = num <= 11;
+  const isSpecial = num <= 10;
   const sp = isSpecial ? specialsByNum.get(num) : null;
 
   const traits = {};
@@ -127,7 +127,7 @@ function expandTokenSummary(num) {
 
 function expandTokenFull(num) {
   const base = expandTokenSummary(num);
-  const isSpecial = num <= 11;
+  const isSpecial = num <= 10;
   const sp = isSpecial ? specialsByNum.get(num) : null;
 
   const nineCats = [
@@ -163,6 +163,7 @@ function expandTokenFull(num) {
       ? sp.description
       : `Pixel Penguin 10K Official Collection on VeryChain (Very NFT). Created by @happy Ahndoge.`,
     n_frames: isSpecial ? sp.n_frames : 1,
+    genesis_bonus: isSpecial ? Number(sp.genesis_bonus || 0) : 0,
     trait_breakdown: breakdown,
     active_trait_stat: {
       active_count: base.active_traits_count,
@@ -182,17 +183,17 @@ function expandTokenFull(num) {
   };
 }
 
-// Serve lossless 48x48 PNG from binary pack
+// Serve lossless PNG from binary pack
 app.get('/img/:tokenFile', (req, res) => {
   if (!collection || !packBuffer) {
     if (!loadCollectionData()) return res.status(503).send('Collection pack initializing');
   }
   const raw = req.params.tokenFile.replace(/\.png$/i, '');
   const num = parseTokenNumber(raw);
-  if (!num) {
+  if (num === null) {
     return res.status(404).send('Token not found');
   }
-  const [offset, length] = collection.offsets[num - 1];
+  const [offset, length] = collection.offsets[num];
   const slice = packBuffer.subarray(offset, offset + length);
   res.setHeader('Content-Type', 'image/png');
   res.setHeader('Cache-Control', 'public, max-age=86400, must-revalidate');
@@ -251,16 +252,16 @@ app.get('/api/tokens', (req, res) => {
     return res.json({ total: 0, page, limit, items: [] });
   }
 
-  // Exact ID shortcut if q is e.g. "#12", "P00012", "12"
-  const exactNum = parseTokenNumber(q);
+  // Exact ID shortcut if q is e.g. "#0", "P00000", "0"
+  const exactNum = q ? parseTokenNumber(q) : null;
 
   const matchedNums = [];
-  for (let num = 1; num <= 10000; num++) {
-    const row = collection.tokens[num - 1];
+  for (let num = 0; num <= 9999; num++) {
+    const row = collection.tokens[num];
     const tIndices = row[0];
 
-    if (editionFilter === 'special' && num > 11) continue;
-    if (editionFilter === 'generative' && num <= 11) continue;
+    if (editionFilter === 'special' && num > 10) continue;
+    if (editionFilter === 'generative' && num <= 10) continue;
 
     if (tierValIdx !== -1 && tIndices[tierCatIdx] !== tierValIdx) continue;
 
@@ -276,14 +277,15 @@ app.get('/api/tokens', (req, res) => {
     if (q) {
       const idStr = `p${String(num).padStart(5, '0')}`;
       const numStr = String(num);
-      let qMatch = exactNum === num || idStr.includes(q) || `#${numStr}` === q;
+      let qMatch = (exactNum !== null && exactNum === num) || idStr.includes(q) || `#${numStr}` === q;
 
-      if (!qMatch && num <= 11) {
+      if (!qMatch && num <= 10) {
         const sp = specialsByNum.get(num);
         if (
-          sp.title.toLowerCase().includes(q) ||
-          sp.character_ko.toLowerCase().includes(q) ||
-          sp.archetype.toLowerCase().includes(q)
+          sp &&
+          (sp.title.toLowerCase().includes(q) ||
+            sp.character_ko.toLowerCase().includes(q) ||
+            sp.archetype.toLowerCase().includes(q))
         ) {
           qMatch = true;
         }
@@ -304,10 +306,10 @@ app.get('/api/tokens', (req, res) => {
     matchedNums.push(num);
   }
 
-  // Sort matched token numbers (including #1~#11 in all sort orders)
+  // Sort matched token numbers (including #0~#10 in all sort orders)
   matchedNums.sort((a, b) => {
-    const rowA = collection.tokens[a - 1];
-    const rowB = collection.tokens[b - 1];
+    const rowA = collection.tokens[a];
+    const rowB = collection.tokens[b];
     if (sort === 'id_asc') return a - b;
     if (sort === 'id_desc') return b - a;
     if (sort === 'rank_desc') return rowB[3] - rowA[3];
@@ -342,8 +344,8 @@ app.get('/api/token/:id', (req, res) => {
     return res.status(503).json({ error: 'Collection data loading' });
   }
   const num = parseTokenNumber(req.params.id);
-  if (!num) {
-    return res.status(404).json({ error: 'Invalid token ID (valid range: P00001 ~ P10000 or 1 ~ 10000)' });
+  if (num === null) {
+    return res.status(404).json({ error: 'Invalid token ID (valid range: P00000 ~ P09999 or 0 ~ 9999)' });
   }
   res.json(expandTokenFull(num));
 });
@@ -355,7 +357,7 @@ app.get('/api/metadata/:id', (req, res) => {
   }
   const raw = req.params.id.replace(/\.json$/i, '');
   const num = parseTokenNumber(raw);
-  if (!num) {
+  if (num === null) {
     return res.status(404).json({ error: 'Token not found' });
   }
   const full = expandTokenFull(num);
@@ -369,7 +371,7 @@ app.get('/api/metadata/:id', (req, res) => {
   attributes.push({
     trait_type: 'Edition Type',
     value:
-      num <= 11 ? '1-of-1 Animated Special Original (GIF)' : 'Generative 48x48 Pixel Art',
+      num <= 10 ? '1-of-1 Animated Special Original (GIF)' : 'Generative 48x48 Pixel Art',
   });
 
   res.json({

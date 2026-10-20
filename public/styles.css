@@ -18,6 +18,7 @@
   --text-primary: #f8fafc;
   --text-secondary: #a3a0b8;
   --text-muted: #6e6b85;
+  --tier-genesis: #fde047;
   --tier-mythic: #ff4d6d;
   --tier-legendary: #fbbf24;
   --tier-epic: #c084fc;
@@ -1216,6 +1217,7 @@ body {
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
+.tier-Genesis { color: var(--tier-genesis); border-color: rgba(253, 224, 71, 0.78); box-shadow: 0 0 10px rgba(253, 224, 71, 0.25); }
 .tier-Mythic { color: var(--tier-mythic); border-color: rgba(255, 77, 109, 0.55); }
 .tier-Legendary { color: var(--tier-legendary); border-color: rgba(251, 191, 36, 0.55); }
 .tier-Epic { color: var(--tier-epic); border-color: rgba(192, 132, 252, 0.55); }
@@ -1353,6 +1355,12 @@ body {
   transform: translateY(-2px);
   border-color: var(--accent-ice);
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.45);
+}
+
+.nft-card.genesis-card {
+  border-color: rgba(253, 224, 71, 0.58);
+  background: linear-gradient(180deg, rgba(44, 35, 16, 0.92) 0%, rgba(24, 23, 36, 0.96) 100%);
+  box-shadow: 0 0 16px rgba(251, 191, 36, 0.14);
 }
 
 .nft-card.mythic-card {

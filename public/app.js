@@ -7,7 +7,7 @@ let APP_CONFIG = null;
 let CURRENT_LANG = 'ko';
 let CURRENT_PAGE = 1;
 let TOTAL_PAGES = 1;
-let CURRENT_PFP_TOKEN = 4442;
+let CURRENT_PFP_TOKEN = 4441;
 let ACTIVE_TRAIT_TAB = 'Hat';
 
 const NINE_CATS = [
@@ -35,35 +35,35 @@ const CAT_LABELS_KO = {
   Prop: '종합 소품 (Prop)',
 };
 
-// Featured Generative Penguins from our 10,000 Collection
+// Featured Generative Penguins from our 10,000 Collection (0-based #0 ~ #9,999)
 const CURATED_BEAUTY_14 = [
   {
-    edition: 4442,
-    id: 'P04442',
+    edition: 4441,
+    id: 'P04441',
     isSpecial: false,
     tier: 'Common',
     rank: 9811,
     score: '87.1',
     shortKo: '선글라스 펭귄',
     shortEn: 'Pixel Shades',
-    titleKo: '#4442 선글라스 펭귄 (P04442)',
-    titleEn: '#4442 Pixel Shades Penguin',
+    titleKo: '#4441 선글라스 펭귄 (P04441)',
+    titleEn: '#4441 Pixel Shades Penguin',
     themeKo: 'Common · Glacier Sky & Pixel Shades',
     themeEn: 'Common · Glacier Sky & Pixel Shades',
     noteKo: '파란 하늘에 픽셀 선글라스 낀 정감 가는 자식입니다.',
     noteEn: 'Blue sky and pixel shades.',
   },
   {
-    edition: 963,
-    id: 'P00963',
+    edition: 962,
+    id: 'P00962',
     isSpecial: false,
     tier: 'Mythic',
     rank: 12,
     score: '1,914.93',
     shortKo: '여우 잠옷 펭귄',
     shortEn: 'Fox Onesie',
-    titleKo: '#963 여우 잠옷 입고 윙크하는 자식 (Fox Onesie)',
-    titleEn: '#963 Fox Onesie Penguin (Mythic)',
+    titleKo: '#962 여우 잠옷 입고 윙크하는 자식 (Fox Onesie)',
+    titleEn: '#962 Fox Onesie Penguin (Mythic)',
     themeKo: 'Mythic · Rank #12 · Fox Onesie & Wink',
     themeEn: 'Mythic · Rank #12 · Fox Onesie & Wink',
     noteKo:
@@ -72,16 +72,16 @@ const CURATED_BEAUTY_14 = [
       'A penguin wearing a fox onesie and winking. Highest rarity.tools score among static pixel penguins (Rank #12, Mythic), though it still gives zero perks.',
   },
   {
-    edition: 6522,
-    id: 'P06522',
+    edition: 6521,
+    id: 'P06521',
     isSpecial: false,
     tier: 'Mythic',
     rank: 15,
     score: '1,839.98',
     shortKo: '게코 후드 펭귄',
     shortEn: 'Gecko Onesie',
-    titleKo: '#6522 도마뱀 후드 뒤집어쓴 자식 (Gecko Onesie)',
-    titleEn: '#6522 Dreamglow Gecko Onesie (Mythic)',
+    titleKo: '#6521 도마뱀 후드 뒤집어쓴 자식 (Gecko Onesie)',
+    titleEn: '#6521 Dreamglow Gecko Onesie (Mythic)',
     themeKo: 'Mythic · Rank #15 · Dreamglow & Gecko Onesie',
     themeEn: 'Mythic · Rank #15 · Dreamglow & Gecko Onesie',
     noteKo:
@@ -90,16 +90,16 @@ const CURATED_BEAUTY_14 = [
       'Ranked #15 (Mythic) thanks to its rare Dreamglow skin and Gecko Onesie hood. Smiling eyes make it a great PFP.',
   },
   {
-    edition: 43,
-    id: 'P00043',
+    edition: 42,
+    id: 'P00042',
     isSpecial: false,
     tier: 'Legendary',
     rank: 187,
     score: '517.67',
     shortKo: '꽃화관 빙어 낚시',
     shortEn: 'Floral Angler',
-    titleKo: '#43 꽃화관 쓰고 빙어 낚는 자식 (Floral Wreath Angler)',
-    titleEn: '#43 Floral Wreath Ice Angler (Legendary)',
+    titleKo: '#42 꽃화관 쓰고 빙어 낚는 자식 (Floral Wreath Angler)',
+    titleEn: '#42 Floral Wreath Ice Angler (Legendary)',
     themeKo: 'Legendary · Rank #187 · Floral Wreath & Arctic Smelt',
     themeEn: 'Legendary · Rank #187 · Floral Wreath & Arctic Smelt',
     noteKo:
@@ -108,16 +108,16 @@ const CURATED_BEAUTY_14 = [
       'Wearing a floral wreath while catching an arctic smelt. Proof that you do not need a #1 rank to get an adorable combination.',
   },
   {
-    edition: 500,
-    id: 'P00500',
+    edition: 499,
+    id: 'P00499',
     isSpecial: false,
     tier: 'Mythic',
     rank: 46,
     score: '932.31',
     shortKo: '크리스탈 나이트',
     shortEn: 'Crystal Knight',
-    titleKo: '#500 투구 쓰고 비눗방울 부는 자식 (Crystal Knight)',
-    titleEn: '#500 Crystal Knight Helmet & Bubble Pipe',
+    titleKo: '#499 투구 쓰고 비눗방울 부는 자식 (Crystal Knight)',
+    titleEn: '#499 Crystal Knight Helmet & Bubble Pipe',
     themeKo: 'Mythic · Rank #46 · Crystal Helmet & Bubble Pipe',
     themeEn: 'Mythic · Rank #46 · Crystal Helmet & Bubble Pipe',
     noteKo:
@@ -126,16 +126,16 @@ const CURATED_BEAUTY_14 = [
       'Wearing a serious knight helmet and frost staff while blowing bubbles from a seashell pipe—goofy and cute.',
   },
   {
-    edition: 75,
-    id: 'P00075',
+    edition: 74,
+    id: 'P00074',
     isSpecial: false,
     tier: 'Legendary',
     rank: 162,
     score: '550.29',
     shortKo: '빙하 왕관 과잠',
     shortEn: 'Glacier Varsity',
-    titleKo: '#75 용암 동굴에서 과잠 입은 자식 (Glacier Crown)',
-    titleEn: '#75 Glacier Crown & Varsity Jacket',
+    titleKo: '#74 용암 동굴에서 과잠 입은 자식 (Glacier Crown)',
+    titleEn: '#74 Glacier Crown & Varsity Jacket',
     themeKo: 'Legendary · Rank #162 · Glacier Crown & Varsity Jacket',
     themeEn: 'Legendary · Rank #162 · Glacier Crown & Varsity Jacket',
     noteKo:
@@ -144,16 +144,16 @@ const CURATED_BEAUTY_14 = [
       'Wearing an ice crown and blue varsity jacket inside a hot lava cave—a delightfully contradictory penguin.',
   },
   {
-    edition: 192,
-    id: 'P00192',
+    edition: 191,
+    id: 'P00191',
     isSpecial: false,
     tier: 'Common',
     rank: 7788,
     score: '146.63',
     shortKo: '군밤장수 털모자',
     shortEn: 'Polar Ushanka',
-    titleKo: '#192 민트 배경에 털모자 쓴 초코 펭귄 (Polar Ushanka)',
-    titleEn: '#192 Polar Ushanka & Cocoa Penguin (Common)',
+    titleKo: '#191 민트 배경에 털모자 쓴 초코 펭귄 (Polar Ushanka)',
+    titleEn: '#191 Polar Ushanka & Cocoa Penguin (Common)',
     themeKo: 'Common · Rank #7,788 · Kelp Mint · Polar Ushanka',
     themeEn: 'Common · Rank #7,788 · Kelp Mint · Polar Ushanka',
     noteKo:
@@ -162,16 +162,16 @@ const CURATED_BEAUTY_14 = [
       'Ranked #7,788 (Common), but the mint background, cocoa feathers, and plush ushanka hat make it ridiculously cute.',
   },
   {
-    edition: 21,
-    id: 'P00021',
+    edition: 20,
+    id: 'P00020',
     isSpecial: false,
     tier: 'Common',
     rank: 6885,
     score: '162.54',
     shortKo: '핑크 비니 빙어',
     shortEn: 'Pink Smelt Catch',
-    titleKo: '#21 핑크 배경에 초록 비니 쓰고 빙어 문 자식',
-    titleEn: '#21 Orchid Pink & Green Beanie Smelt Catcher',
+    titleKo: '#20 핑크 배경에 초록 비니 쓰고 빙어 문 자식',
+    titleEn: '#20 Orchid Pink & Green Beanie Smelt Catcher',
     themeKo: 'Common · Rank #6,885 · Orchid Pink · Green Beanie',
     themeEn: 'Common · Rank #6,885 · Orchid Pink · Green Beanie',
     noteKo:
@@ -180,16 +180,16 @@ const CURATED_BEAUTY_14 = [
       'Pink penguin in a green beanie holding a freshly caught smelt in its beak—guaranteed to brighten up your profile.',
   },
   {
-    edition: 25,
-    id: 'P00025',
+    edition: 24,
+    id: 'P00024',
     isSpecial: false,
     tier: 'Uncommon',
     rank: 2785,
     score: '252.41',
     shortKo: '안전모 세일러',
     shortEn: 'Hardhat Sailor',
-    titleKo: '#25 박쥐 날개 달고 노란 안전모 쓴 자식 (Hardhat Sailor)',
-    titleEn: '#25 Bat Wings & Sailor Collar Hardhat (Uncommon)',
+    titleKo: '#24 박쥐 날개 달고 노란 안전모 쓴 자식 (Hardhat Sailor)',
+    titleEn: '#24 Bat Wings & Sailor Collar Hardhat (Uncommon)',
     themeKo: 'Uncommon · Rank #2,785 · Bat Wings & Hardhat',
     themeEn: 'Uncommon · Rank #2,785 · Bat Wings & Hardhat',
     noteKo:
@@ -198,16 +198,16 @@ const CURATED_BEAUTY_14 = [
       'Rocking a sailor collar, bat wings, a yellow construction hardhat, and a wheat straw—chaotic B-grade charm.',
   },
   {
-    edition: 4276,
-    id: 'P04276',
+    edition: 4275,
+    id: 'P04275',
     isSpecial: false,
     tier: 'Epic',
     rank: 310,
     score: '455.85',
     shortKo: '매화 로브 윙크',
     shortEn: 'Plum Robe Wink',
-    titleKo: '#4276 프리즘 후광에 비눗방울 부는 자식 (Plum Robe)',
-    titleEn: '#4276 Glacier Prism & Bubble Pipe Wink (Epic)',
+    titleKo: '#4275 프리즘 후광에 비눗방울 부는 자식 (Plum Robe)',
+    titleEn: '#4275 Glacier Prism & Bubble Pipe Wink (Epic)',
     themeKo: 'Epic · Rank #310 · Glacier Prism & Wink',
     themeEn: 'Epic · Rank #310 · Glacier Prism & Wink',
     noteKo:
@@ -216,16 +216,16 @@ const CURATED_BEAUTY_14 = [
       'Ranked #310 (Epic) thanks to its Glacier Prism aura and Plum Blossom robe. Higher tier still means zero utility.',
   },
   {
-    edition: 88,
-    id: 'P00088',
+    edition: 87,
+    id: 'P00087',
     isSpecial: false,
     tier: 'Common',
     rank: 6044,
     score: '177.49',
     shortKo: '초록 비니 과잠',
     shortEn: 'Beanie Varsity',
-    titleKo: '#88 초록 비니에 파이프 물고 과잠 입은 자식',
-    titleEn: '#88 Green Beanie & Blue Varsity Jacket',
+    titleKo: '#87 초록 비니에 파이프 물고 과잠 입은 자식',
+    titleEn: '#87 Green Beanie & Blue Varsity Jacket',
     themeKo: 'Common · Rank #6,044 · Blue Varsity & Briar Pipe',
     themeEn: 'Common · Rank #6,044 · Blue Varsity & Briar Pipe',
     noteKo:
@@ -234,16 +234,16 @@ const CURATED_BEAUTY_14 = [
       'Midnight penguin in a blue varsity jacket and green beanie with a briar pipe—chill campus vibe for your PFP.',
   },
   {
-    edition: 108,
-    id: 'P00108',
+    edition: 107,
+    id: 'P00107',
     isSpecial: false,
     tier: 'Common',
     rank: 7545,
     score: '150.71',
     shortKo: '파란 캡모자 후드',
     shortEn: 'Blue Cap Hoodie',
-    titleKo: '#108 회색 후드티에 파란 캡모자 쓴 자식',
-    titleEn: '#108 Grey Hoodie & Blue Cap Penguin',
+    titleKo: '#107 회색 후드티에 파란 캡모자 쓴 자식',
+    titleEn: '#107 Grey Hoodie & Blue Cap Penguin',
     themeKo: 'Common · Rank #7,545 · Grey Hoodie & Blue Cap',
     themeEn: 'Common · Rank #7,545 · Grey Hoodie & Blue Cap',
     noteKo:
@@ -252,16 +252,16 @@ const CURATED_BEAUTY_14 = [
       'Apricot penguin in a casual grey hoodie and blue cap chewing on a wheat straw. Effortlessly clean PFP.',
   },
   {
-    edition: 312,
-    id: 'P00312',
+    edition: 311,
+    id: 'P00311',
     isSpecial: false,
     tier: 'Common',
     rank: 5671,
     score: '184.47',
     shortKo: '하와이안 헤드폰',
     shortEn: 'Hawaiian Beats',
-    titleKo: '#312 빨간 하와이안 셔츠에 헤드폰 낀 자식',
-    titleEn: '#312 Red Hawaiian Shirt & Purple Headphones',
+    titleKo: '#311 빨간 하와이안 셔츠에 헤드폰 낀 자식',
+    titleEn: '#311 Red Hawaiian Shirt & Purple Headphones',
     themeKo: 'Common · Rank #5,671 · Hawaiian Shirt & Headphones',
     themeEn: 'Common · Rank #5,671 · Hawaiian Shirt & Headphones',
     noteKo:
@@ -270,58 +270,58 @@ const CURATED_BEAUTY_14 = [
       'An Antarctic penguin wearing a red Hawaiian shirt, blue wayfarer sunglasses, and purple headphones.',
   },
   {
-    edition: 777,
-    id: 'P00777',
+    edition: 776,
+    id: 'P00776',
     isSpecial: false,
     tier: 'Uncommon',
     rank: 4419,
     score: '209.51',
-    shortKo: '보안관 모자 777',
-    shortEn: 'Sheriff #777',
-    titleKo: '#777 민트 폴로셔츠에 보안관 모자 쓴 럭키 자식',
-    titleEn: '#777 Sheriff Hat & Mint Polo Penguin',
-    themeKo: 'Uncommon · Rank #4,419 · Token #777 · Sheriff Hat',
-    themeEn: 'Uncommon · Rank #4,419 · Token #777 · Sheriff Hat',
+    shortKo: '보안관 모자 776',
+    shortEn: 'Sheriff #776',
+    titleKo: '#776 민트 폴로셔츠에 보안관 모자 쓴 럭키 자식',
+    titleEn: '#776 Sheriff Hat & Mint Polo Penguin',
+    themeKo: 'Uncommon · Rank #4,419 · Token #776 · Sheriff Hat',
+    themeEn: 'Uncommon · Rank #4,419 · Token #776 · Sheriff Hat',
     noteKo:
-      '번호가 무려 777번인 초코 펭귄입니다. 보안관 모자 쓰고 민트색 폴로셔츠 입었는데, 777번이라고 잭팟 터지는 기능 같은 건 없습니다.',
+      '보안관 모자 쓰고 민트색 폴로셔츠 입은 초코 펭귄입니다.',
     noteEn:
-      'Lucky edition #777 wearing a sheriff hat and mint polo shirt—though hitting #777 still pays out zero jackpot.',
+      'Cocoa penguin wearing a sheriff hat and mint polo shirt.',
   },
 ];
 
-// Additional Penguins for the 28-Token Dual-Row Infinite Pixel Parade (All 48x48 Generative Penguins)
+// Additional Penguins for the 28-Token Dual-Row Infinite Pixel Parade (All Generative Penguins)
 const PARADE_ROW_1_ITEMS = [
-  { edition: 4442, labelKo: '선글라스 펭귄', labelEn: 'Pixel Shades Penguin', sub: 'Common · #4442' },
-  { edition: 963, labelKo: '여우 잠옷 펭귄', labelEn: 'Fox Onesie Penguin', sub: 'Mythic · #963' },
-  { edition: 6522, labelKo: '도마뱀 후드 펭귄', labelEn: 'Gecko Onesie Penguin', sub: 'Mythic · #6522' },
-  { edition: 43, labelKo: '꽃화관 빙어 낚시', labelEn: 'Floral Wreath Angler', sub: 'Legendary · #43' },
-  { edition: 500, labelKo: '크리스탈 나이트', labelEn: 'Crystal Knight', sub: 'Mythic · #500' },
-  { edition: 75, labelKo: '빙하 왕관 과잠', labelEn: 'Glacier Varsity', sub: 'Legendary · #75' },
-  { edition: 192, labelKo: '군밤장수 털모자', labelEn: 'Polar Ushanka', sub: 'Common · #192' },
-  { edition: 21, labelKo: '핑크 비니 빙어', labelEn: 'Pink Smelt Catcher', sub: 'Common · #21' },
-  { edition: 25, labelKo: '안전모 세일러', labelEn: 'Hardhat Sailor', sub: 'Uncommon · #25' },
-  { edition: 4276, labelKo: '매화 로브 윙크', labelEn: 'Plum Robe Wink', sub: 'Epic · #4276' },
-  { edition: 88, labelKo: '초록 비니 과잠', labelEn: 'Beanie Varsity', sub: 'Common · #88' },
-  { edition: 108, labelKo: '파란 캡모자 후드', labelEn: 'Blue Cap Hoodie', sub: 'Common · #108' },
-  { edition: 312, labelKo: '하와이안 헤드폰', labelEn: 'Hawaiian Headphones', sub: 'Common · #312' },
-  { edition: 777, labelKo: '보안관 모자 777', labelEn: 'Sheriff Hat #777', sub: 'Uncommon · #777' },
+  { edition: 4441, labelKo: '선글라스 펭귄', labelEn: 'Pixel Shades Penguin', sub: 'Common · #4441' },
+  { edition: 962, labelKo: '여우 잠옷 펭귄', labelEn: 'Fox Onesie Penguin', sub: 'Mythic · #962' },
+  { edition: 6521, labelKo: '도마뱀 후드 펭귄', labelEn: 'Gecko Onesie Penguin', sub: 'Mythic · #6521' },
+  { edition: 42, labelKo: '꽃화관 빙어 낚시', labelEn: 'Floral Wreath Angler', sub: 'Legendary · #42' },
+  { edition: 499, labelKo: '크리스탈 나이트', labelEn: 'Crystal Knight', sub: 'Mythic · #499' },
+  { edition: 74, labelKo: '빙하 왕관 과잠', labelEn: 'Glacier Varsity', sub: 'Legendary · #74' },
+  { edition: 191, labelKo: '군밤장수 털모자', labelEn: 'Polar Ushanka', sub: 'Common · #191' },
+  { edition: 20, labelKo: '핑크 비니 빙어', labelEn: 'Pink Smelt Catcher', sub: 'Common · #20' },
+  { edition: 24, labelKo: '안전모 세일러', labelEn: 'Hardhat Sailor', sub: 'Uncommon · #24' },
+  { edition: 4275, labelKo: '매화 로브 윙크', labelEn: 'Plum Robe Wink', sub: 'Epic · #4275' },
+  { edition: 87, labelKo: '초록 비니 과잠', labelEn: 'Beanie Varsity', sub: 'Common · #87' },
+  { edition: 107, labelKo: '파란 캡모자 후드', labelEn: 'Blue Cap Hoodie', sub: 'Common · #107' },
+  { edition: 311, labelKo: '하와이안 헤드폰', labelEn: 'Hawaiian Headphones', sub: 'Common · #311' },
+  { edition: 776, labelKo: '보안관 모자 776', labelEn: 'Sheriff Hat #776', sub: 'Uncommon · #776' },
 ];
 
 const PARADE_ROW_2_ITEMS = [
-  { edition: 12, labelKo: '픽셀 펭귄 #12', labelEn: 'Pixel Penguin #12', sub: 'Generative · #12' },
-  { edition: 33, labelKo: '픽셀 펭귄 #33', labelEn: 'Pixel Penguin #33', sub: 'Generative · #33' },
-  { edition: 55, labelKo: '픽셀 펭귄 #55', labelEn: 'Pixel Penguin #55', sub: 'Generative · #55' },
-  { edition: 100, labelKo: '픽셀 펭귄 #100', labelEn: 'Pixel Penguin #100', sub: 'Generative · #100' },
-  { edition: 256, labelKo: '픽셀 펭귄 #256', labelEn: 'Pixel Penguin #256', sub: 'Generative · #256' },
-  { edition: 365, labelKo: '픽셀 펭귄 #365', labelEn: 'Pixel Penguin #365', sub: 'Generative · #365' },
-  { edition: 512, labelKo: '픽셀 펭귄 #512', labelEn: 'Pixel Penguin #512', sub: 'Generative · #512' },
-  { edition: 1000, labelKo: '픽셀 펭귄 #1000', labelEn: 'Pixel Penguin #1000', sub: 'Generative · #1000' },
-  { edition: 1024, labelKo: '픽셀 펭귄 #1024', labelEn: 'Pixel Penguin #1024', sub: 'Generative · #1024' },
-  { edition: 2026, labelKo: '픽셀 펭귄 #2026', labelEn: 'Pixel Penguin #2026', sub: 'Generative · #2026' },
-  { edition: 3333, labelKo: '픽셀 펭귄 #3333', labelEn: 'Pixel Penguin #3333', sub: 'Generative · #3333' },
-  { edition: 5555, labelKo: '픽셀 펭귄 #5555', labelEn: 'Pixel Penguin #5555', sub: 'Generative · #5555' },
-  { edition: 8888, labelKo: '픽셀 펭귄 #8888', labelEn: 'Pixel Penguin #8888', sub: 'Generative · #8888' },
-  { edition: 10000, labelKo: '픽셀 펭귄 #10000', labelEn: 'Pixel Penguin #10000', sub: 'Generative · #10000' },
+  { edition: 11, labelKo: '픽셀 펭귄 #11', labelEn: 'Pixel Penguin #11', sub: 'Generative · #11' },
+  { edition: 32, labelKo: '픽셀 펭귄 #32', labelEn: 'Pixel Penguin #32', sub: 'Generative · #32' },
+  { edition: 54, labelKo: '픽셀 펭귄 #54', labelEn: 'Pixel Penguin #54', sub: 'Generative · #54' },
+  { edition: 99, labelKo: '픽셀 펭귄 #99', labelEn: 'Pixel Penguin #99', sub: 'Generative · #99' },
+  { edition: 255, labelKo: '픽셀 펭귄 #255', labelEn: 'Pixel Penguin #255', sub: 'Generative · #255' },
+  { edition: 364, labelKo: '픽셀 펭귄 #364', labelEn: 'Pixel Penguin #364', sub: 'Generative · #364' },
+  { edition: 511, labelKo: '픽셀 펭귄 #511', labelEn: 'Pixel Penguin #511', sub: 'Generative · #511' },
+  { edition: 999, labelKo: '픽셀 펭귄 #999', labelEn: 'Pixel Penguin #999', sub: 'Generative · #999' },
+  { edition: 1023, labelKo: '픽셀 펭귄 #1023', labelEn: 'Pixel Penguin #1023', sub: 'Generative · #1023' },
+  { edition: 2025, labelKo: '픽셀 펭귄 #2025', labelEn: 'Pixel Penguin #2025', sub: 'Generative · #2025' },
+  { edition: 3332, labelKo: '픽셀 펭귄 #3332', labelEn: 'Pixel Penguin #3332', sub: 'Generative · #3332' },
+  { edition: 5554, labelKo: '픽셀 펭귄 #5554', labelEn: 'Pixel Penguin #5554', sub: 'Generative · #5554' },
+  { edition: 8887, labelKo: '픽셀 펭귄 #8887', labelEn: 'Pixel Penguin #8887', sub: 'Generative · #8887' },
+  { edition: 9999, labelKo: '픽셀 펭귄 #9999', labelEn: 'Pixel Penguin #9999', sub: 'Generative · #9999' },
 ];
 
 function scrollToSection(id) {
@@ -1979,7 +1979,7 @@ function buildPixelParadeMarquee() {
   const renderCard = (item) => {
     const id = `P${String(item.edition).padStart(5, '0')}`;
     const src =
-      item.edition <= 11 ? `/assets/specials/${item.edition}_fast.gif?v=v322` : `/img/${id}.png?v=v322`;
+      item.edition <= 10 ? `/assets/specials/${item.edition}_fast.gif?v=v322` : `/img/${id}.png?v=v322`;
     const name = CURRENT_LANG === 'ko' ? item.labelKo : item.labelEn;
     return `
       <button type="button" class="parade-card" onclick="handleParadeClick(${item.edition})">
@@ -2068,7 +2068,7 @@ async function loadPfpPreview(tokenNum) {
     const tok = await res.json();
     CURRENT_PFP_TOKEN = tok.edition;
 
-    const imgUrl = tok.edition <= 11 ? tok.image_url : tok.pixel_48_url;
+    const imgUrl = tok.edition <= 10 ? tok.image_url : tok.pixel_48_url;
     document.getElementById('pfp-preview-img').src = imgUrl;
     document.getElementById('pfp-mini-img').src = imgUrl;
     document.getElementById('pfp-sim-title').textContent = tok.name;
@@ -2111,7 +2111,7 @@ function initPfpStudio() {
     strip.innerHTML = presets
       .map((num, idx) => {
         const id = `P${String(num).padStart(5, '0')}`;
-        const src = num <= 11 ? `/assets/specials/${num}_fast.gif?v=v322` : `/img/${id}.png?v=v322`;
+        const src = num <= 10 ? `/assets/specials/${num}_fast.gif?v=v322` : `/img/${id}.png?v=v322`;
         return `<button type="button" class="pfp-thumb-btn ${idx === 0 ? 'active' : ''}" data-num="${num}" title="#${num}">
           <img src="${src}" alt="#${num}" class="pixelated" loading="lazy" />
         </button>`;
@@ -2134,7 +2134,7 @@ function initPfpStudio() {
     const triggerJump = () => {
       const raw = jumpInput.value.trim().replace(/^#/, '').replace(/^P/i, '');
       const n = parseInt(raw, 10);
-      if (n >= 1 && n <= 10000) {
+      if (!Number.isNaN(n) && n >= 0 && n <= 9999) {
         loadPfpPreview(n);
       }
     };
@@ -2159,11 +2159,11 @@ function renderSpecialsGrid(specials) {
   grid.innerHTML = specials
     .map(
       (sp) => `
-    <button type="button" class="nft-card mythic-card" onclick="openTokenModal(${sp.edition})">
+    <button type="button" class="nft-card genesis-card" onclick="openTokenModal(${sp.edition})">
       <div class="nft-thumb-wrap">
         <img src="${sp.fast_gif_url}" alt="${escapeHtml(sp.title)}" class="pixelated" loading="lazy" />
         <div class="card-top-badges">
-          <span class="tier-pill tier-Unranked">UNRANKED</span>
+          <span class="tier-pill tier-${sp.tier}">${sp.tier}</span>
           <span class="rank-pill">Rank #${sp.rarity_rank}</span>
         </div>
       </div>
@@ -2286,12 +2286,14 @@ async function fetchExplorerTokens() {
 
     grid.innerHTML = data.items
       .map((item) => {
-        const isSpecial = item.edition <= 11;
+        const isSpecial = item.edition <= 10;
         const subtitle = isSpecial
           ? item.archetype
           : `${item.traits.Hat !== 'None' ? item.traits.Hat : item.traits.Clothes !== 'None' ? item.traits.Clothes : item.traits.Species}`;
+        const cardTierClass =
+          item.tier === 'Genesis' ? 'genesis-card' : item.tier === 'Mythic' ? 'mythic-card' : '';
         return `
-        <button type="button" class="nft-card ${item.tier === 'Mythic' ? 'mythic-card' : ''}" onclick="openTokenModal(${item.edition})">
+        <button type="button" class="nft-card ${cardTierClass}" onclick="openTokenModal(${item.edition})">
           <div class="nft-thumb-wrap">
             <img src="${item.image_url}" alt="${escapeHtml(item.name)}" class="pixelated" loading="lazy" />
             <div class="card-top-badges">
@@ -2414,7 +2416,7 @@ async function openTokenModal(tokenNum) {
   try {
     const res = await fetch(`/api/token/${tokenNum}`);
     const tok = await res.json();
-    const isSpecial = tok.edition <= 11;
+    const isSpecial = tok.edition <= 10;
 
     const traitsHtml = tok.trait_breakdown
       .map(
@@ -2481,6 +2483,14 @@ async function openTokenModal(tokenNum) {
             <span class="spec-label">장착 파츠 수 (특성 개수 점수)</span>
             <span class="spec-value">${tok.active_trait_stat.active_count}개 (${tok.active_trait_stat.pct}% · +${Number(tok.active_trait_stat.score).toLocaleString()} pts)</span>
           </div>
+          ${
+            isSpecial && tok.genesis_bonus > 0
+              ? `<div class="spec-row">
+            <span class="spec-label">Genesis 1-of-1 Origin 가산점 (#0~#10 순번)</span>
+            <span class="spec-value" style="color:var(--tier-genesis);">+${Number(tok.genesis_bonus).toLocaleString()} pts</span>
+          </div>`
+              : ''
+          }
         </div>
 
         <h4 style="font-size:13.5px; font-weight:800; margin-bottom:6px;">파츠별 rarity.tools 점수 (전체 수 10,000 ÷ 보유 수)</h4>
@@ -2606,7 +2616,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderSpecialsGrid(APP_CONFIG.specials);
     buildExplorerTraitDropdowns();
     renderTraitDirectory();
-    loadPfpPreview(4442);
+    loadPfpPreview(4441);
     fetchExplorerTokens();
   } catch (err) {
     console.error('Failed to initialize config:', err);
