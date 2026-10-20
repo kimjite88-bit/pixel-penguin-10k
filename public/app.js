@@ -328,6 +328,8 @@ function scrollToSection(id) {
   let tabKey = 'tab-intro';
   if (id === 'tab-codex' || id === 'sec-explorer' || id === 'sec-traits' || id === 'sec-provenance') {
     tabKey = 'tab-codex';
+  } else if (id === 'tab-ranking' || id === 'sec-ranking') {
+    tabKey = 'tab-ranking';
   } else if (id === 'tab-notices' || id === 'sec-notices') {
     tabKey = 'tab-notices';
   }
@@ -335,6 +337,7 @@ function scrollToSection(id) {
   const pageMap = {
     'tab-intro': 'tab-page-intro',
     'tab-codex': 'tab-page-codex',
+    'tab-ranking': 'tab-page-ranking',
     'tab-notices': 'tab-page-notices',
   };
 
@@ -350,7 +353,17 @@ function scrollToSection(id) {
     btn.classList.toggle('active', btn.dataset.target === tabKey);
   });
 
-  if (id === 'tab-intro' || id === 'tab-codex' || id === 'tab-notices' || id === 'top') {
+  if (tabKey === 'tab-ranking' && typeof fetchAndRenderRankingPage === 'function') {
+    fetchAndRenderRankingPage();
+  }
+
+  if (
+    id === 'tab-intro' ||
+    id === 'tab-codex' ||
+    id === 'tab-ranking' ||
+    id === 'tab-notices' ||
+    id === 'top'
+  ) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } else {
     const el = document.getElementById(id);
@@ -718,6 +731,10 @@ async function submitUfoScoreToServer(tokenId, score, kills) {
     if (res.ok) {
       const data = await res.json();
       UFO_GAME.lastRank = data.rank || null;
+      if (Array.isArray(data.items)) {
+        RANKING_PAGE_CACHE = data.items;
+        renderRankingPageList();
+      }
     }
   } catch (e) {
     // Non-blocking fallback
@@ -809,59 +826,142 @@ async function setUfoPilotTokenId(tokenNum, triggerPfp = true, restartScene = fa
   }
 }
 
-async function openLeaderboardModal() {
-  const modal = document.getElementById('leaderboard-modal');
-  const body = document.getElementById('leaderboard-list-body');
-  if (!modal || !body) return;
-  modal.classList.add('open');
-  body.innerHTML = `<div style="padding:32px; text-align:center; color:#94a3b8; font-weight:800;">${
-    CURRENT_LANG === 'ko' ? '랭킹 데이터를 불러오는 중...' : 'Loading NFT Leaderboard...'
-  }</div>`;
+let RANKING_PAGE_CACHE = [];
 
-  try {
-    const res = await fetch('/api/leaderboard?limit=30');
-    const data = await res.json();
-    const items = data.items || [];
-    if (items.length === 0) {
-      body.innerHTML = `<div style="padding:32px; text-align:center; color:#94a3b8;">아직 등록된 기록이 없습니다.</div>`;
-      return;
-    }
-    body.innerHTML = items
-      .map((item) => {
-        const medal =
-          item.rank === 1
-            ? '🥇 1위'
-            : item.rank === 2
-            ? '🥈 2위'
-            : item.rank === 3
-            ? '🥉 3위'
-            : `#${item.rank}`;
-        const topClass = item.rank <= 3 ? `rank-top-${item.rank}` : '';
-        const goLabel = CURRENT_LANG === 'ko' ? `#${item.edition} 보러가기 ▶` : `Go to #${item.edition} ▶`;
-        const subText =
-          CURRENT_LANG === 'ko'
-            ? `희귀도 순위 #${Number(item.rarity_rank).toLocaleString()} · 격파 ${item.kills || 0}기`
-            : `Rarity Rank #${Number(item.rarity_rank).toLocaleString()} · ${item.kills || 0} Hits`;
-        return `
-          <div class="rank-row-card ${topClass}" onclick="jumpToRankedNft(${item.edition})">
-            <div class="rank-badge-num">${medal}</div>
-            <img src="${item.image_url}" alt="${item.id}" class="rank-avatar-thumb" loading="lazy" />
-            <div class="rank-nft-info">
-              <div class="rank-nft-title">
-                <span>#${item.edition} (${item.id})</span>
-                <span class="tier-pill tier-${item.tier}" style="font-size:10.5px; padding:2px 7px;">${item.tier}</span>
-              </div>
-              <div class="rank-nft-sub">${subText}</div>
-            </div>
-            <div class="rank-score-val">${Number(item.score).toLocaleString()} PTS</div>
-            <div class="rank-go-btn">${goLabel}</div>
-          </div>
-        `;
-      })
-      .join('');
-  } catch (e) {
-    body.innerHTML = `<div style="padding:32px; text-align:center; color:#fb7185;">랭킹 로드 실패</div>`;
+function getNftDisplayName(item) {
+  if (!item) return 'Pixel Penguin #0';
+  if (CURRENT_LANG === 'ko') {
+    return item.name_ko || item.name || `Pixel Penguin #${item.edition}`;
   }
+  return item.name_en || item.name || `Pixel Penguin #${item.edition}`;
+}
+
+function buildLeaderboardRowsHtml(items, showBoardAction = true) {
+  if (!items || items.length === 0) {
+    return `<div style="padding:32px; text-align:center; color:#94a3b8; font-weight:800;">${
+      CURRENT_LANG === 'ko'
+        ? '검색 조건에 해당하는 NFT 게임 순위 기록이 없습니다.'
+        : 'No matching NFT ranking records found.'
+    }</div>`;
+  }
+  return items
+    .map((item) => {
+      const medal =
+        item.rank === 1
+          ? '🥇 1위'
+          : item.rank === 2
+          ? '🥈 2위'
+          : item.rank === 3
+          ? '🥉 3위'
+          : `#${item.rank}`;
+      const topClass = item.rank <= 3 ? `rank-top-${item.rank}` : '';
+      const nftName = getNftDisplayName(item);
+      const spText = item.species || 'Classic';
+      const subText =
+        CURRENT_LANG === 'ko'
+          ? `깃털스킨: ${spText} · 희귀도 순위 #${Number(item.rarity_rank).toLocaleString()} · 장애물 격파 ${item.kills || 0}기`
+          : `Feather Skin: ${spText} · Rarity Rank #${Number(item.rarity_rank).toLocaleString()} · ${item.kills || 0} Hits`;
+      const goLabel = CURRENT_LANG === 'ko' ? '🔍 NFT 상세·프사 ▶' : '🔍 Inspect NFT ▶';
+      const boardLabel = CURRENT_LANG === 'ko' ? '🛸 이 NFT로 탑승' : '🛸 Board UFO';
+
+      return `
+        <div class="rank-row-card ${topClass}" onclick="jumpToRankedNft(${item.edition})">
+          <div class="rank-badge-num">${medal}</div>
+          <img src="${item.image_url}" alt="${escapeHtml(nftName)}" class="rank-avatar-thumb" loading="lazy" />
+          <div class="rank-nft-info">
+            <div class="rank-nft-title">
+              <span>${escapeHtml(nftName)}</span>
+              <span class="pill-tag" style="font-size:10.5px; padding:2px 6px;">${escapeHtml(item.id)}</span>
+              <span class="tier-pill tier-${item.tier}" style="font-size:10.5px; padding:2px 7px;">${item.tier}</span>
+            </div>
+            <div class="rank-nft-sub">${escapeHtml(subText)}</div>
+          </div>
+          <div class="rank-score-val">${Number(item.score).toLocaleString()} PTS</div>
+          ${
+            showBoardAction
+              ? `<div class="rank-action-group">
+                   <button type="button" class="rank-board-btn" onclick="boardRankedNftAndPlay(${item.edition}, event)">${boardLabel}</button>
+                   <div class="rank-go-btn">${goLabel}</div>
+                 </div>`
+              : `<div class="rank-go-btn">${goLabel}</div>`
+          }
+        </div>
+      `;
+    })
+    .join('');
+}
+
+function renderRankingPageList() {
+  const listEl = document.getElementById('ranking-page-list-body');
+  if (!listEl) return;
+  const q = (document.getElementById('ranking-search-input')?.value || '').trim().toLowerCase();
+
+  let filtered = RANKING_PAGE_CACHE;
+  if (q) {
+    filtered = RANKING_PAGE_CACHE.filter((item) => {
+      const nameKo = String(item.name_ko || item.name || `Pixel Penguin #${item.edition}`).toLowerCase();
+      const nameEn = String(item.name_en || item.name || `Pixel Penguin #${item.edition}`).toLowerCase();
+      const idStr = String(item.id || '').toLowerCase();
+      const edStr = String(item.edition);
+      const spStr = String(item.species || '').toLowerCase();
+      return (
+        nameKo.includes(q) ||
+        nameEn.includes(q) ||
+        idStr.includes(q) ||
+        edStr === q.replace(/^#/, '') ||
+        spStr.includes(q)
+      );
+    });
+  }
+
+  listEl.innerHTML = buildLeaderboardRowsHtml(filtered, true);
+
+  // Update KPI summary cards
+  const totalEl = document.getElementById('ranking-kpi-total');
+  const topNameEl = document.getElementById('ranking-kpi-top-name');
+  const topScoreEl = document.getElementById('ranking-kpi-top-score');
+  if (totalEl) totalEl.textContent = `${RANKING_PAGE_CACHE.length.toLocaleString()}마리`;
+  if (RANKING_PAGE_CACHE.length > 0) {
+    const first = RANKING_PAGE_CACHE[0];
+    if (topNameEl) topNameEl.textContent = `${getNftDisplayName(first)} (${first.id})`;
+    if (topScoreEl) topScoreEl.textContent = `${Number(first.score).toLocaleString()} PTS`;
+  }
+}
+
+async function fetchAndRenderRankingPage() {
+  const listEl = document.getElementById('ranking-page-list-body');
+  if (listEl && RANKING_PAGE_CACHE.length === 0) {
+    listEl.innerHTML = `<div style="padding:32px; text-align:center; color:#94a3b8; font-weight:800;">${
+      CURRENT_LANG === 'ko' ? 'NFT 이름별 게임 순위를 불러오는 중...' : 'Loading NFT Game Rankings...'
+    }</div>`;
+  }
+  try {
+    const res = await fetch('/api/leaderboard?limit=50');
+    if (res.ok) {
+      const data = await res.json();
+      RANKING_PAGE_CACHE = data.items || [];
+      renderRankingPageList();
+    }
+  } catch (e) {
+    if (listEl) {
+      listEl.innerHTML = `<div style="padding:32px; text-align:center; color:#fb7185;">게임 순위 로드 실패</div>`;
+    }
+  }
+}
+
+function boardRankedNftAndPlay(edition, event) {
+  if (event && typeof event.stopPropagation === 'function') {
+    event.stopPropagation();
+  }
+  const num = Math.max(0, Math.min(9999, Number(edition) || 0));
+  closeLeaderboardModal();
+  setUfoPilotTokenId(num, true, true);
+  scrollToSection('tab-intro');
+}
+
+async function openLeaderboardModal() {
+  // Navigate directly to the dedicated "게임 순위" (tab-ranking) menu tab between 도감도 & 공지사항!
+  scrollToSection('tab-ranking');
 }
 
 function closeLeaderboardModal() {
@@ -3647,6 +3747,7 @@ function applyLanguage(lang) {
 
   updateMobileTraitFilterBtnLabel();
   updateUfoBoardingDockUI();
+  renderRankingPageList();
   setIntroScene(MOTION_STATE.sceneIdx, false);
 }
 
@@ -4138,6 +4239,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     tab.addEventListener('click', () => scrollToSection(tab.dataset.target));
   });
 
+  // Ranking Page Search & Refresh
+  document.getElementById('btn-refresh-ranking-page')?.addEventListener('click', () => {
+    fetchAndRenderRankingPage();
+  });
+  document.getElementById('ranking-search-input')?.addEventListener('input', () => {
+    renderRankingPageList();
+  });
+
   // Mobile 9-Category Filter Drawer Toggle
   document.getElementById('btn-toggle-trait-filters')?.addEventListener('click', () => {
     const gridEl = document.getElementById('exp-trait-filters');
@@ -4230,6 +4339,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderTraitDirectory();
     loadPfpPreview(4441);
     fetchExplorerTokens();
+    fetchAndRenderRankingPage();
   } catch (err) {
     console.error('Failed to initialize config:', err);
   }

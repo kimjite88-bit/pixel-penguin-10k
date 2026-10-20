@@ -468,20 +468,28 @@ function saveLeaderboardData() {
   }
 }
 
-function getFormattedLeaderboard(limit = 30) {
+function getFormattedLeaderboard(limit = 50) {
   if (!collection) loadCollectionData();
   const sorted = Array.from(ufoLeaderboardMap.values()).sort(
     (a, b) => b.score - a.score || a.edition - b.edition
   );
   return sorted.slice(0, limit).map((row, idx) => {
     const summary = collection ? expandTokenSummary(row.edition) : null;
+    const idCode = `P${String(row.edition).padStart(4, '0')}`;
     return {
       rank: idx + 1,
       edition: row.edition,
-      id: `P${String(row.edition).padStart(4, '0')}`,
+      id: idCode,
+      name: summary ? summary.name : `Pixel Penguin #${row.edition}`,
+      name_ko: summary ? summary.name_ko : `Pixel Penguin #${row.edition}`,
+      name_en: summary ? summary.name_en : `Pixel Penguin #${row.edition}`,
       tier: summary ? summary.tier : 'Common',
       rarity_rank: summary ? summary.rarity_rank : row.edition + 1,
-      image_url: summary ? summary.image_url : `/img/P${String(row.edition).padStart(4, '0')}.png`,
+      rarity_score: summary ? summary.rarity_score : 0,
+      species: summary?.traits?.Species || 'Classic',
+      hat: summary?.traits?.Hat || 'None',
+      clothes: summary?.traits?.Clothes || 'None',
+      image_url: summary ? summary.image_url : `/img/${idCode}.png`,
       score: row.score,
       kills: row.kills,
       updated_at: row.updated_at,
