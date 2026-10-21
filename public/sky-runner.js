@@ -3,7 +3,7 @@
 //
 // Control follows CookieRun's Bonus Time flight (community wiki: pressing carries the cookie up, pressing
 // nothing lets it go down) and Jetpack Joyride (hold to climb, release to drop). Like the car run:
-// energy that drains and drops on hits, fuel cans to refill it, a speed ramp capped at 1.6x, and a course
+// energy that drains and drops on hits, fuel cans to refill it, a speed ramp that keeps climbing (2x by ~4 min), and a course
 // built from hand-made chunks that are proven passable (scratch/car_mode/verify_sky.js). Storms show a
 // warning at the right edge before they arrive; the first seconds are clear. Stars are laid along the
 // flight line like CookieRun jellies; air-race gates build a combo; a close shave past a storm pays.
@@ -16,18 +16,29 @@ const SKY_CFG = {
   Y_MIN: 112, // plane origin (cockpit rim) range; the stage edges just stop the plane
   Y_MAX: 432,
   START_Y: 290,
-  LIFT: 0.55, // per-frame climb acceleration while held
-  GRAVITY: 0.42,
-  MAX_VY: 6.5,
-  SPEED: 7,
-  MAX_SPEED: 11.2, // 1.6x, like the car's 9.6 -> 15
-  ACCELERATION: 0.0009,
+  // Gentler than v5.11 so the plane is easy to steer: less climb/fall force, a lower top vertical speed, and
+  // REVERSE_ASSIST extra force while the input fights the current motion, so it turns round quickly instead
+  // of overshooting
+  LIFT: 0.46, // per-frame climb acceleration while held
+  GRAVITY: 0.36,
+  REVERSE_ASSIST: 0.3,
+  MAX_VY: 5.9,
+  // Speed climbs for the whole run: linearly to SPEED_KNEE in ~2 min (the Chrome dino ramps 6 -> 13 at
+  // 0.001/frame, ~2 min), then slower (OVERDRIVE_ACCELERATION) up to MAX_SPEED
+  SPEED: 6.2,
+  SPEED_KNEE: 11,
+  MAX_SPEED: 12.4,
+  ACCELERATION: 0.00067,
+  OVERDRIVE_ACCELERATION: 0.0002,
+  // Chunks stretch with speed by only this share of the speed-up, so at higher speed the next hazard comes
+  // sooner (the Chrome dino does the same: gap = width * speed + a fixed minimum gap)
+  CHUNK_STRETCH: 0.6,
   CLEAR_DISTANCE: 1260, // ~3 s with nothing in the way
   CHUNK_GAP: 240,
   MAX_CHUNK_DUPLICATION: 2,
   WARNING_FRAMES: 48, // "!" at the right edge 0.8 s before a storm enters
   STORM_R: 26,
-  STORM_HIT: 0.85, // storm hit radius = r * 0.85 (the puffy edge is forgiving)
+  STORM_HIT: 0.75, // storm hit radius = r * 0.75 (the puffy edge is forgiving)
   ENERGY_MAX: 100,
   ENERGY_DRAIN_PER_SEC: 0.8,
   HIT_ENERGY: 34,
@@ -125,7 +136,7 @@ function skyDuplicateCheck(run, idx) {
 
 // A chunk is stretched by speed / start speed so the time between its pieces stays the same at any speed
 function skyPlaceChunk(run, chunk, x0) {
-  const k = Math.max(1, run.speed / SKY_CFG.SPEED);
+  const k = Math.max(1, 1 + (run.speed / SKY_CFG.SPEED - 1) * SKY_CFG.CHUNK_STRETCH);
   const X = (v) => x0 + v * k;
   (chunk.storms || []).forEach(([x, y], n) =>
     run.storms.push({ x: X(x), y, r: SKY_CFG.STORM_R, seed: (run.chunks * 13 + n) % 97, nearChecked: false, closest: Infinity })
@@ -194,7 +205,9 @@ function skyStep(run, dt, now, rng = Math.random) {
   if (run.crashed) return events;
 
   // 1. Hold to climb, release to drop; the stage edges stop the plane without damage
-  run.vy += (run.held ? -SKY_CFG.LIFT : SKY_CFG.GRAVITY) * dt;
+  const reversing = run.held ? run.vy > 0 : run.vy < 0;
+  const force = (run.held ? -SKY_CFG.LIFT : SKY_CFG.GRAVITY) + (reversing ? (run.held ? -1 : 1) * SKY_CFG.REVERSE_ASSIST : 0);
+  run.vy += force * dt;
   run.vy = Math.max(-SKY_CFG.MAX_VY, Math.min(SKY_CFG.MAX_VY, run.vy));
   run.y += run.vy * dt;
   if (run.y < SKY_CFG.Y_MIN) {
@@ -285,7 +298,8 @@ function skyStep(run, dt, now, rng = Math.random) {
   run.energy -= (SKY_CFG.ENERGY_DRAIN_PER_SEC / 60) * dt;
   run.distance += dx;
   run.distScore = Math.floor(run.distance * SKY_CFG.DISTANCE_SCORE);
-  if (run.speed < SKY_CFG.MAX_SPEED) run.speed = Math.min(SKY_CFG.MAX_SPEED, run.speed + SKY_CFG.ACCELERATION * dt);
+  const accel = run.speed < SKY_CFG.SPEED_KNEE ? SKY_CFG.ACCELERATION : SKY_CFG.OVERDRIVE_ACCELERATION;
+  if (run.speed < SKY_CFG.MAX_SPEED) run.speed = Math.min(SKY_CFG.MAX_SPEED, run.speed + accel * dt);
   const lv = skyLevelForSpeed(run.speed);
   if (lv > run.level) {
     run.level = lv;

@@ -490,7 +490,7 @@ function initAmbientPixelCanvas() {
 //    Scene 4 (5. 도착마을): seasonal pixel town arrival & welcome by pixel penguin friends
 //                            (Christmas town Oct–Feb, Cherry Blossom town Mar–Sep)
 // ============================================================================
-const SCENE_DURATIONS = [99999999, 2600, 99999999, 4800, 99999999]; // scene 4: approach (scene-pull.js) + scan
+const SCENE_DURATIONS = [99999999, 2600, 99999999, 7000, 99999999]; // scene 4: approach + scan + rise (scene-pull.js)
 
 // Scene 5 town follows the season. ?town=xmas or ?town=cherry forces one (preview the other season).
 const INTRO_TOWN = (() => {
@@ -3072,7 +3072,8 @@ function initPixelMotionStudio() {
     else if (MOTION_STATE.sceneIdx === 1 && MOTION_STATE.vehicle === 'boat') {
       ctx.save();
       ctx.translate(Math.sin(now * 0.065) * 2.4, Math.cos(now * 0.055) * 1.8);
-      drawRefVortexBackground(ctx, now);
+      drawRefVortexBackgroundMirrored(ctx, now); // pillar behind, on the left: run right, away from it
+      drawScene1Suction(ctx, now, p);
       drawBoatScene1Departure(ctx, now, p, activeSpId);
       ctx.restore();
       if (elapsed >= curDuration) {
@@ -3084,7 +3085,8 @@ function initPixelMotionStudio() {
     else if (MOTION_STATE.sceneIdx === 1 && MOTION_STATE.vehicle === 'car') {
       ctx.save();
       ctx.translate(Math.sin(now * 0.065) * 2.4, Math.cos(now * 0.055) * 1.8);
-      drawRefVortexBackground(ctx, now);
+      drawRefVortexBackgroundMirrored(ctx, now); // pillar behind, on the left: run right, away from it
+      drawScene1Suction(ctx, now, p);
       drawCarScene1Liftoff(ctx, now, p, activeSpId);
       ctx.restore();
       if (elapsed >= curDuration) {
@@ -3098,7 +3100,8 @@ function initPixelMotionStudio() {
     else if (MOTION_STATE.sceneIdx === 1) {
       ctx.save();
       ctx.translate(Math.sin(now * 0.065) * 2.4, Math.cos(now * 0.055) * 1.8);
-      drawRefVortexBackground(ctx, now);
+      drawRefVortexBackgroundMirrored(ctx, now); // pillar behind, on the left: run right, away from it
+      drawScene1Suction(ctx, now, p);
       drawPlaneScene1Takeoff(ctx, now, p, activeSpId);
       ctx.restore();
 
@@ -3130,12 +3133,12 @@ function initPixelMotionStudio() {
     // ========================================================================
     else if (MOTION_STATE.sceneIdx === 3) {
       ctx.save();
-      drawRefVortexBackground(ctx, now);
+      drawRefVortexBackgroundMirrored(ctx, now); // the pillar the vehicle was running from, on the left
 
       const subP = Math.min(1, elapsed / curDuration);
-      const scanStart = SCENE3_APPROACH + 0.04;
-      const scanRatio = subP < scanStart ? 0 : Math.min(1, (subP - scanStart) / (0.86 - scanStart));
-      const completeP = subP > 0.86 ? (subP - 0.86) / 0.14 : 0;
+      const scanStart = SCENE3_APPROACH + 0.03;
+      const scanRatio = subP < scanStart ? 0 : Math.min(1, (subP - scanStart) / (SCENE3_SCAN_END - scanStart));
+      const completeP = subP > SCENE3_SCAN_END ? Math.min(1, (subP - SCENE3_SCAN_END) / (SCENE3_RISE_START - SCENE3_SCAN_END)) : 0;
       const pose = scene3Pose(MOTION_STATE.vehicle, subP, now);
       const ufoX = pose.x;
       const ufoY = pose.y;
@@ -3146,12 +3149,12 @@ function initPixelMotionStudio() {
       ctx.strokeStyle = 'rgba(103, 232, 249, 0.85)';
       ctx.lineWidth = 5;
       ctx.beginPath();
-      ctx.ellipse(690, 86, 62, 18, -0.08, 0, Math.PI * 2);
+      ctx.ellipse(270, 86, 62, 18, 0.08, 0, Math.PI * 2);
       ctx.stroke();
       ctx.strokeStyle = '#ffffff';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.ellipse(690, 86, 62, 18, -0.08, 0, Math.PI * 2);
+      ctx.ellipse(270, 86, 62, 18, 0.08, 0, Math.PI * 2);
       ctx.stroke();
       ctx.restore();
 
@@ -3313,6 +3316,11 @@ function initPixelMotionStudio() {
         now
       );
       if (scanRatio > 0) drawPixelScanHudPill(ctx, ufoX, Math.min(488, botEdge + 18), pct);
+
+      // Then up the pillar and out of the top, Alice-style (paints over the whole stage)
+      if (subP >= SCENE3_RISE_START) {
+        drawScene3Rise(ctx, now, (subP - SCENE3_RISE_START) / (1 - SCENE3_RISE_START), MOTION_STATE.vehicle, activeSpId);
+      }
 
       ctx.restore();
 

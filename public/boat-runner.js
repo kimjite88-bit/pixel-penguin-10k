@@ -25,10 +25,15 @@ const BOAT_CFG = {
   BOAT_HALF_W: 58,
   CHANNEL_L: 150, // the pack ice shelves either side of the lead
   CHANNEL_R: 810,
+  // Everything speeds up with time, not with floes broken: cruise speed, the freeze line, the ram gauge and the
+  // ice thickness. First ramp ~110 s (the Chrome dino needs ~2 min to reach top speed), then a slower overdrive.
   CRUISE: 4.2,
-  MAX_CRUISE: 6.6,
+  CRUISE_KNEE: 6.6,
+  MAX_CRUISE: 7.4,
   CRUISE_ACCEL: 0.08, // per frame towards the cruise speed
-  CRUISE_RAMP: 0.0006, // cruise speed gain per frame
+  CRUISE_RAMP: 0.0006, // cruise speed gain per frame up to CRUISE_KNEE
+  CRUISE_OVERDRIVE: 0.00015,
+  SECONDS_PER_LEVEL: 11,
   LUNGE_SPEED: 13,
   RAM_REACH: 150, // letting go this close to a floe rams it without stopping
   BACK_OFF: 46, // how far a full charge backs the ship off (drawn; the lunge covers it again)
@@ -44,13 +49,15 @@ const BOAT_CFG = {
   BOUNCE_FRAMES: 20,
   LEAD_START: 320, // freeze line distance behind the stern
   LEAD_MAX: 420,
-  FREEZE: 1.8, // freeze line speed at LV.1
-  FREEZE_PER_LEVEL: 0.2,
+  FREEZE: 1.8, // freeze line speed at the start
+  FREEZE_RAMP: 0.0164, // per second for the first 110 s (1.8 -> 3.6)
+  FREEZE_KNEE_SEC: 110,
+  FREEZE_OVERDRIVE: 0.006, // per second after that
+  MAX_FREEZE: 4.4,
   PERFECT_LEAD: 70,
   PERFECT_BOOST: 3,
   GOOD_BOOST: 1.2,
   REPAIR: 25,
-  BANDS_PER_LEVEL: 8,
   MAX_LEVEL: 10,
   GAP_MIN: 170, // open water between floes
   GAP_MAX: 300,
@@ -68,8 +75,14 @@ function boatIceRange(level) {
   return [lo, hi];
 }
 
-function boatLevelFor(broken) {
-  return Math.min(BOAT_CFG.MAX_LEVEL, 1 + Math.floor(broken / BOAT_CFG.BANDS_PER_LEVEL));
+function boatLevelFor(seconds) {
+  return Math.min(BOAT_CFG.MAX_LEVEL, 1 + Math.floor(seconds / BOAT_CFG.SECONDS_PER_LEVEL));
+}
+
+function boatFreezeSpeed(seconds) {
+  const knee = BOAT_CFG.FREEZE_KNEE_SEC;
+  const v = seconds <= knee ? BOAT_CFG.FREEZE + BOAT_CFG.FREEZE_RAMP * seconds : BOAT_CFG.FREEZE + BOAT_CFG.FREEZE_RAMP * knee + BOAT_CFG.FREEZE_OVERDRIVE * (seconds - knee);
+  return Math.min(BOAT_CFG.MAX_FREEZE, v);
 }
 
 function boatChargeMs(level) {
@@ -86,8 +99,9 @@ function boatPowerAt(ms, level) {
 
 function boatAddBand(run, rng) {
   const last = run.bands.length ? run.bands[run.bands.length - 1] : null;
-  const level = boatLevelFor(run.broken + run.bands.filter((b) => !b.broken).length);
-  const [lo, hi] = boatIceRange(level);
+  // Floes are laid ~1400px ahead: give them the level the ship will have when it gets there
+  const ahead = last ? (last.y0 - run.y) / Math.max(1, run.cruise) / 60 : 0;
+  const [lo, hi] = boatIceRange(boatLevelFor(run.frames / 60 + ahead));
   const T = Math.round(lo + rng() * (hi - lo));
   const gap = last ? BOAT_CFG.GAP_MIN + rng() * (BOAT_CFG.GAP_MAX - BOAT_CFG.GAP_MIN) : BOAT_CFG.FIRST_GAP;
   const y0 = (last ? last.y0 + last.h : 0) + gap;
@@ -211,11 +225,6 @@ function boatImpact(run, band, now, events) {
     if (band.crate) run.hull = Math.min(BOAT_CFG.HULL_MAX, run.hull + BOAT_CFG.REPAIR);
     run.score += points;
     events.push({ type: 'break', band, perfect, excess, dent, saved, crate: band.crate, points, combo: run.combo });
-    const level = boatLevelFor(run.broken);
-    if (level > run.level) {
-      run.level = level;
-      events.push({ type: 'level', level });
-    }
     run.state = 'cruise';
     run.v = Math.max(run.v, run.cruise + run.boost);
     if (run.hull <= 0) boatEndRun(run, 'hull', events);
@@ -238,7 +247,14 @@ function boatStep(run, dt, now, rng = Math.random) {
     events.push({ type: 'whiff' });
   }
   run.frames += dt;
-  run.cruise = Math.min(BOAT_CFG.MAX_CRUISE, run.cruise + BOAT_CFG.CRUISE_RAMP * dt);
+  const sec = run.frames / 60;
+  const ramp = run.cruise < BOAT_CFG.CRUISE_KNEE ? BOAT_CFG.CRUISE_RAMP : BOAT_CFG.CRUISE_OVERDRIVE;
+  run.cruise = Math.min(BOAT_CFG.MAX_CRUISE, run.cruise + ramp * dt);
+  const level = boatLevelFor(sec);
+  if (level > run.level) {
+    run.level = level;
+    events.push({ type: 'level', level });
+  }
   run.boost = Math.max(0, run.boost - 0.04 * dt);
   if (run.charging) run.power = boatPowerAt(now - run.chargeStart, run.level);
 
@@ -275,7 +291,7 @@ function boatStep(run, dt, now, rng = Math.random) {
   }
 
   // The freeze line follows at its own speed; only forward progress outruns it
-  const freeze = BOAT_CFG.FREEZE + (run.level - 1) * BOAT_CFG.FREEZE_PER_LEVEL;
+  const freeze = boatFreezeSpeed(sec);
   run.lead = Math.min(BOAT_CFG.LEAD_MAX, run.lead + (run.y - y0) - freeze * dt);
   if (run.lead <= 0) {
     run.lead = 0;
@@ -1025,12 +1041,12 @@ function drawBoatRunnerFrame(ctx, now, spId) {
 // SCENE 2 — boat departure: the ice shelf cracks and the icebreaker shoves off through the floes
 // ============================================================================
 function drawBoatScene1Departure(ctx, now, p, spId) {
+  // Runs from the pillar (left) to the right edge, speeding up; it never leaves the water
   const S = 1.0;
-  const boatX = 140 + p * 470;
+  const boatX = 230 + p * p * 820;
   const waterY = 438;
   const roll = Math.sin(now * 0.006) * 0.03;
-  const lift = p > 0.7 ? (p - 0.7) / 0.3 : 0;
-  const boatY = waterY - 34 * S - lift * lift * 170 + Math.sin(now * 0.008) * 3;
+  const boatY = waterY - 34 * S + Math.sin(now * 0.008) * 3;
 
   ctx.save();
   // Open water band
@@ -1081,13 +1097,13 @@ function drawBoatScene1Departure(ctx, now, p, spId) {
   }
   ctx.restore();
 
-  drawBoatWithPilot(ctx, boatX, boatY, roll - lift * 0.18, now, { scale: S, spId });
+  drawBoatWithPilot(ctx, boatX, boatY, roll - 0.04, now, { scale: S, spId });
 
   drawRetroSpeechBubble(
     ctx,
     Math.min(520, boatX + 10),
     Math.max(64, boatY - 150),
-    CURRENT_LANG === 'ko' ? '바다가 얼어붙는다!! 쇄빙선 출항, 얼음 부수고 간다!!' : 'The sea is freezing!! Icebreaker away, we ram our way out!!',
+    CURRENT_LANG === 'ko' ? '뒤에서 기둥이 빨아들인다!! 전속력 출항, 얼음 부수고 도망간다!!' : 'The pillar is sucking everything in!! Full ahead, ram our way out!!',
     '#38bdf8',
     now
   );

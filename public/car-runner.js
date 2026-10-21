@@ -24,8 +24,15 @@ const CAR_CFG = {
   WHEEL_BOTTOM: 57, // local y of the tyre contact point below the car origin
   SUPPORT_HALF: 34, // the car stands on whatever is under its middle +-34px
   SPEED: 9.6,
-  MAX_SPEED: 15,
+  // Speed climbs for the whole run: 9.6 -> SPEED_KNEE in ~75 s, then slower (OVERDRIVE_ACCELERATION) up to
+  // MAX_SPEED, so the run keeps getting harder after the first ramp (every chunk is re-checked at MAX_SPEED)
+  SPEED_KNEE: 15,
+  MAX_SPEED: 16.5,
   ACCELERATION: 0.0012,
+  OVERDRIVE_ACCELERATION: 0.0003,
+  // Chunks stretch with speed by only this share of the speed-up, so at higher speed the next hazard comes
+  // sooner (the Chrome dino does the same: gap = width * speed + a fixed minimum gap)
+  CHUNK_STRETCH: 0.6,
   GRAVITY: 0.6,
   JUMP_VELOCITY: 13.2, // first jump: ~145px apex
   DOUBLE_JUMP_VELOCITY: 12, // second jump in the air: +120px
@@ -200,7 +207,7 @@ function carDuplicateChunkCheck(run, idx) {
 // A chunk is stretched by speed / start speed (Chrome widens its gaps with speed too): the jump covers
 // proportionally more ground, so the timing of every chunk stays the same at any speed
 function carPlaceChunk(run, chunk, x0) {
-  const k = Math.max(1, run.speed / CAR_CFG.SPEED);
+  const k = Math.max(1, 1 + (run.speed / CAR_CFG.SPEED - 1) * CAR_CFG.CHUNK_STRETCH);
   const X = (v) => x0 + v * k;
   let cursor = x0;
   (chunk.pits || []).forEach(([a, b]) => {
@@ -432,7 +439,8 @@ function carStep(run, dt, now, rng = Math.random) {
   run.energy -= (CAR_CFG.ENERGY_DRAIN_PER_SEC / 60) * dt;
   run.distance += dx;
   run.distScore = Math.floor(run.distance * CAR_CFG.DISTANCE_SCORE);
-  if (run.speed < CAR_CFG.MAX_SPEED) run.speed = Math.min(CAR_CFG.MAX_SPEED, run.speed + CAR_CFG.ACCELERATION * dt);
+  const accel = run.speed < CAR_CFG.SPEED_KNEE ? CAR_CFG.ACCELERATION : CAR_CFG.OVERDRIVE_ACCELERATION;
+  if (run.speed < CAR_CFG.MAX_SPEED) run.speed = Math.min(CAR_CFG.MAX_SPEED, run.speed + accel * dt);
   const lv = carLevelForSpeed(run.speed);
   if (lv > run.level) {
     run.level = lv;
