@@ -283,30 +283,40 @@ const PIXEL_PLANE_PALETTE = [
   '#0b1020', '#1e293b', '#1f2937', '#334155', '#64748b', '#94a3b8', '#cbd5e1', '#e2e8f0', '#f8fafc',
   '#0f766e', '#14b8a6', '#2dd4bf', '#5eead4', '#99f6e4', '#a7f3e8',
   '#be185d', '#f472b6', '#f9a8d4', '#f97316', '#ef4444', '#facc15', '#fde047', '#22c55e', '#14532d', '#7dd3fc', '#bae6fd',
-].map((hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)]);
-const PIXEL_PLANE_BUFFERS = {};
+];
+// Shared by the plane and the ship: draw `drawFn` (local vehicle units) into a 1/cell-size buffer, snap every
+// pixel to `palette` with hard alpha, add a 1-px dark outline round the silhouette, return the buffer (draw it
+// at box.x, box.y, size * cell). key keeps one buffer per vehicle layer.
+const PIXEL_ART_BUFFERS = {};
+const PIXEL_ART_PALETTES = new Map();
 
-// layer: 'back' (skis, tail, seat) or 'front' (cargo, body, wing, propeller); the pixel pilot goes between them
-function renderPixelPlaneBuffer(now, propSpin, layer) {
-  const C = PIXEL_PLANE_CELL;
-  const B = PIXEL_PLANE_BOX;
-  const w = Math.ceil(B.w / C);
-  const h = Math.ceil(B.h / C);
-  if (!PIXEL_PLANE_BUFFERS[layer]) {
-    const c = document.createElement('canvas');
-    c.width = w;
-    c.height = h;
-    PIXEL_PLANE_BUFFERS[layer] = c;
+function pixelArtPalette(hexes) {
+  let p = PIXEL_ART_PALETTES.get(hexes);
+  if (!p) {
+    p = hexes.map((hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)]);
+    PIXEL_ART_PALETTES.set(hexes, p);
   }
-  const buf = PIXEL_PLANE_BUFFERS[layer];
+  return p;
+}
+
+function renderPixelArtLayer(key, box, cell, paletteHex, drawFn) {
+  const w = Math.ceil(box.w / cell);
+  const h = Math.ceil(box.h / cell);
+  let buf = PIXEL_ART_BUFFERS[key];
+  if (!buf) {
+    buf = document.createElement('canvas');
+    buf.width = w;
+    buf.height = h;
+    PIXEL_ART_BUFFERS[key] = buf;
+  }
+  const palette = pixelArtPalette(paletteHex);
   const b = buf.getContext('2d', { willReadFrequently: true });
   b.setTransform(1, 0, 0, 1, 0, 0);
   b.clearRect(0, 0, w, h);
   b.imageSmoothingEnabled = true;
-  b.setTransform(1 / C, 0, 0, 1 / C, -B.x / C, -B.y / C);
-  drawPlaneWithPilot(b, 0, 0, 0, now, { scale: 1, withPilot: false, propSpin, layer });
+  b.setTransform(1 / cell, 0, 0, 1 / cell, -box.x / cell, -box.y / cell);
+  drawFn(b);
   b.setTransform(1, 0, 0, 1, 0, 0);
-  // Hard alpha + nearest palette colour: crisp pixel edges, no muddy in-between shades
   const img = b.getImageData(0, 0, w, h);
   const d = img.data;
   for (let i = 0; i < d.length; i += 4) {
@@ -315,27 +325,27 @@ function renderPixelPlaneBuffer(now, propSpin, layer) {
       continue;
     }
     // un-premultiply partly covered edge pixels before matching
-    const a = d[i + 3] / 255;
-    const r = d[i] / a;
-    const g = d[i + 1] / a;
-    const bl = d[i + 2] / a;
+    const al = d[i + 3] / 255;
+    const r = d[i] / al;
+    const g = d[i + 1] / al;
+    const bl = d[i + 2] / al;
     let best = 0;
     let bestD = Infinity;
-    for (let k = 0; k < PIXEL_PLANE_PALETTE.length; k++) {
-      const p = PIXEL_PLANE_PALETTE[k];
+    for (let k = 0; k < palette.length; k++) {
+      const p = palette[k];
       const dist = (p[0] - r) * (p[0] - r) * 0.3 + (p[1] - g) * (p[1] - g) * 0.59 + (p[2] - bl) * (p[2] - bl) * 0.11;
       if (dist < bestD) {
         bestD = dist;
         best = k;
       }
     }
-    const p = PIXEL_PLANE_PALETTE[best];
+    const p = palette[best];
     d[i] = p[0];
     d[i + 1] = p[1];
     d[i + 2] = p[2];
     d[i + 3] = 255;
   }
-  // 1-pixel dark outline round the silhouette (the thin 2D strokes vanish at 1/3 size)
+  // 1-pixel dark outline round the silhouette (the thin 2D strokes vanish at this size)
   const solid = new Uint8Array(w * h);
   for (let i = 0; i < w * h; i++) solid[i] = d[i * 4 + 3] ? 1 : 0;
   for (let y = 0; y < h; y++) {
@@ -386,7 +396,9 @@ function drawPixelPlaneWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}
   const C = PIXEL_PLANE_CELL;
   const blit = (layer) => {
     if (typeof document === 'undefined') return;
-    const buf = renderPixelPlaneBuffer(now, propSpin, layer);
+    const buf = renderPixelArtLayer('plane-' + layer, B, C, PIXEL_PLANE_PALETTE, (b) =>
+      drawPlaneWithPilot(b, 0, 0, 0, now, { scale: 1, withPilot: false, propSpin, layer })
+    );
     ctx.drawImage(buf, B.x, B.y, buf.width * C, buf.height * C);
   };
   blit('back');

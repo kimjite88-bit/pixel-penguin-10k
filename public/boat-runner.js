@@ -583,7 +583,12 @@ function drawBoatTopDown(ctx, cx, bowY, now, opts = {}) {
 // Side-view icebreaker for the picker, the departure, the pixel scan and the crash landing.
 // Origin = foredeck under the pilot, facing right; waterline at y = +34, keel at +48.
 const BOAT_SIDE_PILOT_RECT = { x: -40, y: -81, size: 79 };
-let BOAT_PIXEL_BUFFER = null;
+const BOAT_PIXEL_CELL = 3; // stage px per art pixel, same as the pixel plane
+const BOAT_PIXEL_BOX = { x: -156, y: -120, w: 312, h: 174 }; // mast top to keel, stern to raked bow
+const BOAT_PIXEL_PALETTE = [
+  '#0b1020', '#1e3a5f', '#334155', '#94a3b8', '#cbd5e1', '#e2e8f0', '#f8fafc', '#ffffff',
+  '#d7263d', '#9f1239', '#7f1d1d', '#fde68a', '#facc15',
+];
 
 function traceBoatSideHull(ctx) {
   ctx.beginPath();
@@ -596,9 +601,11 @@ function traceBoatSideHull(ctx) {
   ctx.closePath();
 }
 
+// layer: 'all', or 'back' (superstructure, funnel, smoke) / 'front' (hull, rail) for the pixel ship
 function drawBoatSideBody(ctx, now, opts) {
-  const { withPilot = true, spId, isShocked = false, isImpactBlink = false, smokeOn = true, pixelMode = false } = opts;
+  const { withPilot = true, spId, isShocked = false, isImpactBlink = false, smokeOn = true, pixelMode = false, layer = 'all' } = opts;
   const lw = pixelMode ? 0 : 3;
+  if (layer !== 'front') {
   // Superstructure aft (left), kept behind and below the pilot's head line
   ctx.fillStyle = '#f8fafc';
   ctx.fillRect(-134, -58, 92, 58);
@@ -631,8 +638,10 @@ function drawBoatSideBody(ctx, now, opts) {
       ctx.fill();
     }
   }
+  }
+  if (layer === 'back') return;
   // Pilot on the open foredeck: the hull's bulwark (y = -2) hides the waist
-  if (withPilot && typeof drawCarPilot === 'function') {
+  if (withPilot && layer === 'all' && typeof drawCarPilot === 'function') {
     drawCarPilot(ctx, pixelMode, now, { spId, isShocked, isImpactBlink, rect: BOAT_SIDE_PILOT_RECT, clip: (c) => c.rect(-70, -140, 150, 140) });
   }
   // Hull: red above the waterline, dark below, white boot stripe; ARAON-style lettering band
@@ -675,28 +684,32 @@ function drawBoatWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
   if (!pixelMode) {
     drawBoatSideBody(ctx, now, options);
   } else {
-    // Pixel version: render the hull small and blow it up without smoothing, then the pixel pilot on top
-    if (!BOAT_PIXEL_BUFFER && typeof document !== 'undefined') {
-      BOAT_PIXEL_BUFFER = document.createElement('canvas');
-      BOAT_PIXEL_BUFFER.width = 80;
-      BOAT_PIXEL_BUFFER.height = 50;
-    }
-    if (BOAT_PIXEL_BUFFER) {
-      const b = BOAT_PIXEL_BUFFER.getContext('2d');
-      b.clearRect(0, 0, 80, 50);
-      b.save();
-      b.scale(0.25, 0.25);
-      b.translate(160, 130);
-      drawBoatSideBody(b, now, { ...options, withPilot: false, pixelMode: false, smokeOn: false });
-      b.restore();
+    // Pixel version: the same 2D ship rendered at 1/BOAT_PIXEL_CELL (renderPixelArtLayer in plane.js), in two
+    // layers so the pixel pilot stands between the superstructure and the hull, like the 2D ship
+    const B = BOAT_PIXEL_BOX;
+    const C = BOAT_PIXEL_CELL;
+    const blit = (layer) => {
+      if (typeof document === 'undefined' || typeof renderPixelArtLayer !== 'function') return;
+      const buf = renderPixelArtLayer('boat-' + layer, B, C, BOAT_PIXEL_PALETTE, (b) =>
+        drawBoatSideBody(b, now, { ...options, withPilot: false, pixelMode: false, smokeOn: false, layer })
+      );
       ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(BOAT_PIXEL_BUFFER, -160, -130, 320, 200);
+      ctx.drawImage(buf, B.x, B.y, buf.width * C, buf.height * C);
+    };
+    if (options.smokeOn) {
+      // Blocky funnel smoke, on the same 3px grid
+      for (let k = 0; k < 4; k++) {
+        const tp = (now * 0.0008 + k * 0.25) % 1;
+        const sz = Math.round((6 + tp * 8) / C) * C;
+        ctx.fillStyle = `rgba(226, 232, 240, ${(0.85 - tp * 0.7).toFixed(2)})`;
+        ctx.fillRect(Math.round((-52 - tp * 60) / C) * C, Math.round((-104 - tp * 50) / C) * C, sz, sz);
+      }
     }
+    blit('back');
     if (options.withPilot !== false && typeof drawCarPilot === 'function') {
-      ctx.save();
-      drawCarPilot(ctx, true, now, { ...options, rect: BOAT_SIDE_PILOT_RECT, clip: (c) => c.rect(-70, -140, 150, 138) });
-      ctx.restore();
+      drawCarPilot(ctx, true, now, { ...options, rect: BOAT_SIDE_PILOT_RECT, clip: (c) => c.rect(-70, -140, 150, 140) });
     }
+    blit('front');
   }
   ctx.restore();
 }

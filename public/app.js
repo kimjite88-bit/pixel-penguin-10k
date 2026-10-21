@@ -526,10 +526,34 @@ const INTRO_TOWN = (() => {
   };
 })();
 
-// Skip mode (no vehicle on the left) row offset. Penguin sprites are opaque from 8 to 118 px of their 124 px
-// box (frame bbox 17..244 of 256), so the visible row runs from heroX + 8 to the tree's widest tier at heroX + 602
-// (Christmas) or the last friend's edge at heroX + 478 (cherry); heroX = 175 / 237 centres it on x = 480
-const SCENE5_SKIP_SHIFT = INTRO_TOWN.id === 'xmas' ? -147 : -85;
+// Town penguins are sized to the pilots who land among them. Measured opaque widths (alpha > 40): a native
+// species frame is 171 of 256 px wide, a pilot pixel frame 29 of 48. Every vehicle lands at TOWN_VEHICLE_SCALE,
+// so each pilot box is 79 px and its penguin 79 * 29 / 48 = 47.7 px wide; a native matches that in a
+// 47.7 / (171 / 256) = 71 px box. (Before: natives 124 px = 83 px wide vs pilots 43-62 px, 1.3-1.9x too big.)
+const TOWN_VEHICLE_SCALE = 1.0;
+const TOWN_PENGUIN_SIZE = 71;
+const TOWN_PENGUIN_GAP = 50; // 88 * 71 / 124: the same spacing for the body width as before
+const TOWN_FEET_Y = 460; // walkway line the penguins stand on
+const TOWN_ROW_X = 400; // first friend's box in crash mode, right of the landed vehicle
+const TOWN_BODY_L = 44 / 256; // opaque columns of a native frame
+const TOWN_BODY_R = 214 / 256;
+
+// Row layout: friends from TOWN_ROW_X, the Christmas tree just behind the last one (overlapping it a little).
+// Skip mode (no vehicle on the left) puts the default penguin first and centres the whole visible row on x = 480.
+function scene5RowLayout(skipped, treeP) {
+  const N = TOWN_PENGUIN_SIZE;
+  const friendsX = [0, 1, 2, 3].map((i) => TOWN_ROW_X + i * TOWN_PENGUIN_GAP);
+  const last = friendsX[3];
+  const treeCx = last + N * TOWN_BODY_R - 12 + 19 * treeP;
+  const heroX = TOWN_ROW_X - TOWN_PENGUIN_GAP;
+  let shift = 0;
+  if (skipped) {
+    const left = heroX + N * TOWN_BODY_L;
+    const right = INTRO_TOWN.id === 'xmas' ? treeCx + 19 * treeP + 2 : last + N * TOWN_BODY_R;
+    shift = Math.round(480 - (left + right) / 2);
+  }
+  return { friendsX: friendsX.map((x) => x + shift), treeCx: treeCx + shift, heroX: heroX + shift };
+}
 
 // Escape vehicle picked on the first screen: 'ufo' = light plane (sky-runner.js), 'car' (car-runner.js) or 'boat' =
 // icebreaker (boat-runner.js). ?vehicle=car|ufo|boat forces one; otherwise the last pick on this device.
@@ -1772,7 +1796,7 @@ function drawAnimatedPixelPenguin(ctx, spEntry, x, y, size, now, options = {}) {
 // way: four stacked tiers, each with a shadow row under it and a lit left side; snow on the tier tops; a gold
 // garland; glossy baubles (white highlight, darker bottom); twinkling lights (one bright pixel with a 50% halo);
 // a five-pointed star with sparkles on top. The static part is cached once; lights and star glow animate.
-const XMAS_TREE_P = 4; // stage px per tree pixel
+const XMAS_TREE_P = 3; // stage px per tree pixel (3 to suit the 71 px town penguins)
 const XMAS_TREE_W = 39; // grid width (centre column = 19)
 const XMAS_TREE_H = 58; // grid height: star 10 + tiers 37 + trunk 4 + tub 7
 let XMAS_TREE_CACHE = null;
@@ -3463,15 +3487,17 @@ function initPixelMotionStudio() {
         ctx.fillText(mText, menuX + 46, rowY + 1);
       });
 
-      const spriteSize = 124;
+      const spriteSize = TOWN_PENGUIN_SIZE;
+      const spriteY = Math.round(TOWN_FEET_Y - spriteSize * (243 / 256)); // frame feet at row 243
+      const row = scene5RowLayout(MOTION_STATE.skippedEscape, XMAS_TREE_P);
       const s5P = Math.min(1, Math.max(0, elapsed / 6800));
       let ufoRenderY = 418;
 
       if (MOTION_STATE.skippedEscape) {
         const defaultEntry = ensureSpeciesSprite('01');
-        const heroX = Math.round(322 + SCENE5_SKIP_SHIFT + Math.sin(now * 0.0022) * 6); // right next to the welcoming friends
-        const heroY = 338;
-        drawPixelGroundShadow(ctx, heroX + spriteSize / 2, heroY + spriteSize - 6, 58, 0);
+        const heroX = Math.round(row.heroX + Math.sin(now * 0.0022) * 4); // right next to the welcoming friends
+        const heroY = spriteY;
+        drawPixelGroundShadow(ctx, heroX + spriteSize / 2, heroY + spriteSize - 4, 40, 0);
         drawAnimatedPixelPenguin(ctx, defaultEntry, heroX, heroY, spriteSize, now, {
           seed: 0,
           isWalking: true,
@@ -3488,8 +3514,9 @@ function initPixelMotionStudio() {
         const ufoLandX = 228;
         const ufoGroundY = 418;
         // Car tyres (+57 x 1.3) and plane skis (+66 x 1.0) end on the same walkway line (y = 450)
-        // The ship's keel (+48 x 0.9) ends on the same line
-        const landY = isCarRun ? ufoGroundY - 42 : isBoatRun ? ufoGroundY - 11 : ufoGroundY - 34;
+        // Every vehicle lands at TOWN_VEHICLE_SCALE with its lowest point (tyres +57, keel +48, skis +66) on y = 450
+        const V = TOWN_VEHICLE_SCALE;
+        const landY = Math.round(ufoGroundY + 32 - (isCarRun ? 57 : isBoatRun ? 48 : 66) * V);
         const ufoCurY =
           crashP < 1
             ? Math.round(90 + crashP * crashP * (landY - 90))
@@ -3497,7 +3524,7 @@ function initPixelMotionStudio() {
         ufoRenderY = ufoCurY;
         const ufoCrashTilt = crashP < 1 ? 0.18 : 0.04;
 
-        drawPixelGroundShadow(ctx, ufoLandX, ufoGroundY + 32, isCarRun ? 236 : 250, bounceOffset);
+        drawPixelGroundShadow(ctx, ufoLandX, ufoGroundY + 32, Math.round((isCarRun ? 182 : isBoatRun ? 250 : 192) * V), bounceOffset);
 
         // Ground impact pixel dust & spark burst when the UFO slams into the stone walkway
         if (s5P >= 0.13 && s5P <= 0.28) {
@@ -3519,7 +3546,7 @@ function initPixelMotionStudio() {
         if (isBoatRun) {
           // Beached on the walkway, listing to one side; the pilot is still on the foredeck
           drawBoatWithPilot(ctx, ufoLandX + 10, ufoCurY, crashP < 1 ? 0.16 : 0.06, now, {
-            scale: 0.9,
+            scale: V,
             spId: activeSpId,
             pixelMode: true,
             isShocked: crashP < 1,
@@ -3528,7 +3555,7 @@ function initPixelMotionStudio() {
         } else if (isCarRun) {
           // No hatch to open: the pilot pops up out of the seat once the car lands
           drawPixelCarWithPilot(ctx, ufoLandX, ufoCurY, ufoCrashTilt, now, {
-            scale: 1.3,
+            scale: V,
             spId: activeSpId,
             isShocked: crashP < 1,
             showSmoke: true,
@@ -3539,7 +3566,7 @@ function initPixelMotionStudio() {
         } else {
           // Ski landing gone wrong: prop stops, the pilot pops up in the window
           drawPixelPlaneWithPilot(ctx, ufoLandX + 14, ufoCurY, crashP < 1 ? 0.24 : 0.05, now, {
-            scale: 1.0,
+            scale: V,
             spId: activeSpId,
             isShocked: crashP < 1,
             showSmoke: true,
@@ -3550,17 +3577,15 @@ function initPixelMotionStudio() {
       }
 
       // 4 Colorful Pixel Penguin Friends on the Right Walking Up & Welcoming the Protagonist
-      // Shoulder to shoulder (88px apart, a small sway so they never bump); the Christmas tree fills the space
-      // left behind the purple one
+      // Shoulder to shoulder (a small sway so they never bump); the Christmas tree fills the space behind the
+      // purple one (scene5RowLayout)
       const colorfulFriends = [
-        { sp: '05', baseX: 418, y: 342, seed: 2, amp: 6, speed: 0.0026 },
-        { sp: '04', baseX: 506, y: 336, seed: 3, amp: 6, speed: 0.0023 },
-        { sp: '09', baseX: 594, y: 342, seed: 4, amp: 6, speed: 0.0027 },
-        { sp: '06', baseX: 682, y: 336, seed: 5, amp: 6, speed: 0.0024 },
+        { sp: '05', baseX: row.friendsX[0], y: spriteY + 3, seed: 2, amp: 4, speed: 0.0026 },
+        { sp: '04', baseX: row.friendsX[1], y: spriteY - 1, seed: 3, amp: 4, speed: 0.0023 },
+        { sp: '09', baseX: row.friendsX[2], y: spriteY + 3, seed: 4, amp: 4, speed: 0.0027 },
+        { sp: '06', baseX: row.friendsX[3], y: spriteY - 1, seed: 5, amp: 4, speed: 0.0024 },
       ];
-      // Skipped (no vehicle on the left): the whole row slides left so hero + friends + tree sit centred
-      const rowShift = MOTION_STATE.skippedEscape ? SCENE5_SKIP_SHIFT : 0;
-      if (INTRO_TOWN.id === 'xmas') drawPixelXmasTree(ctx, 846 + rowShift, 462, now);
+      if (INTRO_TOWN.id === 'xmas') drawPixelXmasTree(ctx, row.treeCx, 462, now);
 
       const walkInP = Math.min(1, s5P / 0.20);
       const renderedFriends = [];
@@ -3568,10 +3593,10 @@ function initPixelMotionStudio() {
       colorfulFriends.forEach((fr, idx) => {
         const spEntry = ensureSpeciesSprite(fr.sp);
         const strollX = walkInP >= 1 ? Math.sin(now * fr.speed + idx * 1.4) * fr.amp : 0;
-        const fx = Math.round(fr.baseX + rowShift + (1 - walkInP) * 95 + strollX);
+        const fx = Math.round(fr.baseX + (1 - walkInP) * 64 + strollX);
         const fy = fr.y;
 
-        drawPixelGroundShadow(ctx, fx + spriteSize / 2, fy + spriteSize - 6, 56, 0);
+        drawPixelGroundShadow(ctx, fx + spriteSize / 2, fy + spriteSize - 4, 38, 0);
         drawAnimatedPixelPenguin(ctx, spEntry, fx, fy, spriteSize, now, {
           seed: fr.seed,
           isWalking: true,
@@ -3583,16 +3608,16 @@ function initPixelMotionStudio() {
       });
 
       // B-Grade Retro Pixel Speech Bubbles in Scene 5 (Crash-landing + Pixel Penguins Welcoming!)
-      const speaker1 = renderedFriends[0] || { fx: 418, fy: 342 };
-      const speaker2 = renderedFriends[1] || { fx: 506, fy: 336 };
+      const speaker1 = renderedFriends[0] || { fx: row.friendsX[0], fy: spriteY };
+      const speaker2 = renderedFriends[1] || { fx: row.friendsX[1], fy: spriteY };
       if (MOTION_STATE.skippedEscape) {
         const skipPhase = Math.floor(elapsed / 3400) % 2;
         if (skipPhase === 0) {
-          drawPixelHeart(ctx, 387 + SCENE5_SKIP_SHIFT, 315 - ((now * 0.03) % 18), 2.6, '#38bdf8');
+          drawPixelHeart(ctx, row.heroX + spriteSize / 2, spriteY - 8 - ((now * 0.03) % 18), 2.6, '#38bdf8');
           drawRetroSpeechBubble(
             ctx,
-            380 + SCENE5_SKIP_SHIFT,
-            318,
+            row.heroX + spriteSize / 2,
+            spriteY - 6,
             CURRENT_LANG === 'ko'
               ? `남극 탈출이고 나발이고 귀찮아서 바로 ${INTRO_TOWN.ko}로 째버렸지롱~`
               : `Skipped the whole escape game and walked straight to ${INTRO_TOWN.en}~`,
@@ -3600,7 +3625,7 @@ function initPixelMotionStudio() {
             now
           );
         } else {
-          drawPixelHeart(ctx, speaker1.fx + 44, 318 - ((now * 0.03) % 18), 2.6, '#ff4d6d');
+          drawPixelHeart(ctx, speaker1.fx + spriteSize / 2, spriteY - 8 - ((now * 0.03) % 18), 2.6, '#ff4d6d');
           drawRetroSpeechBubble(
             ctx,
             speaker1.fx + spriteSize / 2 + 12,
@@ -3645,12 +3670,14 @@ function initPixelMotionStudio() {
         );
       } else {
         const talkPhase = Math.floor(Math.max(0, elapsed - 2850) / 3400) % 3;
-        drawPixelHeart(ctx, speaker1.fx + 42, 318 - ((now * 0.03) % 20), 2.6, '#ff4d6d');
-        drawPixelHeart(ctx, speaker2.fx + 78, 314 - ((now * 0.03) % 20), 2.6, '#fbbf24');
+        drawPixelHeart(ctx, speaker1.fx + spriteSize / 2, spriteY - 8 - ((now * 0.03) % 20), 2.6, '#ff4d6d');
+        drawPixelHeart(ctx, speaker2.fx + spriteSize / 2, spriteY - 12 - ((now * 0.03) % 20), 2.6, '#fbbf24');
+        // The friends' bubbles sit right of the landed vehicle so they never cover the pilot's head
+        const friendBubbleX = (fx) => Math.max(fx + spriteSize / 2, 640);
         if (talkPhase === 0) {
           drawRetroSpeechBubble(
             ctx,
-            speaker1.fx + spriteSize / 2 + 14,
+            friendBubbleX(speaker1.fx),
             speaker1.fy - 4,
             CURRENT_LANG === 'ko'
               ? `우와 ${isCarRun ? '하늘에서 차가 떨어졌어' : isBoatRun ? '하늘에서 배가 떨어졌어' : '비행기 불시착했어'} ㅋㅋ 살아있냐?! ${INTRO_TOWN.koPixel}에 온 걸 환영해!!`
@@ -3661,7 +3688,7 @@ function initPixelMotionStudio() {
         } else if (talkPhase === 1) {
           drawRetroSpeechBubble(
             ctx,
-            speaker2.fx + spriteSize / 2 - 12,
+            friendBubbleX(speaker2.fx),
             speaker2.fy - 4,
             CURRENT_LANG === 'ko'
               ? '사신다고 뭐 안 드립니다 ㅋㅋ 내 눈에 제일 이쁜 자식 골라서 프사나 박아~'
