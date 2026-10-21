@@ -510,7 +510,7 @@ const INTRO_TOWN = (() => {
       koPixel: '크리스마스 픽셀마을',
       koGround: '눈밭',
       en: 'Christmas Town',
-      bg: '/assets/motion_sprites/bg_scene5_xmas.png?v=5.7.0',
+      bg: '/assets/motion_sprites/bg_scene5_xmas.jpg?v=5.7.1',
     };
   }
   return {
@@ -2796,88 +2796,48 @@ function drawRefSkyGameBackground(ctx, now) {
   ctx.restore();
 }
 
-// Christmas town overlay anchors in the background's 240x135 pixel grid (x4 on the 960x540 stage).
-// Generated together with bg_scene5_xmas.png by scratch/xmas_town/build_xmas_town_bg.py — regenerate both.
-// bulbs: [x, y, colorIdx] · chimneys / stars: [x, y] · ice: [topY, bottomY]
-const XMAS_TOWN_ANCHORS = {"bulbs":[[56,70,0],[61,70,2],[54,72,2],[63,72,0],[51,74,0],[66,74,2],[75,68,2],[79,68,0],[72,70,0],[82,70,2],[70,72,2],[84,72,0],[98,70,0],[103,70,2],[95,72,2],[106,72,0],[92,74,0],[109,74,2],[89,76,2],[112,76,0],[127,69,0],[132,69,2],[124,71,2],[135,71,0],[121,73,0],[138,73,2],[151,70,2],[155,70,0],[148,72,0],[158,72,2],[145,74,2],[161,74,0],[172,67,0],[177,67,2],[170,69,2],[179,69,0],[167,71,0],[182,71,2],[190,74,2],[193,74,0],[187,76,0],[196,76,2],[212,34,2],[215,34,1],[210,36,0],[217,36,3],[209,38,2],[218,38,1],[208,40,0],[219,40,3],[206,42,2],[221,42,1],[205,44,0],[222,44,3],[203,46,2],[224,46,1],[202,48,0],[225,48,3],[26,33,2],[19,39,3],[25,39,0],[31,39,1],[24,43,2],[19,52,3],[25,52,0],[31,52,1],[20,57,2],[26,57,3],[13,67,0],[19,67,1],[25,67,2],[31,67,3],[37,67,0],[22,71,1],[28,71,2],[13,82,3],[19,82,0],[25,82,1],[31,82,2],[37,82,3],[18,86,0],[24,86,1],[30,86,2],[11,96,3],[17,96,0],[23,96,1],[29,96,2],[35,96,3],[41,96,0]],"chimneys":[[64,66],[107,66],[136,65],[180,63]],"treeStar":[25,24],"towerStar":[214,28],"lamp":[98,79],"stars":[[92,28],[232,34],[66,4],[180,12],[89,0],[23,15]],"ice":[88,99]};
+// Winter version of the cherry-blossom town: same composition, snow instead of blossoms.
+// bg_scene5_xmas.jpg + these anchors come from scratch/xmas_town/winterize_cherry_bg.py — regenerate both.
+// bulbs: [x, y, colorIdx] in stage px on the frosted tree crowns · ice: [topY, bottomY, leftX, rightX]
+const XMAS_TOWN_ANCHORS = {"bulbs":[[4,212,0],[28,208,0],[0,240,2],[52,232,2],[208,240,2],[64,256,0],[212,252,3],[836,252,1],[8,284,2],[28,272,2],[164,276,3],[184,276,3],[208,276,1],[240,276,3],[284,284,1],[864,276,3],[8,304,1],[60,300,1],[80,304,2],[220,304,2],[240,296,2],[288,296,2],[396,304,1],[416,296,3],[732,304,1],[788,296,2],[832,300,3],[868,300,0],[940,304,0],[0,320,3],[920,320,3],[84,340,0]],"ice":[324,404,200,880]};
 const XMAS_BULB_COLORS = ['#ff5a6a', '#ffd84a', '#5cf29a', '#6cc4ff'];
 
-// Christmas town life: chasing string lights, star sparkle, chimney smoke, ice glints, falling snow
+// Kept deliberately light: a few twinkling lights on the trees, glints on the ice and falling snow
 function drawXmasTownOverlay(ctx, now) {
   const P = 4;
   const A = XMAS_TOWN_ANCHORS;
   const snap = (v) => Math.floor(v / P) * P;
   ctx.save();
 
-  (A.stars || []).forEach(([x, y], i) => {
-    if (Math.floor(now / 640 + i * 1.7) % 3 !== 0) return;
-    ctx.fillStyle = '#dfe7ff';
-    ctx.fillRect((x - 2) * P, y * P, P * 5, P);
-    ctx.fillRect(x * P, (y - 2) * P, P, P * 5);
-  });
-
-  (A.chimneys || []).forEach(([cx, cy], ci) => {
-    for (let k = 0; k < 4; k++) {
-      const t = (now * 0.00032 + k / 4 + ci * 0.23) % 1;
-      const sz = t < 0.45 ? P * 2 : P * 3;
-      ctx.globalAlpha = 0.5 * (1 - t);
-      ctx.fillStyle = '#c9d3ee';
-      ctx.fillRect(
-        snap(cx * P + t * 24 + Math.sin(t * 7 + ci) * 5 - sz / 2),
-        snap(cy * P - t * 56),
-        sz,
-        sz
-      );
-    }
-  });
-  ctx.globalAlpha = 1;
-
-  // One bulb in four rests on each beat, so every string reads as a chase
-  const beat = Math.floor(now / 380);
+  const beat = Math.floor(now / 520);
   (A.bulbs || []).forEach(([x, y, k], i) => {
-    if ((i + beat) % 4 === 0) return;
+    if ((i + beat) % 3 === 0) return;
     ctx.fillStyle = XMAS_BULB_COLORS[k];
-    ctx.globalAlpha = 0.32;
-    ctx.fillRect((x - 1) * P, y * P, P * 3, P);
-    ctx.fillRect(x * P, (y - 1) * P, P, P * 3);
+    ctx.globalAlpha = 0.3;
+    ctx.fillRect(x - P, y - P, P * 3, P * 3);
     ctx.globalAlpha = 1;
-    ctx.fillRect(x * P, y * P, P, P);
+    ctx.fillRect(x, y, P, P);
   });
-
-  [A.treeStar, A.towerStar].forEach((star, si) => {
-    if (!star) return;
-    const [sx, sy] = star;
-    const reach = [2, 3, 4, 3][(Math.floor(now / 230) + si * 2) % 4] + (si === 0 ? 4 : 1);
-    ctx.fillStyle = '#fff6c2';
-    ctx.globalAlpha = 0.85;
-    ctx.fillRect(sx * P, (sy - reach) * P, P, P);
-    ctx.fillRect((sx - reach) * P, sy * P, P, P);
-    ctx.fillRect((sx + reach) * P, sy * P, P, P);
-    ctx.globalAlpha = 0.16;
-    ctx.fillRect((sx - reach + 1) * P, (sy - 1) * P, (reach * 2 - 1) * P, P * 3);
-    ctx.fillRect((sx - 1) * P, (sy - reach + 1) * P, P * 3, (reach * 2 - 1) * P);
-  });
-  ctx.globalAlpha = 1;
 
   if (A.ice) {
-    const [iceTop, iceBot] = A.ice;
+    const [iceTop, iceBot, iceL, iceR] = A.ice;
     const glint = Math.floor(now / 320) % 2;
-    ctx.fillStyle = 'rgba(232, 242, 255, 0.85)';
+    ctx.fillStyle = 'rgba(240, 246, 255, 0.85)';
     for (let g = 0; g < 9; g++) {
-      const gx = (62 + g * 19 + glint * 2) * P;
-      const gy = (iceTop + 2 + ((g * 5) % Math.max(1, iceBot - iceTop - 3))) * P;
+      const gx = snap(iceL + 40 + g * ((iceR - iceL - 80) / 8) + glint * 8);
+      const gy = snap(iceTop + 12 + ((g * 23) % Math.max(1, iceBot - iceTop - 24)));
       ctx.fillRect(gx, gy, P * 2, P);
     }
   }
 
   // Snowfall: far flakes drift slowly, every fourth flake is a larger near one
-  for (let i = 0; i < 64; i++) {
+  for (let i = 0; i < 56; i++) {
     const near = i % 4 === 0;
     const speed = near ? 0.05 + (i % 3) * 0.008 : 0.022 + (i % 5) * 0.004;
     const fy = snap(((now * speed + i * 83) % 580) - 20);
     const sway = Math.sin(now * 0.0012 + i * 1.7) * (near ? 16 : 8);
     const fx = snap((((i * 151 + sway) % 960) + 960) % 960);
-    ctx.fillStyle = near ? '#ffffff' : '#c9d6f6';
+    ctx.fillStyle = near ? '#ffffff' : '#d6e0f8';
     ctx.fillRect(fx, fy, near ? P * 2 : P, near ? P * 2 : P);
   }
   ctx.restore();
