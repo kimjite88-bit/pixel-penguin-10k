@@ -490,7 +490,7 @@ function initAmbientPixelCanvas() {
 //    Scene 4 (5. 도착마을): seasonal pixel town arrival & welcome by pixel penguin friends
 //                            (Christmas town Oct–Feb, Cherry Blossom town Mar–Sep)
 // ============================================================================
-const SCENE_DURATIONS = [99999999, 2600, 99999999, 3500, 99999999];
+const SCENE_DURATIONS = [99999999, 2600, 99999999, 4800, 99999999]; // scene 4: approach (scene-pull.js) + scan
 
 // Scene 5 town follows the season. ?town=xmas or ?town=cherry forces one (preview the other season).
 const INTRO_TOWN = (() => {
@@ -3124,31 +3124,22 @@ function initPixelMotionStudio() {
     }
 
     // ========================================================================
-    // SCENE 4 (sceneIdx === 3 — Reference Image #4):
-    //   Right before arriving at Cherry Blossom Town:
-    //   The UFO is pulled into the towering vertical Cyan-Magenta-Blue Voxel Beam Vortex
-    //   and transforms into a 16-Bit Pixel UFO + Pixel Penguin.
+    // SCENE 4 (sceneIdx === 3): each vehicle ends up in the pixel pillar its own way (scene-pull.js: the plane is
+    //   snatched out of its fall, the car is dragged off the ice, the ship goes down a whirlpool and up a
+    //   waterspout), then the shared scan turns vehicle + pilot into pixels.
     // ========================================================================
     else if (MOTION_STATE.sceneIdx === 3) {
       ctx.save();
       drawRefVortexBackground(ctx, now);
 
       const subP = Math.min(1, elapsed / curDuration);
-      const pullP = Math.min(1, subP / 0.28);
-      const smoothPull = pullP * pullP * (3 - 2 * pullP);
-      const scanRatio = subP < 0.14 ? 0 : Math.min(1, (subP - 0.14) / 0.68);
-      const completeP = subP > 0.82 ? (subP - 0.82) / 0.18 : 0;
-
-      const startX = 310;
-      const startY = 305;
-      const targetBeamX = 665;
-      const targetBeamY = 262;
-      const ufoX = startX + smoothPull * (targetBeamX - startX);
-      const ufoY =
-        startY +
-        smoothPull * (targetBeamY - startY) +
-        Math.sin(now * 0.012) * 4;
-      const ufoTilt = (1 - smoothPull) * -0.18 + Math.sin(now * 0.02) * 0.04;
+      const scanStart = SCENE3_APPROACH + 0.04;
+      const scanRatio = subP < scanStart ? 0 : Math.min(1, (subP - scanStart) / (0.86 - scanStart));
+      const completeP = subP > 0.86 ? (subP - 0.86) / 0.14 : 0;
+      const pose = scene3Pose(MOTION_STATE.vehicle, subP, now);
+      const ufoX = pose.x;
+      const ufoY = pose.y;
+      const ufoTilt = pose.tilt;
 
       // Upper Glowing Cyan Halo Ring high in the Voxel Beam (Matches Reference Image #4)
       ctx.save();
@@ -3164,18 +3155,8 @@ function initPixelMotionStudio() {
       ctx.stroke();
       ctx.restore();
 
-      // Curved Cyan Tractor-Stream Energy Ribbons pulling the UFO into the Voxel Beam
-      ctx.save();
-      for (let s = 0; s < 5; s++) {
-        const yOff = (s - 2) * 18;
-        ctx.strokeStyle = s % 2 === 0 ? 'rgba(103, 232, 249, 0.72)' : 'rgba(244, 114, 182, 0.55)';
-        ctx.lineWidth = 2.6;
-        ctx.beginPath();
-        ctx.moveTo(220, 340 + yOff);
-        ctx.quadraticCurveTo(465, 330 + yOff * 0.6, targetBeamX + 25, targetBeamY + yOff * 0.5);
-        ctx.stroke();
-      }
-      ctx.restore();
+      // Smoke trail / tyre spray / whirlpool + waterspout, and the beam's ribbons once it has hold
+      drawScene3Approach(ctx, MOTION_STATE.vehicle, subP, now, pose);
 
       // The lifted car's tyres hang lower than the plane's skis, so its scan runs further down
       const isCar = MOTION_STATE.vehicle === 'car';
@@ -3203,7 +3184,7 @@ function initPixelMotionStudio() {
             wheelAngle: now * 0.03,
           });
         } else if (isBoat) {
-          drawBoatWithPilot(ctx, ufoX, ufoY, ufoTilt, now, { scale: 1.0, spId: activeSpId, pixelMode: true, isImpactBlink: pixelBlinkDuringBeam });
+          drawBoatWithPilot(ctx, ufoX, ufoY, ufoTilt, now, { scale: SCENE3_BOAT_SCALE, flipX: pose.flip, spId: activeSpId, pixelMode: true, isImpactBlink: pixelBlinkDuringBeam });
         } else {
           drawPixelPlaneWithPilot(ctx, ufoX, ufoY, ufoTilt, now, {
             scale: planeScanScale,
@@ -3220,7 +3201,7 @@ function initPixelMotionStudio() {
         ctx.beginPath();
         ctx.rect(ufoX - 180, scanY, 360, botEdge - scanY + 50);
         ctx.clip();
-        drawBoatWithPilot(ctx, ufoX, ufoY, ufoTilt, now, { scale: 1.0, spId: activeSpId, isImpactBlink: subP < 0.09 });
+        drawBoatWithPilot(ctx, ufoX, ufoY, ufoTilt, now, { scale: SCENE3_BOAT_SCALE, flipX: pose.flip, spId: activeSpId, isShocked: pose.phase !== 'beam' });
         ctx.restore();
       } else if (scanRatio < 1 && isCar) {
         ctx.save();
@@ -3230,10 +3211,10 @@ function initPixelMotionStudio() {
         drawCarWithPilot(ctx, ufoX, ufoY, ufoTilt, now, {
           scale: carScale,
           spId: activeSpId,
-          isImpactBlink: subP < 0.09,
+          isShocked: pose.phase === 'drag' || pose.phase === 'lift',
           beam: false,
-          wheelAngle: now * 0.03,
-          boost: 0.6,
+          wheelAngle: pose.phase === 'drive' ? now * 0.05 : now * 0.03,
+          boost: pose.phase === 'drive' ? 1.2 : 0.6,
         });
         ctx.restore();
       } else if (scanRatio < 1) {
@@ -3244,7 +3225,8 @@ function initPixelMotionStudio() {
         drawPlaneWithPilot(ctx, ufoX, ufoY, ufoTilt, now, {
           scale: planeScanScale,
           spId: activeSpId,
-          isImpactBlink: subP < 0.09,
+          isShocked: pose.phase !== 'beam',
+          propSpin: false, // the engine died
         });
         ctx.restore();
       }
@@ -3302,7 +3284,9 @@ function initPixelMotionStudio() {
         ctx,
         Math.min(540, ufoX - 24),
         Math.max(64, topEdge - 6),
-        pct < 78
+        scanRatio === 0
+          ? scene3ApproachLine(MOTION_STATE.vehicle, pose, CURRENT_LANG === 'ko')
+          : pct < 78
           ? CURRENT_LANG === 'ko'
             ? isBoat
               ? '어어 배가 통째로 하늘로 빨려 올라가!! 쇄빙선까지 도트 찍히잖아?!!'
@@ -3319,16 +3303,16 @@ function initPixelMotionStudio() {
             ? '강제 도트화 완료... 어 잠깐 여기 바다가 없잖아 떨어진다아악!!'
             : isCar
             ? '강제 도트화 완료... 어 잠깐 바퀴가 허공에서 헛돈다 떨어진다아악!!'
-            : '강제 도트화 완료... 어어 잠깐만 계기판 왜 꺼져 추락한다아악!!'
+            : '강제 도트화 완료... 근데 나 아직 추락 중이었잖아아악!!'
           : isBoat
           ? 'Pixelation complete... Wait, there is no sea up here?! FALLING!!'
           : isCar
           ? 'Pixelation complete... Wait, the wheels are spinning on air?! FALLING!!'
-          : 'Pixelation complete... Wait why did the engine die?! CRASHING!!',
-        pct < 78 ? '#38bdf8' : '#fb7185',
+          : 'Pixelation complete... But I was still falling?! CRASHING!!',
+        scanRatio === 0 ? '#fb7185' : pct < 78 ? '#38bdf8' : '#fb7185',
         now
       );
-      drawPixelScanHudPill(ctx, ufoX, Math.min(488, botEdge + 18), pct);
+      if (scanRatio > 0) drawPixelScanHudPill(ctx, ufoX, Math.min(488, botEdge + 18), pct);
 
       ctx.restore();
 

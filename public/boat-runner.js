@@ -646,11 +646,11 @@ function drawBoatSideBody(ctx, now, opts) {
 }
 
 function drawBoatWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
-  const { scale = 1, pixelMode = false } = options;
+  const { scale = 1, pixelMode = false, flipX = false } = options;
   ctx.save();
   ctx.translate(Math.round(cx), Math.round(cy));
   ctx.rotate(tiltRad);
-  ctx.scale(scale, scale);
+  ctx.scale(flipX ? -scale : scale, scale);
   if (!pixelMode) {
     drawBoatSideBody(ctx, now, options);
   } else {
