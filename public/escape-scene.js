@@ -266,11 +266,11 @@ function drawScene0Mark(ctx, x, y, ch, col) {
 }
 
 // Hazard banner at the top: "남극 붕괴 경보" with stripes and a stage counter that climbs while you wait
-function drawScene0Alarm(ctx, now, esc) {
+function drawScene0Alarm(ctx, now, esc, finalStage = false) {
   const ko = CURRENT_LANG === 'ko';
   const on = Math.floor(now / (520 - esc * 260)) % 2 === 0;
   const text = ko ? '남극 붕괴 경보' : 'ANTARCTIC COLLAPSE ALERT';
-  const level = 1 + Math.min(3, Math.floor(esc * 4));
+  const level = finalStage ? 5 : 1 + Math.min(3, Math.floor(esc * 4));
   const sub = ko ? `${level}단계` : `LV.${level}`;
   ctx.save();
   ctx.font = '900 26px "Pretendard", "Malgun Gothic", sans-serif';
@@ -379,6 +379,13 @@ function drawScene0Marker(ctx, now, target, label, accent) {
 }
 
 function drawScene0Escape(ctx, now) {
+  // Stage 5: left alone too long, the pillar takes the penguin (drawScene0IdleSuck)
+  const idle = scene0IdleProgress(now);
+  if (idle >= 0.6) {
+    drawScene0IdleSuck(ctx, now, idle);
+    if (idle >= 1) finishScene0Idle();
+    return;
+  }
   const esc = scene0Escalation(now);
   const quake = scene0Quake(now);
   const vehicle = MOTION_STATE.vehicle;
@@ -426,15 +433,19 @@ function drawScene0Escape(ctx, now) {
   });
   drawCarWithPilot(ctx, car.x, car.y + rattle(3), car.tilt, now, { scale: car.scale, withPilot: false, lightsOn: vehicle === 'car', wheelAngle: 0 });
 
-  // The penguin, front and centre, on a cracking ledge
+  // The penguin, front and centre, on a cracking ledge (gone into the pillar once stage 5 starts)
   drawScene0HeroLedge(ctx, now, esc, quake);
-  drawScene0Hero(ctx, now, esc, quake);
+  if (idle < 0) drawScene0Hero(ctx, now, esc, quake);
   ctx.restore();
 
   // Overlays that do not shake with the world
   drawScene0Blizzard(ctx, now, esc);
   drawScene0Vignette(ctx, now, esc, quake);
-  drawScene0Alarm(ctx, now, esc);
+  drawScene0Alarm(ctx, now, esc, idle >= 0);
+  if (idle >= 0) {
+    drawScene0IdleSuck(ctx, now, idle);
+    return;
+  }
 
   const target =
     vehicle === 'car'
@@ -486,6 +497,142 @@ function drawScene0Shout(ctx, now, lines, accent, quake) {
   ctx.fillText(lines[0], bx + 15, by + 23);
   ctx.fillText(lines[1], bx + 15, by + 49);
   ctx.restore();
+}
+
+// ============================================================================
+// STAGE 5 — nobody picked anything. Like Sonic CD's idle easter egg (left alone for 3 minutes, Sonic says "I'm
+// outta here!" and leaves, game over), the penguin is taken out of the player's hands: the pillar drags it in,
+// pixelates it and shoots it up, exactly as it does to the vehicles (scene-pull.js), and it lands in the town as
+// if 안 해요 had been pressed — where the locals ask what on earth you were doing.
+// It starts SCENE0_IDLE_MS after the scene began and at least SCENE0_IDLE_QUIET_MS after the last input, and only
+// while the stage is on screen.
+// ============================================================================
+const SCENE0_IDLE_MS = 30000;
+const SCENE0_IDLE_QUIET_MS = 10000;
+const SCENE0_SUCK_MS = 7000;
+const SCENE0_PILLAR = { x: 700, y: 250 };
+
+// Any input on the page counts as "not idle"; time with the stage off screen does too
+function noteScene0Input() {
+  MOTION_STATE.scene0LastInput = performance.now();
+}
+if (typeof window !== 'undefined') {
+  ['pointerdown', 'keydown', 'input', 'wheel', 'touchstart'].forEach((ev) => window.addEventListener(ev, noteScene0Input, { passive: true }));
+}
+
+function scene0StageVisible() {
+  if (typeof document === 'undefined' || document.visibilityState !== 'visible') return false;
+  const c = document.getElementById('pixel-stage-canvas');
+  if (!c) return false;
+  const r = c.getBoundingClientRect();
+  return r.bottom > r.height * 0.5 && r.top < window.innerHeight - r.height * 0.5;
+}
+
+// 0..1 through the suck sequence, or -1 while it has not started
+function scene0IdleProgress(now) {
+  if (MOTION_STATE.scene0IdleStart) return Math.min(1, (now - MOTION_STATE.scene0IdleStart) / SCENE0_SUCK_MS);
+  if (!scene0StageVisible()) {
+    MOTION_STATE.scene0LastInput = now;
+    return -1;
+  }
+  const sinceStart = now - MOTION_STATE.sceneStartTime;
+  const sinceInput = now - Math.max(MOTION_STATE.sceneStartTime, MOTION_STATE.scene0LastInput || 0);
+  if (sinceStart >= SCENE0_IDLE_MS && sinceInput >= SCENE0_IDLE_QUIET_MS) {
+    MOTION_STATE.scene0IdleStart = now;
+    return 0;
+  }
+  return -1;
+}
+
+// The default 2D penguin pulled through the air towards the pillar, flailing and tumbling
+function drawScene0FlyingHero(ctx, x, y, size, rot, now) {
+  ensureHero2DSprite();
+  const sheet = MOTION_STATE.hero2DSheetLoaded ? MOTION_STATE.hero2DSheet : null;
+  ctx.save();
+  ctx.translate(Math.round(x), Math.round(y));
+  ctx.rotate(rot);
+  ctx.imageSmoothingEnabled = true;
+  if (sheet) ctx.drawImage(sheet, 6 * 256, 0, 256, 256, -size / 2, -size / 2, size, size);
+  else if (MOTION_STATE.hero2DLoaded && MOTION_STATE.hero2DImg) ctx.drawImage(MOTION_STATE.hero2DImg, -size / 2, -size / 2, size, size);
+  ctx.restore();
+}
+
+function drawScene0PixelHero(ctx, x, y, size, rot, now) {
+  const entry = ensureSpeciesSprite('01');
+  ctx.save();
+  ctx.translate(Math.round(x), Math.round(y));
+  ctx.rotate(rot);
+  drawAnimatedPixelPenguin(ctx, entry, -size / 2, -size / 2, size, now, { seed: 0, isWalking: false, forceBlink: Math.floor(now / 300) % 3 === 0 });
+  ctx.restore();
+}
+
+// r = 0..1: drag (0-0.3), pixel scan in the beam (0.3-0.6), rise up the pillar (0.6-1)
+function drawScene0IdleSuck(ctx, now, r) {
+  const ko = CURRENT_LANG === 'ko';
+  const P = SCENE0_PILLAR;
+  if (r >= 0.6) {
+    drawScene3Rise(ctx, now, (r - 0.6) / 0.4, 'penguin', '01');
+    return;
+  }
+  const home = { x: SCENE0_HERO.x, y: SCENE0_HERO.feet - SCENE0_HERO.size / 2 + 6 };
+  const d = scene3Smooth(Math.min(1, r / 0.3));
+  // Arc up and over to the beam, spinning faster as it goes
+  const x = home.x + (P.x - home.x) * d;
+  const y = home.y + (P.y - home.y) * d - Math.sin(d * Math.PI) * 60 + Math.sin(now * 0.02) * 3 * (1 - d);
+  const rot = d < 1 ? Math.sin(now * 0.012) * 0.5 + d * Math.PI * 2 : Math.sin(now * 0.004) * 0.12;
+  const size = 140 - d * 36;
+  drawScene3Ribbons(ctx, x, y, Math.min(1, r / 0.12));
+  if (r < 0.3) {
+    drawScene0FlyingHero(ctx, x, y, size, rot, now);
+  } else {
+    // Pixel scan: the 2D penguin breaks into mosaic blocks below the line, clean pixel penguin above it
+    const s = (r - 0.3) / 0.3;
+    const top = y - size / 2;
+    const scanY = top + s * size;
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x - size, top - 20, size * 2, scanY - top + 20);
+    ctx.clip();
+    drawScene0PixelHero(ctx, x, y, size, rot, now);
+    ctx.restore();
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(x - size, scanY, size * 2, size);
+    ctx.clip();
+    drawScene3Mosaic(ctx, 1 + Math.floor(s * 7), (c) => drawScene0FlyingHero(c, x, y, size, rot, now));
+    ctx.restore();
+    ctx.fillStyle = '#0284c7';
+    ctx.fillRect(x - size * 0.7, scanY - 4, size * 1.4, 8);
+    ctx.fillStyle = '#67e8f9';
+    ctx.fillRect(x - size * 0.7 + 2, scanY - 2, size * 1.4 - 4, 4);
+    for (let k = 0; k < 12; k++) {
+      const kx = Math.round(x - size * 0.6 + k * (size * 1.2 / 11));
+      const ky = Math.round(scanY + Math.sin(now * 0.032 + k * 1.35) * 8);
+      ctx.fillStyle = SCENE0_K;
+      ctx.fillRect(kx - 4, ky - 4, 8, 8);
+      ctx.fillStyle = k % 3 === 0 ? '#ffffff' : k % 2 ? '#f472b6' : '#67e8f9';
+      ctx.fillRect(kx - 3, ky - 3, 6, 6);
+    }
+  }
+  const line =
+    r < 0.12
+      ? ko
+        ? ['어어?! 몸이 떠오른다?!', '아무거나 누르라고 했잖아아!!']
+        : ['Huh?! I am floating?!', 'I TOLD you to press something!!']
+      : r < 0.3
+      ? ko
+        ? ['으아아악 아무도 안 눌러?!', '나 지금 빨려간다고오오!!']
+        : ['AAAAH nobody pressed anything?!', 'I am getting sucked in!!']
+      : ko
+      ? ['탈 것도 없이 맨몸으로 도트화...', '이게 무슨 B급 엔딩이야!!']
+      : ['Pixelated with no ride at all...', 'What kind of B-movie ending is this!!'];
+  drawScene0Shout(ctx, now, line, '#a78bfa', 0);
+}
+
+function finishScene0Idle() {
+  MOTION_STATE.scene0IdleStart = 0;
+  skipEscapeToCherryBlossomTown();
+  MOTION_STATE.idleSucked = true; // after the switch to scene 5, which clears it for every other way in
 }
 
 // Which vehicle a click on the scene 1 picture picks (null = none)

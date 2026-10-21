@@ -1634,6 +1634,9 @@ function setIntroScene(sceneIdx, resetTimer = true) {
   if (theaterEl) {
     theaterEl.dataset.scene = String(MOTION_STATE.sceneIdx);
   }
+  // "Left it alone" (escape-scene.js stage 5) only holds for the town it led to
+  MOTION_STATE.scene0IdleStart = 0;
+  if (MOTION_STATE.sceneIdx !== 4) MOTION_STATE.idleSucked = false;
   if (resetTimer) {
     MOTION_STATE.sceneStartTime = performance.now();
     if (MOTION_STATE.sceneIdx === 0) {
@@ -3414,7 +3417,15 @@ function initPixelMotionStudio() {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
 
-      if (MOTION_STATE.skippedEscape) {
+      if (MOTION_STATE.idleSucked) {
+        ctx.fillText(
+          CURRENT_LANG === 'ko'
+            ? `멍때리다 기둥에 빨려옴 · 기본 펭귄으로 ${INTRO_TOWN.koPixel} 도착  |  [게임 순위 보기]`
+            : `Sucked in while idling · Default Penguin in ${INTRO_TOWN.en}  |  [Rankings]`,
+          480,
+          banY + banH / 2 + 1
+        );
+      } else if (MOTION_STATE.skippedEscape) {
         ctx.fillText(
           CURRENT_LANG === 'ko'
             ? `기본 펭귄으로 ${INTRO_TOWN.koPixel} 도착  |  [게임 순위 보기]`
@@ -3617,8 +3628,30 @@ function initPixelMotionStudio() {
       const speaker1 = renderedFriends[0] || { fx: row.friendsX[0], fy: spriteY };
       const speaker2 = renderedFriends[1] || { fx: row.friendsX[1], fy: spriteY };
       if (MOTION_STATE.skippedEscape) {
-        const skipPhase = Math.floor(elapsed / 3400) % 2;
-        if (skipPhase === 0) {
+        const skipPhase = Math.floor(elapsed / 3400) % (MOTION_STATE.idleSucked ? 3 : 2);
+        if (MOTION_STATE.idleSucked) {
+          // Arrived because nobody pressed anything: the locals want to know what you were doing
+          const ko = CURRENT_LANG === 'ko';
+          const talk = [
+            {
+              who: speaker1,
+              col: '#ff4d6d',
+              text: ko ? '야 안 누르고 뭐했냐?! 남극 무너지는 거 30초 동안 멍때리고 구경했냐 ㅋㅋㅋ' : 'Yo, why did you not press anything?! Watched Antarctica fall apart for 30 s? lol',
+            },
+            {
+              who: { fx: row.heroX, fy: spriteY },
+              col: '#38bdf8',
+              text: ko ? '아니 그게... 셋 중에 뭐 탈지 고르다가... 정신 차려보니 빨려왔어...' : 'Well... I was still picking a ride... and then I got sucked up...',
+            },
+            {
+              who: speaker2,
+              col: '#fbbf24',
+              text: ko ? `결정장애 펭귄 레전드 ㅋㅋㅋ 탈 것도 없이 맨몸 입성 축하한다!! ${INTRO_TOWN.ko} 환영~` : `Legendary indecisive penguin lol. Welcome to ${INTRO_TOWN.en}, no ride needed!!`,
+            },
+          ][skipPhase];
+          drawPixelHeart(ctx, talk.who.fx + spriteSize / 2, spriteY - 8 - ((now * 0.03) % 18), 2.6, talk.col);
+          drawRetroSpeechBubble(ctx, talk.who.fx + spriteSize / 2, talk.who.fy - 6, talk.text, talk.col, now);
+        } else if (skipPhase === 0) {
           drawPixelHeart(ctx, row.heroX + spriteSize / 2, spriteY - 8 - ((now * 0.03) % 18), 2.6, '#38bdf8');
           drawRetroSpeechBubble(
             ctx,

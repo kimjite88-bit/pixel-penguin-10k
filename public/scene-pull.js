@@ -482,7 +482,10 @@ function drawScene3Rise(ctx, now, r, vehicle, spId) {
   const vy = 300 - r * 40 - out * 560;
   const tilt = Math.sin(now * 0.0014) * 0.45 + out * 1.4;
   const S = 1 - out * 0.5;
-  if (vehicle === 'car') {
+  if (vehicle === 'penguin') {
+    // Stage 5 of the escape scene: no vehicle, just the pixelated default penguin
+    drawScene0PixelHero(ctx, vx, vy, 104 * S, tilt, now);
+  } else if (vehicle === 'car') {
     drawPixelCarWithPilot(ctx, vx, vy, tilt, now, { scale: S, spId, isShocked: true, beam: false, wheelAngle: now * 0.02 });
   } else if (vehicle === 'boat') {
     drawBoatWithPilot(ctx, vx, vy, tilt, now, { scale: SCENE3_BOAT_SCALE * S, spId, pixelMode: true, isShocked: true });
