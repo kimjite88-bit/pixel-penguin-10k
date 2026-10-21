@@ -3385,7 +3385,7 @@ function initPixelMotionStudio() {
       }
 
       // 4. Update & Draw Entities + plane collisions
-      const planeScale = 0.8;
+      const planeScale = 0.76;
       for (let i = UFO_GAME.entities.length - 1; i >= 0; i--) {
         const ent = UFO_GAME.entities[i];
         ent.x += ent.vx * dt;
@@ -3564,12 +3564,12 @@ function initPixelMotionStudio() {
       }
       ctx.restore();
 
-      // The lifted car reaches higher (light bar) and lower (tyres) than the saucer, so its scan is longer
+      // The lifted car's tyres hang lower than the plane's skis, so its scan runs further down
       const isCar = MOTION_STATE.vehicle === 'car';
       const carScale = 1.3;
-      const planeScanScale = 1.05; // the plane is long: at this size it stays inside the 360px scan window
-      const topEdge = isCar ? ufoY - 136 : ufoY - 120;
-      const botEdge = isCar ? ufoY + 80 : ufoY + 52;
+      const planeScanScale = 1.02; // the plane is long: at this size it stays inside the 360px scan window
+      const topEdge = ufoY - 120;
+      const botEdge = isCar ? ufoY + 80 : ufoY + 58;
       const totalSpanH = botEdge - topEdge;
       const scanY = topEdge + scanRatio * totalSpanH;
       const pixelBlinkDuringBeam = scanRatio > 0.30 && scanRatio < 0.38;
@@ -3831,8 +3831,8 @@ function initPixelMotionStudio() {
 
         const ufoLandX = 228;
         const ufoGroundY = 418;
-        // Car tyres (+57 x 1.3) and plane skis (+45 x 1.15) end on the same walkway line (y = 450)
-        const landY = isCarRun ? ufoGroundY - 42 : ufoGroundY - 20;
+        // Car tyres (+57 x 1.3) and plane skis (+51 x 1.0) end on the same walkway line (y = 450)
+        const landY = isCarRun ? ufoGroundY - 42 : ufoGroundY - 19;
         const ufoCurY =
           crashP < 1
             ? Math.round(90 + crashP * crashP * (landY - 90))
@@ -3872,8 +3872,8 @@ function initPixelMotionStudio() {
           });
         } else {
           // Ski landing gone wrong: prop stops, the pilot pops up in the window
-          drawPixelPlaneWithPilot(ctx, ufoLandX + 20, ufoCurY, crashP < 1 ? 0.24 : 0.05, now, {
-            scale: 1.15,
+          drawPixelPlaneWithPilot(ctx, ufoLandX + 14, ufoCurY, crashP < 1 ? 0.24 : 0.05, now, {
+            scale: 1.0,
             spId: activeSpId,
             isShocked: crashP < 1,
             showSmoke: true,

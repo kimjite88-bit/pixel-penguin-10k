@@ -52,7 +52,7 @@ const CAR_CFG = {
   JELLY_STEP: 36,
 };
 
-// Car hit boxes in local car units (y down from the door line). The hat and the cage are left out on purpose.
+// Car hit boxes in local car units (y down from the door line). The hat is left out on purpose.
 const CAR_HIT_BOXES = [
   { x: -82, y: 2, w: 166, h: 53 }, // body + tyres
   { x: -56, y: -58, w: 70, h: 60 }, // pilot
@@ -449,8 +449,8 @@ function carStep(run, dt, now, rng = Math.random) {
 }
 
 // ============================================================================
-// DRAWING — lifted off-road car: mint body, hot-pink stripe, black fender flares, chunky snow tyres,
-// roll cage with an LED light bar, snorkel and winch; the NFT pilot sits in the open top under the cage.
+// DRAWING — lifted open-top off-road car: mint body, hot-pink stripe, black fender flares, chunky snow
+// tyres, snorkel, winch and a bumper LED bar; nothing over the cabin, so the NFT pilot is fully visible.
 // ============================================================================
 const CAR_PILOT_DX = -14; // the pilot sits behind the windshield, not mid-car
 const CAR_K = '#090d1a';
@@ -621,16 +621,6 @@ function traceOffroadBody2D(ctx) {
   ctx.closePath();
 }
 
-function traceRollCage(ctx) {
-  ctx.beginPath();
-  ctx.moveTo(-68, 0);
-  ctx.lineTo(-68, -74);
-  ctx.quadraticCurveTo(-68, -84, -58, -84);
-  ctx.lineTo(22, -84);
-  ctx.lineTo(34, -40);
-  ctx.lineTo(38, 0);
-}
-
 // Smooth 2D car (scenes 1–3). Origin = door line under the pilot; tyres touch y = +57.
 function drawCarWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
   const {
@@ -754,7 +744,7 @@ function drawCarWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
     ctx.stroke();
   });
 
-  // Windshield + roll cage + LED bar + snorkel
+  // Windshield + snorkel (open top: no cage over the pilot)
   ctx.fillStyle = 'rgba(186, 230, 253, 0.32)';
   ctx.strokeStyle = CAR_K;
   ctx.lineWidth = 2;
@@ -766,23 +756,6 @@ function drawCarWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
-  traceRollCage(ctx);
-  ctx.strokeStyle = CAR_K;
-  ctx.lineWidth = 6.5;
-  ctx.lineJoin = 'round';
-  ctx.stroke();
-  traceRollCage(ctx);
-  ctx.strokeStyle = '#475569';
-  ctx.lineWidth = 3.5;
-  ctx.stroke();
-  ctx.fillStyle = CAR_K;
-  ctx.beginPath();
-  ctx.roundRect(-46, -95, 56, 10, 2);
-  ctx.fill();
-  for (let i = 0; i < 6; i++) {
-    ctx.fillStyle = lightsOn ? (Math.floor(now / 200 + i) % 6 === 0 ? '#ffffff' : '#fde047') : '#78716c';
-    ctx.fillRect(-43 + i * 9, -92.5, 6, 5);
-  }
   ctx.fillStyle = '#111827';
   ctx.fillRect(54, -36, 5, 40);
   ctx.fillRect(50, -42, 12, 7);
@@ -798,8 +771,15 @@ function drawCarWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
   ctx.stroke();
   ctx.fillStyle = '#ef4444';
   ctx.fillRect(102, 24, 5, 4);
-  ctx.fillStyle = '#94a3b8';
-  ctx.fillRect(93, 15, 8, 5);
+  // LED light bar on the front bumper (moved off the roof so nothing sits over the pilot)
+  ctx.fillStyle = CAR_K;
+  ctx.beginPath();
+  ctx.roundRect(88, 12, 20, 8, 2);
+  ctx.fill();
+  for (let i = 0; i < 3; i++) {
+    ctx.fillStyle = lightsOn ? (Math.floor(now / 200 + i) % 3 === 0 ? '#ffffff' : '#fde047') : '#78716c';
+    ctx.fillRect(90 + i * 6, 14, 4, 4);
+  }
   ctx.fillStyle = lightsOn ? '#fde047' : '#a16207';
   ctx.beginPath();
   ctx.arc(92, 10, 4.2, 0, Math.PI * 2);
@@ -941,24 +921,11 @@ function drawPixelCarWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) 
     ctx.fillRect(wx + 20, 12, 6, 10);
   });
 
-  // Windshield pillar, cage, LED bar, snorkel
+  // Windshield pillar + snorkel (open top)
+  ctx.fillStyle = CAR_K;
+  ctx.fillRect(26, -40, 8, 42);
   ctx.fillStyle = '#7dd3fc';
-  ctx.fillRect(28, -34, 6, 34);
-  ctx.fillStyle = CAR_K;
-  ctx.fillRect(-72, -88, 8, 90);
-  ctx.fillRect(-72, -88, 98, 8);
-  ctx.fillRect(22, -88, 8, 12);
-  ctx.fillRect(26, -78, 8, 40);
-  ctx.fillRect(32, -40, 8, 42);
-  ctx.fillStyle = '#64748b';
-  ctx.fillRect(-70, -86, 4, 86);
-  ctx.fillRect(-70, -86, 94, 4);
-  ctx.fillRect(28, -76, 4, 38);
-  ctx.fillRect(34, -38, 4, 38);
-  ctx.fillStyle = CAR_K;
-  ctx.fillRect(-48, -98, 58, 10);
-  ctx.fillStyle = lightsOn ? '#fde047' : '#78716c';
-  for (let i = 0; i < 6; i++) ctx.fillRect(-46 + i * 9, -96, 6, 6);
+  ctx.fillRect(28, -38, 4, 38);
   ctx.fillStyle = '#111827';
   ctx.fillRect(54, -36, 6, 40);
   ctx.fillRect(50, -42, 12, 8);
@@ -971,6 +938,10 @@ function drawPixelCarWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) 
   ctx.fillRect(-100, 2, 8, 14);
   ctx.fillStyle = '#ef4444';
   ctx.fillRect(104, 24, 4, 4);
+  ctx.fillStyle = CAR_K;
+  ctx.fillRect(88, 12, 20, 8);
+  ctx.fillStyle = lightsOn ? '#fde047' : '#78716c';
+  for (let i = 0; i < 3; i++) ctx.fillRect(90 + i * 6, 14, 4, 4);
   ctx.fillStyle = lightsOn ? '#fde047' : '#a16207';
   ctx.fillRect(88, 8, 6, 6);
   ctx.fillStyle = lightsOn ? '#fb7185' : '#9f1239';
@@ -1795,7 +1766,7 @@ function drawCarRunnerFrame(ctx, now, spId) {
 // Parked on the ice-canyon background: plane on the igloo plateau (snow line y = 296), car on the floe
 // right of the beam (y = 366)
 const SCENE0_CAR_SPOT = { x: 880, y: 366 - 57 * 0.64, tilt: 0, scale: 0.64 };
-const SCENE0_UFO_SPOT = { x: 330, y: 296 - 45 * 0.74, tilt: 0, scale: 0.74 }; // the plane ('ufo' key kept for saved picks + the board)
+const SCENE0_UFO_SPOT = { x: 330, y: 296 - 51 * 0.72, tilt: 0, scale: 0.72 }; // the plane ('ufo' key kept for saved picks + the board)
 
 function drawScene0VehiclePicker(ctx, now) {
   const isCar = MOTION_STATE.vehicle === 'car';
@@ -1813,14 +1784,14 @@ function drawScene0VehiclePicker(ctx, now) {
   // Parked plane (prop still) and car, each with a contact shadow
   ctx.fillStyle = 'rgba(9, 13, 26, 0.28)';
   ctx.beginPath();
-  ctx.ellipse(plane.x - 40 * plane.scale, plane.y + 45 * plane.scale, 120 * plane.scale, 5, 0, 0, Math.PI * 2);
+  ctx.ellipse(plane.x + 40 * plane.scale, plane.y + 51 * plane.scale, 70 * plane.scale, 5, 0, 0, Math.PI * 2);
   ctx.ellipse(car.x, car.y + 57 * car.scale, 86 * car.scale, 5, 0, 0, Math.PI * 2);
   ctx.fill();
   drawPlaneWithPilot(ctx, plane.x, plane.y, plane.tilt, now, { scale: plane.scale, withPilot: false, propSpin: !isCar && Math.floor(now / 1600) % 2 === 0 });
   drawCarWithPilot(ctx, car.x, car.y, car.tilt, now, { scale: car.scale, withPilot: false, lightsOn: isCar, wheelAngle: 0 });
 
   // Bouncing pixel marker + label over the chosen vehicle
-  const target = isCar ? { x: car.x - 10, y: car.y - 98 * car.scale - 6 } : { x: plane.x - 40, y: plane.y - 62 * plane.scale - 4 };
+  const target = isCar ? { x: car.x - 10, y: car.y - 60 * car.scale - 6 } : { x: plane.x, y: plane.y - 56 * plane.scale - 4 };
   const bounce = Math.floor(now / 260) % 2 === 0 ? 0 : -4;
   const label = isCar ? (CURRENT_LANG === 'ko' ? '자동차' : 'CAR') : CURRENT_LANG === 'ko' ? '경비행기' : 'PLANE';
   const accent = isCar ? '#f472b6' : '#fb923c';
@@ -1852,9 +1823,9 @@ function drawScene0VehiclePicker(ctx, now) {
 // Which vehicle a click on the scene 1 picture picks (null = neither)
 function scene0VehicleAt(mx, my) {
   const c = SCENE0_CAR_SPOT;
-  if (mx >= c.x - 110 * c.scale && mx <= c.x + 110 * c.scale && my >= c.y - 100 * c.scale && my <= c.y + 60 * c.scale) return 'car';
+  if (mx >= c.x - 110 * c.scale && mx <= c.x + 110 * c.scale && my >= c.y - 80 * c.scale && my <= c.y + 60 * c.scale) return 'car';
   const p = SCENE0_UFO_SPOT;
-  if (mx >= p.x - 170 * p.scale && mx <= p.x + 110 * p.scale && my >= p.y - 66 * p.scale && my <= p.y + 50 * p.scale) return 'ufo';
+  if (mx >= p.x - 170 * p.scale && mx <= p.x + 165 * p.scale && my >= p.y - 60 * p.scale && my <= p.y + 55 * p.scale) return 'ufo';
   return null;
 }
 
