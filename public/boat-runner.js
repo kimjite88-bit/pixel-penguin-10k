@@ -583,12 +583,69 @@ function drawBoatTopDown(ctx, cx, bowY, now, opts = {}) {
 // Side-view icebreaker for the picker, the departure, the pixel scan and the crash landing.
 // Origin = foredeck under the pilot, facing right; waterline at y = +34, keel at +48.
 const BOAT_SIDE_PILOT_RECT = { x: -40, y: -81, size: 79 };
-const BOAT_PIXEL_CELL = 3; // stage px per art pixel, same as the pixel plane
-const BOAT_PIXEL_BOX = { x: -156, y: -120, w: 312, h: 174 }; // mast top to keel, stern to raked bow
-const BOAT_PIXEL_PALETTE = [
-  '#0b1020', '#1e3a5f', '#334155', '#94a3b8', '#cbd5e1', '#e2e8f0', '#f8fafc', '#ffffff',
-  '#d7263d', '#9f1239', '#7f1d1d', '#fde68a', '#facc15',
-];
+// Pixel ship by the pixel car's rules (see drawPixelPlaneWithPilot): 2px grid, every part its own outlined block
+// with a light top band and a dark bottom band; the hull follows the 2D hull outline on the grid.
+// layer 'back' = superstructure, mast, funnel; 'front' = hull, portholes, rail (the pixel pilot goes between).
+const PIXEL_BOAT_HULL_BOX = { x: -152, y: -16, w: 304, h: 66 };
+const BOAT_RED_LIGHT = '#f05a6e';
+
+function drawBoatPixelLayer(ctx, now, layer) {
+  const K = BOAT_K;
+  if (layer === 'back') {
+    // Mast with a crossbar
+    drawPixelBlock(ctx, -94, -116, 6, 34, '#facc15', null, null, K);
+    drawPixelBlock(ctx, -104, -110, 26, 4, '#facc15', null, null, K);
+    // Bridge and deckhouse: white with a light top and a grey shade band, navy windows with a glint
+    drawPixelBlock(ctx, -120, -84, 60, 28, '#f8fafc', '#ffffff', '#cbd5e1', K);
+    drawPixelBlock(ctx, -134, -58, 92, 58, '#f8fafc', '#ffffff', '#cbd5e1', K);
+    for (let i = 0; i < 4; i++) {
+      ctx.fillStyle = '#1e3a5f';
+      ctx.fillRect(-114 + i * 14, -78, 8, 10);
+      ctx.fillStyle = '#7dd3fc';
+      ctx.fillRect(-114 + i * 14, -78, 4, 2);
+    }
+    for (let i = 0; i < 5; i++) {
+      ctx.fillStyle = '#1e3a5f';
+      ctx.fillRect(-126 + i * 16, -44, 10, 8);
+      ctx.fillStyle = '#7dd3fc';
+      ctx.fillRect(-126 + i * 16, -44, 4, 2);
+    }
+    // Funnel: red with the white band
+    drawPixelBlock(ctx, -60, -92, 24, 36, BOAT_RED, BOAT_RED_LIGHT, BOAT_RED_DARK, K);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(-60, -80, 24, 6);
+    return;
+  }
+  // Hull on the 2D hull's outline: red with a light top band, dark strake, white boot stripe, dark bottom
+  if (typeof document !== 'undefined') {
+    const hull = pixelGridMask('boat-hull', traceBoatSideHull, PIXEL_BOAT_HULL_BOX);
+    fillPixelMask(ctx, hull, K);
+    fillPixelMask(ctx, hull, BOAT_RED, { inset: 1 });
+    fillPixelMask(ctx, hull, BOAT_RED_LIGHT, { inset: 1, y1: 4 });
+    fillPixelMask(ctx, hull, BOAT_RED_DARK, { inset: 1, y0: 6, y1: 8 });
+    fillPixelMask(ctx, hull, '#ffffff', { inset: 1, y0: 30, y1: 34 });
+    fillPixelMask(ctx, hull, '#7f1d1d', { inset: 1, y0: 34 });
+  }
+  // Portholes (lit, outlined like the car's lamps) and the anchor
+  for (let i = 0; i < 6; i++) {
+    const px = -122 + i * 34;
+    ctx.fillStyle = K;
+    ctx.fillRect(px, 12, 12, 12);
+    ctx.fillStyle = '#fde68a';
+    ctx.fillRect(px + 2, 14, 8, 8);
+    ctx.fillStyle = '#fffbeb';
+    ctx.fillRect(px + 2, 14, 4, 2);
+  }
+  ctx.fillStyle = K;
+  ctx.fillRect(112, 6, 8, 8);
+  // Foredeck rail
+  ctx.fillStyle = K;
+  ctx.fillRect(-42, -14, 140, 6);
+  for (let i = 0; i < 6; i++) ctx.fillRect(-38 + i * 26, -14, 7, 14);
+  ctx.fillStyle = '#e2e8f0';
+  ctx.fillRect(-40, -12, 136, 2);
+  for (let i = 0; i < 6; i++) ctx.fillRect(-36 + i * 26, -12, 3, 10);
+}
 
 function traceBoatSideHull(ctx) {
   ctx.beginPath();
@@ -684,32 +741,22 @@ function drawBoatWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
   if (!pixelMode) {
     drawBoatSideBody(ctx, now, options);
   } else {
-    // Pixel version: the same 2D ship rendered at 1/BOAT_PIXEL_CELL (renderPixelArtLayer in plane.js), in two
-    // layers so the pixel pilot stands between the superstructure and the hull, like the 2D ship
-    const B = BOAT_PIXEL_BOX;
-    const C = BOAT_PIXEL_CELL;
-    const blit = (layer) => {
-      if (typeof document === 'undefined' || typeof renderPixelArtLayer !== 'function') return;
-      const buf = renderPixelArtLayer('boat-' + layer, B, C, BOAT_PIXEL_PALETTE, (b) =>
-        drawBoatSideBody(b, now, { ...options, withPilot: false, pixelMode: false, smokeOn: false, layer })
-      );
-      ctx.imageSmoothingEnabled = false;
-      ctx.drawImage(buf, B.x, B.y, buf.width * C, buf.height * C);
-    };
+    // Pixel version by the pixel car's rules (drawBoatPixelLayer): superstructure, the pixel pilot, then the hull
+    ctx.imageSmoothingEnabled = false;
     if (options.smokeOn) {
-      // Blocky funnel smoke, on the same 3px grid
+      // Blocky funnel smoke, on the same 2px grid
       for (let k = 0; k < 4; k++) {
         const tp = (now * 0.0008 + k * 0.25) % 1;
-        const sz = Math.round((6 + tp * 8) / C) * C;
+        const sz = Math.round((6 + tp * 8) / 2) * 2;
         ctx.fillStyle = `rgba(226, 232, 240, ${(0.85 - tp * 0.7).toFixed(2)})`;
-        ctx.fillRect(Math.round((-52 - tp * 60) / C) * C, Math.round((-104 - tp * 50) / C) * C, sz, sz);
+        ctx.fillRect(Math.round((-52 - tp * 60) / 2) * 2, Math.round((-104 - tp * 50) / 2) * 2, sz, sz);
       }
     }
-    blit('back');
+    drawBoatPixelLayer(ctx, now, 'back');
     if (options.withPilot !== false && typeof drawCarPilot === 'function') {
       drawCarPilot(ctx, true, now, { ...options, rect: BOAT_SIDE_PILOT_RECT, clip: (c) => c.rect(-70, -140, 150, 140) });
     }
-    blit('front');
+    drawBoatPixelLayer(ctx, now, 'front');
   }
   ctx.restore();
 }

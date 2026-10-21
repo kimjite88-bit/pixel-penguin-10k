@@ -73,6 +73,14 @@ function drawPlanePropeller(ctx, now, spinning, pixelMode) {
     ctx.fillStyle = '#facc15';
     ctx.fillRect(px - 1.5, py - L, 3, 4);
     ctx.fillRect(px - 1.5, py + L - 4, 3, 4);
+  } else if (pixelMode) {
+    // Stopped blades on the grid: one up, one down-left
+    ctx.fillStyle = PLANE_K;
+    ctx.fillRect(px - 4, py - 34, 8, 34);
+    ctx.fillRect(px - 4, py, 8, 26);
+    ctx.fillStyle = '#475569';
+    ctx.fillRect(px - 2, py - 32, 4, 30);
+    ctx.fillRect(px - 2, py + 2, 4, 22);
   } else {
     ctx.fillStyle = '#334155';
     ctx.fillRect(px - 2, py - 32, 4, 32);
@@ -81,6 +89,18 @@ function drawPlanePropeller(ctx, now, spinning, pixelMode) {
     ctx.rotate(-0.5);
     ctx.fillRect(-2, 0, 4, 28);
     ctx.restore();
+  }
+  if (pixelMode) {
+    // Stepped pink spinner, outlined like the pixel car's parts
+    ctx.fillStyle = PLANE_K;
+    ctx.fillRect(100, py - 10, 12, 20);
+    ctx.fillRect(112, py - 6, 6, 12);
+    ctx.fillStyle = '#f472b6';
+    ctx.fillRect(102, py - 8, 10, 16);
+    ctx.fillRect(112, py - 4, 4, 8);
+    ctx.fillStyle = '#f9a8d4';
+    ctx.fillRect(102, py - 8, 10, 2);
+    return;
   }
   // Pink spinner, like the car's wheel caps
   ctx.fillStyle = '#f472b6';
@@ -105,7 +125,6 @@ function drawPlaneWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
     isImpactBlink = false,
     propSpin = true,
     pilotLift = 0,
-    layer = 'all', // 'back' = everything behind the pilot, 'front' = everything over it (for the pixel plane)
   } = options;
   ctx.save();
   ctx.translate(cx, cy);
@@ -113,7 +132,6 @@ function drawPlaneWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
   ctx.scale(scale, scale);
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
-  if (layer !== 'front') {
 
   // Ski legs + fat skis, tail skid
   ctx.strokeStyle = '#334155';
@@ -176,12 +194,7 @@ function drawPlaneWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
   ctx.beginPath();
   ctx.roundRect(-36, -30, 12, 32, 4);
   ctx.fill();
-  }
-  if (layer === 'back') {
-    ctx.restore();
-    return;
-  }
-  if (withPilot && layer === 'all') {
+  if (withPilot) {
     drawCarPilot(ctx, false, now, {
       spId,
       isShocked,
@@ -274,95 +287,73 @@ function drawPlaneWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
   ctx.restore();
 }
 
-// 16-bit pixel plane (scenes 4–5): the very same drawing as the in-game plane (drawPlaneWithPilot), rendered at
-// 1/PIXEL_PLANE_CELL size, snapped to the plane's own palette with hard alpha, then blown up without smoothing,
-// so the pixel version can never drift from the plane the player flew. The pixel pilot goes on top.
-const PIXEL_PLANE_CELL = 3; // stage px per art pixel (the town penguins are ~2.6)
-const PIXEL_PLANE_BOX = { x: -120, y: -57, w: 243, h: 126 }; // tail fin top to skis, tail to spinner
-const PIXEL_PLANE_PALETTE = [
-  '#0b1020', '#1e293b', '#1f2937', '#334155', '#64748b', '#94a3b8', '#cbd5e1', '#e2e8f0', '#f8fafc',
-  '#0f766e', '#14b8a6', '#2dd4bf', '#5eead4', '#99f6e4', '#a7f3e8',
-  '#be185d', '#f472b6', '#f9a8d4', '#f97316', '#ef4444', '#facc15', '#fde047', '#22c55e', '#14532d', '#7dd3fc', '#bae6fd',
-];
-// Shared by the plane and the ship: draw `drawFn` (local vehicle units) into a 1/cell-size buffer, snap every
-// pixel to `palette` with hard alpha, add a 1-px dark outline round the silhouette, return the buffer (draw it
-// at box.x, box.y, size * cell). key keeps one buffer per vehicle layer.
-const PIXEL_ART_BUFFERS = {};
-const PIXEL_ART_PALETTES = new Map();
+// 16-bit pixel plane (scenes 4–5), drawn by the pixel car's rules (drawPixelCarWithPilot): a 2px grid, every part
+// a flat block with its own 2px dark outline, a 4px light band on top and a darker band at the bottom, no
+// gradients. Curved parts (body, fin) follow the 2D plane's own outlines, sampled on the 2px grid.
+const PIXEL_GRID = 2;
+const PIXEL_MASKS = {};
+let PIXEL_MASK_CTX = null;
 
-function pixelArtPalette(hexes) {
-  let p = PIXEL_ART_PALETTES.get(hexes);
-  if (!p) {
-    p = hexes.map((hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)]);
-    PIXEL_ART_PALETTES.set(hexes, p);
+// Cells of the 2px grid inside a 2D outline (tracer builds the path in local units), cached per key
+function pixelGridMask(key, tracer, box) {
+  if (PIXEL_MASKS[key]) return PIXEL_MASKS[key];
+  if (!PIXEL_MASK_CTX) PIXEL_MASK_CTX = document.createElement('canvas').getContext('2d');
+  const g = PIXEL_MASK_CTX;
+  tracer(g);
+  const G = PIXEL_GRID;
+  const cols = Math.ceil(box.w / G);
+  const rows = Math.ceil(box.h / G);
+  const m = new Uint8Array(cols * rows);
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) m[r * cols + c] = g.isPointInPath(box.x + c * G + G / 2, box.y + r * G + G / 2) ? 1 : 0;
   }
-  return p;
+  PIXEL_MASKS[key] = { m, cols, rows, box };
+  return PIXEL_MASKS[key];
 }
 
-function renderPixelArtLayer(key, box, cell, paletteHex, drawFn) {
-  const w = Math.ceil(box.w / cell);
-  const h = Math.ceil(box.h / cell);
-  let buf = PIXEL_ART_BUFFERS[key];
-  if (!buf) {
-    buf = document.createElement('canvas');
-    buf.width = w;
-    buf.height = h;
-    PIXEL_ART_BUFFERS[key] = buf;
-  }
-  const palette = pixelArtPalette(paletteHex);
-  const b = buf.getContext('2d', { willReadFrequently: true });
-  b.setTransform(1, 0, 0, 1, 0, 0);
-  b.clearRect(0, 0, w, h);
-  b.imageSmoothingEnabled = true;
-  b.setTransform(1 / cell, 0, 0, 1 / cell, -box.x / cell, -box.y / cell);
-  drawFn(b);
-  b.setTransform(1, 0, 0, 1, 0, 0);
-  const img = b.getImageData(0, 0, w, h);
-  const d = img.data;
-  for (let i = 0; i < d.length; i += 4) {
-    if (d[i + 3] < 80) {
-      d[i + 3] = 0;
-      continue;
-    }
-    // un-premultiply partly covered edge pixels before matching
-    const al = d[i + 3] / 255;
-    const r = d[i] / al;
-    const g = d[i + 1] / al;
-    const bl = d[i + 2] / al;
-    let best = 0;
-    let bestD = Infinity;
-    for (let k = 0; k < palette.length; k++) {
-      const p = palette[k];
-      const dist = (p[0] - r) * (p[0] - r) * 0.3 + (p[1] - g) * (p[1] - g) * 0.59 + (p[2] - bl) * (p[2] - bl) * 0.11;
-      if (dist < bestD) {
-        bestD = dist;
-        best = k;
-      }
-    }
-    const p = palette[best];
-    d[i] = p[0];
-    d[i + 1] = p[1];
-    d[i + 2] = p[2];
-    d[i + 3] = 255;
-  }
-  // 1-pixel dark outline round the silhouette (the thin 2D strokes vanish at this size)
-  const solid = new Uint8Array(w * h);
-  for (let i = 0; i < w * h; i++) solid[i] = d[i * 4 + 3] ? 1 : 0;
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < w; x++) {
-      const i = y * w + x;
-      if (solid[i]) continue;
-      if ((x > 0 && solid[i - 1]) || (x < w - 1 && solid[i + 1]) || (y > 0 && solid[i - w]) || (y < h - 1 && solid[i + w])) {
-        d[i * 4] = 11;
-        d[i * 4 + 1] = 16;
-        d[i * 4 + 2] = 32;
-        d[i * 4 + 3] = 255;
+// Fill the mask's cells in runs. inset 1 = only cells whose 4 neighbours are inside too (leaves the car's 2px
+// outline); x0..x1 / y0..y1 limit the band in local units.
+function fillPixelMask(ctx, mask, color, opts = {}) {
+  const { inset = 0, x0 = -Infinity, x1 = Infinity, y0 = -Infinity, y1 = Infinity } = opts;
+  const { m, cols, rows, box } = mask;
+  const G = PIXEL_GRID;
+  const inside = (r, c) => r >= 0 && c >= 0 && r < rows && c < cols && m[r * cols + c] === 1;
+  ctx.fillStyle = color;
+  for (let r = 0; r < rows; r++) {
+    const y = box.y + r * G;
+    if (y < y0 || y >= y1) continue;
+    let run = -1;
+    for (let c = 0; c <= cols; c++) {
+      const x = box.x + c * G;
+      const ok =
+        c < cols && x >= x0 && x < x1 && inside(r, c) && (!inset || (inside(r - 1, c) && inside(r + 1, c) && inside(r, c - 1) && inside(r, c + 1)));
+      if (ok && run < 0) run = c;
+      if (!ok && run >= 0) {
+        ctx.fillRect(box.x + run * G, y, (c - run) * G, G);
+        run = -1;
       }
     }
   }
-  b.putImageData(img, 0, 0);
-  return buf;
 }
+
+// A block the car way: 2px outline, fill, 4px light top band, 4px dark bottom band
+function drawPixelBlock(ctx, x, y, w, h, fill, light, shade, K = PLANE_K) {
+  ctx.fillStyle = K;
+  ctx.fillRect(x - 2, y - 2, w + 4, h + 4);
+  ctx.fillStyle = fill;
+  ctx.fillRect(x, y, w, h);
+  if (light && h > 6) {
+    ctx.fillStyle = light;
+    ctx.fillRect(x, y, w, 4);
+  }
+  if (shade && h > 10) {
+    ctx.fillStyle = shade;
+    ctx.fillRect(x, y + h - 4, w, 4);
+  }
+}
+
+const PIXEL_PLANE_BODY_BOX = { x: -100, y: -10, w: 212, h: 64 };
+const PIXEL_PLANE_FIN_BOX = { x: -104, y: -50, w: 48, h: 64 };
 
 function drawPixelPlaneWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
   const {
@@ -374,6 +365,7 @@ function drawPixelPlaneWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}
     propSpin = true,
     pilotLift = 0,
   } = options;
+  const K = PLANE_K;
   ctx.save();
   ctx.translate(cx, cy);
   ctx.rotate(tiltRad);
@@ -391,17 +383,37 @@ function drawPixelPlaneWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}
     }
   }
 
-  // Same stacking as the 2D plane: tail + seat, the pixel pilot, then cargo + body + wing + propeller
-  const B = PIXEL_PLANE_BOX;
-  const C = PIXEL_PLANE_CELL;
-  const blit = (layer) => {
-    if (typeof document === 'undefined') return;
-    const buf = renderPixelArtLayer('plane-' + layer, B, C, PIXEL_PLANE_PALETTE, (b) =>
-      drawPlaneWithPilot(b, 0, 0, 0, now, { scale: 1, withPilot: false, propSpin, layer })
-    );
-    ctx.drawImage(buf, B.x, B.y, buf.width * C, buf.height * C);
-  };
-  blit('back');
+  // Ski legs, skis, tail skid
+  ctx.fillStyle = K;
+  ctx.fillRect(4, 42, 8, 20);
+  ctx.fillRect(30, 42, 8, 20);
+  ctx.fillRect(-92, 30, 8, 14);
+  ctx.fillStyle = '#475569';
+  ctx.fillRect(6, 44, 4, 16);
+  ctx.fillRect(32, 44, 4, 16);
+  ctx.fillRect(-90, 32, 4, 10);
+  drawPixelBlock(ctx, -14, 60, 68, 6, '#f8fafc', null, null, K);
+  drawPixelBlock(ctx, 56, 54, 8, 6, '#f8fafc', null, null, K);
+  ctx.fillStyle = '#f472b6';
+  ctx.fillRect(-10, 62, 60, 2);
+  drawPixelBlock(ctx, -102, 40, 20, 4, '#e2e8f0', null, null, K);
+
+  // Far-side stabiliser
+  drawPixelBlock(ctx, -112, 10, 34, 8, '#14b8a6', '#5eead4', null, K);
+
+  // Tail fin on the 2D fin's outline: mint, polar-orange top, white pinstripe
+  if (typeof document !== 'undefined') {
+    const fin = pixelGridMask('plane-fin', traceTailFin, PIXEL_PLANE_FIN_BOX);
+    fillPixelMask(ctx, fin, K);
+    fillPixelMask(ctx, fin, '#2dd4bf', { inset: 1 });
+    fillPixelMask(ctx, fin, '#5eead4', { inset: 1, x1: -90 });
+    fillPixelMask(ctx, fin, '#f97316', { inset: 1, y1: -36 });
+    fillPixelMask(ctx, fin, '#ffffff', { inset: 1, y0: -36, y1: -34 });
+    fillPixelMask(ctx, fin, '#0f766e', { inset: 1, y0: -2 });
+  }
+
+  // Seat, pilot, cargo
+  drawPixelBlock(ctx, -36, -30, 12, 30, '#334155', '#475569', null, K);
   drawCarPilot(ctx, true, now, {
     spId,
     isShocked,
@@ -410,7 +422,46 @@ function drawPixelPlaneWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}
     rect: PLANE_PILOT_RECT,
     clip: (c) => c.rect(-70, -140, 140, 142),
   });
-  blit('front');
+  drawPlaneCargo(ctx, true);
+
+  // Egg body on the 2D body's outline: mint with a light top band, white pinstripe, hot-pink band, dark belly,
+  // silver cowling with a seam
+  if (typeof document !== 'undefined') {
+    const body = pixelGridMask('plane-body', tracePlaneBody, PIXEL_PLANE_BODY_BOX);
+    fillPixelMask(ctx, body, K);
+    fillPixelMask(ctx, body, '#2dd4bf', { inset: 1 });
+    fillPixelMask(ctx, body, '#99f6e4', { inset: 1, y1: 6 });
+    fillPixelMask(ctx, body, '#f8fafc', { inset: 1, y0: 24, y1: 26 });
+    fillPixelMask(ctx, body, '#f472b6', { inset: 1, y0: 26, y1: 34 });
+    fillPixelMask(ctx, body, '#be185d', { inset: 1, y0: 34, y1: 36 });
+    fillPixelMask(ctx, body, '#0f766e', { inset: 1, y0: 40 });
+    fillPixelMask(ctx, body, '#cbd5e1', { inset: 1, x0: 72 });
+    fillPixelMask(ctx, body, '#f1f5f9', { inset: 1, x0: 72, y1: 10 });
+    fillPixelMask(ctx, body, '#94a3b8', { inset: 1, x0: 72, y0: 38 });
+    fillPixelMask(ctx, body, K, { inset: 1, x0: 70, x1: 72 });
+  }
+  ctx.fillStyle = '#1f2937';
+  ctx.fillRect(-38, -2, 76, 4);
+  drawPixelHeart(ctx, -54, 16, 2, '#f472b6');
+  ctx.fillStyle = '#334155';
+  ctx.fillRect(76, 40, 4, 2);
+  ctx.fillRect(84, 40, 4, 2);
+
+  // Windscreen
+  drawPixelBlock(ctx, 38, -20, 8, 18, '#7dd3fc', null, null, K);
+  ctx.fillStyle = '#e0f2fe';
+  ctx.fillRect(38, -20, 2, 18);
+
+  // Stubby low wing with an orange tip and nav light
+  drawPixelBlock(ctx, -16, 33, 70, 13, '#f8fafc', '#ffffff', '#cbd5e1', K);
+  ctx.fillStyle = '#f97316';
+  ctx.fillRect(-16, 33, 14, 13);
+  ctx.fillStyle = '#fdba74';
+  ctx.fillRect(-16, 33, 14, 4);
+  ctx.fillStyle = Math.floor(now / 500) % 2 === 0 ? '#22c55e' : '#14532d';
+  ctx.fillRect(46, 37, 4, 4);
+
+  drawPlanePropeller(ctx, now, propSpin, true);
   ctx.restore();
 }
 
