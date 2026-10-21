@@ -532,27 +532,29 @@ const INTRO_TOWN = (() => {
 // 47.7 / (171 / 256) = 71 px box. (Before: natives 124 px = 83 px wide vs pilots 43-62 px, 1.3-1.9x too big.)
 const TOWN_VEHICLE_SCALE = 1.0;
 const TOWN_PENGUIN_SIZE = 71;
-const TOWN_PENGUIN_GAP = 50; // 88 * 71 / 124: the same spacing for the body width as before
 const TOWN_FEET_Y = 460; // walkway line the penguins stand on
-const TOWN_ROW_X = 400; // first friend's box in crash mode, right of the landed vehicle
 const TOWN_BODY_L = 44 / 256; // opaque columns of a native frame
 const TOWN_BODY_R = 214 / 256;
+// Row spacing by the Gestalt proximity principle (closer = one group): the natives stand close together (gap g
+// between bodies) and the vehicle / guest penguin and the tree are set apart from them by 2g, so the row reads as
+// [vehicle] [six natives] [tree]. The natives fill the walkway from the widest vehicle's nose (the ship's, x = 390)
+// to the tree at its original spot on the right (centre 846, widest tier 59 px each side).
+const TOWN_ROW_LEFT = 390;
+const TOWN_TREE_CX = 846;
+const TOWN_TREE_HALF = 59;
+const TOWN_NATIVES = 6;
 
-// Row layout: friends from TOWN_ROW_X, the Christmas tree just behind the last one (overlapping it a little).
-// Skip mode (no vehicle on the left) puts the default penguin first and centres the whole visible row on x = 480.
-function scene5RowLayout(skipped, treeP) {
+// Row layout (see TOWN_ROW_LEFT): solve 5 g + 2 * 2g = free width, then place the six natives and the guest
+function scene5RowLayout() {
   const N = TOWN_PENGUIN_SIZE;
-  const friendsX = [0, 1, 2, 3].map((i) => TOWN_ROW_X + i * TOWN_PENGUIN_GAP);
-  const last = friendsX[3];
-  const treeCx = last + N * TOWN_BODY_R - 12 + 19 * treeP;
-  const heroX = TOWN_ROW_X - TOWN_PENGUIN_GAP;
-  let shift = 0;
-  if (skipped) {
-    const left = heroX + N * TOWN_BODY_L;
-    const right = INTRO_TOWN.id === 'xmas' ? treeCx + 19 * treeP + 2 : last + N * TOWN_BODY_R;
-    shift = Math.round(480 - (left + right) / 2);
-  }
-  return { friendsX: friendsX.map((x) => x + shift), treeCx: treeCx + shift, heroX: heroX + shift };
+  const body = N * (TOWN_BODY_R - TOWN_BODY_L); // 47.4 px
+  const span = TOWN_TREE_CX - TOWN_TREE_HALF - TOWN_ROW_LEFT; // vehicle nose to tree edge
+  const g = (span - TOWN_NATIVES * body) / (TOWN_NATIVES - 1 + 4); // 12.5 px; 2g = 25 px to vehicle and tree
+  const firstLeft = TOWN_ROW_LEFT + 2 * g;
+  const friendsX = Array.from({ length: TOWN_NATIVES }, (_, i) => Math.round(firstLeft + i * (body + g) - N * TOWN_BODY_L));
+  // Skip mode: the default penguin stands where the vehicle would be, 2g left of the natives
+  const heroX = Math.round(firstLeft - 2 * g - body - N * TOWN_BODY_L);
+  return { friendsX, treeCx: TOWN_TREE_CX, heroX, gap: g };
 }
 
 // Escape vehicle picked on the first screen: 'ufo' = light plane (sky-runner.js), 'car' (car-runner.js) or 'boat' =
@@ -1654,7 +1656,7 @@ function setIntroScene(sceneIdx, resetTimer = true) {
 }
 
 function selectMotionPenguin() {
-  ['01', '04', '05', '06', '09', '15'].forEach((id) => ensureSpeciesSprite(id));
+  ['01', '04', '05', '06', '09', '10', '15', '22'].forEach((id) => ensureSpeciesSprite(id));
 }
 
 // Helper: Compute Eye-Blink, 4-Step Walk & Shocked Frame Index (0:idle, 1:blink, 2:walkL, 3:walkR, 4:walkLBlink, 5:walkRBlink, 6:shock)
@@ -2816,7 +2818,7 @@ function initPixelMotionStudio() {
   ensureIntroBackgrounds();
   ensureHero2DSprite();
   ensureDefaultPilotSheets();
-  ['01', '04', '05', '06', '09', '15'].forEach((id) => ensureSpeciesSprite(id));
+  ['01', '04', '05', '06', '09', '10', '15', '22'].forEach((id) => ensureSpeciesSprite(id));
 
   const pilotInput = document.getElementById('ufo-pilot-id-input');
   const s1Input = document.getElementById('scene1-nft-input');
@@ -3489,7 +3491,7 @@ function initPixelMotionStudio() {
 
       const spriteSize = TOWN_PENGUIN_SIZE;
       const spriteY = Math.round(TOWN_FEET_Y - spriteSize * (243 / 256)); // frame feet at row 243
-      const row = scene5RowLayout(MOTION_STATE.skippedEscape, XMAS_TREE_P);
+      const row = scene5RowLayout();
       const s5P = Math.min(1, Math.max(0, elapsed / 6800));
       let ufoRenderY = 418;
 
@@ -3579,12 +3581,16 @@ function initPixelMotionStudio() {
       // 4 Colorful Pixel Penguin Friends on the Right Walking Up & Welcoming the Protagonist
       // Shoulder to shoulder (a small sway so they never bump); the Christmas tree fills the space behind the
       // purple one (scene5RowLayout)
-      const colorfulFriends = [
-        { sp: '05', baseX: row.friendsX[0], y: spriteY + 3, seed: 2, amp: 4, speed: 0.0026 },
-        { sp: '04', baseX: row.friendsX[1], y: spriteY - 1, seed: 3, amp: 4, speed: 0.0023 },
-        { sp: '09', baseX: row.friendsX[2], y: spriteY + 3, seed: 4, amp: 4, speed: 0.0027 },
-        { sp: '06', baseX: row.friendsX[3], y: spriteY - 1, seed: 5, amp: 4, speed: 0.0024 },
-      ];
+      // Six natives, six colours none of which repeats the guest's blue: magenta, teal, orange, green, red and
+      // purple last, next to the tree
+      const colorfulFriends = ['05', '22', '04', '09', '10', '06'].map((sp, i) => ({
+        sp,
+        baseX: row.friendsX[i],
+        y: spriteY + (i % 2 ? -1 : 3),
+        seed: 2 + i,
+        amp: Math.min(4, row.gap / 3), // sway stays inside the gap, so neighbours never touch
+        speed: 0.0023 + (i % 3) * 0.0002,
+      }));
       if (INTRO_TOWN.id === 'xmas') drawPixelXmasTree(ctx, row.treeCx, 462, now);
 
       const walkInP = Math.min(1, s5P / 0.20);
