@@ -543,18 +543,44 @@ const TOWN_ROW_LEFT = 390;
 const TOWN_TREE_CX = 846;
 const TOWN_TREE_HALF = 59;
 const TOWN_NATIVES = 6;
+// Skip mode has no vehicle on the left, so the whole group (guest + natives + tree) is centred on the stage
+// instead, keeping the same 1 : 2 gap ratio and the tree in the right fifth (centre x = 790)
+const TOWN_SKIP_TREE_CX = 790;
 
-// Row layout (see TOWN_ROW_LEFT): solve 5 g + 2 * 2g = free width, then place the six natives and the guest
-function scene5RowLayout() {
+// Town command box (10,000 도감 / 다시 플레이). On a phone the 960px stage is shown ~360px wide, so the box and
+// its text are drawn 1.5x there; the click and hover areas use the same numbers.
+function townMenuLayout() {
+  const c = document.getElementById('pixel-stage-canvas');
+  const k = c && c.getBoundingClientRect().width < 700 ? 1.5 : 1;
+  const w = 332 * k;
+  const h = 78 * k;
+  const x = 480 - w / 2;
+  const y = 176;
+  return { k, w, h, x, y, rowY: (i) => y + (24 + i * 30) * k, split: y + 39 * k };
+}
+
+// Row layout (see TOWN_ROW_LEFT): solve 5 g + 2 * 2g = free width, then place the six natives and the guest.
+// Skip mode: the guest takes the vehicle's place, so solve guest + 5 g + 2 * 2g between a left edge and the tree
+// that mirror each other about x = 480 (g = 32 px).
+function scene5RowLayout(skipped = false) {
   const N = TOWN_PENGUIN_SIZE;
   const body = N * (TOWN_BODY_R - TOWN_BODY_L); // 47.4 px
-  const span = TOWN_TREE_CX - TOWN_TREE_HALF - TOWN_ROW_LEFT; // vehicle nose to tree edge
-  const g = (span - TOWN_NATIVES * body) / (TOWN_NATIVES - 1 + 4); // 12.5 px; 2g = 25 px to vehicle and tree
-  const firstLeft = TOWN_ROW_LEFT + 2 * g;
+  let treeCx = TOWN_TREE_CX;
+  let left = TOWN_ROW_LEFT;
+  let g;
+  if (skipped) {
+    treeCx = TOWN_SKIP_TREE_CX;
+    const groupLeft = 960 - (treeCx + TOWN_TREE_HALF);
+    g = (treeCx - TOWN_TREE_HALF - groupLeft - (TOWN_NATIVES + 1) * body) / (TOWN_NATIVES - 1 + 4);
+    left = groupLeft + body; // the guest's right edge plays the vehicle's nose
+  } else {
+    g = (treeCx - TOWN_TREE_HALF - left - TOWN_NATIVES * body) / (TOWN_NATIVES - 1 + 4); // 12.5 px
+  }
+  const firstLeft = left + 2 * g;
   const friendsX = Array.from({ length: TOWN_NATIVES }, (_, i) => Math.round(firstLeft + i * (body + g) - N * TOWN_BODY_L));
   // Skip mode: the default penguin stands where the vehicle would be, 2g left of the natives
   const heroX = Math.round(firstLeft - 2 * g - body - N * TOWN_BODY_L);
-  return { friendsX, treeCx: TOWN_TREE_CX, heroX, gap: g };
+  return { friendsX, treeCx, heroX, gap: g };
 }
 
 // Escape vehicle picked on the first screen: 'ufo' = light plane (sky-runner.js), 'car' (car-runner.js) or 'boat' =
@@ -3022,11 +3048,13 @@ function initPixelMotionStudio() {
         return;
       }
       // Clicking RPG Command Box options
-      if (mx >= 310 && mx <= 650 && my >= 176 && my <= 218) {
+      const menu = townMenuLayout();
+      const inMenuX = mx >= menu.x - 20 && mx <= menu.x + menu.w + 20;
+      if (inMenuX && my >= menu.y && my < menu.split) {
         scrollToSection('tab-codex');
         return;
       }
-      if (mx >= 310 && mx <= 650 && my >= 219 && my <= 264) {
+      if (inMenuX && my >= menu.split && my <= menu.y + menu.h + 10) {
         MOTION_STATE.skippedEscape = false;
         setIntroScene(0, true);
         return;
@@ -3047,8 +3075,9 @@ function initPixelMotionStudio() {
   canvas.addEventListener('mousemove', (e) => {
     const { mx, my } = getLogicalCoords(e.clientX, e.clientY);
     if (MOTION_STATE.sceneIdx === 4) {
-      if (my >= 176 && my < 219) MOTION_STATE.menuHoverIdx = 0;
-      else if (my >= 219 && my <= 268) MOTION_STATE.menuHoverIdx = 1;
+      const menu = townMenuLayout();
+      if (my >= menu.y && my < menu.split) MOTION_STATE.menuHoverIdx = 0;
+      else if (my >= menu.split && my <= menu.y + menu.h + 14) MOTION_STATE.menuHoverIdx = 1;
     }
   });
 
@@ -3464,10 +3493,12 @@ function initPixelMotionStudio() {
       drawArcadePixelWord(ctx, 'PENGUIN', 480, logoTopY + 46, 4.5);
       drawPixelOutlinedSubtitle(ctx, 'PPENG · 10,000 VERYCHAT PFP', 480, logoTopY + 108);
 
-      const menuW = 332;
-      const menuH = 78;
-      const menuX = 480 - menuW / 2;
-      const menuY = 176;
+      const menu = townMenuLayout();
+      const mk = menu.k;
+      const menuW = menu.w;
+      const menuH = menu.h;
+      const menuX = menu.x;
+      const menuY = menu.y;
 
       ctx.fillStyle = 'rgba(9, 11, 20, 0.55)';
       ctx.fillRect(menuX + 4, menuY + 6, menuW + 4, menuH + 4);
@@ -3486,23 +3517,23 @@ function initPixelMotionStudio() {
           : ['10,000 CODEX', 'PLAY AGAIN'];
 
       menuItems.forEach((mText, idx) => {
-        const rowY = menuY + 24 + idx * 30;
+        const rowY = menu.rowY(idx);
         const isSelected = (MOTION_STATE.menuHoverIdx % 2) === idx;
         if (isSelected) {
           ctx.fillStyle = 'rgba(255, 77, 109, 0.22)';
-          ctx.fillRect(menuX + 10, rowY - 12, menuW - 20, 24);
-          drawPixelHeart(ctx, menuX + 28, rowY, 2.3, '#ff4d6d');
+          ctx.fillRect(menuX + 10 * mk, rowY - 12 * mk, menuW - 20 * mk, 24 * mk);
+          drawPixelHeart(ctx, menuX + 28 * mk, rowY, 2.3 * mk, '#ff4d6d');
         }
         ctx.fillStyle = isSelected ? '#ffffff' : '#94a3b8';
-        ctx.font = '900 15px "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
+        ctx.font = `900 ${15 * mk}px "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif`;
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        ctx.fillText(mText, menuX + 46, rowY + 1);
+        ctx.fillText(mText, menuX + 46 * mk, rowY + 1);
       });
 
       const spriteSize = TOWN_PENGUIN_SIZE;
       const spriteY = Math.round(TOWN_FEET_Y - spriteSize * (243 / 256)); // frame feet at row 243
-      const row = scene5RowLayout();
+      const row = scene5RowLayout(MOTION_STATE.skippedEscape);
       const s5P = Math.min(1, Math.max(0, elapsed / 6800));
       let ufoRenderY = 418;
 
