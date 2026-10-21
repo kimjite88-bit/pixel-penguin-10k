@@ -689,7 +689,8 @@ body.ufo-fullscreen-lock {
   color: var(--text-2);
   font-size: 14.5px;
   line-height: 1.7;
-  max-width: 58ch;
+  max-width: 62ch;
+  word-break: keep-all;
 }
 
 .hero-kpis {
@@ -1835,12 +1836,94 @@ body.ufo-fullscreen-lock {
 }
 
 /* ===== Responsive ===== */
+/* PC & tablet landscape: two side-by-side cards left a tall empty gap under the intro text, so stack them:
+   a wide intro band (text | KPIs) and a wide PFP preview (preview | presets) */
+@media (min-width: 861px) {
+  .hero-section {
+    grid-template-columns: 1fr;
+  }
+  .hero-left {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(300px, 1fr);
+    align-items: center;
+    column-gap: 36px;
+  }
+  .hero-desc {
+    font-size: 15px;
+  }
+  .hero-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    border-top: none;
+    padding-top: 0;
+  }
+  .hero-kpis .kpi-box,
+  .hero-kpis .kpi-box:first-child {
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--bg);
+  }
+  .hero-kpis .kpi-val {
+    font-size: 17px;
+  }
+}
+
+@media (min-width: 1061px) {
+  .hero-right {
+    display: grid;
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 14px 22px;
+  }
+  .pfp-studio-header {
+    grid-column: 1 / -1;
+  }
+  .pfp-stage {
+    grid-template-columns: 168px minmax(0, 1fr);
+    gap: 18px;
+    padding: 16px 18px;
+  }
+  .pfp-Frame-wrap,
+  .pfp-hex-stage-shell {
+    width: 168px;
+  }
+  .pfp-hex-stage-shell {
+    height: 168px;
+  }
+  .pfp-preset-box {
+    border-top: none;
+    padding-top: 0;
+  }
+}
+
 @media (max-width: 1060px) {
   .hero-section {
     grid-template-columns: 1fr;
   }
   .toolbar-traits-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* tablet / small laptop: preview stays stacked, so one row of 14 thumbnails instead of 7x2 giant tiles */
+@media (min-width: 601px) and (max-width: 1060px) {
+  .pfp-Mini-selector {
+    grid-template-columns: repeat(14, minmax(0, 1fr));
+  }
+  .pfp-stage {
+    grid-template-columns: 150px minmax(0, 1fr);
+    gap: 18px;
+  }
+  .pfp-Frame-wrap,
+  .pfp-hex-stage-shell {
+    width: 150px;
+  }
+  .pfp-hex-stage-shell {
+    height: 150px;
+  }
+  .pfp-mock-chat {
+    max-width: 480px;
   }
 }
 
