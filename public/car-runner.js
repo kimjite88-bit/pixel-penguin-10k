@@ -1766,7 +1766,7 @@ function drawCarRunnerFrame(ctx, now, spId) {
 // Parked on the ice-canyon background: plane on the igloo plateau (snow line y = 296), car on the floe
 // right of the beam (y = 366)
 const SCENE0_CAR_SPOT = { x: 880, y: 366 - 57 * 0.64, tilt: 0, scale: 0.64 };
-const SCENE0_UFO_SPOT = { x: 330, y: 296 - 51 * 0.72, tilt: 0, scale: 0.72 }; // the plane ('ufo' key kept for saved picks + the board)
+const SCENE0_UFO_SPOT = { x: 320, y: 296 - 66 * 0.74, tilt: 0, scale: 0.74 }; // the plane ('ufo' key kept for saved picks + the board)
 
 function drawScene0VehiclePicker(ctx, now) {
   const isCar = MOTION_STATE.vehicle === 'car';
@@ -1784,14 +1784,14 @@ function drawScene0VehiclePicker(ctx, now) {
   // Parked plane (prop still) and car, each with a contact shadow
   ctx.fillStyle = 'rgba(9, 13, 26, 0.28)';
   ctx.beginPath();
-  ctx.ellipse(plane.x + 40 * plane.scale, plane.y + 51 * plane.scale, 70 * plane.scale, 5, 0, 0, Math.PI * 2);
+  ctx.ellipse(plane.x + 20 * plane.scale, plane.y + 66 * plane.scale, 60 * plane.scale, 5, 0, 0, Math.PI * 2);
   ctx.ellipse(car.x, car.y + 57 * car.scale, 86 * car.scale, 5, 0, 0, Math.PI * 2);
   ctx.fill();
   drawPlaneWithPilot(ctx, plane.x, plane.y, plane.tilt, now, { scale: plane.scale, withPilot: false, propSpin: !isCar && Math.floor(now / 1600) % 2 === 0 });
   drawCarWithPilot(ctx, car.x, car.y, car.tilt, now, { scale: car.scale, withPilot: false, lightsOn: isCar, wheelAngle: 0 });
 
   // Bouncing pixel marker + label over the chosen vehicle
-  const target = isCar ? { x: car.x - 10, y: car.y - 60 * car.scale - 6 } : { x: plane.x, y: plane.y - 56 * plane.scale - 4 };
+  const target = isCar ? { x: car.x - 10, y: car.y - 60 * car.scale - 6 } : { x: plane.x - 20, y: plane.y - 46 * plane.scale - 4 };
   const bounce = Math.floor(now / 260) % 2 === 0 ? 0 : -4;
   const label = isCar ? (CURRENT_LANG === 'ko' ? '자동차' : 'CAR') : CURRENT_LANG === 'ko' ? '경비행기' : 'PLANE';
   const accent = isCar ? '#f472b6' : '#fb923c';
@@ -1825,7 +1825,7 @@ function scene0VehicleAt(mx, my) {
   const c = SCENE0_CAR_SPOT;
   if (mx >= c.x - 110 * c.scale && mx <= c.x + 110 * c.scale && my >= c.y - 80 * c.scale && my <= c.y + 60 * c.scale) return 'car';
   const p = SCENE0_UFO_SPOT;
-  if (mx >= p.x - 170 * p.scale && mx <= p.x + 165 * p.scale && my >= p.y - 60 * p.scale && my <= p.y + 55 * p.scale) return 'ufo';
+  if (mx >= p.x - 115 * p.scale && mx <= p.x + 120 * p.scale && my >= p.y - 50 * p.scale && my <= p.y + 70 * p.scale) return 'ufo';
   return null;
 }
 

@@ -1,137 +1,98 @@
 // ============================================================================
-// LIGHT PLANE (경비행기) — replaces the UFO. An open-cockpit, low-wing, two-seat tandem trainer in the
-// Ryan ST layout (open cockpits in tandem, wing under the fuselage), so nothing sits above the penguin:
-// the NFT pilot rides in the rear cockpit from the waist up like the car's driver. Polar touches:
-// skis instead of wheels and a high-visibility orange livery (open-cockpit Gipsy Moths and the Auster
-// Antarctic flew in Antarctica). No guns: storms have to be flown around.
-// Origin = rear cockpit rim under the pilot, facing right; skis touch y = +51.
+// LIGHT PLANE (경비행기) — replaces the UFO. A super-deformed ("egg plane") open-cockpit trainer:
+// real low-wing open-cockpit layout (Ryan ST) squeezed to toy proportions like Hasegawa's Egg Plane
+// kits, so it sits next to the car at the same size (about 1.6:1 with the pilot). Same mint / hot-pink
+// paint as the car; polar orange only on the fin and wing tip; skis for the ice. Nothing above the
+// pilot: the NFT penguin rides in the cockpit at the car driver's size.
+// Origin = cockpit rim under the pilot, facing right; skis touch y = +66.
 // ============================================================================
 const PLANE_CFG = {
-  SKI_BOTTOM: 51,
-  // Hit shapes (local units): ellipse around fuselage + wing, circle around the pilot's head and chest
-  HIT_CX: -2,
-  HIT_CY: 6,
-  HIT_RX: 150,
-  HIT_RY: 20,
-  PILOT_CX: 0,
-  PILOT_CY: -34,
-  PILOT_R: 30,
+  SKI_BOTTOM: 66,
 };
 const PLANE_K = '#0b1020';
 const PLANE_PILOT_RECT = { x: -40, y: -74, size: 79 }; // same size as the car's driver
 
-function tracePlaneFuselage(ctx) {
+function tracePlaneBody(ctx) {
   ctx.beginPath();
-  ctx.moveTo(138, -14);
-  ctx.quadraticCurveTo(150, -12, 152, -1);
-  ctx.quadraticCurveTo(150, 12, 138, 15);
-  ctx.lineTo(60, 22);
-  ctx.lineTo(-40, 20);
-  ctx.lineTo(-150, 4);
-  ctx.lineTo(-157, 0);
-  ctx.lineTo(-155, -8);
-  ctx.lineTo(-70, -6);
-  // Headrest fairing behind the rear cockpit
-  ctx.quadraticCurveTo(-60, -20, -42, -4);
-  ctx.lineTo(-38, 0);
-  ctx.lineTo(38, 0);
-  ctx.lineTo(54, -4);
-  ctx.lineTo(128, -14);
+  ctx.moveTo(-98, 14);
+  ctx.quadraticCurveTo(-72, -8, -34, -1);
+  ctx.lineTo(34, 0);
+  ctx.quadraticCurveTo(74, -2, 94, 14);
+  ctx.quadraticCurveTo(108, 27, 94, 40);
+  ctx.quadraticCurveTo(44, 52, -18, 45);
+  ctx.quadraticCurveTo(-72, 38, -98, 14);
   ctx.closePath();
 }
 
-function drawPlaneFrontCargo(ctx, pixelMode) {
-  // Front cockpit carries the season's load (gifts in winter, a duffel otherwise)
+function traceTailFin(ctx) {
+  ctx.beginPath();
+  ctx.moveTo(-58, 2);
+  ctx.lineTo(-80, -38);
+  ctx.quadraticCurveTo(-90, -52, -102, -42);
+  ctx.lineTo(-100, 12);
+  ctx.closePath();
+}
+
+function drawPlaneCargo(ctx, pixelMode) {
+  // Behind the pilot on the tail deck, like the car's rear deck
   ctx.strokeStyle = PLANE_K;
   ctx.lineWidth = 2;
   if (INTRO_TOWN.id === 'xmas') {
     ctx.fillStyle = '#ef4444';
-    ctx.fillRect(72, -22, 20, 18);
-    if (!pixelMode) ctx.strokeRect(72, -22, 20, 18);
+    ctx.fillRect(-66, -18, 20, 15);
+    if (!pixelMode) ctx.strokeRect(-66, -18, 20, 15);
     ctx.fillStyle = '#fde047';
-    ctx.fillRect(80, -22, 4, 18);
+    ctx.fillRect(-58, -18, 4, 15);
     ctx.fillStyle = '#22c55e';
-    ctx.fillRect(76, -34, 13, 12);
-    if (!pixelMode) ctx.strokeRect(76, -34, 13, 12);
-    ctx.fillStyle = '#f8fafc';
-    ctx.fillRect(81, -34, 3, 12);
+    ctx.fillRect(-62, -28, 13, 10);
+    if (!pixelMode) ctx.strokeRect(-62, -28, 13, 10);
   } else {
-    ctx.fillStyle = '#0f766e';
-    ctx.fillRect(70, -20, 26, 16);
-    if (!pixelMode) ctx.strokeRect(70, -20, 26, 16);
-    ctx.fillStyle = '#f472b6';
-    ctx.fillRect(70, -14, 26, 3);
+    ctx.fillStyle = '#1f2937';
+    ctx.fillRect(-68, -18, 24, 14);
+    ctx.fillStyle = '#94a3b8';
+    ctx.fillRect(-65, -15, 7, 7);
+    ctx.fillRect(-54, -15, 7, 7);
   }
 }
 
 function drawPlanePropeller(ctx, now, spinning, pixelMode) {
-  const px = 157;
+  const px = 110;
+  const py = 27;
   if (spinning) {
     ctx.fillStyle = 'rgba(148, 163, 184, 0.32)';
     if (pixelMode) {
-      ctx.fillRect(px - 2, -46, 4, 92);
+      ctx.fillRect(px - 2, py - 38, 4, 76);
     } else {
       ctx.beginPath();
-      ctx.ellipse(px, 0, 3.5, 47, 0, 0, Math.PI * 2);
+      ctx.ellipse(px, py, 3.5, 38, 0, 0, Math.PI * 2);
       ctx.fill();
     }
-    // Blade seen edge-on: its visible length follows the rotation
-    const L = Math.abs(Math.cos(now * 0.09)) * 46;
+    const L = Math.abs(Math.cos(now * 0.09)) * 37;
     ctx.fillStyle = 'rgba(30, 41, 59, 0.75)';
-    ctx.fillRect(px - 1.5, -L, 3, L * 2);
+    ctx.fillRect(px - 1.5, py - L, 3, L * 2);
     ctx.fillStyle = '#facc15';
-    ctx.fillRect(px - 1.5, -L, 3, 4);
-    ctx.fillRect(px - 1.5, L - 4, 3, 4);
+    ctx.fillRect(px - 1.5, py - L, 3, 4);
+    ctx.fillRect(px - 1.5, py + L - 4, 3, 4);
   } else {
-    // Stopped after the crash landing: one blade bent back
     ctx.fillStyle = '#334155';
-    ctx.fillRect(px - 2, -40, 4, 40);
+    ctx.fillRect(px - 2, py - 32, 4, 32);
     ctx.save();
-    ctx.translate(px, 0);
+    ctx.translate(px, py);
     ctx.rotate(-0.5);
-    ctx.fillRect(-2, 0, 4, 36);
+    ctx.fillRect(-2, 0, 4, 28);
     ctx.restore();
   }
-  ctx.fillStyle = '#e2e8f0';
+  // Pink spinner, like the car's wheel caps
+  ctx.fillStyle = '#f472b6';
   ctx.strokeStyle = PLANE_K;
   ctx.lineWidth = 1.8;
   ctx.beginPath();
-  ctx.moveTo(151, -9);
-  ctx.quadraticCurveTo(165, -2, 164, 0);
-  ctx.quadraticCurveTo(165, 2, 151, 9);
+  ctx.moveTo(101, py - 9);
+  ctx.quadraticCurveTo(117, py - 2, 116, py);
+  ctx.quadraticCurveTo(117, py + 2, 101, py + 9);
   ctx.closePath();
   ctx.fill();
   if (!pixelMode) ctx.stroke();
-}
-
-function drawPlaneSkis(ctx) {
-  ctx.strokeStyle = '#334155';
-  ctx.lineWidth = 3.5;
-  ctx.beginPath();
-  ctx.moveTo(30, 22);
-  ctx.lineTo(40, 46);
-  ctx.moveTo(56, 22);
-  ctx.lineTo(50, 46);
-  ctx.moveTo(-146, 2);
-  ctx.lineTo(-148, 12);
-  ctx.stroke();
-  ctx.fillStyle = '#e2e8f0';
-  ctx.strokeStyle = PLANE_K;
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(8, 46);
-  ctx.lineTo(80, 46);
-  ctx.quadraticCurveTo(90, 45, 92, 38);
-  ctx.lineTo(94, 39);
-  ctx.quadraticCurveTo(92, 51, 80, 51);
-  ctx.lineTo(8, 51);
-  ctx.closePath();
-  ctx.fill();
-  ctx.stroke();
-  ctx.fillStyle = '#ea580c';
-  ctx.fillRect(12, 47.5, 64, 2);
-  ctx.fillStyle = '#e2e8f0';
-  ctx.fillRect(-160, 12, 24, 3);
 }
 
 // Smooth 2D plane (scenes 1–3)
@@ -150,22 +111,68 @@ function drawPlaneWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
   ctx.rotate(tiltRad);
   ctx.scale(scale, scale);
   ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
 
-  drawPlaneSkis(ctx);
-
-  // Far-side stabiliser
-  ctx.fillStyle = '#c2410c';
+  // Ski legs + fat skis, tail skid
+  ctx.strokeStyle = '#334155';
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(4, 44);
+  ctx.lineTo(10, 62);
+  ctx.moveTo(36, 44);
+  ctx.lineTo(32, 62);
+  ctx.moveTo(-86, 32);
+  ctx.lineTo(-92, 42);
+  ctx.stroke();
+  ctx.fillStyle = '#f8fafc';
   ctx.strokeStyle = PLANE_K;
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.roundRect(-170, -3, 50, 7, 3);
+  ctx.moveTo(-14, 60);
+  ctx.lineTo(54, 60);
+  ctx.quadraticCurveTo(64, 59, 66, 52);
+  ctx.lineTo(68, 53);
+  ctx.quadraticCurveTo(66, 66, 54, 66);
+  ctx.lineTo(-14, 66);
+  ctx.quadraticCurveTo(-18, 63, -14, 60);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  ctx.fillStyle = '#f472b6';
+  ctx.fillRect(-10, 62, 60, 2);
+  ctx.fillStyle = '#e2e8f0';
+  ctx.fillRect(-102, 41, 20, 3);
+
+  // Far-side stabiliser
+  ctx.fillStyle = '#14b8a6';
+  ctx.strokeStyle = PLANE_K;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(-112, 10, 34, 9, 4);
   ctx.fill();
   ctx.stroke();
 
-  // Seat back, pilot (waist hidden by the cockpit rim) and the front-cockpit load
+  // Tail fin: mint with a polar-orange top
+  traceTailFin(ctx);
+  ctx.fillStyle = '#2dd4bf';
+  ctx.fill();
+  ctx.save();
+  traceTailFin(ctx);
+  ctx.clip();
+  ctx.fillStyle = '#f97316';
+  ctx.fillRect(-110, -60, 50, 24);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(-110, -36, 50, 3);
+  ctx.restore();
+  traceTailFin(ctx);
+  ctx.strokeStyle = PLANE_K;
+  ctx.lineWidth = 2.2;
+  ctx.stroke();
+
+  // Seat back, pilot and cargo
   ctx.fillStyle = '#1e293b';
   ctx.beginPath();
-  ctx.roundRect(-34, -30, 12, 32, 4);
+  ctx.roundRect(-36, -30, 12, 32, 4);
   ctx.fill();
   if (withPilot) {
     drawCarPilot(ctx, false, now, {
@@ -174,122 +181,99 @@ function drawPlaneWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
       isImpactBlink,
       lift: pilotLift,
       rect: PLANE_PILOT_RECT,
-      clip: (c) => c.rect(-70, -140, 140, 143),
+      clip: (c) => c.rect(-70, -140, 140, 142),
     });
   }
-  drawPlaneFrontCargo(ctx, false);
+  drawPlaneCargo(ctx, false);
 
-  // Fuselage: orange top, white belly, navy cheat line, polished cowling
-  tracePlaneFuselage(ctx);
-  const paint = ctx.createLinearGradient(0, -20, 0, 22);
-  paint.addColorStop(0, '#fb923c');
-  paint.addColorStop(0.6, '#ea580c');
-  paint.addColorStop(1, '#c2410c');
+  // Egg body: mint paint, white pinstripe, hot-pink band, silver cowling
+  tracePlaneBody(ctx);
+  const paint = ctx.createLinearGradient(0, -4, 0, 48);
+  paint.addColorStop(0, '#a7f3e8');
+  paint.addColorStop(0.4, '#2dd4bf');
+  paint.addColorStop(1, '#0f766e');
   ctx.fillStyle = paint;
   ctx.fill();
   ctx.save();
-  tracePlaneFuselage(ctx);
+  tracePlaneBody(ctx);
   ctx.clip();
-  ctx.fillStyle = '#f8fafc';
-  ctx.fillRect(-170, 9, 330, 16);
-  ctx.fillStyle = '#1e3a8a';
-  ctx.fillRect(-170, 5, 330, 4);
-  const cowl = ctx.createLinearGradient(0, -16, 0, 16);
-  cowl.addColorStop(0, '#f1f5f9');
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+  ctx.fillRect(-110, 24, 230, 1.8);
+  ctx.fillStyle = '#f472b6';
+  ctx.fillRect(-110, 27, 230, 8);
+  ctx.fillStyle = '#be185d';
+  ctx.fillRect(-110, 35, 230, 2);
+  const cowl = ctx.createLinearGradient(0, 0, 0, 46);
+  cowl.addColorStop(0, '#f8fafc');
   cowl.addColorStop(0.5, '#94a3b8');
   cowl.addColorStop(1, '#e2e8f0');
   ctx.fillStyle = cowl;
-  ctx.fillRect(110, -20, 50, 40);
-  ctx.strokeStyle = 'rgba(11, 16, 32, 0.4)';
-  ctx.lineWidth = 1.4;
-  ctx.beginPath();
-  ctx.moveTo(110, -20);
-  ctx.lineTo(110, 20);
-  ctx.moveTo(126, -18);
-  ctx.lineTo(126, 18);
-  ctx.stroke();
+  ctx.fillRect(70, -6, 50, 56);
+  ctx.fillStyle = 'rgba(11, 16, 32, 0.35)';
+  ctx.fillRect(70, -6, 2, 56);
   ctx.restore();
-  tracePlaneFuselage(ctx);
+  tracePlaneBody(ctx);
   ctx.strokeStyle = PLANE_K;
   ctx.lineWidth = 2.4;
   ctx.stroke();
-  // Cockpit rims, exhaust stubs, letters
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(-60, 6);
+  ctx.quadraticCurveTo(-40, 3, -30, 4);
+  ctx.moveTo(40, 4);
+  ctx.lineTo(64, 6);
+  ctx.stroke();
   ctx.fillStyle = '#1f2937';
   ctx.beginPath();
-  ctx.roundRect(-40, -2, 80, 5, 2.5);
-  ctx.roundRect(64, -10, 36, 5, 2.5);
+  ctx.roundRect(-38, -2, 76, 5, 2.5);
   ctx.fill();
+  drawPixelHeart(ctx, -54, 16, 1.6, '#f472b6');
   ctx.fillStyle = '#334155';
-  [116, 124, 132].forEach((x) => ctx.fillRect(x, 8, 5, 3));
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '900 11px "Pretendard", "Malgun Gothic", sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('PPENG', -102, 0);
-  drawPixelHeart(ctx, -66, 12, 1.5, '#f472b6');
+  [76, 84].forEach((x) => ctx.fillRect(x, 40, 5, 3));
 
-  // Small windscreens in front of each cockpit
-  ctx.fillStyle = 'rgba(186, 230, 253, 0.4)';
+  // Windscreen
+  ctx.fillStyle = 'rgba(186, 230, 253, 0.42)';
   ctx.strokeStyle = PLANE_K;
   ctx.lineWidth = 1.8;
-  [
-    [36, 0, 50, -3, 44, -22, 38, -22],
-    [100, -11, 110, -13, 106, -28, 100, -28],
-  ].forEach(([x1, y1, x2, y2, x3, y3, x4, y4]) => {
-    ctx.beginPath();
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
-    ctx.lineTo(x3, y3);
-    ctx.lineTo(x4, y4);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-  });
-
-  // Tail fin with rudder line
-  ctx.fillStyle = '#ea580c';
-  ctx.strokeStyle = PLANE_K;
-  ctx.lineWidth = 2.2;
   ctx.beginPath();
-  ctx.moveTo(-116, -4);
-  ctx.lineTo(-142, -52);
-  ctx.lineTo(-158, -52);
-  ctx.lineTo(-157, -4);
+  ctx.moveTo(36, 0);
+  ctx.lineTo(50, -2);
+  ctx.lineTo(45, -22);
+  ctx.lineTo(39, -22);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = '#f8fafc';
-  ctx.fillRect(-156, -46, 14, 6);
-  ctx.strokeStyle = 'rgba(11, 16, 32, 0.45)';
-  ctx.lineWidth = 1.4;
-  ctx.beginPath();
-  ctx.moveTo(-148, -50);
-  ctx.lineTo(-144, -6);
-  ctx.stroke();
 
-  // Low wing under the fuselage (near side), orange tip band, nav light
-  const wing = ctx.createLinearGradient(0, 14, 0, 28);
+  // Stubby low wing (near side) with an orange tip and nav light
+  const wing = ctx.createLinearGradient(0, 32, 0, 46);
   wing.addColorStop(0, '#ffffff');
   wing.addColorStop(1, '#cbd5e1');
   ctx.fillStyle = wing;
   ctx.strokeStyle = PLANE_K;
   ctx.lineWidth = 2.2;
   ctx.beginPath();
-  ctx.moveTo(-20, 16);
-  ctx.lineTo(84, 14);
-  ctx.quadraticCurveTo(98, 16, 98, 21);
-  ctx.quadraticCurveTo(96, 27, 84, 27);
-  ctx.lineTo(-16, 26);
-  ctx.closePath();
+  ctx.roundRect(-16, 33, 70, 13, 6.5);
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = '#ea580c';
-  ctx.fillRect(-14, 18, 14, 7);
+  ctx.fillStyle = '#f97316';
+  ctx.beginPath();
+  ctx.roundRect(-16, 33, 15, 13, [6.5, 0, 0, 6.5]);
+  ctx.fill();
   ctx.fillStyle = Math.floor(now / 500) % 2 === 0 ? '#22c55e' : '#14532d';
-  ctx.fillRect(92, 19, 3, 3);
+  ctx.fillRect(47, 37, 3, 3);
 
   drawPlanePropeller(ctx, now, propSpin, false);
   ctx.restore();
+}
+
+function fillPlanePixelEllipse(ctx, cx, cy, rx, ry, color) {
+  ctx.fillStyle = color;
+  for (let y = -ry; y < ry; y += 2) {
+    const yy = y + 1;
+    const half = Math.round((rx * Math.sqrt(Math.max(0, 1 - (yy * yy) / (ry * ry)))) / 2) * 2;
+    if (half > 0) ctx.fillRect(cx - half, cy + y, half * 2, 2);
+  }
 }
 
 // 16-bit pixel plane (scenes 3–5)
@@ -312,118 +296,101 @@ function drawPixelPlaneWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}
   if (showSmoke) {
     for (let s = 0; s < 3; s++) {
       const sp = (now * 0.0022 + s * 0.33) % 1;
-      const sx = Math.round((126 + sp * 16) / 4) * 4;
-      const sy = Math.round((-20 - sp * 34) / 4) * 4;
+      const sx = Math.round((84 + sp * 16) / 4) * 4;
+      const sy = Math.round((-4 - sp * 34) / 4) * 4;
       const sz = s % 2 === 0 ? 8 : 6;
       ctx.fillStyle = s % 2 === 0 ? 'rgba(100, 116, 139, 0.75)' : 'rgba(250, 204, 21, 0.72)';
       ctx.fillRect(sx, sy, sz, sz);
     }
   }
 
-  // Skis + legs
+  // Skis, legs, tail skid
   ctx.fillStyle = '#334155';
-  ctx.fillRect(34, 22, 4, 24);
-  ctx.fillRect(52, 22, 4, 24);
-  ctx.fillRect(-148, 2, 3, 10);
+  ctx.fillRect(6, 44, 4, 18);
+  ctx.fillRect(32, 44, 4, 18);
+  ctx.fillRect(-90, 32, 4, 10);
   ctx.fillStyle = PLANE_K;
-  ctx.fillRect(6, 44, 78, 8);
-  ctx.fillRect(84, 38, 8, 8);
+  ctx.fillRect(-16, 58, 72, 10);
+  ctx.fillRect(56, 52, 8, 8);
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(-14, 60, 68, 6);
+  ctx.fillRect(56, 54, 6, 6);
+  ctx.fillStyle = '#f472b6';
+  ctx.fillRect(-10, 62, 60, 2);
   ctx.fillStyle = '#e2e8f0';
-  ctx.fillRect(8, 46, 74, 4);
-  ctx.fillRect(84, 40, 6, 6);
-  ctx.fillStyle = '#ea580c';
-  ctx.fillRect(12, 48, 64, 2);
-  ctx.fillStyle = '#e2e8f0';
-  ctx.fillRect(-160, 12, 24, 4);
+  ctx.fillRect(-102, 40, 20, 4);
 
-  // Stabiliser
+  // Stabiliser + stepped fin
   ctx.fillStyle = PLANE_K;
-  ctx.fillRect(-172, -4, 54, 10);
-  ctx.fillStyle = '#c2410c';
-  ctx.fillRect(-170, -2, 50, 6);
+  ctx.fillRect(-114, 8, 38, 13);
+  ctx.fillStyle = '#14b8a6';
+  ctx.fillRect(-112, 10, 34, 9);
+  const fin = [
+    [-100, -46, 12, 10],
+    [-100, -36, 18, 12],
+    [-100, -24, 26, 14],
+    [-100, -10, 36, 14],
+  ];
+  ctx.fillStyle = PLANE_K;
+  fin.forEach(([x, y, w, h]) => ctx.fillRect(x - 2, y - 2, w + 4, h + 4));
+  ctx.fillStyle = '#2dd4bf';
+  fin.forEach(([x, y, w, h]) => ctx.fillRect(x, y, w, h));
+  ctx.fillStyle = '#f97316';
+  ctx.fillRect(-100, -46, 12, 10);
+  ctx.fillRect(-100, -36, 18, 4);
 
-  // Seat, pilot, front load
+  // Seat, pilot, cargo
   ctx.fillStyle = PLANE_K;
-  ctx.fillRect(-36, -32, 16, 34);
+  ctx.fillRect(-38, -32, 16, 34);
   ctx.fillStyle = '#334155';
-  ctx.fillRect(-34, -30, 12, 30);
+  ctx.fillRect(-36, -30, 12, 30);
   drawCarPilot(ctx, true, now, {
     spId,
     isShocked,
     isImpactBlink: forceBlink,
     lift: pilotLift,
     rect: PLANE_PILOT_RECT,
-    clip: (c) => c.rect(-70, -140, 140, 143),
+    clip: (c) => c.rect(-70, -140, 140, 142),
   });
-  drawPlaneFrontCargo(ctx, true);
+  drawPlaneCargo(ctx, true);
 
-  // Fuselage blocks (stepped taper)
-  const body = [
-    [-38, 0, 92, 22],
-    [54, -6, 56, 28],
-    [110, -14, 42, 30],
-    [-80, -4, 42, 22],
-    [-120, -2, 40, 18],
-    [-156, -6, 36, 12],
-    [-66, -14, 22, 10],
-  ];
-  ctx.fillStyle = PLANE_K;
-  body.forEach(([x, y, w, h]) => ctx.fillRect(x - 2, y - 2, w + 4, h + 4));
-  ctx.fillStyle = '#ea580c';
-  body.forEach(([x, y, w, h]) => ctx.fillRect(x, y, w, h));
-  ctx.fillStyle = '#fb923c';
-  body.forEach(([x, y, w]) => ctx.fillRect(x, y, w, 3));
-  ctx.fillStyle = '#cbd5e1';
-  ctx.fillRect(110, -14, 42, 30);
-  ctx.fillStyle = '#f1f5f9';
-  ctx.fillRect(110, -14, 42, 6);
+  // Egg body
+  fillPlanePixelEllipse(ctx, 2, 22, 102, 26, PLANE_K);
+  fillPlanePixelEllipse(ctx, 2, 22, 98, 23, '#2dd4bf');
+  ctx.fillStyle = '#99f6e4';
+  ctx.fillRect(-60, 2, 120, 4);
   ctx.fillStyle = '#f8fafc';
-  [
-    [-38, 10, 92, 12],
-    [54, 10, 56, 12],
-    [-80, 10, 42, 8],
-    [-120, 8, 40, 4],
-  ].forEach(([x, y, w, h]) => ctx.fillRect(x, y, w, h));
-  ctx.fillStyle = '#1e3a8a';
-  ctx.fillRect(-150, 6, 260, 4);
+  ctx.fillRect(-88, 24, 172, 2);
+  ctx.fillStyle = '#f472b6';
+  ctx.fillRect(-90, 26, 176, 8);
+  ctx.fillStyle = '#be185d';
+  ctx.fillRect(-84, 34, 164, 2);
+  ctx.fillStyle = '#0f766e';
+  ctx.fillRect(-70, 38, 140, 4);
+  fillPlanePixelEllipse(ctx, 86, 22, 16, 22, '#cbd5e1');
+  ctx.fillStyle = '#f1f5f9';
+  ctx.fillRect(76, 4, 14, 6);
   ctx.fillStyle = '#1f2937';
-  ctx.fillRect(-40, -2, 80, 4);
-  ctx.fillRect(64, -10, 36, 4);
-  drawPixelHeart(ctx, -66, 12, 2, '#f472b6');
+  ctx.fillRect(-38, -2, 76, 4);
+  drawPixelHeart(ctx, -54, 16, 2, '#f472b6');
 
-  // Windscreens
+  // Windscreen
   ctx.fillStyle = PLANE_K;
   ctx.fillRect(36, -22, 12, 22);
-  ctx.fillRect(100, -28, 10, 18);
   ctx.fillStyle = '#7dd3fc';
   ctx.fillRect(38, -20, 8, 18);
-  ctx.fillRect(102, -26, 6, 14);
 
-  // Tail fin (stepped)
-  const fin = [
-    [-158, -52, 16, 10],
-    [-157, -42, 24, 12],
-    [-157, -30, 32, 14],
-    [-156, -16, 40, 12],
-  ];
+  // Stubby wing
   ctx.fillStyle = PLANE_K;
-  fin.forEach(([x, y, w, h]) => ctx.fillRect(x - 2, y - 2, w + 4, h + 4));
-  ctx.fillStyle = '#ea580c';
-  fin.forEach(([x, y, w, h]) => ctx.fillRect(x, y, w, h));
+  ctx.fillRect(-18, 31, 74, 17);
   ctx.fillStyle = '#f8fafc';
-  ctx.fillRect(-156, -48, 12, 4);
-
-  // Low wing
-  ctx.fillStyle = PLANE_K;
-  ctx.fillRect(-22, 14, 122, 14);
-  ctx.fillStyle = '#f8fafc';
-  ctx.fillRect(-20, 16, 118, 10);
+  ctx.fillRect(-16, 33, 70, 13);
   ctx.fillStyle = '#cbd5e1';
-  ctx.fillRect(-20, 24, 118, 2);
-  ctx.fillStyle = '#ea580c';
-  ctx.fillRect(-20, 16, 16, 10);
+  ctx.fillRect(-16, 43, 70, 3);
+  ctx.fillStyle = '#f97316';
+  ctx.fillRect(-16, 33, 14, 13);
   ctx.fillStyle = Math.floor(now / 500) % 2 === 0 ? '#22c55e' : '#14532d';
-  ctx.fillRect(92, 18, 4, 4);
+  ctx.fillRect(46, 37, 4, 4);
 
   drawPlanePropeller(ctx, now, propSpin, true);
   ctx.restore();
@@ -475,14 +442,6 @@ function drawStormCloud(ctx, r, now, seed = 0) {
     ctx.stroke();
   }
   ctx.restore();
-}
-
-// Hit test: entity circle against the fuselage/wing ellipse or the pilot's circle (tilt ignored)
-function planeHits(px, py, s, ex, ey, er) {
-  const dx = (ex - (px + PLANE_CFG.HIT_CX * s)) / (PLANE_CFG.HIT_RX * s + er);
-  const dy = (ey - (py + PLANE_CFG.HIT_CY * s)) / (PLANE_CFG.HIT_RY * s + er);
-  if (dx * dx + dy * dy <= 1) return true;
-  return Math.hypot(ex - (px + PLANE_CFG.PILOT_CX * s), ey - (py + PLANE_CFG.PILOT_CY * s)) <= PLANE_CFG.PILOT_R * s + er;
 }
 
 // SCENE 2 — take-off run on skis across the cracking ice, then climb out

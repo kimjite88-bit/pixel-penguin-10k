@@ -688,119 +688,22 @@ function getHero2DSheetForSpecies(spId = '01') {
 }
 
 // ============================================================================
-// OPEN-SOURCE HYBRID GIANT UFO ARCADE ENGINE
+// PILOT + RESULT STATE shared by both vehicles (name kept from the UFO days: saved picks and the leaderboard
+// still call the plane board 'ufo'). The flying run itself lives in sky-runner.js, the car in car-runner.js.
 // Protagonist: Selected NFT Penguin (Category #1 Feather Skin) OR Default Blue Penguin ('없음')
 // ============================================================================
 const UFO_GAME = {
-  phase: 'combat', // 'combat' | 'scan' (in Scene 1)
-  phaseStartTime: 0,
-  lastTickAt: 0,
-  userControlled: false,
   hasNft: false, // false = '없음 (기록 안 남음)', true = NFT #0~#9999 boarded & records score!
   pilotTokenId: null,
   pilotSpeciesId: '01',
   pilotSpeciesLabel: '기본 파란 펭귄 (Adelie Classic)',
-  x: 225,
-  y: 215,
-  vx: 0,
-  vy: 0,
-  targetX: 225,
-  targetY: 215,
-  tiltRad: 0,
-  shields: 3,
-  maxShields: 3,
   score: 0,
   lastFinalScore: 0,
   lastRank: null,
-  kills: 0,
-  combo: 1,
-  lastSpawnAt: 0,
-  hitFlashUntil: 0,
-  shakeUntil: 0,
-  shotDownX: 480,
-  shotDownY: 250,
   scoreSubmitted: false,
-  keys: {},
-  entities: [], // { type: 'banana'|'meteor'|'mine'|'fish'|'core', x, y, vx, vy, r, hp, rot, vrot }
-  particles: [], // { x, y, vx, vy, col, sz, alpha, decay }
-  popups: [], // { x, y, vy, text, col, alpha }
-  stars: Array.from({ length: 32 }, (_, i) => ({
-    x: (i * 73) % 960,
-    y: 18 + ((i * 41) % 340),
-    spd: 1.5 + (i % 4) * 0.85,
-    sz: i % 3 === 0 ? 3 : 2,
-  })),
 };
 
-function resetUfoGame(now = performance.now(), keepUserControl = false) {
-  UFO_GAME.phase = 'combat';
-  UFO_GAME.phaseStartTime = now;
-  UFO_GAME.lastTickAt = now;
-  UFO_GAME.userControlled = keepUserControl;
-  UFO_GAME.x = 225;
-  UFO_GAME.y = 265;
-  UFO_GAME.vx = 0;
-  UFO_GAME.vy = 0;
-  UFO_GAME.targetX = 225;
-  UFO_GAME.targetY = 265;
-  UFO_GAME.tiltRad = 0;
-  UFO_GAME.shields = 3;
-  UFO_GAME.score = 0;
-  UFO_GAME.kills = 0;
-  UFO_GAME.combo = 1;
-  UFO_GAME.lastDiffLevel = 1;
-  UFO_GAME.lastSpawnAt = now;
-  UFO_GAME.hitFlashUntil = 0;
-  UFO_GAME.shakeUntil = 0;
-  UFO_GAME.scoreSubmitted = false;
-  // Pre-seed Reference Image #3 entities across the sky corridor (3-Star Arc, Pink Neon Warp Ring, 3D Neon Cubes & Dark Purple Spiked Mines!)
-  UFO_GAME.entities = [
-    { type: 'star', x: 375, y: 205, vx: -4.2, vy: 0, r: 17, hp: 1, rot: 0, vrot: 0 },
-    { type: 'star', x: 420, y: 185, vx: -4.2, vy: 0, r: 17, hp: 1, rot: 0, vrot: 0 },
-    { type: 'star', x: 465, y: 165, vx: -4.2, vy: 0, r: 17, hp: 1, rot: 0, vrot: 0 },
-    { type: 'ring', x: 525, y: 270, vx: -4.2, vy: 0, r: 36, hp: 1, rot: 0, vrot: 0 },
-    { type: 'mine', x: 560, y: 150, vx: -4.5, vy: 0.2, r: 21, hp: 2, rot: 0.2, vrot: 0.04 },
-    { type: 'mine', x: 645, y: 315, vx: -4.6, vy: -0.2, r: 21, hp: 2, rot: 0.5, vrot: 0.04 },
-    { type: 'cube', colorMode: 'cyan', x: 615, y: 195, vx: -4.4, vy: 0, r: 19, hp: 1, rot: 0.3, vrot: 0.05 },
-    { type: 'cube', colorMode: 'pink', x: 735, y: 195, vx: -4.4, vy: 0, r: 19, hp: 1, rot: 0.7, vrot: 0.05 },
-    { type: 'ring', x: 805, y: 310, vx: -4.3, vy: 0, r: 36, hp: 1, rot: 0, vrot: 0 },
-    { type: 'star', x: 840, y: 180, vx: -4.3, vy: 0, r: 17, hp: 1, rot: 0, vrot: 0 },
-    { type: 'star', x: 882, y: 162, vx: -4.3, vy: 0, r: 17, hp: 1, rot: 0, vrot: 0 },
-    { type: 'star', x: 924, y: 144, vx: -4.3, vy: 0, r: 17, hp: 1, rot: 0, vrot: 0 },
-  ];
-  UFO_GAME.particles = [];
-  UFO_GAME.popups = [];
-}
 
-function triggerUfoShotDown(now = performance.now()) {
-  UFO_GAME.shields = 0;
-  UFO_GAME.shotDownX = Math.max(240, Math.min(620, UFO_GAME.x));
-  UFO_GAME.shotDownY = Math.max(170, Math.min(290, UFO_GAME.y));
-  UFO_GAME.shakeUntil = now + 520;
-  UFO_GAME.lastFinalScore = Math.max(450, UFO_GAME.score);
-  // Spawn dramatic shot-down explosion & EMP sparks around the Giant UFO
-  for (let i = 0; i < 28; i++) {
-    const a = (i / 28) * Math.PI * 2 + (Math.random() - 0.5) * 0.25;
-    const sp = 2.4 + Math.random() * 5.6;
-    UFO_GAME.particles.push({
-      x: UFO_GAME.x,
-      y: UFO_GAME.y,
-      vx: Math.cos(a) * sp,
-      vy: Math.sin(a) * sp,
-      col: i % 3 === 0 ? '#facc15' : i % 2 === 0 ? '#fb7185' : '#67e8f9',
-      sz: 5 + (i % 3) * 2,
-      alpha: 1,
-      decay: 0.022,
-    });
-  }
-  if (UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null) {
-    submitUfoScoreToServer(UFO_GAME.pilotTokenId, UFO_GAME.lastFinalScore, UFO_GAME.kills);
-  } else {
-    UFO_GAME.lastRank = null;
-  }
-  // Transition directly to Scene 4 (sceneIdx = 3: UFO Pixelation before Cherry Blossom Town)
-  setIntroScene(3, true);
-}
 
 async function submitUfoScoreToServer(tokenId, score, kills) {
   if (
@@ -1164,7 +1067,6 @@ function enterUfoFullscreenGame(startCombatImmediately = true) {
 
   if (startCombatImmediately) {
     setIntroScene(2, true);
-    UFO_GAME.userControlled = true;
   }
 }
 
@@ -1222,8 +1124,8 @@ function updateVehicleUI() {
   if (theaterEl) theaterEl.dataset.vehicle = vehicle;
   const padText = document.querySelector('#mobile-fullscreen-touchpad .touchpad-text');
   if (padText) {
-    const ko = vehicle === 'car' ? '아무 데나 누르면 점프 · 공중에서 한 번 더 = 2단 점프' : '아무 데나 대고 끌면 비행기가 따라 움직여요';
-    const en = vehicle === 'car' ? 'Press anywhere to jump · again in the air to double jump' : 'Drag anywhere here to steer the plane';
+    const ko = vehicle === 'car' ? '아무 데나 누르면 점프 · 공중에서 한 번 더 = 2단 점프' : '누르고 있으면 상승 · 떼면 하강';
+    const en = vehicle === 'car' ? 'Press anywhere to jump · again in the air to double jump' : 'Hold to climb · release to dive';
     padText.dataset.ko = ko;
     padText.dataset.en = en;
     padText.textContent = CURRENT_LANG === 'ko' ? ko : en;
@@ -1696,11 +1598,8 @@ function setIntroScene(sceneIdx, resetTimer = true) {
       if (MOTION_STATE.vehicle === 'car') {
         resetCarGame(MOTION_STATE.sceneStartTime);
       } else {
-        resetUfoGame(MOTION_STATE.sceneStartTime, true);
+        resetSkyGame(MOTION_STATE.sceneStartTime);
       }
-    } else if (MOTION_STATE.sceneIdx === 3) {
-      UFO_GAME.phase = 'scan';
-      UFO_GAME.phaseStartTime = MOTION_STATE.sceneStartTime;
     }
   }
   const s1Overlay = document.getElementById('scene1-escape-overlay');
@@ -2695,136 +2594,9 @@ function drawPinkNeonWarpRing(ctx, now = 0) {
   ctx.restore();
 }
 
-// Helper: Draw a Glowing 3D Neon Wireframe Voxel Cube (Matches Reference Image #3!)
-function drawNeonWireframeCube(ctx, r = 18, colorMode = 'cyan', rot = 0) {
-  ctx.save();
-  ctx.rotate(rot * 0.35);
-  const s = r * 0.88;
-  const off = s * 0.42;
-  const edgeCol = colorMode === 'pink' ? '#f472b6' : '#67e8f9';
-  const fillCol =
-    colorMode === 'pink' ? 'rgba(236, 72, 153, 0.22)' : 'rgba(56, 189, 248, 0.22)';
-
-  // Back face
-  ctx.fillStyle = fillCol;
-  ctx.strokeStyle = edgeCol;
-  ctx.lineWidth = 2.2;
-  ctx.fillRect(-s + off, -s - off, s * 1.5, s * 1.5);
-  ctx.strokeRect(-s + off, -s - off, s * 1.5, s * 1.5);
-
-  // Front face
-  ctx.fillRect(-s, -s, s * 1.5, s * 1.5);
-  ctx.strokeRect(-s, -s, s * 1.5, s * 1.5);
-
-  // Connecting 3D corners
-  ctx.beginPath();
-  ctx.moveTo(-s, -s);
-  ctx.lineTo(-s + off, -s - off);
-  ctx.moveTo(s * 0.5, -s);
-  ctx.lineTo(s * 0.5 + off, -s - off);
-  ctx.moveTo(-s, s * 0.5);
-  ctx.lineTo(-s + off, s * 0.5 - off);
-  ctx.moveTo(s * 0.5, s * 0.5);
-  ctx.lineTo(s * 0.5 + off, s * 0.5 - off);
-  ctx.stroke();
-
-  // Inner bright core pixel
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(-3, -3, 6, 6);
-  ctx.restore();
-}
 
 
-// Helper: Draw Entities in Scene 3 — Matches Reference Image #3
-function drawUfoEntity(ctx, ent, now) {
-  ctx.save();
-  ctx.translate(ent.x, ent.y);
 
-  if (ent.type === 'star') {
-    const bob = Math.sin(now * 0.01 + ent.x * 0.02) * 3;
-    ctx.translate(0, bob);
-    drawGoldenStarCollectible(ctx, ent.r || 17, now);
-  } else if (ent.type === 'ring') {
-    drawPinkNeonWarpRing(ctx, now);
-  } else if (ent.type === 'cube') {
-    drawNeonWireframeCube(ctx, ent.r || 18, ent.colorMode || 'cyan', ent.rot || 0);
-  } else if (ent.type === 'mine') {
-    // Storm cell: a light plane has to fly around it
-    drawStormCloud(ctx, (ent.r || 20) * 1.15, now, Math.round(ent.y));
-  }
-  ctx.restore();
-}
-
-// Helper: Top Arcade HUD Bar inside Scene 3 Sky Game
-function drawUfoCombatHud(ctx, now, remainSec = 15) {
-  ctx.save();
-  const hx = 16;
-  const hy = 12;
-  const hw = 430;
-  const hh = 34;
-  ctx.fillStyle = 'rgba(9, 13, 26, 0.88)';
-  ctx.fillRect(hx - 2, hy - 2, hw + 4, hh + 4);
-  ctx.strokeStyle = '#38bdf8';
-  ctx.lineWidth = 1.6;
-  ctx.strokeRect(hx, hy, hw, hh);
-
-  // Pilot NFT Tag OR Guest Tag
-  if (UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null) {
-    const idCode = `P${String(UFO_GAME.pilotTokenId).padStart(4, '0')}`;
-    ctx.fillStyle = '#fde047';
-    ctx.font = '900 12.5px "Pretendard", "Malgun Gothic", sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(`NFT ${idCode}`, hx + 12, hy + hh / 2 + 1);
-  } else {
-    ctx.fillStyle = '#67e8f9';
-    ctx.font = '900 11.5px "Pretendard", "Malgun Gothic", sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(CURRENT_LANG === 'ko' ? 'GUEST (기본)' : 'GUEST', hx + 12, hy + hh / 2 + 1);
-  }
-
-  // Score
-  ctx.fillStyle = '#ffffff';
-  ctx.font = '900 12.5px "Pretendard", "Malgun Gothic", sans-serif';
-  ctx.fillText(
-    `SCORE ${UFO_GAME.score.toLocaleString()}`,
-    hx + 102,
-    hy + hh / 2 + 1
-  );
-
-  // Combo
-  if (UFO_GAME.combo > 1) {
-    ctx.fillStyle = '#34d399';
-    ctx.fillText(`x${UFO_GAME.combo}`, hx + 208, hy + hh / 2 + 1);
-  }
-
-  // 3 Shield Hearts
-  for (let s = 0; s < UFO_GAME.maxShields; s++) {
-    const active = s < UFO_GAME.shields;
-    drawPixelHeart(
-      ctx,
-      hx + 252 + s * 22,
-      hy + hh / 2,
-      2.1,
-      active ? '#38bdf8' : '#334155'
-    );
-  }
-
-  // Escalating Difficulty Level & Survival Time (No artificial time limit — survive until 3 shields deplete!)
-  const diffLevel = Math.max(1, Math.round(remainSec));
-  const survivalSec = Math.max(0, Math.floor((now - UFO_GAME.phaseStartTime) / 1000));
-  ctx.fillStyle = diffLevel >= 5 ? '#fb7185' : diffLevel >= 3 ? '#fde047' : '#bae6fd';
-  ctx.font = '900 12px "Pretendard", "Malgun Gothic", sans-serif';
-  ctx.textAlign = 'right';
-  ctx.fillText(
-    `LV.${diffLevel} · ${survivalSec}s`,
-    hx + hw - 14,
-    hy + hh / 2 + 1
-  );
-
-  ctx.restore();
-}
 
 function initPixelMotionStudio() {
   const canvas = document.getElementById('pixel-stage-canvas');
@@ -2943,34 +2715,27 @@ function initPixelMotionStudio() {
     if (e.target.id === 'leaderboard-modal') closeLeaderboardModal();
   });
 
-  // Keyboard Controls for Giant UFO Spaceship in Scene 3 (sceneIdx === 2)
-  // Car: Space / ArrowUp / W jump while held
-  const isCarJumpKey = (code) => code === 'Space' || code === 'ArrowUp' || code === 'KeyW';
+  // One-button controls for both vehicles in Scene 3 (sceneIdx === 2): the car jumps on press (again in the
+  // air = double jump), the plane climbs while held and dives when released. Space / ArrowUp / W, the mouse
+  // button, a finger on the stage or on the fullscreen pad all drive the same press / release.
+  const isActionKey = (code) => code === 'Space' || code === 'ArrowUp' || code === 'KeyW';
+  const pressAction = () => {
+    if (carGameActive()) carJumpPress(performance.now());
+    else if (skyGameActive()) skyPress();
+  };
+  const releaseAction = () => {
+    carJumpRelease();
+    skyRelease();
+  };
   window.addEventListener('keydown', (e) => {
-    if (carGameActive() && isCarJumpKey(e.code)) {
-      const activeTag = document.activeElement?.tagName;
-      if (activeTag === 'INPUT' || activeTag === 'SELECT' || activeTag === 'TEXTAREA') return;
-      e.preventDefault();
-      if (!e.repeat) carJumpPress(performance.now());
-      return;
-    }
-    if (
-      ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(
-        e.code
-      )
-    ) {
-      const activeTag = document.activeElement?.tagName;
-      if (activeTag === 'INPUT' || activeTag === 'SELECT' || activeTag === 'TEXTAREA') return;
-      UFO_GAME.keys[e.code] = true;
-      if (MOTION_STATE.sceneIdx === 2) {
-        UFO_GAME.userControlled = true;
-        if (e.code.startsWith('Arrow')) e.preventDefault();
-      }
-    }
+    if (!isActionKey(e.code) || !(carGameActive() || skyGameActive())) return;
+    const activeTag = document.activeElement?.tagName;
+    if (activeTag === 'INPUT' || activeTag === 'SELECT' || activeTag === 'TEXTAREA') return;
+    e.preventDefault();
+    if (!e.repeat) pressAction();
   });
   window.addEventListener('keyup', (e) => {
-    UFO_GAME.keys[e.code] = false;
-    if (isCarJumpKey(e.code)) carJumpRelease();
+    if (isActionKey(e.code)) releaseAction();
   });
 
   // Launch Fullscreen UFO Game Buttons
@@ -3017,13 +2782,7 @@ function initPixelMotionStudio() {
       return;
     }
 
-    if (MOTION_STATE.sceneIdx === 2) {
-      if (MOTION_STATE.vehicle === 'car') return; // jumps come from mousedown / touchstart
-      UFO_GAME.userControlled = true;
-      UFO_GAME.targetX = Math.max(150, Math.min(680, mx));
-      UFO_GAME.targetY = Math.max(92, Math.min(390, my));
-      return;
-    }
+    if (MOTION_STATE.sceneIdx === 2) return; // play input comes from mousedown / touchstart
 
     if (MOTION_STATE.sceneIdx === 3) {
       setIntroScene(4, true);
@@ -3050,128 +2809,54 @@ function initPixelMotionStudio() {
   });
 
   canvas.addEventListener('mousedown', (e) => {
-    if (e.button === 0 && carGameActive()) carJumpPress(performance.now());
+    if (e.button === 0) pressAction();
   });
-  window.addEventListener('mouseup', () => carJumpRelease());
+  window.addEventListener('mouseup', releaseAction);
 
   canvas.addEventListener('mousemove', (e) => {
     const { mx, my } = getLogicalCoords(e.clientX, e.clientY);
-    if (MOTION_STATE.sceneIdx === 2) {
-      if (MOTION_STATE.vehicle === 'car') return;
-      if (my > 54 && mx < 780) {
-        UFO_GAME.userControlled = true;
-        UFO_GAME.targetX = Math.max(150, Math.min(680, mx));
-        UFO_GAME.targetY = Math.max(92, Math.min(390, my));
-      }
-      return;
-    }
     if (MOTION_STATE.sceneIdx === 4) {
       if (my >= 176 && my < 219) MOTION_STATE.menuHoverIdx = 0;
       else if (my >= 219 && my <= 268) MOTION_STATE.menuHoverIdx = 1;
     }
   });
 
-  // Mobile-First Touch Drag Steering for Giant UFO Spaceship in Scene 3 (sceneIdx === 2)
-  const handleTouchSteer = (e) => {
-    const touch = e.touches[0];
-    if (!touch) return;
-
-    if (MOTION_STATE.sceneIdx === 2) {
-      if (e.cancelable) e.preventDefault();
-      if (MOTION_STATE.vehicle === 'car') {
-        if (e.type === 'touchstart') carJumpPress(performance.now());
-        return;
-      }
-      const { mx, my } = getLogicalCoords(touch.clientX, touch.clientY);
-      UFO_GAME.userControlled = true;
-      UFO_GAME.targetX = Math.max(150, Math.min(680, mx));
-      UFO_GAME.targetY = Math.max(92, Math.min(390, my - 36));
-    }
+  // Touch on the stage: press while a finger is down (no page scroll during play)
+  const handleStageTouch = (e) => {
+    if (MOTION_STATE.sceneIdx !== 2) return;
+    if (e.cancelable) e.preventDefault();
+    if (e.type === 'touchstart') pressAction();
   };
-  canvas.addEventListener('touchstart', handleTouchSteer, { passive: false });
-  canvas.addEventListener('touchmove', handleTouchSteer, { passive: false });
-  const releaseCarTouch = (e) => {
-    if (e.touches.length === 0) carJumpRelease();
+  canvas.addEventListener('touchstart', handleStageTouch, { passive: false });
+  canvas.addEventListener('touchmove', handleStageTouch, { passive: false });
+  const releaseOnLastFinger = (e) => {
+    if (e.touches.length === 0) releaseAction();
   };
-  canvas.addEventListener('touchend', releaseCarTouch);
-  canvas.addEventListener('touchcancel', releaseCarTouch);
+  canvas.addEventListener('touchend', releaseOnLastFinger);
+  canvas.addEventListener('touchcancel', releaseOnLastFinger);
 
-  // Dedicated Mobile Fullscreen Touchpad Below Canvas
-  // CRITICAL FIX: Never call setIntroScene(2, true) when sceneIdx !== 2 (prevents resetting score & blocking Scene 4/5 transition!)
+  // Fullscreen pad below the stage: the whole pad is one big button
   const touchpadEl = document.getElementById('mobile-fullscreen-touchpad');
   if (touchpadEl) {
-    // Trackpad-style relative steering: the UFO moves by how far the finger travels, never jumps to where the
-    // finger lands (an absolute pad snapped it to mid-screen on every re-touch), and the gain follows the stage
-    // width so a tall pad is not sluggish vertically.
-    const PAD_GAIN = 1.15;
-    let padLast = null; // { id, x, y } of the finger currently steering
-    const padGain = () => {
-      const stage = canvas.getBoundingClientRect();
-      return (960 / Math.max(1, stage.width)) * PAD_GAIN;
-    };
-    const padMoveTo = (clientX, clientY) => {
-      if (!padLast) return;
-      const g = padGain();
-      UFO_GAME.userControlled = true;
-      UFO_GAME.targetX = Math.max(150, Math.min(680, UFO_GAME.targetX + (clientX - padLast.x) * g));
-      UFO_GAME.targetY = Math.max(92, Math.min(390, UFO_GAME.targetY + (clientY - padLast.y) * g));
-      padLast.x = clientX;
-      padLast.y = clientY;
-    };
-    const findPadTouch = (list) => {
-      for (let i = 0; i < list.length; i++) if (padLast && list[i].identifier === padLast.id) return list[i];
-      return null;
-    };
     touchpadEl.addEventListener(
       'touchstart',
       (e) => {
         if (MOTION_STATE.sceneIdx !== 2) return;
         if (e.cancelable) e.preventDefault();
-        // Car: the whole pad is one big jump button
-        if (MOTION_STATE.vehicle === 'car') {
-          carJumpPress(performance.now());
-          return;
-        }
-        const t = e.changedTouches[0];
-        if (t && (!padLast || !findPadTouch(e.touches))) {
-          padLast = { id: t.identifier, x: t.clientX, y: t.clientY };
-        }
+        pressAction();
       },
       { passive: false }
     );
     touchpadEl.addEventListener(
       'touchmove',
       (e) => {
-        if (MOTION_STATE.sceneIdx !== 2) return;
-        if (e.cancelable) e.preventDefault();
-        const t = findPadTouch(e.touches);
-        if (t) padMoveTo(t.clientX, t.clientY);
+        if (MOTION_STATE.sceneIdx === 2 && e.cancelable) e.preventDefault();
       },
       { passive: false }
     );
-    const releasePad = (e) => {
-      if (e.touches.length === 0) carJumpRelease();
-      if (padLast && !findPadTouch(e.touches)) {
-        // Another finger still on the pad takes over without a jump
-        const next = e.touches[0];
-        padLast = next ? { id: next.identifier, x: next.clientX, y: next.clientY } : null;
-      }
-    };
-    touchpadEl.addEventListener('touchend', releasePad);
-    touchpadEl.addEventListener('touchcancel', releasePad);
-    touchpadEl.addEventListener('mousedown', (e) => {
-      if (carGameActive()) {
-        carJumpPress(performance.now());
-        return;
-      }
-      padLast = { id: 'mouse', x: e.clientX, y: e.clientY };
-    });
-    touchpadEl.addEventListener('mousemove', (e) => {
-      if (e.buttons === 1 && MOTION_STATE.sceneIdx === 2) padMoveTo(e.clientX, e.clientY);
-    });
-    window.addEventListener('mouseup', () => {
-      if (padLast && padLast.id === 'mouse') padLast = null;
-    });
+    touchpadEl.addEventListener('touchend', releaseOnLastFinger);
+    touchpadEl.addEventListener('touchcancel', releaseOnLastFinger);
+    touchpadEl.addEventListener('mousedown', pressAction);
   }
 
   setIntroScene(0, true);
@@ -3241,273 +2926,9 @@ function initPixelMotionStudio() {
       drawCarRunnerFrame(ctx, now, activeSpId);
     }
 
-    // ========================================================================
-    // SCENE 3 (sceneIdx === 2 — Reference Image #3):
-    //   Actual Playable Sky Game Stage (15 seconds)!
-    // ========================================================================
+    // SCENE 3 for the plane: the one-touch flying run (sky-runner.js)
     else if (MOTION_STATE.sceneIdx === 2) {
-      const dt = Math.min(32, Math.max(8, now - (UFO_GAME.lastTickAt || now))) / 16.67;
-      UFO_GAME.lastTickAt = now;
-
-      ctx.save();
-      if (now < UFO_GAME.shakeUntil) {
-        const mag = ((UFO_GAME.shakeUntil - now) / 520) * 8;
-        ctx.translate((Math.random() - 0.5) * mag, (Math.random() - 0.5) * mag);
-      }
-
-      drawRefSkyGameBackground(ctx, now);
-
-      const combatElapsed = now - UFO_GAME.phaseStartTime;
-      const combatSec = Math.max(0, combatElapsed / 1000);
-      // Progressive Difficulty Level: escalates every 8 seconds (LV.1 -> LV.10 MAX), no artificial 15s cutoff!
-      const diffLevel = Math.min(10, 1 + Math.floor(combatSec / 8));
-      const speedMult = 1 + (diffLevel - 1) * 0.22;
-
-      if (diffLevel > (UFO_GAME.lastDiffLevel || 1)) {
-        UFO_GAME.lastDiffLevel = diffLevel;
-        const lvBonus = diffLevel * 300;
-        UFO_GAME.score += lvBonus;
-        UFO_GAME.popups.push({
-          x: Math.max(220, Math.min(740, UFO_GAME.x)),
-          y: Math.max(95, UFO_GAME.y - 62),
-          vy: -1.4,
-          text: `LV.${diffLevel} SPEED UP! +${lvBonus}`,
-          col: '#fde047',
-          alpha: 1,
-        });
-      }
-
-      // 1. Update Giant UFO Position (Keyboard OR Touch/Mouse Target)
-      const keySpd = 6.2 * dt;
-      let keyMoved = false;
-      if (UFO_GAME.keys['ArrowLeft'] || UFO_GAME.keys['KeyA']) {
-        UFO_GAME.targetX -= keySpd;
-        keyMoved = true;
-      }
-      if (UFO_GAME.keys['ArrowRight'] || UFO_GAME.keys['KeyD']) {
-        UFO_GAME.targetX += keySpd;
-        keyMoved = true;
-      }
-      if (UFO_GAME.keys['ArrowUp'] || UFO_GAME.keys['KeyW']) {
-        UFO_GAME.targetY -= keySpd;
-        keyMoved = true;
-      }
-      if (UFO_GAME.keys['ArrowDown'] || UFO_GAME.keys['KeyS']) {
-        UFO_GAME.targetY += keySpd;
-        keyMoved = true;
-      }
-      if (keyMoved) {
-        UFO_GAME.targetX = Math.max(150, Math.min(680, UFO_GAME.targetX));
-        UFO_GAME.targetY = Math.max(92, Math.min(390, UFO_GAME.targetY));
-      }
-
-      const dx = UFO_GAME.targetX - UFO_GAME.x;
-      const dy = UFO_GAME.targetY - UFO_GAME.y;
-      UFO_GAME.vx = dx * 0.16;
-      UFO_GAME.vy = dy * 0.16;
-      UFO_GAME.x += UFO_GAME.vx * dt;
-      UFO_GAME.y += UFO_GAME.vy * dt;
-      UFO_GAME.tiltRad = Math.max(-0.22, Math.min(0.22, UFO_GAME.vy * 0.03 + UFO_GAME.vx * 0.01));
-
-      // 2. The light plane carries no guns: storm cells can only be flown around, so they come less often
-      //    than the old shootable mines. Spawn interval 440ms (LV.1) -> 200ms; storm share 30% -> 60%.
-      const spawnInterval = Math.max(200, 440 - (diffLevel - 1) * 30);
-      if (now - UFO_GAME.lastSpawnAt >= spawnInterval) {
-        UFO_GAME.lastSpawnAt = now;
-        const roll = Math.random();
-        const baseY = 115 + Math.random() * 245;
-        const mineProb = Math.min(0.6, 0.3 + (diffLevel - 1) * 0.04);
-        const starCut = (1 - mineProb) * 0.46;
-        const ringCut = (1 - mineProb) * 0.72;
-        const cubeCut = 1 - mineProb;
-
-        if (roll < starCut) {
-          for (let s = 0; s < 3; s++) {
-            UFO_GAME.entities.push({
-              type: 'star',
-              x: 940 + s * 44,
-              y: baseY - s * 16,
-              vx: -5.0 * speedMult,
-              vy: 0,
-              r: 17,
-              hp: 1,
-              rot: 0,
-              vrot: 0,
-            });
-          }
-        } else if (roll < ringCut) {
-          UFO_GAME.entities.push({
-            type: 'ring',
-            x: 940,
-            y: Math.max(140, Math.min(340, baseY)),
-            vx: -4.8 * speedMult,
-            vy: 0,
-            r: 36,
-            hp: 1,
-            rot: 0,
-            vrot: 0,
-          });
-        } else if (roll < cubeCut) {
-          UFO_GAME.entities.push({
-            type: 'cube',
-            colorMode: Math.random() < 0.5 ? 'cyan' : 'pink',
-            x: 940,
-            y: baseY,
-            vx: -5.1 * speedMult,
-            vy: Math.sin(now * 0.008) * 0.6 * speedMult,
-            r: 19,
-            hp: 1,
-            rot: Math.random() * Math.PI,
-            vrot: 0.05,
-          });
-        } else {
-          const mineHp = diffLevel >= 4 ? 4 : diffLevel >= 2 ? 3 : 2;
-          const mineCount = diffLevel >= 6 ? 2 : diffLevel >= 3 && Math.random() < 0.4 ? 2 : 1;
-          for (let m = 0; m < mineCount; m++) {
-            // Aimed/off-axis lane on the first storm at LV.2+ so a plane that never moves cannot survive
-            const targetLaneY =
-              m === 0 && diffLevel >= 2 && Math.random() < 0.55
-                ? Math.max(105, Math.min(375, UFO_GAME.y + (Math.random() < 0.5 ? -36 : 38)))
-                : Math.max(105, Math.min(375, baseY + (m - (mineCount - 1) / 2) * 74));
-            UFO_GAME.entities.push({
-              type: 'mine',
-              x: 940 + m * 38,
-              y: targetLaneY,
-              vx: -(5.4 + Math.random() * 1.8) * speedMult,
-              vy: (Math.random() - 0.5) * (1.2 + (diffLevel - 1) * 0.35),
-              r: 21,
-              hp: mineHp,
-              rot: m * 0.4,
-              vrot: 0.04 * speedMult,
-            });
-          }
-        }
-      }
-
-      // 4. Update & Draw Entities + plane collisions
-      const planeScale = 0.76;
-      for (let i = UFO_GAME.entities.length - 1; i >= 0; i--) {
-        const ent = UFO_GAME.entities[i];
-        ent.x += ent.vx * dt;
-        ent.y += ent.vy * dt;
-        ent.rot += ent.vrot * dt;
-
-        if (ent.x < -60) {
-          UFO_GAME.entities.splice(i, 1);
-          continue;
-        }
-
-        const isCollectible =
-          ent.type === 'star' || ent.type === 'ring' || ent.type === 'cube';
-
-        // Collision with the plane (ellipse around fuselage + wing)
-        if (planeHits(UFO_GAME.x, UFO_GAME.y, planeScale, ent.x, ent.y, isCollectible ? ent.r : ent.r * 0.85)) {
-          if (isCollectible) {
-            const baseVal =
-              ent.type === 'ring' ? 500 : ent.type === 'cube' ? 350 : 200;
-            const pts = baseVal * UFO_GAME.combo;
-            UFO_GAME.score += pts;
-            UFO_GAME.combo = Math.min(8, UFO_GAME.combo + 1);
-            UFO_GAME.popups.push({
-              x: ent.x,
-              y: ent.y - 14,
-              vy: -1.8,
-              text: `+${pts}`,
-              col: ent.type === 'ring' ? '#f472b6' : '#fde047',
-              alpha: 1,
-            });
-            UFO_GAME.entities.splice(i, 1);
-            continue;
-          } else {
-            UFO_GAME.entities.splice(i, 1);
-            UFO_GAME.hitFlashUntil = now + 520;
-            UFO_GAME.shakeUntil = now + 260;
-            UFO_GAME.combo = 1;
-            UFO_GAME.shields -= 1;
-            UFO_GAME.popups.push({
-              x: UFO_GAME.x,
-              y: UFO_GAME.y - 48,
-              vy: -1.5,
-              text: UFO_GAME.shields > 0 ? 'HP -1' : 'MAYDAY',
-              col: '#fb7185',
-              alpha: 1,
-            });
-            if (UFO_GAME.shields <= 0) {
-              triggerUfoShotDown(now);
-              break;
-            }
-            continue;
-          }
-        }
-
-        drawUfoEntity(ctx, ent, now);
-      }
-
-      // 5. Wingtip vapour / exhaust puffs behind the tail
-      ctx.save();
-      for (let t = 0; t < 8; t++) {
-        const trailP = ((now * 0.005 + t * 0.125) % 1);
-        const tx = UFO_GAME.x - 135 - trailP * 110;
-        const ty = UFO_GAME.y - 6 + Math.sin(now * 0.02 + t * 1.7) * 5;
-        const sz = Math.max(3, Math.round((1 - trailP) * 8));
-        ctx.globalAlpha = 0.8 * (1 - trailP);
-        ctx.fillStyle = t % 2 === 0 ? '#ffffff' : '#cbd5e1';
-        ctx.fillRect(tx, ty, sz, sz);
-      }
-      ctx.restore();
-
-      // 6. The light plane with the penguin behind the side window
-      const isHitShocked = now < UFO_GAME.hitFlashUntil;
-      const isHitImpactBlink = now < UFO_GAME.hitFlashUntil - 420;
-      drawPlaneWithPilot(ctx, UFO_GAME.x, UFO_GAME.y, UFO_GAME.tiltRad, now, {
-        scale: planeScale,
-        spId: activeSpId,
-        isShocked: isHitShocked,
-        isImpactBlink: isHitImpactBlink,
-        skis: true,
-      });
-
-      drawUfoCombatHud(ctx, now, diffLevel);
-
-      // Render Explosion Particles & Floating Score Popups
-      for (let i = UFO_GAME.particles.length - 1; i >= 0; i--) {
-        const pt = UFO_GAME.particles[i];
-        pt.x += pt.vx * dt;
-        pt.y += pt.vy * dt;
-        pt.alpha -= pt.decay * dt;
-        if (pt.alpha <= 0) {
-          UFO_GAME.particles.splice(i, 1);
-          continue;
-        }
-        ctx.save();
-        ctx.globalAlpha = Math.max(0, pt.alpha);
-        ctx.fillStyle = '#090d1a';
-        ctx.fillRect(pt.x - pt.sz / 2 - 1, pt.y - pt.sz / 2 - 1, pt.sz + 2, pt.sz + 2);
-        ctx.fillStyle = pt.col;
-        ctx.fillRect(pt.x - pt.sz / 2, pt.y - pt.sz / 2, pt.sz, pt.sz);
-        ctx.restore();
-      }
-
-      for (let i = UFO_GAME.popups.length - 1; i >= 0; i--) {
-        const pop = UFO_GAME.popups[i];
-        pop.y += pop.vy * dt;
-        pop.alpha -= 0.024 * dt;
-        if (pop.alpha <= 0) {
-          UFO_GAME.popups.splice(i, 1);
-          continue;
-        }
-        ctx.save();
-        ctx.globalAlpha = Math.max(0, pop.alpha);
-        ctx.font = '900 14px "Pretendard", "Malgun Gothic", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#090d1a';
-        ctx.fillText(pop.text, pop.x + 2, pop.y + 2);
-        ctx.fillStyle = pop.col;
-        ctx.fillText(pop.text, pop.x, pop.y);
-        ctx.restore();
-      }
-
-      ctx.restore();
+      drawSkyRunnerFrame(ctx, now, activeSpId);
     }
 
     // ========================================================================
@@ -3569,7 +2990,7 @@ function initPixelMotionStudio() {
       const carScale = 1.3;
       const planeScanScale = 1.02; // the plane is long: at this size it stays inside the 360px scan window
       const topEdge = ufoY - 120;
-      const botEdge = isCar ? ufoY + 80 : ufoY + 58;
+      const botEdge = isCar ? ufoY + 80 : ufoY + 72;
       const totalSpanH = botEdge - topEdge;
       const scanY = topEdge + scanRatio * totalSpanH;
       const pixelBlinkDuringBeam = scanRatio > 0.30 && scanRatio < 0.38;
@@ -3831,8 +3252,8 @@ function initPixelMotionStudio() {
 
         const ufoLandX = 228;
         const ufoGroundY = 418;
-        // Car tyres (+57 x 1.3) and plane skis (+51 x 1.0) end on the same walkway line (y = 450)
-        const landY = isCarRun ? ufoGroundY - 42 : ufoGroundY - 19;
+        // Car tyres (+57 x 1.3) and plane skis (+66 x 1.0) end on the same walkway line (y = 450)
+        const landY = isCarRun ? ufoGroundY - 42 : ufoGroundY - 34;
         const ufoCurY =
           crashP < 1
             ? Math.round(90 + crashP * crashP * (landY - 90))
