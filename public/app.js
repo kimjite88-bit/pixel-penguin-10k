@@ -549,15 +549,25 @@ const TOWN_SKIP_TREE_CX = 790;
 
 // Town command box (10,000 도감 / 다시 플레이). On a phone (stageUiK) the box and its text are drawn 1.5x; the
 // click and hover areas use the same numbers.
-// On phones the town banner is 1.6x (bottom at y = 66), so the logo and the menu move down this much
-const TOWN_PHONE_SHIFT = 18;
+// Phone town layout. Stage text is 1.6x there, so the top stack (banner 10-66, logo, 1.5x menu) used to push the
+// speech bubbles down onto the landed pilot's head (~y 305). On phones the logo is drawn at 0.65x so the menu sits
+// at y 158 (bubbles from y 289), and the town picture is zoomed TOWN_PHONE_ZOOM about its top centre so the
+// walkway, and everything standing on it, comes down townDrop() px (58): the pilot's head is then at ~y 363.
+const TOWN_PHONE_ZOOM = 1.125;
+const TOWN_PHONE_LOGO = { top: 70, scale: 0.65, menuY: 158 };
+function townPhone() {
+  return stageUiK() > 1;
+}
+function townDrop() {
+  return townPhone() ? Math.round(TOWN_FEET_Y * (TOWN_PHONE_ZOOM - 1)) : 0;
+}
 
 function townMenuLayout() {
   const k = stageUiK() > 1 ? 1.5 : 1;
   const w = 332 * k;
   const h = 78 * k;
   const x = 480 - w / 2;
-  const y = 176 + (k > 1 ? TOWN_PHONE_SHIFT : 0);
+  const y = k > 1 ? TOWN_PHONE_LOGO.menuY : 176;
   return { k, w, h, x, y, rowY: (i) => y + (24 + i * 30) * k, split: y + 39 * k };
 }
 
@@ -2262,29 +2272,33 @@ function drawRetroSpeechBubble(
   anchorY,
   text,
   accentColor = '#38bdf8',
-  now = 0
+  now = 0,
+  area = null // { minX, maxX }: keep the bubble inside this band (wraps to two lines if needed)
 ) {
   const P = 3;
   const k = stageUiK();
+  const areaL = area ? area.minX : 18;
+  const areaR = area ? area.maxX : 942;
+  const maxW = areaR - areaL;
   const bob = Math.floor(now / 250) % 2 === 0 ? 0 : -2;
   ctx.save();
   const fontPx = 13.5 * k;
   ctx.font = `800 ${fontPx}px "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif`;
   // Too wide for the stage (long lines at the phone size): break at the space nearest the middle
   let lines = [text];
-  if (Math.ceil(ctx.measureText(text).width) + 32 * k > 924) {
+  if (Math.ceil(ctx.measureText(text).width) + 32 * k > maxW) {
     const mid = text.length / 2;
     let cut = -1;
     for (let i = 0; i < text.length; i++) if (text[i] === ' ' && (cut < 0 || Math.abs(i - mid) < Math.abs(cut - mid))) cut = i;
     if (cut > 0) lines = [text.slice(0, cut), text.slice(cut + 1)];
   }
   const textW = Math.max(...lines.map((l) => Math.ceil(ctx.measureText(l).width)));
-  const bw = Math.min(924, Math.max(128, Math.round((textW + 32 * k) / 4) * 4));
+  const bw = Math.min(maxW, Math.max(128, Math.round((textW + 32 * k) / 4) * 4));
   const lineH = fontPx * 1.35;
   const bh = Math.round(36 * k + (lines.length - 1) * lineH);
 
   // Clamp bubble horizontally & vertically so it never clips off-canvas or overlaps top HUD bars (y=12..48)
-  const bx = Math.max(18, Math.min(960 - bw - 18, Math.round(anchorX - bw / 2)));
+  const bx = Math.max(areaL, Math.min(areaR - bw, Math.round(anchorX - bw / 2)));
   const by = Math.max(56 + (k - 1) * 30, MOTION_STATE.bubbleMinY || 0, Math.round(anchorY - bh - 10 + bob));
   const tailX = Math.max(bx + 18, Math.min(bx + bw - 18, Math.round(anchorX)));
 
@@ -3475,7 +3489,16 @@ function initPixelMotionStudio() {
     // SCENE 5 (sceneIdx === 4 — seasonal pixel town, see INTRO_TOWN):
     // ========================================================================
     else {
-      drawScene2PixelWorldBackground(ctx, now);
+      if (townPhone()) {
+        ctx.save();
+        ctx.translate(480, 0);
+        ctx.scale(TOWN_PHONE_ZOOM, TOWN_PHONE_ZOOM);
+        ctx.translate(-480, 0);
+        drawScene2PixelWorldBackground(ctx, now);
+        ctx.restore();
+      } else {
+        drawScene2PixelWorldBackground(ctx, now);
+      }
       ctx.imageSmoothingEnabled = false;
 
       // 1. Top Arcade Landing Score & Leaderboard Banner (Clickable to open #tab-ranking)
@@ -3545,12 +3568,13 @@ function initPixelMotionStudio() {
 
       // 2. Sculpted 16-Bit "PIXEL PENGUIN" Arcade Logo & RPG Command Box in Upper Sky
       const titleBounce = Math.floor(now / 480) % 2 === 0 ? 0 : -3;
-      const logoTopY = 50 + titleBounce + (stageUiK() > 1 ? TOWN_PHONE_SHIFT : 0); // clear of the bigger phone banner
+      const lr = townPhone() ? TOWN_PHONE_LOGO.scale : 1; // smaller logo on phones (see TOWN_PHONE_ZOOM)
+      const logoTopY = (townPhone() ? TOWN_PHONE_LOGO.top : 50) + titleBounce;
 
-      drawArcadePixelWord(ctx, 'PIXEL', 480, logoTopY, 4.5);
-      drawGoldenArcadeHeart(ctx, 636, logoTopY + 16, 3.2);
-      drawArcadePixelWord(ctx, 'PENGUIN', 480, logoTopY + 46, 4.5);
-      drawPixelOutlinedSubtitle(ctx, 'PPENG · 10,000 VERYCHAT PFP', 480, logoTopY + 108);
+      drawArcadePixelWord(ctx, 'PIXEL', 480, logoTopY, 4.5 * lr);
+      drawGoldenArcadeHeart(ctx, 480 + 156 * lr, logoTopY + 16 * lr, 3.2 * lr);
+      drawArcadePixelWord(ctx, 'PENGUIN', 480, logoTopY + 46 * lr, 4.5 * lr);
+      drawPixelOutlinedSubtitle(ctx, 'PPENG · 10,000 VERYCHAT PFP', 480, logoTopY + 108 * lr);
 
       const menu = townMenuLayout();
       const mk = menu.k;
@@ -3592,7 +3616,7 @@ function initPixelMotionStudio() {
 
       MOTION_STATE.bubbleMinY = menuY + menuH + 14; // the town's bubbles never cover the menu
       const spriteSize = TOWN_PENGUIN_SIZE;
-      const spriteY = Math.round(TOWN_FEET_Y - spriteSize * (243 / 256)); // frame feet at row 243
+      const spriteY = Math.round(TOWN_FEET_Y + townDrop() - spriteSize * (243 / 256)); // frame feet at row 243
       const row = scene5RowLayout(MOTION_STATE.skippedEscape);
       const s5P = Math.min(1, Math.max(0, elapsed / 6800));
       let ufoRenderY = 418;
@@ -3616,7 +3640,7 @@ function initPixelMotionStudio() {
           s5P < 0.16 ? 0 : Math.min(1, (s5P - 0.16) / 0.18);
 
         const ufoLandX = 228;
-        const ufoGroundY = 418;
+        const ufoGroundY = 418 + townDrop();
         // Car tyres (+57 x 1.3) and plane skis (+66 x 1.0) end on the same walkway line (y = 450)
         // Every vehicle lands at TOWN_VEHICLE_SCALE with its lowest point (tyres +57, keel +48, skis +66) on y = 450
         const V = TOWN_VEHICLE_SCALE;
@@ -3693,7 +3717,7 @@ function initPixelMotionStudio() {
         amp: Math.min(4, row.gap / 3), // sway stays inside the gap, so neighbours never touch
         speed: 0.0023 + (i % 3) * 0.0002,
       }));
-      if (INTRO_TOWN.id === 'xmas') drawPixelXmasTree(ctx, row.treeCx, 462, now);
+      if (INTRO_TOWN.id === 'xmas') drawPixelXmasTree(ctx, row.treeCx, 462 + townDrop(), now);
 
       const walkInP = Math.min(1, s5P / 0.20);
       const renderedFriends = [];
@@ -3802,8 +3826,10 @@ function initPixelMotionStudio() {
         const talkPhase = Math.floor(Math.max(0, elapsed - 2850) / 3400) % 3;
         drawPixelHeart(ctx, speaker1.fx + spriteSize / 2, spriteY - 8 - ((now * 0.03) % 20), 2.6, '#ff4d6d');
         drawPixelHeart(ctx, speaker2.fx + spriteSize / 2, spriteY - 12 - ((now * 0.03) % 20), 2.6, '#fbbf24');
-        // The friends' bubbles sit right of the landed vehicle so they never cover the pilot's head
+        // The friends' bubbles stay right of the landed vehicle (the ship's bow ends at x ~394) so they never cover
+        // the pilot; long lines wrap to two lines inside that band
         const friendBubbleX = (fx) => Math.max(fx + spriteSize / 2, 640);
+        const friendArea = { minX: 410, maxX: 942 };
         if (talkPhase === 0) {
           drawRetroSpeechBubble(
             ctx,
@@ -3813,7 +3839,8 @@ function initPixelMotionStudio() {
               ? `우와 ${isCarRun ? '하늘에서 차가 떨어졌어' : isBoatRun ? '하늘에서 배가 떨어졌어' : '비행기 불시착했어'} ㅋㅋ 살아있냐?! ${INTRO_TOWN.koPixel}에 온 걸 환영해!!`
               : `Whoa ${isCarRun ? 'a car fell from the sky' : isBoatRun ? 'a ship fell from the sky' : 'your plane crash-landed'} haha—you alive?! Welcome to ${INTRO_TOWN.en}!!`,
             '#ff4d6d',
-            now
+            now,
+            friendArea
           );
         } else if (talkPhase === 1) {
           drawRetroSpeechBubble(
@@ -3824,7 +3851,8 @@ function initPixelMotionStudio() {
               ? '사신다고 뭐 안 드립니다 ㅋㅋ 내 눈에 제일 이쁜 자식 골라서 프사나 박아~'
               : 'Zero perks as promised haha—just pick the cutest penguin for your PFP~',
             '#fbbf24',
-            now
+            now,
+            friendArea
           );
         } else {
           drawRetroSpeechBubble(
