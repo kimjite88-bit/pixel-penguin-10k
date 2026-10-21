@@ -25,19 +25,24 @@
     "updated_at": "2026-10-20T23:10:52.223Z"
   },
   {
+    "edition": 0,
+    "score": 138800,
+    "updated_at": "2026-10-21T08:17:17.852Z"
+  },
+  {
     "edition": 6980,
     "score": 125650,
     "updated_at": "2026-10-20T23:02:25.419Z"
   },
   {
-    "edition": 0,
-    "score": 113100,
-    "updated_at": "2026-10-20T23:02:44.294Z"
-  },
-  {
     "edition": 5832,
     "score": 106400,
     "updated_at": "2026-10-20T23:16:32.208Z"
+  },
+  {
+    "edition": 324,
+    "score": 56950,
+    "updated_at": "2026-10-21T08:16:37.896Z"
   },
   {
     "edition": 4,
@@ -48,6 +53,11 @@
     "edition": 6,
     "score": 52500,
     "updated_at": "2026-10-20T17:15:10.082Z"
+  },
+  {
+    "edition": 4510,
+    "score": 47650,
+    "updated_at": "2026-10-21T08:32:04.514Z"
   },
   {
     "edition": 1500,

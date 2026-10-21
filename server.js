@@ -414,6 +414,20 @@ app.get('/api/metadata/:id', (req, res) => {
 const LEADERBOARD_JSON_PATH = path.join(DATA_DIR, 'ufo_leaderboard.json');
 let ufoLeaderboardMap = new Map();
 
+// CAR ESCAPE has its own board (same rules: explicit number only, best score per number). It starts empty:
+// no seeded baseline scores.
+const CAR_LEADERBOARD_JSON_PATH = path.join(DATA_DIR, 'car_leaderboard.json');
+const carLeaderboardMap = new Map();
+const LEADERBOARDS = {
+  ufo: { map: ufoLeaderboardMap, path: LEADERBOARD_JSON_PATH, seed: true },
+  car: { map: carLeaderboardMap, path: CAR_LEADERBOARD_JSON_PATH, seed: false },
+};
+
+// Missing or unknown game = the original UFO board, so old clients keep working
+function getLeaderboard(game) {
+  return LEADERBOARDS[game === 'car' ? 'car' : 'ufo'];
+}
+
 function seedDefaultLeaderboard() {
   // Diverse 100 NFT editions across #11 ~ #9999 (excluding #0 by default so #0 only appears when explicitly played with "0")
   // Modest baseline high scores (1,150 ~ 3,600 PTS) so real players easily beat #1!
@@ -445,19 +459,20 @@ function seedDefaultLeaderboard() {
   }
 }
 
-function loadLeaderboardData() {
+function loadLeaderboardData(board = LEADERBOARDS.ufo) {
+  const boardMap = board.map;
   try {
-    if (fs.existsSync(LEADERBOARD_JSON_PATH)) {
-      const raw = JSON.parse(fs.readFileSync(LEADERBOARD_JSON_PATH, 'utf8'));
+    if (fs.existsSync(board.path)) {
+      const raw = JSON.parse(fs.readFileSync(board.path, 'utf8'));
       if (Array.isArray(raw) && raw.length > 0) {
-        ufoLeaderboardMap.clear();
+        boardMap.clear();
         for (const row of raw) {
           if (row.edition === null || row.edition === undefined || String(row.edition).trim() === '') continue;
           const ed = parseTokenNumber(row.edition);
           if (ed !== null && Number(row.score) > 0) {
-            const prev = ufoLeaderboardMap.get(ed);
+            const prev = boardMap.get(ed);
             const bestScore = Math.max(prev?.score || 0, Math.floor(Number(row.score)));
-            ufoLeaderboardMap.set(ed, {
+            boardMap.set(ed, {
               edition: ed,
               score: bestScore,
               updated_at: row.updated_at || new Date().toISOString(),
@@ -469,22 +484,22 @@ function loadLeaderboardData() {
   } catch (e) {
     console.warn('[Leaderboard] Using default seed:', e.message);
   }
-  seedDefaultLeaderboard();
-  saveLeaderboardData();
+  if (board.seed) seedDefaultLeaderboard();
+  saveLeaderboardData(board);
 }
 
-function saveLeaderboardData() {
+function saveLeaderboardData(board = LEADERBOARDS.ufo) {
   try {
-    const arr = Array.from(ufoLeaderboardMap.values()).sort((a, b) => b.score - a.score);
-    fs.writeFileSync(LEADERBOARD_JSON_PATH, JSON.stringify(arr.slice(0, 200), null, 2), 'utf8');
+    const arr = Array.from(board.map.values()).sort((a, b) => b.score - a.score);
+    fs.writeFileSync(board.path, JSON.stringify(arr.slice(0, 200), null, 2), 'utf8');
   } catch (e) {
     // Ignore read-only fs errors in container if any; memory map remains authoritative
   }
 }
 
-function getFormattedLeaderboard(limit = 100) {
+function getFormattedLeaderboard(limit = 100, board = LEADERBOARDS.ufo) {
   if (!collection) loadCollectionData();
-  const sorted = Array.from(ufoLeaderboardMap.values()).sort(
+  const sorted = Array.from(board.map.values()).sort(
     (a, b) => b.score - a.score || a.edition - b.edition
   );
   return sorted.slice(0, limit).map((row, idx) => {
@@ -505,13 +520,15 @@ function getFormattedLeaderboard(limit = 100) {
   });
 }
 
-loadLeaderboardData();
+loadLeaderboardData(LEADERBOARDS.ufo);
+loadLeaderboardData(LEADERBOARDS.car);
 
 app.get('/api/leaderboard', (req, res) => {
   const limit = Math.min(100, Math.max(5, parseInt(req.query.limit, 10) || 100));
+  const board = getLeaderboard(req.query.game);
   res.json({
-    total_pilots: ufoLeaderboardMap.size,
-    items: getFormattedLeaderboard(limit),
+    total_pilots: board.map.size,
+    items: getFormattedLeaderboard(limit, board),
   });
 });
 
@@ -529,18 +546,19 @@ app.post('/api/leaderboard', (req, res) => {
   }
 
   // HIGH SCORE ONLY: Never add/accumulate scores; only update if new score > previous best score!
-  const prev = ufoLeaderboardMap.get(ed);
+  const board = getLeaderboard(req.body?.game);
+  const prev = board.map.get(ed);
   const isNewBest = !prev || rawScore > prev.score;
   if (isNewBest) {
-    ufoLeaderboardMap.set(ed, {
+    board.map.set(ed, {
       edition: ed,
       score: rawScore,
       updated_at: new Date().toISOString(),
     });
-    saveLeaderboardData();
+    saveLeaderboardData(board);
   }
 
-  const allSorted = Array.from(ufoLeaderboardMap.values()).sort(
+  const allSorted = Array.from(board.map.values()).sort(
     (a, b) => b.score - a.score || a.edition - b.edition
   );
   const myRank = allSorted.findIndex((r) => r.edition === ed) + 1;
@@ -550,10 +568,10 @@ app.post('/api/leaderboard', (req, res) => {
     edition: ed,
     id: `P${String(ed).padStart(4, '0')}`,
     is_new_best: isNewBest,
-    best_score: ufoLeaderboardMap.get(ed).score,
+    best_score: board.map.get(ed).score,
     rank: myRank,
-    total_pilots: ufoLeaderboardMap.size,
-    items: getFormattedLeaderboard(100),
+    total_pilots: board.map.size,
+    items: getFormattedLeaderboard(100, board),
   });
 });
 

@@ -15,7 +15,7 @@
   <link rel="icon" type="image/png" href="/img/P4441.png?v=v322" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-  <link rel="stylesheet" href="/styles.css?v=5.7.2" />
+  <link rel="stylesheet" href="/styles.css?v=5.8.0" />
 </head>
 <body>
   <!-- Full-Viewport Stepped Pixel Ambient Particle Canvas -->
@@ -87,6 +87,16 @@
             <div class="s1-overlay-card">
               <div class="s1-overlay-title" data-ko="남극이 무너지고 있습니다. 탈출하시겠습니까?" data-en="Antarctica is crumbling. Will you escape?">
                 남극이 무너지고 있습니다. 탈출하시겠습니까?
+              </div>
+              <div class="s1-vehicle-pick" role="radiogroup" aria-label="탈출 수단">
+                <button type="button" class="s1-vehicle-btn is-active" data-vehicle="ufo" role="radio" aria-checked="true">
+                  <svg class="vh-icon" viewBox="0 0 13 8" aria-hidden="true" shape-rendering="crispEdges"><rect x="4" y="0" width="5" height="1" fill="#7dd3fc"/><rect x="3" y="1" width="7" height="2" fill="#7dd3fc"/><rect x="1" y="3" width="11" height="2" fill="#38bdf8"/><rect x="0" y="4" width="13" height="1" fill="#38bdf8"/><rect x="3" y="5" width="7" height="1" fill="#0284c7"/><rect x="3" y="4" width="1" height="1" fill="#facc15"/><rect x="6" y="4" width="1" height="1" fill="#facc15"/><rect x="9" y="4" width="1" height="1" fill="#facc15"/></svg>
+                  <span class="vh-text"><span class="vh-name" data-ko="우주선" data-en="UFO">우주선</span><span class="vh-hint" data-ko="끌어서 조종" data-en="Drag to steer">끌어서 조종</span></span>
+                </button>
+                <button type="button" class="s1-vehicle-btn" data-vehicle="car" role="radio" aria-checked="false">
+                  <svg class="vh-icon" viewBox="0 0 14 8" aria-hidden="true" shape-rendering="crispEdges"><rect x="3" y="1" width="1" height="2" fill="#e2e8f0"/><rect x="9" y="1" width="1" height="2" fill="#7dd3fc"/><rect x="1" y="3" width="12" height="2" fill="#2dd4bf"/><rect x="1" y="5" width="12" height="1" fill="#f472b6"/><rect x="13" y="3" width="1" height="1" fill="#fde047"/><rect x="2" y="6" width="3" height="2" fill="#1f2937"/><rect x="9" y="6" width="3" height="2" fill="#1f2937"/><rect x="3" y="6" width="1" height="1" fill="#e2e8f0"/><rect x="10" y="6" width="1" height="1" fill="#e2e8f0"/></svg>
+                  <span class="vh-text"><span class="vh-name" data-ko="자동차" data-en="Car">자동차</span><span class="vh-hint" data-ko="눌러서 점프" data-en="Tap to jump">눌러서 점프</span></span>
+                </button>
               </div>
               <div class="s1-overlay-controls">
                 <div class="s1-yes-group">
@@ -296,9 +306,13 @@
           <div>
             <h2 class="section-title" data-ko="게임 최고점 TOP 100" data-en="Game high scores · TOP 100">게임 최고점 TOP 100</h2>
             <p class="section-sub" data-ko="번호를 넣고 플레이한 기록 중 번호별 최고점만 남깁니다. 재미로 하는 게임이라 NFT 희귀도와는 상관없습니다." data-en="Best score per NFT number entered before playing. Just for fun, it has nothing to do with rarity.">번호를 넣고 플레이한 기록 중 번호별 최고점만 남깁니다. 재미로 하는 게임이라 NFT 희귀도와는 상관없습니다.</p>
+            <div class="rank-game-tabs" role="tablist" aria-label="게임 종류">
+              <button type="button" class="rank-game-btn is-active" data-game="ufo" role="tab" aria-selected="true" data-ko="우주선" data-en="UFO">우주선</button>
+              <button type="button" class="rank-game-btn" data-game="car" role="tab" aria-selected="false" data-ko="자동차" data-en="Car">자동차</button>
+            </div>
           </div>
           <div class="ranking-header-actions">
-            <button type="button" class="btn-primary" onclick="scrollToSection('tab-intro')">
+            <button type="button" class="btn-primary" onclick="setEscapeVehicle(RANKING_GAME); scrollToSection('tab-intro')">
               <span data-ko="게임 하러 가기" data-en="Play">게임 하러 가기</span>
             </button>
             <button type="button" class="btn-secondary" id="btn-refresh-ranking-page">
@@ -399,6 +413,7 @@
     </div>
   </footer>
 
-  <script src="/app.js?v=5.7.2"></script>
+  <script src="/car-runner.js?v=5.8.0"></script>
+  <script src="/app.js?v=5.8.0"></script>
 </body>
 </html>

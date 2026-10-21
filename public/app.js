@@ -523,8 +523,28 @@ const INTRO_TOWN = (() => {
   };
 })();
 
+// Escape vehicle picked on the first screen: 'ufo' (drag to steer) or 'car' (auto-run, tap to jump; car-runner.js).
+// ?vehicle=car or ?vehicle=ufo forces one; otherwise the last pick on this device.
+const VEHICLE_STORAGE_KEY = 'ppeng_vehicle';
+function readInitialVehicle() {
+  try {
+    const forced = new URLSearchParams(window.location.search).get('vehicle');
+    if (forced === 'car' || forced === 'ufo') return forced;
+  } catch (e) {
+    // Fall through to the saved pick
+  }
+  try {
+    const saved = window.localStorage.getItem(VEHICLE_STORAGE_KEY);
+    if (saved === 'car' || saved === 'ufo') return saved;
+  } catch (e) {
+    // Storage blocked (private mode, some WebViews)
+  }
+  return 'ufo';
+}
+
 const MOTION_STATE = {
   sceneIdx: 0,
+  vehicle: readInitialVehicle(),
   autoPlay: true,
   isFullscreen: false,
   skippedEscape: false,
@@ -809,7 +829,7 @@ async function submitUfoScoreToServer(tokenId, score, kills) {
       UFO_GAME.lastRank = data.rank || null;
       UFO_GAME.lastBestScore = data.best_score || score;
       UFO_GAME.lastIsNewBest = Boolean(data.is_new_best);
-      if (Array.isArray(data.items)) {
+      if (Array.isArray(data.items) && RANKING_GAME === 'ufo') {
         RANKING_PAGE_CACHE = data.items;
         renderRankingPageList();
       }
@@ -1184,6 +1204,36 @@ function triggerScene0Liftoff() {
   setIntroScene(1, true);
 }
 
+function setEscapeVehicle(vehicle) {
+  if (vehicle !== 'car' && vehicle !== 'ufo') return;
+  MOTION_STATE.vehicle = vehicle;
+  try {
+    window.localStorage.setItem(VEHICLE_STORAGE_KEY, vehicle);
+  } catch (e) {
+    // Not remembered this time; the pick still applies to this visit
+  }
+  updateVehicleUI();
+}
+
+function updateVehicleUI() {
+  const vehicle = MOTION_STATE.vehicle;
+  document.querySelectorAll('.s1-vehicle-btn').forEach((btn) => {
+    const on = btn.dataset.vehicle === vehicle;
+    btn.classList.toggle('is-active', on);
+    btn.setAttribute('aria-checked', on ? 'true' : 'false');
+  });
+  const theaterEl = document.getElementById('retro-intro-theater');
+  if (theaterEl) theaterEl.dataset.vehicle = vehicle;
+  const padText = document.querySelector('#mobile-fullscreen-touchpad .touchpad-text');
+  if (padText) {
+    const ko = vehicle === 'car' ? '아무 데나 누르면 점프 · 길게 누르면 더 높이' : '아무 데나 대고 끌면 우주선이 따라 움직여요';
+    const en = vehicle === 'car' ? 'Press anywhere to jump · hold to go higher' : 'Drag anywhere here to steer the UFO';
+    padText.dataset.ko = ko;
+    padText.dataset.en = en;
+    padText.textContent = CURRENT_LANG === 'ko' ? ko : en;
+  }
+}
+
 // Choice B ("탈출 안 한다고 하면 바로 저기 벚꽃나무 있는 곳 가장 기본 펭귄으로"):
 function skipEscapeToCherryBlossomTown() {
   MOTION_STATE.skippedEscape = true;
@@ -1306,6 +1356,7 @@ async function setUfoPilotTokenId(tokenNum, triggerPfp = true, startEscape = fal
 }
 
 let RANKING_PAGE_CACHE = [];
+let RANKING_GAME = MOTION_STATE.vehicle; // which board the ranking tab shows: 'ufo' | 'car'
 const RANKING_PAGE_SIZE = 10;
 let CURRENT_RANKING_PAGE = 1;
 let RANKING_TOTAL_PAGES = 10;
@@ -1405,7 +1456,15 @@ function renderRankingPageList() {
   const startIdx = (CURRENT_RANKING_PAGE - 1) * RANKING_PAGE_SIZE;
   const pageItems = filtered.slice(startIdx, startIdx + RANKING_PAGE_SIZE);
 
-  listEl.innerHTML = buildLeaderboardRowsHtml(pageItems, true);
+  if (RANKING_PAGE_CACHE.length === 0 && !q) {
+    listEl.innerHTML = `<div class="empty-state">${
+      CURRENT_LANG === 'ko'
+        ? '아직 기록이 없습니다. 번호를 넣고 플레이하면 첫 기록이 됩니다.'
+        : 'No scores yet. Enter your number and play to set the first one.'
+    }</div>`;
+  } else {
+    listEl.innerHTML = buildLeaderboardRowsHtml(pageItems, true);
+  }
 
   // Update Range Indicator (e.g. "현재 표시: 1위 ~ 10위 (1 / 10 페이지 · 페이지당 10명)")
   const rangeEl = document.getElementById('ranking-range-indicator');
@@ -1456,20 +1515,41 @@ function renderRankingPageList() {
     const first = RANKING_PAGE_CACHE[0];
     if (topNameEl) topNameEl.textContent = getNftDisplayName(first).replace(/^Pixel Penguin /, '');
     if (topScoreEl) topScoreEl.textContent = `${Number(first.score).toLocaleString()} PTS`;
+  } else {
+    if (topNameEl) topNameEl.textContent = '–';
+    if (topScoreEl) topScoreEl.textContent = '–';
+  }
+}
+
+// Switch the ranking tab between the UFO and car boards
+function setRankingGame(game) {
+  if (game !== 'ufo' && game !== 'car') return;
+  const changed = RANKING_GAME !== game;
+  RANKING_GAME = game;
+  document.querySelectorAll('.rank-game-btn').forEach((btn) => {
+    const on = btn.dataset.game === game;
+    btn.classList.toggle('is-active', on);
+    btn.setAttribute('aria-selected', on ? 'true' : 'false');
+  });
+  if (changed) {
+    RANKING_PAGE_CACHE = [];
+    CURRENT_RANKING_PAGE = 1;
   }
 }
 
 async function fetchAndRenderRankingPage() {
   const listEl = document.getElementById('ranking-page-list-body');
+  const game = RANKING_GAME;
   if (listEl && RANKING_PAGE_CACHE.length === 0) {
     listEl.innerHTML = `<div class="empty-state">${
       CURRENT_LANG === 'ko' ? '불러오는 중…' : 'Loading…'
     }</div>`;
   }
   try {
-    const res = await fetch('/api/leaderboard?limit=100');
-    if (res.ok) {
+    const res = await fetch(`/api/leaderboard?limit=100&game=${game}`);
+    if (res.ok && game === RANKING_GAME) {
       const data = await res.json();
+      if (game !== RANKING_GAME) return; // switched boards while this one loaded
       RANKING_PAGE_CACHE = data.items || [];
       renderRankingPageList();
     }
@@ -1490,12 +1570,15 @@ function boardRankedNftAndPlay(edition, event) {
   if (Number.isNaN(parsed)) return;
   const num = Math.max(0, Math.min(9999, parsed));
   closeLeaderboardModal();
+  setEscapeVehicle(RANKING_GAME);
   setUfoPilotTokenId(num, true, true);
   scrollToSection('tab-intro');
   enterUfoFullscreenGame(true);
 }
 
 async function openLeaderboardModal() {
+  // From the game: show the board of the vehicle being played
+  setRankingGame(MOTION_STATE.vehicle);
   scrollToSection('tab-ranking');
 }
 
@@ -2015,7 +2098,11 @@ function setIntroScene(sceneIdx, resetTimer = true) {
       MOTION_STATE.scene0Launching = false;
       MOTION_STATE.scene0LaunchStartTime = 0;
     } else if (MOTION_STATE.sceneIdx === 2) {
-      resetUfoGame(MOTION_STATE.sceneStartTime, true);
+      if (MOTION_STATE.vehicle === 'car') {
+        resetCarGame(MOTION_STATE.sceneStartTime);
+      } else {
+        resetUfoGame(MOTION_STATE.sceneStartTime, true);
+      }
     } else if (MOTION_STATE.sceneIdx === 3) {
       UFO_GAME.phase = 'scan';
       UFO_GAME.phaseStartTime = MOTION_STATE.sceneStartTime;
@@ -2490,7 +2577,13 @@ function drawPixelScanHudPill(ctx, cx, y, pct) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillText(
-    pct < 100 ? `UFO & PILOT PIXEL SCAN · ${pct}%` : 'PIXEL UFO COMPLETE!',
+    MOTION_STATE.vehicle === 'car'
+      ? pct < 100
+        ? `CAR & PILOT PIXEL SCAN · ${pct}%`
+        : 'PIXEL CAR COMPLETE!'
+      : pct < 100
+      ? `UFO & PILOT PIXEL SCAN · ${pct}%`
+      : 'PIXEL UFO COMPLETE!',
     cx,
     topY + 12
   );
@@ -3311,6 +3404,12 @@ function initPixelMotionStudio() {
     skipEscapeToCherryBlossomTown();
   });
 
+  // Vehicle picker in the start prompt
+  document.querySelectorAll('.s1-vehicle-btn').forEach((btn) => {
+    btn.addEventListener('click', () => setEscapeVehicle(btn.dataset.vehicle));
+  });
+  updateVehicleUI();
+
   // Default initial state: Guest ('기본 펭귄 · 기록 미저장') with Default Blue Penguin ('01')
   updateUfoBoardingDockUI();
 
@@ -3328,7 +3427,16 @@ function initPixelMotionStudio() {
   });
 
   // Keyboard Controls for Giant UFO Spaceship in Scene 3 (sceneIdx === 2)
+  // Car: Space / ArrowUp / W jump while held
+  const isCarJumpKey = (code) => code === 'Space' || code === 'ArrowUp' || code === 'KeyW';
   window.addEventListener('keydown', (e) => {
+    if (carGameActive() && isCarJumpKey(e.code)) {
+      const activeTag = document.activeElement?.tagName;
+      if (activeTag === 'INPUT' || activeTag === 'SELECT' || activeTag === 'TEXTAREA') return;
+      e.preventDefault();
+      if (!e.repeat) carJumpPress(performance.now());
+      return;
+    }
     if (
       ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD'].includes(
         e.code
@@ -3345,6 +3453,7 @@ function initPixelMotionStudio() {
   });
   window.addEventListener('keyup', (e) => {
     UFO_GAME.keys[e.code] = false;
+    if (isCarJumpKey(e.code)) carJumpRelease();
   });
 
   // Launch Fullscreen UFO Game Buttons
@@ -3380,6 +3489,9 @@ function initPixelMotionStudio() {
     const { mx, my } = getLogicalCoords(e.clientX, e.clientY);
 
     if (MOTION_STATE.sceneIdx === 0) {
+      // Tapping the UFO or the parked car picks it
+      const picked = scene0VehicleAt(mx, my);
+      if (picked) setEscapeVehicle(picked);
       return;
     }
 
@@ -3389,6 +3501,7 @@ function initPixelMotionStudio() {
     }
 
     if (MOTION_STATE.sceneIdx === 2) {
+      if (MOTION_STATE.vehicle === 'car') return; // jumps come from mousedown / touchstart
       UFO_GAME.userControlled = true;
       UFO_GAME.targetX = Math.max(125, Math.min(680, mx));
       UFO_GAME.targetY = Math.max(92, Math.min(390, my));
@@ -3419,9 +3532,15 @@ function initPixelMotionStudio() {
     }
   });
 
+  canvas.addEventListener('mousedown', (e) => {
+    if (e.button === 0 && carGameActive()) carJumpPress(performance.now());
+  });
+  window.addEventListener('mouseup', () => carJumpRelease());
+
   canvas.addEventListener('mousemove', (e) => {
     const { mx, my } = getLogicalCoords(e.clientX, e.clientY);
     if (MOTION_STATE.sceneIdx === 2) {
+      if (MOTION_STATE.vehicle === 'car') return;
       if (my > 54 && mx < 780) {
         UFO_GAME.userControlled = true;
         UFO_GAME.targetX = Math.max(125, Math.min(680, mx));
@@ -3442,6 +3561,10 @@ function initPixelMotionStudio() {
 
     if (MOTION_STATE.sceneIdx === 2) {
       if (e.cancelable) e.preventDefault();
+      if (MOTION_STATE.vehicle === 'car') {
+        if (e.type === 'touchstart') carJumpPress(performance.now());
+        return;
+      }
       const { mx, my } = getLogicalCoords(touch.clientX, touch.clientY);
       UFO_GAME.userControlled = true;
       UFO_GAME.targetX = Math.max(125, Math.min(680, mx));
@@ -3450,6 +3573,11 @@ function initPixelMotionStudio() {
   };
   canvas.addEventListener('touchstart', handleTouchSteer, { passive: false });
   canvas.addEventListener('touchmove', handleTouchSteer, { passive: false });
+  const releaseCarTouch = (e) => {
+    if (e.touches.length === 0) carJumpRelease();
+  };
+  canvas.addEventListener('touchend', releaseCarTouch);
+  canvas.addEventListener('touchcancel', releaseCarTouch);
 
   // Dedicated Mobile Fullscreen Touchpad Below Canvas
   // CRITICAL FIX: Never call setIntroScene(2, true) when sceneIdx !== 2 (prevents resetting score & blocking Scene 4/5 transition!)
@@ -3482,6 +3610,11 @@ function initPixelMotionStudio() {
       (e) => {
         if (MOTION_STATE.sceneIdx !== 2) return;
         if (e.cancelable) e.preventDefault();
+        // Car: the whole pad is one big jump button
+        if (MOTION_STATE.vehicle === 'car') {
+          carJumpPress(performance.now());
+          return;
+        }
         const t = e.changedTouches[0];
         if (t && (!padLast || !findPadTouch(e.touches))) {
           padLast = { id: t.identifier, x: t.clientX, y: t.clientY };
@@ -3500,6 +3633,7 @@ function initPixelMotionStudio() {
       { passive: false }
     );
     const releasePad = (e) => {
+      if (e.touches.length === 0) carJumpRelease();
       if (padLast && !findPadTouch(e.touches)) {
         // Another finger still on the pad takes over without a jump
         const next = e.touches[0];
@@ -3509,6 +3643,10 @@ function initPixelMotionStudio() {
     touchpadEl.addEventListener('touchend', releasePad);
     touchpadEl.addEventListener('touchcancel', releasePad);
     touchpadEl.addEventListener('mousedown', (e) => {
+      if (carGameActive()) {
+        carJumpPress(performance.now());
+        return;
+      }
       padLast = { id: 'mouse', x: e.clientX, y: e.clientY };
     });
     touchpadEl.addEventListener('mousemove', (e) => {
@@ -3549,7 +3687,20 @@ function initPixelMotionStudio() {
       ctx.save();
       ctx.translate(Math.sin(now * 0.045) * 1.4, Math.cos(now * 0.04) * 1.0);
       drawRefScene1ChoiceBackground(ctx, now);
+      drawScene0VehiclePicker(ctx, now);
       ctx.restore();
+    }
+
+    // SCENE 2 for the car: floors it across the cracking ice and launches off the edge
+    else if (MOTION_STATE.sceneIdx === 1 && MOTION_STATE.vehicle === 'car') {
+      ctx.save();
+      ctx.translate(Math.sin(now * 0.065) * 2.4, Math.cos(now * 0.055) * 1.8);
+      drawRefVortexBackground(ctx, now);
+      drawCarScene1Liftoff(ctx, now, p, activeSpId);
+      ctx.restore();
+      if (elapsed >= curDuration) {
+        setIntroScene(2, true);
+      }
     }
 
     // ========================================================================
@@ -3652,6 +3803,11 @@ function initPixelMotionStudio() {
       if (elapsed >= curDuration) {
         setIntroScene(2, true);
       }
+    }
+
+    // SCENE 3 for the car: the auto-run road (car-runner.js)
+    else if (MOTION_STATE.sceneIdx === 2 && MOTION_STATE.vehicle === 'car') {
+      drawCarRunnerFrame(ctx, now, activeSpId);
     }
 
     // ========================================================================
@@ -4060,8 +4216,11 @@ function initPixelMotionStudio() {
       }
       ctx.restore();
 
+      // The car's tyres hang lower than the saucer hull, so its scan runs further down
+      const isCar = MOTION_STATE.vehicle === 'car';
+      const carScale = 1.3;
       const topEdge = ufoY - 120;
-      const botEdge = ufoY + 52;
+      const botEdge = isCar ? ufoY + 66 : ufoY + 52;
       const totalSpanH = botEdge - topEdge;
       const scanY = topEdge + scanRatio * totalSpanH;
       const pixelBlinkDuringBeam = scanRatio > 0.30 && scanRatio < 0.38;
@@ -4072,19 +4231,43 @@ function initPixelMotionStudio() {
         ctx.beginPath();
         ctx.rect(ufoX - 180, topEdge - 40, 360, scanY - topEdge + 40);
         ctx.clip();
-        drawPixelUfoSpaceshipWithPilot(ctx, ufoX, ufoY, ufoTilt, now, {
-          scale: ufoScale,
-          openHatchRatio: 0,
-          spId: activeSpId,
-          forceBlink: pixelBlinkDuringBeam,
-          isShocked: false,
-          showSmoke: false,
-        });
+        if (isCar) {
+          drawPixelCarWithPilot(ctx, ufoX, ufoY, ufoTilt, now, {
+            scale: carScale,
+            spId: activeSpId,
+            forceBlink: pixelBlinkDuringBeam,
+            beam: false,
+            wheelAngle: now * 0.03,
+          });
+        } else {
+          drawPixelUfoSpaceshipWithPilot(ctx, ufoX, ufoY, ufoTilt, now, {
+            scale: ufoScale,
+            openHatchRatio: 0,
+            spId: activeSpId,
+            forceBlink: pixelBlinkDuringBeam,
+            isShocked: false,
+            showSmoke: false,
+          });
+        }
         ctx.restore();
       }
 
       // 2. Bottom Portion (Below Laser Scan Line): GIANT 2D UFO + 2D PENGUIN PILOT
-      if (scanRatio < 1) {
+      if (scanRatio < 1 && isCar) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(ufoX - 180, scanY, 360, botEdge - scanY + 50);
+        ctx.clip();
+        drawCarWithPilot(ctx, ufoX, ufoY, ufoTilt, now, {
+          scale: carScale,
+          spId: activeSpId,
+          isImpactBlink: subP < 0.09,
+          beam: false,
+          wheelAngle: now * 0.03,
+          boost: 0.6,
+        });
+        ctx.restore();
+      } else if (scanRatio < 1) {
         ctx.save();
         ctx.beginPath();
         ctx.rect(ufoX - 180, scanY, 360, botEdge - scanY + 50);
@@ -4163,10 +4346,18 @@ function initPixelMotionStudio() {
         Math.max(64, topEdge - 6),
         pct < 78
           ? CURRENT_LANG === 'ko'
-            ? '으악 내 뽀샤시한 몸이!! 강제로 도트 찍히고 있잖아?!!'
+            ? isCar
+              ? '어어 차가 하늘로 빨려 올라가!! 내 차까지 도트 찍히잖아?!!'
+              : '으악 내 뽀샤시한 몸이!! 강제로 도트 찍히고 있잖아?!!'
+            : isCar
+            ? 'The car is getting sucked up!! Even my ride is going pixel?!!'
             : 'Aaagh my smooth body!! I am being forcibly pixelated?!!'
           : CURRENT_LANG === 'ko'
-          ? '강제 도트화 완료... 어어 잠깐만 계기판 왜 꺼져 추락한다아악!!'
+          ? isCar
+            ? '강제 도트화 완료... 어 잠깐 바퀴가 허공에서 헛돈다 떨어진다아악!!'
+            : '강제 도트화 완료... 어어 잠깐만 계기판 왜 꺼져 추락한다아악!!'
+          : isCar
+          ? 'Pixelation complete... Wait, the wheels are spinning on air?! FALLING!!'
           : 'Pixelation complete... Wait why did the engine die?! CRASHING!!',
         pct < 78 ? '#38bdf8' : '#fb7185',
         now
@@ -4188,7 +4379,9 @@ function initPixelMotionStudio() {
       ctx.imageSmoothingEnabled = false;
 
       // 1. Top Arcade Landing Score & Leaderboard Banner (Clickable to open #tab-ranking)
-      const finalPts = UFO_GAME.lastFinalScore || UFO_GAME.score || 3450;
+      const isCarRun = MOTION_STATE.vehicle === 'car';
+      const runResult = isCarRun ? CAR_GAME : UFO_GAME; // score, best and rank of the run just played
+      const finalPts = runResult.lastFinalScore || (isCarRun ? 0 : UFO_GAME.score) || 3450;
       const banW = 560;
       const banH = 32;
       const banX = 480 - banW / 2;
@@ -4214,8 +4407,8 @@ function initPixelMotionStudio() {
         );
       } else if (UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null) {
         const pilotCode = `P${String(UFO_GAME.pilotTokenId).padStart(4, '0')}`;
-        const bestPts = Math.max(finalPts, UFO_GAME.lastBestScore || finalPts);
-        const rankTag = UFO_GAME.lastRank ? ` · 순위 #${UFO_GAME.lastRank}` : '';
+        const bestPts = Math.max(finalPts, runResult.lastBestScore || finalPts);
+        const rankTag = runResult.lastRank ? ` · 순위 #${runResult.lastRank}` : '';
         ctx.fillText(
           CURRENT_LANG === 'ko'
             ? `#${UFO_GAME.pilotTokenId} (${pilotCode}) · 최고점 ${bestPts.toLocaleString()} PTS${rankTag}  |  [게임 순위 보기]`
@@ -4303,14 +4496,16 @@ function initPixelMotionStudio() {
 
         const ufoLandX = 228;
         const ufoGroundY = 418;
+        // The car origin sits 27px higher so its tyres (+47 x 1.3) touch the same walkway line as the saucer hull
+        const landY = isCarRun ? ufoGroundY - 27 : ufoGroundY;
         const ufoCurY =
           crashP < 1
-            ? Math.round(90 + crashP * crashP * (ufoGroundY - 90))
-            : Math.round(ufoGroundY + bounceOffset);
+            ? Math.round(90 + crashP * crashP * (landY - 90))
+            : Math.round(landY + bounceOffset);
         ufoRenderY = ufoCurY;
         const ufoCrashTilt = crashP < 1 ? 0.18 : 0.04;
 
-        drawPixelGroundShadow(ctx, ufoLandX, ufoGroundY + 32, 162, bounceOffset);
+        drawPixelGroundShadow(ctx, ufoLandX, ufoGroundY + 32, isCarRun ? 236 : 162, bounceOffset);
 
         // Ground impact pixel dust & spark burst when the UFO slams into the stone walkway
         if (s5P >= 0.13 && s5P <= 0.28) {
@@ -4329,14 +4524,27 @@ function initPixelMotionStudio() {
           ctx.restore();
         }
 
-        drawPixelUfoSpaceshipWithPilot(ctx, ufoLandX, ufoCurY, ufoCrashTilt, now, {
-          scale: 1.42,
-          openHatchRatio,
-          spId: activeSpId,
-          forceBlink: false,
-          isShocked: crashP < 1,
-          showSmoke: true,
-        });
+        if (isCarRun) {
+          // No hatch to open: the pilot pops up out of the seat once the car lands
+          drawPixelCarWithPilot(ctx, ufoLandX, ufoCurY, ufoCrashTilt, now, {
+            scale: 1.3,
+            spId: activeSpId,
+            isShocked: crashP < 1,
+            showSmoke: true,
+            wheelAngle: crashP < 1 ? now * 0.05 : 0,
+            beam: false,
+            pilotLift: openHatchRatio > 0 && openHatchRatio < 1 ? Math.sin(openHatchRatio * Math.PI) * 14 : 0,
+          });
+        } else {
+          drawPixelUfoSpaceshipWithPilot(ctx, ufoLandX, ufoCurY, ufoCrashTilt, now, {
+            scale: 1.42,
+            openHatchRatio,
+            spId: activeSpId,
+            forceBlink: false,
+            isShocked: crashP < 1,
+            showSmoke: true,
+          });
+        }
       }
 
       // 4 Colorful Pixel Penguin Friends on the Right Walking Up & Welcoming the Protagonist
@@ -4391,8 +4599,8 @@ function initPixelMotionStudio() {
             speaker1.fx + spriteSize / 2 + 12,
             speaker1.fy - 4,
             CURRENT_LANG === 'ko'
-              ? `ㅋㅋㅋ 우주선도 안 타고 날로 먹었네?! 어쨌든 ${INTRO_TOWN.ko} 환영한다!!`
-              : `Haha you skipped the UFO ride?! Welcome to ${INTRO_TOWN.en} anyway!!`,
+              ? `ㅋㅋㅋ ${isCarRun ? '차' : '우주선'}도 안 타고 날로 먹었네?! 어쨌든 ${INTRO_TOWN.ko} 환영한다!!`
+              : `Haha you skipped the ${isCarRun ? 'car' : 'UFO'} ride?! Welcome to ${INTRO_TOWN.en} anyway!!`,
             '#ff4d6d',
             now
           );
@@ -4415,7 +4623,11 @@ function initPixelMotionStudio() {
           256,
           306,
           CURRENT_LANG === 'ko'
-            ? '쿠과광—!! 어우 내 허리... 우주선은 폐차각인데 불시착은 성공이다!!'
+            ? isCarRun
+              ? '쿠과광—!! 어우 내 허리... 차는 폐차각인데 도착은 성공이다!!'
+              : '쿠과광—!! 어우 내 허리... 우주선은 폐차각인데 불시착은 성공이다!!'
+            : isCarRun
+            ? 'CRAAASH—!! Ow my back... the car is totaled, but we made it!!'
             : 'CRAAASH—!! Ow my back... UFO is totaled, but we made it!!',
           '#38bdf8',
           now
@@ -4430,8 +4642,8 @@ function initPixelMotionStudio() {
             speaker1.fx + spriteSize / 2 + 14,
             speaker1.fy - 4,
             CURRENT_LANG === 'ko'
-              ? `우와 우주선 추락했어 ㅋㅋ 살아있냐?! ${INTRO_TOWN.koPixel}에 온 걸 환영해!!`
-              : `Whoa your UFO crashed haha—you alive?! Welcome to ${INTRO_TOWN.en}!!`,
+              ? `우와 ${isCarRun ? '하늘에서 차가 떨어졌어' : '우주선 추락했어'} ㅋㅋ 살아있냐?! ${INTRO_TOWN.koPixel}에 온 걸 환영해!!`
+              : `Whoa ${isCarRun ? 'a car fell from the sky' : 'your UFO crashed'} haha—you alive?! Welcome to ${INTRO_TOWN.en}!!`,
             '#ff4d6d',
             now
           );
@@ -4452,8 +4664,8 @@ function initPixelMotionStudio() {
             262,
             306,
             CURRENT_LANG === 'ko'
-              ? '우주선 수리비도 안 주네... 에라 모르겠다 10,000 도감도나 구경 가자!!'
-              : 'Not even paying for UFO repairs... Whatever, let us check the 10K Codex!!',
+              ? `${isCarRun ? '차' : '우주선'} 수리비도 안 주네... 에라 모르겠다 10,000 도감도나 구경 가자!!`
+              : `Not even paying for ${isCarRun ? 'car' : 'UFO'} repairs... Whatever, let us check the 10K Codex!!`,
             '#38bdf8',
             now
           );
@@ -5079,6 +5291,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('btn-refresh-ranking-page')?.addEventListener('click', () => {
     fetchAndRenderRankingPage();
   });
+  document.querySelectorAll('.rank-game-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      if (btn.dataset.game === RANKING_GAME) return;
+      setRankingGame(btn.dataset.game);
+      fetchAndRenderRankingPage();
+    });
+  });
+  setRankingGame(RANKING_GAME);
   document.getElementById('ranking-search-input')?.addEventListener('input', () => {
     CURRENT_RANKING_PAGE = 1;
     renderRankingPageList();
