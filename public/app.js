@@ -1226,8 +1226,8 @@ function updateVehicleUI() {
   if (theaterEl) theaterEl.dataset.vehicle = vehicle;
   const padText = document.querySelector('#mobile-fullscreen-touchpad .touchpad-text');
   if (padText) {
-    const ko = vehicle === 'car' ? '아무 데나 누르면 점프 · 길게 누르면 더 높이' : '아무 데나 대고 끌면 우주선이 따라 움직여요';
-    const en = vehicle === 'car' ? 'Press anywhere to jump · hold to go higher' : 'Drag anywhere here to steer the UFO';
+    const ko = vehicle === 'car' ? '아무 데나 누르면 점프 · 공중에서 한 번 더 = 2단 점프' : '아무 데나 대고 끌면 우주선이 따라 움직여요';
+    const en = vehicle === 'car' ? 'Press anywhere to jump · again in the air to double jump' : 'Drag anywhere here to steer the UFO';
     padText.dataset.ko = ko;
     padText.dataset.en = en;
     padText.textContent = CURRENT_LANG === 'ko' ? ko : en;
@@ -4216,11 +4216,11 @@ function initPixelMotionStudio() {
       }
       ctx.restore();
 
-      // The car's tyres hang lower than the saucer hull, so its scan runs further down
+      // The lifted car reaches higher (light bar) and lower (tyres) than the saucer, so its scan is longer
       const isCar = MOTION_STATE.vehicle === 'car';
       const carScale = 1.3;
-      const topEdge = ufoY - 120;
-      const botEdge = isCar ? ufoY + 66 : ufoY + 52;
+      const topEdge = isCar ? ufoY - 136 : ufoY - 120;
+      const botEdge = isCar ? ufoY + 80 : ufoY + 52;
       const totalSpanH = botEdge - topEdge;
       const scanY = topEdge + scanRatio * totalSpanH;
       const pixelBlinkDuringBeam = scanRatio > 0.30 && scanRatio < 0.38;
@@ -4496,8 +4496,8 @@ function initPixelMotionStudio() {
 
         const ufoLandX = 228;
         const ufoGroundY = 418;
-        // The car origin sits 27px higher so its tyres (+47 x 1.3) touch the same walkway line as the saucer hull
-        const landY = isCarRun ? ufoGroundY - 27 : ufoGroundY;
+        // The car origin sits 42px higher so its tyres (+57 x 1.3) touch the same walkway line as the saucer hull
+        const landY = isCarRun ? ufoGroundY - 42 : ufoGroundY;
         const ufoCurY =
           crashP < 1
             ? Math.round(90 + crashP * crashP * (landY - 90))

@@ -1,98 +1,136 @@
 // ============================================================================
-// CAR ESCAPE MODE (자동차 탈출) — auto-run road + tap-to-jump obstacle course
+// CAR ESCAPE MODE (자동차 탈출) — Cookie Run-style snow trail for a lifted off-road car
 //
-// The jump (variable height: release early for a short hop), the obstacle gap formula and the
-// "no more than 2 of the same obstacle in a row" rule follow the Chromium T-Rex runner
-// (components/neterror/resources/dino_game). Only the game rules are ported; every sprite here is new.
+// Rules follow CookieRun: OvenBreak as documented on the community wiki (cookierun.fandom.com):
+// Energy drains slowly while running and drops on every obstacle hit (small flyers cost half);
+// Energy Potions refill it; tall obstacles need the double jump; running off a ledge keeps the first
+// jump, so two jumps are still available in the air; a pit ends the run unless the runner is lifted
+// out ("Lifts from hole", up to 2 times); Jellies are the main source of points.
+// The course is built from hand-made chunks (ground, pits, one-way ice ledges, obstacles, jelly lines);
+// every chunk is checked to be clearable at the slowest and fastest speed (scratch/car_mode sim).
+// The "no more than 2 of the same chunk in a row" rule follows the Chromium T-Rex runner
+// (components/neterror/resources/dino_game, Copyright 2014 The Chromium Authors, BSD-3-Clause:
+// redistribution with or without modification is permitted provided this notice is retained;
+// the software is provided "as is" without warranty of any kind).
 //
-// Copyright 2014 The Chromium Authors
-// Redistribution and use in source and binary forms, with or without modification, are permitted
-// provided that the following conditions are met:
-//   * Redistributions of source code must retain the above copyright notice, this list of conditions
-//     and the following disclaimer.
-//   * Redistributions in binary form must reproduce the above copyright notice, this list of conditions
-//     and the following disclaimer in the documentation and/or other materials provided with the
-//     distribution.
-//   * Neither the name of Google LLC nor the names of its contributors may be used to endorse or promote
-//     products derived from this software without specific prior written permission.
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED
-// WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
-// PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY
-// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
-// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-// HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
-// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
-//
-// Units: 960x540 logical stage, speeds in px per 60fps frame (Chrome's 600px values x1.6),
-// heights measured upward from the road. Nothing at the top level touches the DOM, so the rules
-// can be loaded and simulated outside the browser.
+// Units: 960x540 logical stage, speeds in px per 60fps frame, heights measured upward from the snow
+// line. Nothing at the top level touches the DOM, so the rules can be simulated outside the browser.
 // ============================================================================
 const CAR_CFG = {
   STAGE_W: 960,
-  GROUND_Y: 474, // tyre contact line on the road
-  CAR_X: 186, // car origin (cockpit door line) on screen
+  GROUND_Y: 470, // snow line on screen
+  CAR_X: 200, // car origin (cockpit door line) on screen
   CAR_SCALE: 0.95,
-  WHEEL_BOTTOM: 47, // local y of the tyre contact point below the car origin
+  WHEEL_BOTTOM: 57, // local y of the tyre contact point below the car origin
+  SUPPORT_HALF: 34, // the car stands on whatever is under its middle +-34px
   SPEED: 9.6,
-  MAX_SPEED: 18.5,
-  ACCELERATION: 0.0016,
-  GRAVITY: 0.6, // Chrome's value; the car is ~4x longer than the T-Rex, so the jump is floatier instead of heavier
-  INITIAL_JUMP_VELOCITY: 15.4, // minus speed / 10, as in Chrome's startJump
-  MIN_JUMP_HEIGHT: 110, // a tap always rises this high (clears one block even at the starting speed)
-  MAX_JUMP_HEIGHT: 170, // holding past this height ends the climb
-  DROP_VELOCITY: 6, // climb speed left after the jump button is released
-  GAP_COEFFICIENT: 0.6,
-  MAX_GAP_COEFFICIENT: 1.5,
-  MAX_OBSTACLE_LENGTH: 3,
-  MAX_OBSTACLE_DUPLICATION: 2,
-  CLEAR_DISTANCE: 620, // obstacle-free run-up (Chrome CLEAR_TIME)
-  MIN_CLEAR_WINDOW: 10, // a held jump must clear every obstacle group with this many frames to spare
-  REACTION_SLACK: 14, // frames of slack between the two jumps of a back-to-back pair
-  JUMP_BUFFER_MS: 150, // a press just before landing jumps again on touchdown
-  INVULN_MS: 1100,
-  HEARTS: 3,
-  DISTANCE_SCORE: 0.1,
-  CLEAR_BONUS: 100,
-  STAR_POINTS: 150,
+  MAX_SPEED: 15,
+  ACCELERATION: 0.0012,
+  GRAVITY: 0.6,
+  JUMP_VELOCITY: 13.2, // first jump: ~145px apex
+  DOUBLE_JUMP_VELOCITY: 12, // second jump in the air: +120px
+  PIT_DEPTH_LIMIT: -150, // fell this deep into a crevasse = out
+  PIT_NO_JUMP: -16, // below the rim there is nothing to jump off
+  JUMP_BUFFER_MS: 140,
+  ENERGY_MAX: 100,
+  ENERGY_DRAIN_PER_SEC: 0.55,
+  HIT_ENERGY: 20,
+  SMALL_HIT_ENERGY: 10,
+  POTION_SMALL: 8,
+  POTION_BIG: 25,
+  PIT_RESCUES: 2,
+  PIT_RESCUE_ENERGY: 25,
+  INVULN_MS: 1000,
+  CLEAR_DISTANCE: 700,
+  CHUNK_RUNUP: 260, // flat snow between chunks
+  MAX_CHUNK_DUPLICATION: 2,
+  DISTANCE_SCORE: 0.05,
+  JELLY_POINTS: 20,
+  GOLD_JELLY_POINTS: 200,
+  JELLY_STEP: 36,
 };
 
-// Car hit boxes in local car units (y down from the door line). The hat and the windshield pillar
-// are left out on purpose, like Chrome's trimmed T-Rex boxes.
+// Car hit boxes in local car units (y down from the door line). The hat and the cage are left out on purpose.
 const CAR_HIT_BOXES = [
-  { x: -82, y: 4, w: 166, h: 41 }, // body + tyres (bumpers and exhaust trimmed)
-  { x: -56, y: -58, w: 70, h: 62 }, // pilot
+  { x: -82, y: 2, w: 166, h: 53 }, // body + tyres
+  { x: -56, y: -58, w: 70, h: 60 }, // pilot
 ];
 
-// boxes: [x, bottom height, width, height] per obstacle unit; groups repeat the unit
-const CAR_OBSTACLE_TYPES = [
-  { type: 'ICE', width: 42, height: 42, multipleSpeed: 0, minGap: 200, minSpeed: 0, boxes: [[3, 0, 36, 38]] },
+// boxes: [x, bottom, width, height] relative to the obstacle's left edge and the surface it stands on
+const CAR_OBSTACLE_TYPES = {
+  SPIKE: { width: 46, boxes: [[5, 0, 36, 38]] },
+  SNOWMAN: { width: 50, boxes: [[6, 0, 38, 40], [13, 40, 24, 30]] },
+  GIFTS: { width: 56, boxes: [[2, 0, 52, 32], [10, 32, 36, 24]] },
+  WALL: { width: 54, boxes: [[5, 0, 44, 150]] }, // taller than a single jump: needs the double jump
+  SKUA: { width: 62, boxes: [[8, 6, 46, 20]], small: true },
+};
+
+// Chunks (x relative to the chunk start). pits: [[a, b]] gaps in the snow; ledges: [[a, b, top]] one-way ice
+// ledges; obs: [[type, x, lift]]; jelly: [[a, b, h]] rows (h above the snow); gold: [[x, h]]; potion: [[x, h, size]]
+const CAR_CHUNKS = [
   {
-    type: 'GIFTS',
-    width: 56,
-    height: 58,
-    multipleSpeed: 14,
-    minGap: 220,
-    minSpeed: 0,
-    boxes: [
-      [2, 0, 52, 32],
-      [10, 32, 36, 24],
-    ],
+    id: 'spikes', len: 1220, minSpeed: 0,
+    obs: [['SPIKE', 300, 0], ['SPIKE', 980, 0]],
+    jelly: [[40, 220, 30], [260, 380, 150], [440, 880, 30], [940, 1060, 150], [1110, 1200, 30]],
+    gold: [[323, 190], [1003, 190]],
   },
   {
-    type: 'SNOWMAN',
-    width: 50,
-    height: 96,
-    multipleSpeed: 999,
-    minGap: 230,
-    minSpeed: 0,
-    boxes: [
-      [6, 0, 38, 40],
-      [13, 40, 24, 30],
-    ],
+    id: 'snowmen', len: 1260, minSpeed: 0,
+    obs: [['SNOWMAN', 380, 0], ['GIFTS', 1040, 0]],
+    jelly: [[40, 300, 30], [340, 470, 165], [540, 940, 30], [1000, 1130, 160], [1180, 1240, 30]],
   },
-  // Flies low (jump it) or high (stay on the road and pass under it); appears once the road is fast
-  { type: 'SKUA', width: 62, height: 34, multipleSpeed: 999, minGap: 260, minSpeed: 12.5, lifts: [26, 118], boxes: [[8, 6, 46, 20]] },
+  {
+    id: 'wall', len: 980, minSpeed: 0,
+    obs: [['WALL', 470, 0]],
+    jelly: [[40, 300, 30], [400, 600, 270], [700, 940, 30]],
+    gold: [[497, 310]],
+  },
+  {
+    id: 'crevasse', len: 920, minSpeed: 0,
+    pits: [[340, 520]],
+    jelly: [[40, 280, 30], [320, 560, 130], [600, 880, 30]],
+    potion: [[430, 175, 'small']],
+  },
+  {
+    id: 'ledge-over-spikes', len: 1160, minSpeed: 0,
+    ledges: [[240, 880, 108]],
+    obs: [['SPIKE', 470, 0], ['SPIKE', 700, 0]],
+    jelly: [[40, 200, 30], [280, 860, 140]],
+    gold: [[560, 140]],
+  },
+  {
+    id: 'stairs', len: 1560, minSpeed: 0,
+    pits: [[500, 1260]],
+    ledges: [[220, 620, 100], [700, 1180, 196]],
+    jelly: [[40, 180, 30], [250, 610, 132], [730, 1170, 228]],
+    gold: [[940, 228]],
+    potion: [[1400, 30, 'big']],
+  },
+  {
+    id: 'skua-low', len: 1220, minSpeed: 10.5,
+    obs: [['SKUA', 360, 26], ['SPIKE', 1020, 0]],
+    jelly: [[40, 260, 30], [320, 460, 170], [520, 920, 30], [980, 1110, 150]],
+  },
+  {
+    id: 'skua-high', len: 900, minSpeed: 10.5,
+    obs: [['SKUA', 420, 140], ['SKUA', 640, 140]],
+    jelly: [[40, 860, 30]],
+    gold: [[450, 30], [670, 30]],
+  },
+  {
+    id: 'bridge', len: 1300, minSpeed: 11,
+    pits: [[300, 1000]],
+    ledges: [[440, 860, 90]],
+    obs: [['SPIKE', 640, 90]],
+    jelly: [[40, 260, 30], [300, 430, 140], [460, 600, 122], [620, 720, 230], [740, 850, 122], [880, 1000, 140]],
+  },
+  {
+    id: 'wall-pit', len: 1500, minSpeed: 12,
+    obs: [['WALL', 330, 0]],
+    pits: [[1000, 1180]],
+    jelly: [[40, 220, 30], [280, 460, 270], [560, 940, 30], [980, 1200, 130], [1240, 1460, 30]],
+    potion: [[760, 30, 'small']],
+  },
 ];
 
 function carHitLength() {
@@ -106,14 +144,9 @@ function carHitLength() {
 }
 
 function carTopHeight() {
-  let top = -Infinity;
-  CAR_HIT_BOXES.forEach((b) => {
-    top = Math.max(top, (CAR_CFG.WHEEL_BOTTOM - b.y) * CAR_CFG.CAR_SCALE);
-  });
-  return top;
+  return Math.max(...CAR_HIT_BOXES.map((b) => (CAR_CFG.WHEEL_BOTTOM - b.y) * CAR_CFG.CAR_SCALE));
 }
 
-// Car boxes on screen: l/r in stage px, b/t as heights above the road
 function carWorldBoxes(run) {
   const S = CAR_CFG.CAR_SCALE;
   return CAR_HIT_BOXES.map((b) => ({
@@ -125,208 +158,141 @@ function carWorldBoxes(run) {
 }
 
 function carObstacleBoxes(o) {
-  const tp = CAR_OBSTACLE_TYPES[o.typeIdx];
-  const out = [];
-  for (let u = 0; u < o.size; u++) {
-    tp.boxes.forEach(([bx, bb, bw, bh]) => {
-      out.push({ l: o.x + u * tp.width + bx, r: o.x + u * tp.width + bx + bw, b: o.lift + bb, t: o.lift + bb + bh });
-    });
-  }
-  return out;
+  const tp = CAR_OBSTACLE_TYPES[o.type];
+  return tp.boxes.map(([bx, bb, bw, bh]) => ({ l: o.x + bx, r: o.x + bx + bw, b: o.lift + bb, t: o.lift + bb + bh }));
 }
 
 function carBoxesOverlap(a, b) {
   return a.l < b.r && a.r > b.l && a.b < b.t && a.t > b.b;
 }
 
-// ---------------------------------------------------------------------------
-// Jump (Chrome Trex.startJump / endJump / updateJump with heights measured upward)
-// ---------------------------------------------------------------------------
-function carStartJump(run) {
-  if (run.jumping) return false;
-  run.jumping = true;
-  run.vh = CAR_CFG.INITIAL_JUMP_VELOCITY - run.speed / 10;
-  run.reachedMinHeight = false;
-  run.jumps += 1;
-  return true;
-}
-
-function carEndJump(run) {
-  if (run.reachedMinHeight && run.vh > CAR_CFG.DROP_VELOCITY) {
-    run.vh = CAR_CFG.DROP_VELOCITY;
-  }
-}
-
-// Returns true on the frame the car touches down
-function carUpdateJump(run, dt) {
-  run.h += run.vh * dt;
-  run.vh -= CAR_CFG.GRAVITY * dt;
-  if (run.h >= CAR_CFG.MIN_JUMP_HEIGHT) run.reachedMinHeight = true;
-  // Chrome ends the climb at max height or on release; a release before the minimum height takes effect
-  // once the car gets there (Chrome drops it, which turns a very quick tap into a full jump)
-  if (run.h >= CAR_CFG.MAX_JUMP_HEIGHT || !run.jumpHeld) carEndJump(run);
-  if (run.h <= 0) {
-    run.h = 0;
-    run.vh = 0;
-    run.jumping = false;
-    return true;
-  }
-  return false;
-}
-
-// Height profile of one jump at a fixed speed, holding for holdFrames (Infinity = full jump)
-function carJumpProfile(speed, holdFrames = Infinity) {
-  const r = { h: 0, vh: 0, jumping: false, reachedMinHeight: false, jumpHeld: true, speed, jumps: 0 };
-  carStartJump(r);
-  const heights = [];
-  for (let f = 1; f < 400; f++) {
-    if (f > holdFrames) r.jumpHeld = false;
-    const landed = carUpdateJump(r, 1);
-    heights.push(r.h);
-    if (landed) break;
-  }
-  return heights;
-}
-
-// Frames a held jump needs to rise to height h, and how long it stays at or above it
-function carRiseFrames(h, speed) {
-  if (h <= 0) return 0;
-  const prof = carJumpProfile(speed);
-  const i = prof.findIndex((y) => y >= h);
-  return i < 0 ? Infinity : i + 1;
-}
-
-function carFramesAbove(h, speed) {
-  return carJumpProfile(speed).filter((y) => y >= h).length;
-}
-
-function carClearHeight(tp, lift) {
-  let top = 0;
-  tp.boxes.forEach(([, bb, , bh]) => {
-    top = Math.max(top, lift + bb + bh);
+// Surfaces under the middle of the car: snow (top 0) where there is no pit, plus ice ledges
+function carSurfacesUnder(run) {
+  const l = CAR_CFG.CAR_X - CAR_CFG.SUPPORT_HALF;
+  const r = CAR_CFG.CAR_X + CAR_CFG.SUPPORT_HALF;
+  const out = [];
+  if (run.ground.some((g) => g.a < r && g.b > l)) out.push(0);
+  run.ledges.forEach((p) => {
+    if (p.a < r && p.b > l) out.push(p.top);
   });
-  return top + 2;
+  return out;
 }
 
-// Largest group a held jump still clears with MIN_CLEAR_WINDOW frames to spare
-function carMaxClearableSize(tp, clearH, speed) {
-  const above = carFramesAbove(clearH, speed);
-  for (let size = CAR_CFG.MAX_OBSTACLE_LENGTH; size > 1; size--) {
-    const need = (carHitLength() + tp.width * size) / speed;
-    if (above - need >= CAR_CFG.MIN_CLEAR_WINDOW) return size;
-  }
-  return 1;
+function carOverPit(run) {
+  const l = CAR_CFG.CAR_X - CAR_CFG.SUPPORT_HALF;
+  const r = CAR_CFG.CAR_X + CAR_CFG.SUPPORT_HALF;
+  return !run.ground.some((g) => g.a < r && g.b > l);
 }
 
 function carRandInt(rng, min, max) {
   return Math.floor(rng() * (max - min + 1)) + min;
 }
 
-// Chrome Obstacle.getGap, with the obstacle's unit width (not the whole group) and a physics floor:
-// after landing from this obstacle there is always time to rise over the next one
-function carObstacleGap(o, speed, rng) {
-  const tp = CAR_OBSTACLE_TYPES[o.typeIdx];
-  const minGapChrome = Math.round(tp.width * speed + tp.minGap * CAR_CFG.GAP_COEFFICIENT);
-  const v = speed * 1.03;
-  let maxRise = 0;
-  CAR_OBSTACLE_TYPES.forEach((t) => {
-    (t.lifts || [0]).forEach((lift) => {
-      if (lift + 0 > carTopHeight()) return; // pass-under flyers need no jump
-      maxRise = Math.max(maxRise, carRiseFrames(carClearHeight(t, lift), v));
-    });
-  });
-  const rise = o.mode === 'over' ? carRiseFrames(o.clearH, v) : 0;
-  const floor = Math.ceil(carHitLength() + v * (rise + maxRise + CAR_CFG.REACTION_SLACK));
-  const minGap = Math.max(minGapChrome, floor);
-  return carRandInt(rng, minGap, Math.round(minGap * CAR_CFG.MAX_GAP_COEFFICIENT));
-}
-
-// Chrome Horizon.duplicateObstacleCheck
-function carDuplicateObstacleCheck(run, typeIdx) {
+// Chrome Horizon.duplicateObstacleCheck, applied to chunks
+function carDuplicateChunkCheck(run, idx) {
   let dup = 0;
-  for (let i = 0; i < run.history.length; i++) {
-    dup = run.history[i] === typeIdx ? dup + 1 : 0;
-  }
-  return dup >= CAR_CFG.MAX_OBSTACLE_DUPLICATION;
+  for (let i = 0; i < run.history.length; i++) dup = run.history[i] === idx ? dup + 1 : 0;
+  return dup >= CAR_CFG.MAX_CHUNK_DUPLICATION;
 }
 
-function carAddObstacle(run, rng) {
-  const candidates = [];
-  CAR_OBSTACLE_TYPES.forEach((tp, idx) => {
-    if (run.speed >= tp.minSpeed && !carDuplicateObstacleCheck(run, idx)) candidates.push(idx);
+// A chunk is stretched by speed / start speed (Chrome widens its gaps with speed too): the jump covers
+// proportionally more ground, so the timing of every chunk stays the same at any speed
+function carPlaceChunk(run, chunk, x0) {
+  const k = Math.max(1, run.speed / CAR_CFG.SPEED);
+  const X = (v) => x0 + v * k;
+  let cursor = x0;
+  (chunk.pits || []).forEach(([a, b]) => {
+    run.ground.push({ a: cursor, b: X(a) });
+    cursor = X(b);
   });
-  const typeIdx = candidates[Math.floor(rng() * candidates.length)];
-  const tp = CAR_OBSTACLE_TYPES[typeIdx];
-  const lift = tp.lifts ? tp.lifts[Math.floor(rng() * tp.lifts.length)] : 0;
-  const mode = lift > carTopHeight() ? 'under' : 'over';
-  const o = {
-    typeIdx,
-    type: tp.type,
-    x: CAR_CFG.STAGE_W + 8,
-    size: 1,
-    lift,
-    mode,
-    clearH: carClearHeight(tp, lift),
-    gap: 0,
-    passed: false,
-    seed: Math.floor(rng() * 1000),
-  };
-  if (mode === 'over' && run.speed > tp.multipleSpeed) {
-    o.size = Math.min(carRandInt(rng, 1, CAR_CFG.MAX_OBSTACLE_LENGTH), carMaxClearableSize(tp, o.clearH, run.speed));
-  }
-  o.w = tp.width * o.size;
-  o.gap = carObstacleGap(o, run.speed, rng);
-  run.obstacles.push(o);
-  run.history.unshift(typeIdx);
-  if (run.history.length > CAR_CFG.MAX_OBSTACLE_DUPLICATION) run.history.length = CAR_CFG.MAX_OBSTACLE_DUPLICATION;
+  const end = X(chunk.len) + CAR_CFG.CHUNK_RUNUP * k;
+  run.ground.push({ a: cursor, b: end });
+  (chunk.ledges || []).forEach(([a, b, top]) => run.ledges.push({ a: X(a), b: X(b), top }));
+  (chunk.obs || []).forEach(([type, x, lift], n) =>
+    run.obstacles.push({ type, x: X(x), lift, w: CAR_OBSTACLE_TYPES[type].width, seed: (run.chunks * 7 + n) % 97, passed: false })
+  );
+  (chunk.jelly || []).forEach(([a, b, h]) => {
+    for (let x = X(a); x <= X(b); x += CAR_CFG.JELLY_STEP) run.jellies.push({ x, h, kind: 'jelly' });
+  });
+  (chunk.gold || []).forEach(([x, h]) => run.jellies.push({ x: X(x), h, kind: 'gold' }));
+  (chunk.potion || []).forEach(([x, h, size]) => run.jellies.push({ x: X(x), h, kind: size === 'big' ? 'potionBig' : 'potion' }));
+  run.chunkEnd = end;
+  run.chunks += 1;
+}
 
-  // Stars: an arc over a jump (reward for a full jump) or a low row under a high flyer (reward for not jumping)
-  if (rng() < 0.5) {
-    const cx = o.x + o.w / 2;
-    if (mode === 'over') {
-      [-54, 0, 54].forEach((dx, k) => run.stars.push({ x: cx + dx, h: o.clearH + (k === 1 ? 74 : 48) }));
-    } else {
-      [-44, 0, 44].forEach((dx) => run.stars.push({ x: cx + dx, h: 24 }));
-    }
-  }
+function carAddChunk(run, rng) {
+  const candidates = [];
+  CAR_CHUNKS.forEach((c, idx) => {
+    if (run.speed >= c.minSpeed && !carDuplicateChunkCheck(run, idx)) candidates.push(idx);
+  });
+  const idx = candidates[Math.floor(rng() * candidates.length)];
+  carPlaceChunk(run, CAR_CHUNKS[idx], run.chunkEnd);
+  run.history.unshift(idx);
+  if (run.history.length > CAR_CFG.MAX_CHUNK_DUPLICATION) run.history.length = CAR_CFG.MAX_CHUNK_DUPLICATION;
 }
 
 function createCarRun(now = 0) {
-  return {
+  const run = {
     speed: CAR_CFG.SPEED,
     distance: 0,
     h: 0,
     vh: 0,
-    jumping: false,
-    reachedMinHeight: false,
+    grounded: true,
+    jumpsUsed: 0,
     jumpHeld: false,
     bufferedAt: -Infinity,
+    ground: [{ a: -400, b: CAR_CFG.CLEAR_DISTANCE }],
+    ledges: [],
     obstacles: [],
-    stars: [],
+    jellies: [],
+    chunkEnd: CAR_CFG.CLEAR_DISTANCE,
+    chunks: 0,
     history: [],
-    hearts: CAR_CFG.HEARTS,
+    energy: CAR_CFG.ENERGY_MAX,
+    rescuesLeft: CAR_CFG.PIT_RESCUES,
     invulnUntil: 0,
     distScore: 0,
     bonus: 0,
     score: 0,
-    combo: 1,
+    jellyCount: 0,
     level: 1,
     jumps: 0,
     cleared: 0,
     hits: 0,
+    pits: 0,
     startAt: now,
     crashed: false,
+    crashReason: '',
   };
+  return run;
+}
+
+function carDoJump(run) {
+  if (run.grounded) {
+    run.grounded = false;
+    run.vh = CAR_CFG.JUMP_VELOCITY;
+    run.jumpsUsed = 1;
+    run.jumps += 1;
+    return 'jump';
+  }
+  if (run.jumpsUsed < 2 && run.h > CAR_CFG.PIT_NO_JUMP) {
+    run.vh = run.jumpsUsed === 0 ? CAR_CFG.JUMP_VELOCITY : CAR_CFG.DOUBLE_JUMP_VELOCITY;
+    run.jumpsUsed += 1;
+    run.jumps += 1;
+    return run.jumpsUsed === 2 ? 'double' : 'jump';
+  }
+  return null;
 }
 
 function carPressJump(run, now) {
   run.jumpHeld = true;
-  if (!carStartJump(run)) run.bufferedAt = now;
+  const kind = carDoJump(run);
+  if (!kind) run.bufferedAt = now;
+  run.pendingJumpEvent = kind;
 }
 
 function carReleaseJump(run) {
   run.jumpHeld = false;
-  if (run.jumping) carEndJump(run);
 }
 
 function carLevelForSpeed(speed) {
@@ -334,41 +300,92 @@ function carLevelForSpeed(speed) {
   return Math.max(1, Math.min(10, 1 + Math.floor(t * 9 + 1e-9)));
 }
 
-// One simulation step (dt in 60fps frames). Returns events for effects and sound-free feedback.
+function carEndRun(run, reason, events) {
+  run.crashed = true;
+  run.crashReason = reason;
+  events.push({ type: 'crash', reason });
+}
+
+// One simulation step (dt in 60fps frames)
 function carStep(run, dt, now, rng = Math.random) {
   const events = [];
   if (run.crashed) return events;
+  if (run.pendingJumpEvent) {
+    events.push({ type: run.pendingJumpEvent });
+    run.pendingJumpEvent = null;
+  }
 
-  // 1. Jump physics (Chrome updates the T-Rex before the horizon)
-  if (run.jumping && carUpdateJump(run, dt)) {
-    events.push({ type: 'land' });
-    if (now - run.bufferedAt <= CAR_CFG.JUMP_BUFFER_MS) {
-      run.bufferedAt = -Infinity;
-      if (carStartJump(run)) events.push({ type: 'jump' });
+  // 1. Scroll the course
+  const dx = run.speed * dt;
+  run.ground.forEach((g) => {
+    g.a -= dx;
+    g.b -= dx;
+  });
+  run.ledges.forEach((p) => {
+    p.a -= dx;
+    p.b -= dx;
+  });
+  run.obstacles.forEach((o) => {
+    o.x -= dx;
+  });
+  run.jellies.forEach((j) => {
+    j.x -= dx;
+  });
+  run.chunkEnd -= dx;
+  run.ground = run.ground.filter((g) => g.b > -400);
+  run.ledges = run.ledges.filter((p) => p.b > -200);
+  run.obstacles = run.obstacles.filter((o) => o.x + o.w > -60);
+  run.jellies = run.jellies.filter((j) => j.x > -40);
+  while (run.chunkEnd < CAR_CFG.STAGE_W + 400) carAddChunk(run, rng);
+
+  // 2. Vertical motion: stand, fall off ledges, land on one-way surfaces, sink into crevasses
+  if (run.grounded) {
+    if (!carSurfacesUnder(run).some((top) => Math.abs(top - run.h) < 0.5)) {
+      run.grounded = false; // ran off a ledge or into a pit: both jumps stay available
+      run.vh = 0;
+      run.jumpsUsed = 0;
+    }
+  }
+  if (!run.grounded) {
+    const prevH = run.h;
+    run.h += run.vh * dt;
+    run.vh -= CAR_CFG.GRAVITY * dt;
+    if (run.vh <= 0) {
+      const landing = carSurfacesUnder(run)
+        .filter((top) => prevH >= top - 0.01 && run.h <= top)
+        .sort((a, b) => b - a)[0];
+      if (landing !== undefined) {
+        run.h = landing;
+        run.vh = 0;
+        run.grounded = true;
+        run.jumpsUsed = 0;
+        events.push({ type: 'land' });
+        if (now - run.bufferedAt <= CAR_CFG.JUMP_BUFFER_MS) {
+          run.bufferedAt = -Infinity;
+          const kind = carDoJump(run);
+          if (kind) events.push({ type: kind });
+        }
+      }
+    }
+    if (!run.grounded && run.h < CAR_CFG.PIT_DEPTH_LIMIT) {
+      run.pits += 1;
+      if (run.rescuesLeft > 0) {
+        // Lifted out of the crevasse ("Lifts from hole"), at an energy cost
+        run.rescuesLeft -= 1;
+        run.energy -= CAR_CFG.PIT_RESCUE_ENERGY;
+        run.h = 170;
+        run.vh = 3;
+        run.jumpsUsed = 0;
+        run.invulnUntil = now + 1500;
+        events.push({ type: 'rescue' });
+      } else {
+        carEndRun(run, 'pit', events);
+        return events;
+      }
     }
   }
 
-  // 2. Scroll obstacles and stars
-  const dx = run.speed * dt;
-  for (let i = run.obstacles.length - 1; i >= 0; i--) {
-    const o = run.obstacles[i];
-    o.x -= dx;
-    if (o.x + o.w < -40) run.obstacles.splice(i, 1);
-  }
-  for (let i = run.stars.length - 1; i >= 0; i--) {
-    run.stars[i].x -= dx;
-    if (run.stars[i].x < -30) run.stars.splice(i, 1);
-  }
-
-  // 3. Spawn (Chrome Horizon.updateObstacles)
-  const last = run.obstacles[run.obstacles.length - 1];
-  if (!last) {
-    if (run.distance >= CAR_CFG.CLEAR_DISTANCE) carAddObstacle(run, rng);
-  } else if (last.x + last.w + last.gap < CAR_CFG.STAGE_W) {
-    carAddObstacle(run, rng);
-  }
-
-  // 4. Collisions, cleared obstacles and stars
+  // 3. Obstacles, jellies, potions
   const carBoxes = carWorldBoxes(run);
   const carLeft = Math.min(...carBoxes.map((b) => b.l));
   const canHit = now >= run.invulnUntil;
@@ -376,48 +393,44 @@ function carStep(run, dt, now, rng = Math.random) {
     const o = run.obstacles[i];
     if (canHit) {
       const oBoxes = carObstacleBoxes(o);
-      const hit = carBoxes.some((cb) => oBoxes.some((ob) => carBoxesOverlap(cb, ob)));
-      if (hit) {
+      if (carBoxes.some((cb) => oBoxes.some((ob) => carBoxesOverlap(cb, ob)))) {
         run.obstacles.splice(i, 1);
-        run.hearts -= 1;
+        const cost = CAR_OBSTACLE_TYPES[o.type].small ? CAR_CFG.SMALL_HIT_ENERGY : CAR_CFG.HIT_ENERGY;
+        run.energy -= cost;
         run.hits += 1;
-        run.combo = 1;
         run.invulnUntil = now + CAR_CFG.INVULN_MS;
-        events.push({ type: 'hit', obstacle: o });
-        if (run.hearts <= 0) {
-          run.crashed = true;
-          events.push({ type: 'crash' });
-          return events;
-        }
+        events.push({ type: 'hit', obstacle: o, cost });
         continue;
       }
     }
     if (!o.passed && o.x + o.w < carLeft) {
       o.passed = true;
       run.cleared += 1;
-      run.bonus += CAR_CFG.CLEAR_BONUS;
-      events.push({ type: 'clear', obstacle: o, points: CAR_CFG.CLEAR_BONUS });
     }
   }
-  for (let i = run.stars.length - 1; i >= 0; i--) {
-    const s = run.stars[i];
-    const r = 15;
-    const hitStar = carBoxes.some((cb) => s.x + r > cb.l && s.x - r < cb.r && s.h + r > cb.b && s.h - r < cb.t);
-    if (hitStar) {
-      const pts = CAR_CFG.STAR_POINTS * run.combo;
-      run.bonus += pts;
-      run.combo = Math.min(8, run.combo + 1);
-      run.stars.splice(i, 1);
-      events.push({ type: 'star', x: s.x, h: s.h, points: pts });
+  for (let i = run.jellies.length - 1; i >= 0; i--) {
+    const j = run.jellies[i];
+    const r = j.kind === 'jelly' ? 12 : 18;
+    if (carBoxes.some((cb) => j.x + r > cb.l && j.x - r < cb.r && j.h + r > cb.b && j.h - r < cb.t)) {
+      run.jellies.splice(i, 1);
+      if (j.kind === 'potion' || j.kind === 'potionBig') {
+        const gain = j.kind === 'potionBig' ? CAR_CFG.POTION_BIG : CAR_CFG.POTION_SMALL;
+        run.energy = Math.min(CAR_CFG.ENERGY_MAX, run.energy + gain);
+        events.push({ type: 'potion', x: j.x, h: j.h, gain });
+      } else {
+        const pts = j.kind === 'gold' ? CAR_CFG.GOLD_JELLY_POINTS : CAR_CFG.JELLY_POINTS;
+        run.bonus += pts;
+        run.jellyCount += 1;
+        events.push({ type: j.kind, x: j.x, h: j.h, points: pts });
+      }
     }
   }
 
-  // 5. Distance, score and speed (Chrome DistanceMeter + ACCELERATION)
+  // 4. Energy drains while running (CookieRun), distance, speed
+  run.energy -= (CAR_CFG.ENERGY_DRAIN_PER_SEC / 60) * dt;
   run.distance += dx;
   run.distScore = Math.floor(run.distance * CAR_CFG.DISTANCE_SCORE);
-  if (run.speed < CAR_CFG.MAX_SPEED) {
-    run.speed = Math.min(CAR_CFG.MAX_SPEED, run.speed + CAR_CFG.ACCELERATION * dt);
-  }
+  if (run.speed < CAR_CFG.MAX_SPEED) run.speed = Math.min(CAR_CFG.MAX_SPEED, run.speed + CAR_CFG.ACCELERATION * dt);
   const lv = carLevelForSpeed(run.speed);
   if (lv > run.level) {
     run.level = lv;
@@ -426,15 +439,21 @@ function carStep(run, dt, now, rng = Math.random) {
     events.push({ type: 'level', level: lv, points: bonus });
   }
   run.score = run.distScore + run.bonus;
+  if (run.energy <= 0) {
+    run.energy = 0;
+    carEndRun(run, 'energy', events);
+  }
   return events;
 }
 
 // ============================================================================
-// DRAWING — "Y2K neon lowrider": mint box body, hot-pink rocker panel, chrome spinner rims,
-// cyan underglow, roll bar and a seasonal load on the rear deck. The NFT pilot sits in the open top.
+// DRAWING — lifted off-road car: mint body, hot-pink stripe, black fender flares, chunky snow tyres,
+// roll cage with an LED light bar, snorkel and winch; the NFT pilot sits in the open top under the cage.
 // ============================================================================
 const CAR_PILOT_DX = -14; // the pilot sits behind the windshield, not mid-car
 const CAR_K = '#090d1a';
+const CAR_WHEELS = [-56, 58]; // wheel centres (local x); y = 36, tyre radius 21
+const CAR_WHEEL_Y = 36;
 
 function drawCarPilot(ctx, pixelMode, now, options = {}) {
   const { spId = UFO_GAME.pilotSpeciesId || '01', isShocked = false, isImpactBlink = false, lift = 0 } = options;
@@ -444,7 +463,7 @@ function drawCarPilot(ctx, pixelMode, now, options = {}) {
   const py = r.y - lift;
   ctx.save();
   ctx.beginPath();
-  ctx.rect(px - 16, -120, r.size + 32, 124); // the door line (y = +4) hides the waist
+  ctx.rect(px - 16, -130, r.size + 32, 134); // the door line (y = +4) hides the waist
   ctx.clip();
   if (pixelMode) {
     ctx.imageSmoothingEnabled = false;
@@ -479,24 +498,18 @@ function drawCarPilot(ctx, pixelMode, now, options = {}) {
   ctx.restore();
 }
 
-function drawCarExhaustFlame(ctx, now, boost, pixelMode) {
+function drawCarExhaustFlame(ctx, now, boost) {
   if (boost <= 0) return;
   const cols = ['#fde047', '#fb923c', '#f472b6'];
   for (let k = 0; k < 4; k++) {
     const flick = Math.floor(now / 60 + k) % 2;
     const sz = Math.max(3, Math.round((8 - k * 1.6) * Math.min(1.6, boost)));
-    const fx = -108 - k * 8 - flick * 2;
-    const fy = 32 - Math.round(sz / 2) + (flick ? -1 : 1);
+    const fx = -112 - k * 8 - flick * 2;
+    const fy = 26 - Math.round(sz / 2) + (flick ? -1 : 1);
     ctx.fillStyle = CAR_K;
     ctx.fillRect(fx - 1, fy - 1, sz + 2, sz + 2);
     ctx.fillStyle = cols[k % 3];
     ctx.fillRect(fx, fy, sz, sz);
-  }
-  if (!pixelMode) {
-    ctx.fillStyle = 'rgba(253, 224, 71, 0.35)';
-    ctx.beginPath();
-    ctx.ellipse(-112, 32, 12 * Math.min(1.6, boost), 4, 0, 0, Math.PI * 2);
-    ctx.fill();
   }
 }
 
@@ -504,115 +517,115 @@ function drawCarCargo2D(ctx) {
   ctx.lineWidth = 2;
   ctx.strokeStyle = CAR_K;
   if (INTRO_TOWN.id === 'xmas') {
-    // Gift stack + bow
     ctx.fillStyle = '#ef4444';
     ctx.beginPath();
-    ctx.roundRect(-96, -16, 21, 14, 2);
+    ctx.roundRect(-97, -20, 21, 14, 2);
     ctx.fill();
     ctx.stroke();
     ctx.fillStyle = '#fde047';
-    ctx.fillRect(-87, -15, 3, 12);
-    ctx.fillRect(-95, -10.5, 19, 3);
+    ctx.fillRect(-88, -19, 3, 12);
+    ctx.fillRect(-96, -14.5, 19, 3);
     ctx.fillStyle = '#22c55e';
     ctx.beginPath();
-    ctx.roundRect(-92, -27, 14, 11, 2);
+    ctx.roundRect(-93, -31, 14, 11, 2);
     ctx.fill();
     ctx.stroke();
     ctx.fillStyle = '#f8fafc';
-    ctx.fillRect(-86, -26, 2.5, 9);
-    ctx.strokeStyle = '#fde047';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.ellipse(-88, -30, 3, 2.2, -0.5, 0, Math.PI * 2);
-    ctx.ellipse(-81.5, -30, 3, 2.2, 0.5, 0, Math.PI * 2);
-    ctx.stroke();
+    ctx.fillRect(-87, -30, 2.5, 9);
   } else {
-    // Boombox
     ctx.fillStyle = '#1f2937';
     ctx.beginPath();
-    ctx.roundRect(-97, -17, 25, 15, 2.5);
+    ctx.roundRect(-98, -21, 25, 15, 2.5);
     ctx.fill();
     ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(-93, -17);
-    ctx.lineTo(-93, -22);
-    ctx.lineTo(-76, -22);
-    ctx.lineTo(-76, -17);
-    ctx.stroke();
-    [-91, -78].forEach((sx) => {
+    [-92, -79].forEach((sx) => {
       ctx.fillStyle = '#94a3b8';
       ctx.beginPath();
-      ctx.arc(sx, -9.5, 4.6, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#0f172a';
-      ctx.beginPath();
-      ctx.arc(sx, -9.5, 2, 0, Math.PI * 2);
+      ctx.arc(sx, -13.5, 4.6, 0, Math.PI * 2);
       ctx.fill();
     });
   }
 }
 
-function drawCarWheel2D(ctx, wx, wy, angle) {
-  ctx.fillStyle = '#0b1020';
+// Chunky snow tyre: tread blocks turn with the wheel, beadlock rim with a pink cap
+function drawCarTyre2D(ctx, wx, wy, angle) {
+  ctx.fillStyle = '#0f172a';
   ctx.strokeStyle = CAR_K;
   ctx.lineWidth = 2.2;
   ctx.beginPath();
-  ctx.arc(wx, wy, 16.5, 0, Math.PI * 2);
+  ctx.arc(wx, wy, 21, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
-  ctx.strokeStyle = '#374151';
+  ctx.fillStyle = '#334155';
+  for (let i = 0; i < 12; i++) {
+    const a = angle + (i * Math.PI * 2) / 12;
+    ctx.save();
+    ctx.translate(wx + Math.cos(a) * 19, wy + Math.sin(a) * 19);
+    ctx.rotate(a);
+    ctx.fillRect(-2.5, -3.5, 5, 7);
+    ctx.restore();
+  }
+  ctx.strokeStyle = '#1f2937';
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.arc(wx, wy, 13, 0, Math.PI * 2);
+  ctx.arc(wx, wy, 14.5, 0, Math.PI * 2);
   ctx.stroke();
-  const rim = ctx.createRadialGradient(wx - 3, wy - 3, 1, wx, wy, 10);
-  rim.addColorStop(0, '#ffffff');
-  rim.addColorStop(0.55, '#e2e8f0');
-  rim.addColorStop(1, '#94a3b8');
-  ctx.fillStyle = rim;
+  ctx.fillStyle = '#475569';
   ctx.beginPath();
-  ctx.arc(wx, wy, 10, 0, Math.PI * 2);
+  ctx.arc(wx, wy, 11.5, 0, Math.PI * 2);
   ctx.fill();
-  // Spinner spokes
-  ctx.strokeStyle = '#475569';
-  ctx.lineWidth = 2.2;
-  ctx.lineCap = 'round';
-  for (let i = 0; i < 5; i++) {
-    const a = angle + (i * Math.PI * 2) / 5;
-    ctx.beginPath();
-    ctx.moveTo(wx + Math.cos(a) * 3, wy + Math.sin(a) * 3);
-    ctx.lineTo(wx + Math.cos(a + 0.35) * 8.6, wy + Math.sin(a + 0.35) * 8.6);
-    ctx.stroke();
+  ctx.strokeStyle = '#cbd5e1';
+  ctx.lineWidth = 1.6;
+  ctx.stroke();
+  ctx.fillStyle = '#e2e8f0';
+  for (let i = 0; i < 6; i++) {
+    const a = angle + (i * Math.PI) / 3;
+    ctx.fillRect(wx + Math.cos(a) * 8.5 - 1.2, wy + Math.sin(a) * 8.5 - 1.2, 2.4, 2.4);
   }
-  ctx.lineCap = 'butt';
   ctx.fillStyle = '#f472b6';
   ctx.strokeStyle = CAR_K;
   ctx.lineWidth = 1.2;
   ctx.beginPath();
-  ctx.arc(wx, wy, 3.2, 0, Math.PI * 2);
+  ctx.arc(wx, wy, 3.6, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
+  // Packed snow in the tread
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+  for (let i = 0; i < 3; i++) {
+    const a = angle * 1 + i * 2.1;
+    ctx.fillRect(wx + Math.cos(a) * 18 - 1.5, wy + Math.sin(a) * 18 - 1.5, 3, 3);
+  }
 }
 
-function traceCarBody2D(ctx) {
+function traceOffroadBody2D(ctx) {
   ctx.beginPath();
-  ctx.moveTo(-92, -2);
-  ctx.lineTo(-62, -2);
-  ctx.lineTo(-60, 3);
-  ctx.lineTo(34, 3);
-  ctx.lineTo(44, 6);
-  ctx.lineTo(86, 9);
-  ctx.quadraticCurveTo(95, 10, 96, 18);
-  ctx.lineTo(96, 30);
-  ctx.quadraticCurveTo(95, 36, 88, 36);
-  ctx.lineTo(-90, 36);
-  ctx.quadraticCurveTo(-97, 36, -97, 29);
-  ctx.lineTo(-96, 4);
-  ctx.quadraticCurveTo(-95, -2, -92, -2);
+  ctx.moveTo(-92, -6);
+  ctx.lineTo(-64, -6);
+  ctx.lineTo(-62, 0);
+  ctx.lineTo(34, 0);
+  ctx.lineTo(42, 2);
+  ctx.lineTo(88, 4);
+  ctx.quadraticCurveTo(98, 5, 98, 13);
+  ctx.lineTo(98, 24);
+  ctx.quadraticCurveTo(97, 30, 90, 30);
+  ctx.lineTo(-92, 30);
+  ctx.quadraticCurveTo(-99, 30, -99, 24);
+  ctx.lineTo(-98, 0);
+  ctx.quadraticCurveTo(-97, -6, -92, -6);
   ctx.closePath();
 }
 
-// Smooth 2D car (scenes 1–3). Origin = door line under the pilot; tyres touch y = +47.
+function traceRollCage(ctx) {
+  ctx.beginPath();
+  ctx.moveTo(-68, 0);
+  ctx.lineTo(-68, -74);
+  ctx.quadraticCurveTo(-68, -84, -58, -84);
+  ctx.lineTo(22, -84);
+  ctx.lineTo(34, -40);
+  ctx.lineTo(38, 0);
+}
+
+// Smooth 2D car (scenes 1–3). Origin = door line under the pilot; tyres touch y = +57.
 function drawCarWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
   const {
     scale = 1,
@@ -632,151 +645,167 @@ function drawCarWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
   ctx.rotate(tiltRad);
   ctx.scale(scale, scale);
 
-  // 1. Cyan underglow + headlight beam
   if (lightsOn) {
-    const glow = 0.42 + Math.sin(now * 0.012) * 0.14;
-    const ug = ctx.createRadialGradient(0, 46, 4, 0, 46, 100);
+    const glow = 0.4 + Math.sin(now * 0.012) * 0.14;
+    const ug = ctx.createRadialGradient(0, 52, 4, 0, 52, 104);
     ug.addColorStop(0, `rgba(34, 211, 238, ${glow})`);
     ug.addColorStop(1, 'rgba(34, 211, 238, 0)');
     ctx.fillStyle = ug;
     ctx.beginPath();
-    ctx.ellipse(0, 46, 100, 11, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 50, 104, 10, 0, 0, Math.PI * 2);
     ctx.fill();
   }
   if (lightsOn && beam) {
-    const light = ctx.createLinearGradient(96, 0, 210, 0);
-    light.addColorStop(0, 'rgba(253, 224, 71, 0.32)');
+    const light = ctx.createLinearGradient(98, 0, 220, 0);
+    light.addColorStop(0, 'rgba(253, 224, 71, 0.3)');
     light.addColorStop(1, 'rgba(253, 224, 71, 0)');
     ctx.fillStyle = light;
     ctx.beginPath();
-    ctx.moveTo(94, 12);
-    ctx.lineTo(210, -6);
-    ctx.lineTo(210, 40);
-    ctx.lineTo(94, 20);
+    ctx.moveTo(96, 6);
+    ctx.lineTo(220, -14);
+    ctx.lineTo(220, 36);
+    ctx.lineTo(96, 16);
     ctx.closePath();
     ctx.fill();
   }
+  drawCarExhaustFlame(ctx, now, boost);
 
-  drawCarExhaustFlame(ctx, now, boost, false);
-
-  // 2. Roll bar, seat and cargo behind the pilot
-  const bar = ctx.createLinearGradient(-70, 0, -62, 0);
-  bar.addColorStop(0, '#f8fafc');
-  bar.addColorStop(1, '#94a3b8');
-  ctx.fillStyle = bar;
+  // Spare tyre on the tailgate, suspension links
+  ctx.fillStyle = '#0f172a';
   ctx.strokeStyle = CAR_K;
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.roundRect(-71, -36, 9, 42, 4);
+  ctx.arc(-102, 6, 13, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = '#1e293b';
+  ctx.fillStyle = '#475569';
   ctx.beginPath();
-  ctx.roundRect(-58, -30, 12, 34, 4);
+  ctx.arc(-102, 6, 6, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = '#64748b';
+  ctx.lineWidth = 3;
+  CAR_WHEELS.forEach((wx) => {
+    ctx.beginPath();
+    ctx.moveTo(wx - 12, 29);
+    ctx.lineTo(wx, CAR_WHEEL_Y);
+    ctx.lineTo(wx + 12, 29);
+    ctx.stroke();
+  });
+
+  // Seat + cargo behind the pilot
+  ctx.fillStyle = '#1e293b';
+  ctx.strokeStyle = CAR_K;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.roundRect(-60, -30, 12, 34, 4);
   ctx.fill();
   ctx.stroke();
   drawCarCargo2D(ctx);
 
-  // 3. Pilot (upper body in the open top)
   if (withPilot) drawCarPilot(ctx, false, now, { spId, isShocked, isImpactBlink, lift: pilotLift });
 
-  // 4. Body: mint paint, hot-pink rocker, white pinstripe
-  traceCarBody2D(ctx);
-  const paint = ctx.createLinearGradient(0, -2, 0, 36);
+  // Body: mint paint, pink stripe, white pinstripe
+  traceOffroadBody2D(ctx);
+  const paint = ctx.createLinearGradient(0, -6, 0, 30);
   paint.addColorStop(0, '#a7f3e8');
-  paint.addColorStop(0.35, '#2dd4bf');
+  paint.addColorStop(0.4, '#2dd4bf');
   paint.addColorStop(1, '#0f766e');
   ctx.fillStyle = paint;
   ctx.fill();
   ctx.save();
-  traceCarBody2D(ctx);
+  traceOffroadBody2D(ctx);
   ctx.clip();
   ctx.fillStyle = '#f472b6';
-  ctx.fillRect(-100, 24, 200, 14);
-  ctx.fillStyle = '#be185d';
-  ctx.fillRect(-100, 32, 200, 6);
+  ctx.fillRect(-100, 15, 200, 8);
   ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-  ctx.fillRect(-100, 21, 200, 1.6);
-  // Dark wheel arches
-  ctx.fillStyle = '#0b1020';
-  [-52, 54].forEach((wx) => {
-    ctx.beginPath();
-    ctx.arc(wx, 31, 20, 0, Math.PI * 2);
-    ctx.fill();
-  });
+  ctx.fillRect(-100, 12.5, 200, 1.6);
+  ctx.fillStyle = '#1f2937';
+  ctx.fillRect(-100, 26, 200, 6);
   ctx.restore();
-  traceCarBody2D(ctx);
+  traceOffroadBody2D(ctx);
   ctx.strokeStyle = CAR_K;
   ctx.lineWidth = 2.4;
   ctx.lineJoin = 'round';
   ctx.stroke();
-
-  // Gloss, door seam, handle, heart decal
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
   ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(-56, 7);
-  ctx.lineTo(30, 7);
-  ctx.moveTo(48, 11);
-  ctx.lineTo(84, 13);
-  ctx.stroke();
-  ctx.strokeStyle = 'rgba(9, 13, 26, 0.4)';
-  ctx.lineWidth = 1.4;
-  ctx.beginPath();
-  ctx.moveTo(-6, 6);
-  ctx.lineTo(-6, 21);
+  ctx.moveTo(-56, 5);
+  ctx.lineTo(30, 5);
+  ctx.moveTo(48, 8);
+  ctx.lineTo(86, 9);
   ctx.stroke();
   ctx.fillStyle = CAR_K;
-  ctx.fillRect(-22, 10, 9, 2.6);
-  drawPixelHeart(ctx, 12, 14, 1.7, '#f472b6');
+  ctx.fillRect(-22, 6, 9, 2.6);
+  drawPixelHeart(ctx, 8, 7, 1.6, '#f472b6');
 
-  // 5. Windshield (glass tint only, the pilot stays visible) and chrome bits
-  ctx.fillStyle = 'rgba(186, 230, 253, 0.34)';
+  // Black fender flares
+  ctx.strokeStyle = '#111827';
+  ctx.lineWidth = 8;
+  CAR_WHEELS.forEach((wx) => {
+    ctx.beginPath();
+    ctx.arc(wx, CAR_WHEEL_Y, 25, Math.PI * 1.05, Math.PI * 1.95);
+    ctx.stroke();
+  });
+
+  // Windshield + roll cage + LED bar + snorkel
+  ctx.fillStyle = 'rgba(186, 230, 253, 0.32)';
   ctx.strokeStyle = CAR_K;
-  ctx.lineWidth = 2.2;
+  ctx.lineWidth = 2;
   ctx.beginPath();
-  ctx.moveTo(24, 3);
-  ctx.lineTo(42, 4);
-  ctx.lineTo(31, -30);
-  ctx.lineTo(23, -30);
+  ctx.moveTo(26, 0);
+  ctx.lineTo(38, 0);
+  ctx.lineTo(33, -36);
+  ctx.lineTo(27, -36);
   ctx.closePath();
   ctx.fill();
   ctx.stroke();
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 1.6;
-  ctx.beginPath();
-  ctx.moveTo(29, -1);
-  ctx.lineTo(28, -24);
+  traceRollCage(ctx);
+  ctx.strokeStyle = CAR_K;
+  ctx.lineWidth = 6.5;
+  ctx.lineJoin = 'round';
   ctx.stroke();
+  traceRollCage(ctx);
+  ctx.strokeStyle = '#475569';
+  ctx.lineWidth = 3.5;
+  ctx.stroke();
+  ctx.fillStyle = CAR_K;
+  ctx.beginPath();
+  ctx.roundRect(-46, -95, 56, 10, 2);
+  ctx.fill();
+  for (let i = 0; i < 6; i++) {
+    ctx.fillStyle = lightsOn ? (Math.floor(now / 200 + i) % 6 === 0 ? '#ffffff' : '#fde047') : '#78716c';
+    ctx.fillRect(-43 + i * 9, -92.5, 6, 5);
+  }
+  ctx.fillStyle = '#111827';
+  ctx.fillRect(54, -36, 5, 40);
+  ctx.fillRect(50, -42, 12, 7);
 
+  // Bumpers, winch, lights
   ctx.strokeStyle = CAR_K;
   ctx.lineWidth = 1.8;
-  ctx.fillStyle = '#e2e8f0';
+  ctx.fillStyle = '#111827';
   ctx.beginPath();
-  ctx.roundRect(90, 24, 9, 8, 2);
-  ctx.roundRect(-101, 24, 9, 8, 2);
+  ctx.roundRect(90, 20, 14, 11, 2);
+  ctx.roundRect(-106, 20, 11, 11, 2);
   ctx.fill();
   ctx.stroke();
-  ctx.fillStyle = '#cbd5e1';
-  ctx.beginPath();
-  ctx.roundRect(-105, 30, 9, 4, 1.5);
-  ctx.fill();
-  ctx.stroke();
+  ctx.fillStyle = '#ef4444';
+  ctx.fillRect(102, 24, 5, 4);
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillRect(93, 15, 8, 5);
   ctx.fillStyle = lightsOn ? '#fde047' : '#a16207';
   ctx.beginPath();
-  ctx.roundRect(87, 12, 8, 6, 2);
+  ctx.arc(92, 10, 4.2, 0, Math.PI * 2);
   ctx.fill();
   ctx.stroke();
   ctx.fillStyle = lightsOn ? '#fb7185' : '#9f1239';
   ctx.beginPath();
-  ctx.roundRect(-98, 6, 5, 10, 1.5);
+  ctx.roundRect(-99, 4, 4, 9, 1.5);
   ctx.fill();
   ctx.stroke();
 
-  // 6. Chrome spinner wheels
-  drawCarWheel2D(ctx, -52, 31, wheelAngle);
-  drawCarWheel2D(ctx, 54, 31, wheelAngle);
-
+  CAR_WHEELS.forEach((wx) => drawCarTyre2D(ctx, wx, CAR_WHEEL_Y, wheelAngle));
   ctx.restore();
 }
 
@@ -790,7 +819,7 @@ function fillPixelDisc(ctx, cx, cy, r, color, maxY = Infinity) {
   }
 }
 
-// 16-bit pixel car (scenes 3–5), same silhouette as the 2D car on a 2px grid
+// 16-bit pixel car (scenes 3–5), same silhouette on a 2px grid
 function drawPixelCarWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
   const {
     scale = 1,
@@ -814,78 +843,71 @@ function drawPixelCarWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) 
   if (showSmoke) {
     for (let s = 0; s < 3; s++) {
       const sp = (now * 0.0022 + s * 0.33) % 1;
-      const sx = Math.round((60 + sp * 16) / 4) * 4;
-      const sy = Math.round((2 - sp * 34) / 4) * 4;
+      const sx = Math.round((64 + sp * 16) / 4) * 4;
+      const sy = Math.round((-2 - sp * 34) / 4) * 4;
       const sz = s % 2 === 0 ? 8 : 6;
       ctx.fillStyle = s % 2 === 0 ? 'rgba(148, 163, 184, 0.7)' : 'rgba(250, 204, 21, 0.72)';
       ctx.fillRect(sx, sy, sz, sz);
     }
   }
-
   if (lightsOn) {
     const glow = 0.4 + (Math.floor(now / 160) % 2) * 0.16;
     ctx.fillStyle = `rgba(34, 211, 238, ${glow})`;
-    ctx.fillRect(-84, 44, 168, 4);
-    ctx.fillStyle = `rgba(34, 211, 238, ${glow * 0.5})`;
-    ctx.fillRect(-64, 48, 128, 4);
+    ctx.fillRect(-86, 54, 172, 4);
   }
   if (lightsOn && beam) {
     ctx.fillStyle = 'rgba(253, 224, 71, 0.18)';
-    ctx.fillRect(98, 8, 44, 14);
+    ctx.fillRect(100, 4, 44, 14);
     ctx.fillStyle = 'rgba(253, 224, 71, 0.09)';
-    ctx.fillRect(142, 4, 44, 22);
+    ctx.fillRect(144, 0, 44, 22);
   }
-  drawCarExhaustFlame(ctx, now, boost, true);
+  drawCarExhaustFlame(ctx, now, boost);
 
-  // Roll bar + seat
+  // Spare tyre, suspension, seat
+  fillPixelDisc(ctx, -102, 6, 14, CAR_K);
+  fillPixelDisc(ctx, -102, 6, 12, '#1f2937');
+  fillPixelDisc(ctx, -102, 6, 6, '#64748b');
+  ctx.fillStyle = '#64748b';
+  CAR_WHEELS.forEach((wx) => {
+    ctx.fillRect(wx - 12, 28, 4, 4);
+    ctx.fillRect(wx - 8, 30, 4, 4);
+    ctx.fillRect(wx + 8, 28, 4, 4);
+    ctx.fillRect(wx + 4, 30, 4, 4);
+  });
   ctx.fillStyle = CAR_K;
-  ctx.fillRect(-72, -38, 12, 44);
-  ctx.fillStyle = '#e2e8f0';
-  ctx.fillRect(-70, -36, 8, 40);
-  ctx.fillStyle = '#94a3b8';
-  ctx.fillRect(-64, -36, 2, 40);
-  ctx.fillStyle = CAR_K;
-  ctx.fillRect(-60, -32, 16, 38);
+  ctx.fillRect(-62, -32, 16, 38);
   ctx.fillStyle = '#334155';
-  ctx.fillRect(-58, -30, 12, 34);
+  ctx.fillRect(-60, -30, 12, 34);
 
-  // Cargo
   if (INTRO_TOWN.id === 'xmas') {
     ctx.fillStyle = CAR_K;
-    ctx.fillRect(-98, -18, 26, 18);
-    ctx.fillRect(-94, -30, 18, 14);
+    ctx.fillRect(-99, -22, 26, 18);
+    ctx.fillRect(-95, -34, 18, 14);
     ctx.fillStyle = '#ef4444';
-    ctx.fillRect(-96, -16, 22, 14);
+    ctx.fillRect(-97, -20, 22, 14);
     ctx.fillStyle = '#22c55e';
-    ctx.fillRect(-92, -28, 14, 10);
+    ctx.fillRect(-93, -32, 14, 10);
     ctx.fillStyle = '#fde047';
-    ctx.fillRect(-87, -16, 4, 14);
-    ctx.fillRect(-96, -10, 22, 2);
-    ctx.fillRect(-90, -34, 4, 4);
-    ctx.fillRect(-82, -34, 4, 4);
-    ctx.fillStyle = '#f8fafc';
-    ctx.fillRect(-86, -28, 2, 10);
+    ctx.fillRect(-88, -20, 4, 14);
+    ctx.fillRect(-97, -14, 22, 2);
   } else {
     ctx.fillStyle = CAR_K;
-    ctx.fillRect(-98, -24, 28, 24);
+    ctx.fillRect(-100, -24, 28, 20);
     ctx.fillStyle = '#1f2937';
-    ctx.fillRect(-96, -18, 24, 16);
+    ctx.fillRect(-98, -22, 24, 16);
     ctx.fillStyle = '#94a3b8';
-    ctx.fillRect(-94, -14, 8, 8);
-    ctx.fillRect(-82, -14, 8, 8);
-    ctx.fillStyle = CAR_K;
-    ctx.fillRect(-92, -12, 4, 4);
-    ctx.fillRect(-80, -12, 4, 4);
+    ctx.fillRect(-96, -18, 8, 8);
+    ctx.fillRect(-84, -18, 8, 8);
   }
 
   drawCarPilot(ctx, true, now, { spId, isShocked, isImpactBlink: forceBlink, lift: pilotLift });
 
-  // Body blocks: outline, mint fill, highlight, pink rocker
+  // Body blocks: outline, mint fill, highlight, pink stripe, black rocker
   const blocks = [
-    [-96, -2, 34, 38],
-    [-60, 2, 96, 34],
-    [38, 6, 54, 30],
-    [92, 12, 4, 22],
+    [-96, -6, 34, 36],
+    [-60, 0, 98, 30],
+    [40, 4, 54, 26],
+    [94, 10, 4, 18],
   ];
   ctx.fillStyle = CAR_K;
   blocks.forEach(([x, y, w, h]) => ctx.fillRect(x - 2, y - 2, w + 4, h + 4));
@@ -893,197 +915,225 @@ function drawPixelCarWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) 
   blocks.forEach(([x, y, w, h]) => ctx.fillRect(x, y, w, h));
   ctx.fillStyle = '#99f6e4';
   blocks.slice(0, 3).forEach(([x, y, w]) => ctx.fillRect(x, y, w, 4));
-  ctx.fillStyle = '#14b8a6';
-  ctx.fillRect(-96, 16, 188, 6);
   ctx.fillStyle = '#f8fafc';
-  ctx.fillRect(-96, 22, 192, 2);
+  ctx.fillRect(-96, 12, 194, 2);
   ctx.fillStyle = '#f472b6';
-  ctx.fillRect(-96, 24, 192, 8);
-  ctx.fillStyle = '#be185d';
-  ctx.fillRect(-96, 32, 192, 4);
-  ctx.fillStyle = '#0f766e';
-  ctx.fillRect(-8, 8, 2, 14);
+  ctx.fillRect(-96, 14, 194, 8);
+  ctx.fillStyle = '#1f2937';
+  ctx.fillRect(-96, 24, 194, 6);
   ctx.fillStyle = CAR_K;
-  ctx.fillRect(-22, 10, 8, 2);
-  drawPixelHeart(ctx, 12, 13, 2, '#f472b6');
+  ctx.fillRect(-22, 6, 8, 2);
+  drawPixelHeart(ctx, 8, 6, 2, '#f472b6');
 
-  // Wheel arches (inside the body only), tyres and spinner rims
-  [-52, 54].forEach((wx) => fillPixelDisc(ctx, wx, 31, 20, CAR_K, 36));
-  const spinState = Math.floor(((wheelAngle % (Math.PI / 2)) + Math.PI / 2) / (Math.PI / 4)) % 2;
-  [-52, 54].forEach((wx) => {
-    fillPixelDisc(ctx, wx, 31, 18, CAR_K);
-    fillPixelDisc(ctx, wx, 31, 16, '#1f2937');
-    fillPixelDisc(ctx, wx, 31, 12, '#374151');
-    fillPixelDisc(ctx, wx, 31, 10, '#e2e8f0');
-    ctx.fillStyle = '#64748b';
-    if (spinState === 0) {
-      ctx.fillRect(wx - 1, 23, 2, 16);
-      ctx.fillRect(wx - 8, 30, 16, 2);
-    } else {
-      for (let k = -3; k <= 3; k++) {
-        ctx.fillRect(wx + k * 2 - 1, 30 + k * 2, 2, 2);
-        ctx.fillRect(wx - k * 2 - 1, 30 + k * 2, 2, 2);
-      }
-    }
-    ctx.fillStyle = '#f472b6';
-    ctx.fillRect(wx - 2, 29, 4, 4);
+  // Fender flares
+  ctx.fillStyle = '#111827';
+  CAR_WHEELS.forEach((wx) => {
+    ctx.fillRect(wx - 26, 12, 6, 10);
+    ctx.fillRect(wx - 22, 8, 8, 6);
+    ctx.fillRect(wx - 14, 6, 28, 6);
+    ctx.fillRect(wx + 14, 8, 8, 6);
+    ctx.fillRect(wx + 20, 12, 6, 10);
   });
 
-  // Windshield pillar (stepped), bumpers, exhaust, lights
-  const pillar = [
-    [23, -32, 8, 10],
-    [25, -22, 8, 10],
-    [27, -12, 8, 10],
-    [29, -2, 8, 6],
-  ];
-  ctx.fillStyle = CAR_K;
-  pillar.forEach(([x, y, w, h]) => ctx.fillRect(x - 2, y - 2, w + 4, h + 4));
-  ctx.fillStyle = '#e2e8f0';
-  pillar.forEach(([x, y, w, h]) => ctx.fillRect(x, y, w, h));
+  // Windshield pillar, cage, LED bar, snorkel
   ctx.fillStyle = '#7dd3fc';
-  pillar.forEach(([x, y, , h]) => ctx.fillRect(x + 4, y, 2, h));
+  ctx.fillRect(28, -34, 6, 34);
   ctx.fillStyle = CAR_K;
-  ctx.fillRect(90, 22, 12, 12);
-  ctx.fillRect(-104, 22, 12, 12);
-  ctx.fillRect(-110, 28, 14, 8);
-  ctx.fillRect(86, 10, 10, 10);
-  ctx.fillRect(-100, 4, 8, 14);
-  ctx.fillStyle = '#e2e8f0';
-  ctx.fillRect(92, 24, 8, 8);
-  ctx.fillRect(-102, 24, 8, 8);
-  ctx.fillStyle = '#cbd5e1';
-  ctx.fillRect(-108, 30, 10, 4);
+  ctx.fillRect(-72, -88, 8, 90);
+  ctx.fillRect(-72, -88, 98, 8);
+  ctx.fillRect(22, -88, 8, 12);
+  ctx.fillRect(26, -78, 8, 40);
+  ctx.fillRect(32, -40, 8, 42);
+  ctx.fillStyle = '#64748b';
+  ctx.fillRect(-70, -86, 4, 86);
+  ctx.fillRect(-70, -86, 94, 4);
+  ctx.fillRect(28, -76, 4, 38);
+  ctx.fillRect(34, -38, 4, 38);
+  ctx.fillStyle = CAR_K;
+  ctx.fillRect(-48, -98, 58, 10);
+  ctx.fillStyle = lightsOn ? '#fde047' : '#78716c';
+  for (let i = 0; i < 6; i++) ctx.fillRect(-46 + i * 9, -96, 6, 6);
+  ctx.fillStyle = '#111827';
+  ctx.fillRect(54, -36, 6, 40);
+  ctx.fillRect(50, -42, 12, 8);
+
+  // Bumpers, lights
+  ctx.fillStyle = CAR_K;
+  ctx.fillRect(90, 18, 16, 14);
+  ctx.fillRect(-108, 18, 14, 14);
+  ctx.fillRect(86, 6, 10, 10);
+  ctx.fillRect(-100, 2, 8, 14);
+  ctx.fillStyle = '#ef4444';
+  ctx.fillRect(104, 24, 4, 4);
   ctx.fillStyle = lightsOn ? '#fde047' : '#a16207';
-  ctx.fillRect(88, 12, 6, 6);
+  ctx.fillRect(88, 8, 6, 6);
   ctx.fillStyle = lightsOn ? '#fb7185' : '#9f1239';
-  ctx.fillRect(-98, 6, 4, 10);
+  ctx.fillRect(-98, 4, 4, 10);
+
+  // Tyres with stepped tread blocks
+  const step = Math.floor(((wheelAngle % (Math.PI / 4)) + Math.PI / 4) / (Math.PI / 8)) % 2;
+  CAR_WHEELS.forEach((wx) => {
+    fillPixelDisc(ctx, wx, CAR_WHEEL_Y, 22, CAR_K);
+    fillPixelDisc(ctx, wx, CAR_WHEEL_Y, 20, '#1f2937');
+    ctx.fillStyle = '#475569';
+    for (let i = 0; i < 8; i++) {
+      const a = (i * Math.PI) / 4 + (step * Math.PI) / 8;
+      ctx.fillRect(Math.round(wx + Math.cos(a) * 17) - 2, Math.round(CAR_WHEEL_Y + Math.sin(a) * 17) - 2, 4, 4);
+    }
+    fillPixelDisc(ctx, wx, CAR_WHEEL_Y, 12, '#94a3b8');
+    fillPixelDisc(ctx, wx, CAR_WHEEL_Y, 9, '#475569');
+    ctx.fillStyle = '#f472b6';
+    ctx.fillRect(wx - 2, CAR_WHEEL_Y - 2, 4, 4);
+  });
 
   ctx.restore();
 }
 
 // ---------------------------------------------------------------------------
-// Obstacles (drawn from their left edge on the road; heights grow upward)
+// Obstacles, ice ledges, jellies and potions
 // ---------------------------------------------------------------------------
 function drawCarObstacle(ctx, o, groundY, now) {
   ctx.save();
   ctx.lineJoin = 'round';
-  const baseX = Math.round(o.x);
-  if (o.mode === 'over') {
-    ctx.fillStyle = 'rgba(9, 13, 26, 0.28)';
-    ctx.beginPath();
-    ctx.ellipse(baseX + o.w / 2, groundY + 2, o.w / 2 + 6, 5, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  const x = Math.round(o.x);
+  const base = groundY - o.lift; // surface the obstacle stands on (snow or a ledge)
 
-  if (o.type === 'ICE') {
-    for (let u = 0; u < o.size; u++) {
-      const x = baseX + u * 42 + 2;
-      const y = groundY - 40 - (u % 2) * 2;
-      const g = ctx.createLinearGradient(x, y, x + 38, y + 40);
+  if (o.type === 'SPIKE') {
+    ctx.fillStyle = 'rgba(9, 13, 26, 0.25)';
+    ctx.beginPath();
+    ctx.ellipse(x + 23, base + 2, 28, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    [
+      [4, 26, 30],
+      [14, 40, 38],
+      [26, 22, 28],
+    ].forEach(([dx, w, h]) => {
+      const g = ctx.createLinearGradient(x + dx, base - h, x + dx + w, base);
       g.addColorStop(0, '#f0f9ff');
-      g.addColorStop(0.5, '#bae6fd');
       g.addColorStop(1, '#38bdf8');
       ctx.fillStyle = g;
       ctx.strokeStyle = '#0c4a6e';
-      ctx.lineWidth = 2.4;
+      ctx.lineWidth = 2.2;
       ctx.beginPath();
-      ctx.roundRect(x, y, 38, 40 + (u % 2) * 2, 5);
+      ctx.moveTo(x + dx, base);
+      ctx.lineTo(x + dx + w / 2, base - h);
+      ctx.lineTo(x + dx + w / 2 + 0.01 + w / 2 - 6, base);
+      ctx.closePath();
       ctx.fill();
       ctx.stroke();
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-      ctx.fillRect(x + 6, y + 6, 10, 4);
-      ctx.fillRect(x + 6, y + 12, 4, 8);
-      ctx.strokeStyle = 'rgba(12, 74, 110, 0.55)';
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(x + 24, y + 4);
-      ctx.lineTo(x + 20, y + 18);
-      ctx.lineTo(x + 28, y + 26);
-      ctx.stroke();
-    }
+    });
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.fillRect(x + 30, base - 28, 3, 10);
+  } else if (o.type === 'WALL') {
+    const h = 152;
+    const g = ctx.createLinearGradient(x, 0, x + 54, 0);
+    g.addColorStop(0, '#e0f2fe');
+    g.addColorStop(0.5, '#7dd3fc');
+    g.addColorStop(1, '#0284c7');
+    ctx.fillStyle = 'rgba(9, 13, 26, 0.25)';
+    ctx.beginPath();
+    ctx.ellipse(x + 27, base + 2, 34, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = g;
+    ctx.strokeStyle = '#0c4a6e';
+    ctx.lineWidth = 2.6;
+    ctx.beginPath();
+    ctx.moveTo(x + 4, base);
+    ctx.lineTo(x + 2, base - h + 18);
+    ctx.lineTo(x + 14, base - h);
+    ctx.lineTo(x + 40, base - h + 4);
+    ctx.lineTo(x + 52, base - h + 22);
+    ctx.lineTo(x + 50, base);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#f8fafc';
+    ctx.beginPath();
+    ctx.moveTo(x + 2, base - h + 18);
+    ctx.lineTo(x + 14, base - h - 4);
+    ctx.lineTo(x + 40, base - h);
+    ctx.lineTo(x + 53, base - h + 20);
+    ctx.lineTo(x + 40, base - h + 12);
+    ctx.lineTo(x + 14, base - h + 10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(12, 74, 110, 0.5)';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(x + 30, base - h + 20);
+    ctx.lineTo(x + 22, base - 90);
+    ctx.lineTo(x + 34, base - 60);
+    ctx.lineTo(x + 26, base - 24);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.fillRect(x + 10, base - h + 30, 5, 50);
   } else if (o.type === 'GIFTS') {
     const palette = [
       ['#ef4444', '#fde047'],
       ['#22c55e', '#f8fafc'],
       ['#8b5cf6', '#fde047'],
     ];
-    for (let u = 0; u < o.size; u++) {
-      const x = baseX + u * 56;
-      const [c1, r1] = palette[(o.seed + u) % 3];
-      const [c2, r2] = palette[(o.seed + u + 1) % 3];
-      ctx.strokeStyle = CAR_K;
-      ctx.lineWidth = 2.4;
-      ctx.fillStyle = c1;
-      ctx.beginPath();
-      ctx.roundRect(x + 2, groundY - 32, 52, 32, 3);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = r1;
-      ctx.fillRect(x + 25, groundY - 31, 6, 30);
-      ctx.fillStyle = c2;
-      ctx.beginPath();
-      ctx.roundRect(x + 10, groundY - 56, 36, 24, 3);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = r2;
-      ctx.fillRect(x + 25, groundY - 55, 6, 22);
-      ctx.strokeStyle = r2;
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.ellipse(x + 22, groundY - 60, 6, 4, -0.5, 0, Math.PI * 2);
-      ctx.ellipse(x + 34, groundY - 60, 6, 4, 0.5, 0, Math.PI * 2);
-      ctx.stroke();
-    }
+    const [c1, r1] = palette[o.seed % 3];
+    const [c2, r2] = palette[(o.seed + 1) % 3];
+    ctx.strokeStyle = CAR_K;
+    ctx.lineWidth = 2.4;
+    ctx.fillStyle = c1;
+    ctx.beginPath();
+    ctx.roundRect(x + 2, base - 32, 52, 32, 3);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = r1;
+    ctx.fillRect(x + 25, base - 31, 6, 30);
+    ctx.fillStyle = c2;
+    ctx.beginPath();
+    ctx.roundRect(x + 10, base - 56, 36, 24, 3);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = r2;
+    ctx.fillRect(x + 25, base - 55, 6, 22);
   } else if (o.type === 'SNOWMAN') {
-    const cx = baseX + 25;
+    const cx = x + 25;
     ctx.strokeStyle = '#1e293b';
     ctx.lineWidth = 2.4;
     ctx.fillStyle = '#f8fafc';
     ctx.beginPath();
-    ctx.arc(cx, groundY - 22, 22, 0, Math.PI * 2);
+    ctx.arc(cx, base - 21, 21, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
     ctx.beginPath();
-    ctx.arc(cx, groundY - 59, 15, 0, Math.PI * 2);
+    ctx.arc(cx, base - 56, 14, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-    // Stick arms
     ctx.strokeStyle = '#78350f';
     ctx.lineWidth = 3;
     ctx.beginPath();
-    ctx.moveTo(cx - 18, groundY - 34);
-    ctx.lineTo(cx - 34, groundY - 48);
-    ctx.moveTo(cx + 18, groundY - 34);
-    ctx.lineTo(cx + 32, groundY - 46);
+    ctx.moveTo(cx - 17, base - 32);
+    ctx.lineTo(cx - 32, base - 46);
+    ctx.moveTo(cx + 17, base - 32);
+    ctx.lineTo(cx + 30, base - 44);
     ctx.stroke();
-    // Scarf
     ctx.fillStyle = '#ef4444';
-    ctx.fillRect(cx - 14, groundY - 46, 28, 6);
-    ctx.fillRect(cx + 4, groundY - 44, 6, 14);
-    // Hat
+    ctx.fillRect(cx - 13, base - 43, 26, 6);
+    ctx.fillRect(cx + 4, base - 41, 6, 13);
     ctx.fillStyle = '#111827';
-    ctx.fillRect(cx - 16, groundY - 76, 32, 5);
-    ctx.fillRect(cx - 10, groundY - 94, 20, 19);
+    ctx.fillRect(cx - 15, base - 72, 30, 5);
+    ctx.fillRect(cx - 9, base - 89, 18, 18);
     ctx.fillStyle = '#ef4444';
-    ctx.fillRect(cx - 10, groundY - 80, 20, 4);
-    // Face (looks at the car) and coal buttons
+    ctx.fillRect(cx - 9, base - 76, 18, 4);
     ctx.fillStyle = '#111827';
-    ctx.fillRect(cx - 8, groundY - 65, 4, 4);
-    ctx.fillRect(cx + 2, groundY - 65, 4, 4);
-    ctx.fillRect(cx - 2, groundY - 28, 4, 4);
-    ctx.fillRect(cx - 2, groundY - 16, 4, 4);
+    ctx.fillRect(cx - 8, base - 62, 4, 4);
+    ctx.fillRect(cx + 2, base - 62, 4, 4);
+    ctx.fillRect(cx - 2, base - 26, 4, 4);
     ctx.fillStyle = '#f97316';
     ctx.beginPath();
-    ctx.moveTo(cx - 2, groundY - 60);
-    ctx.lineTo(cx - 20, groundY - 57);
-    ctx.lineTo(cx - 2, groundY - 54);
+    ctx.moveTo(cx - 2, base - 57);
+    ctx.lineTo(cx - 19, base - 54);
+    ctx.lineTo(cx - 2, base - 51);
     ctx.closePath();
     ctx.fill();
   } else if (o.type === 'SKUA') {
     const flap = Math.floor((now + o.seed * 37) / 140) % 2;
-    const y = groundY - o.lift - 18;
-    const x = baseX;
-    // Wings
+    const y = base - 18;
     ctx.fillStyle = '#57534e';
     ctx.strokeStyle = CAR_K;
     ctx.lineWidth = 2.2;
@@ -1100,7 +1150,6 @@ function drawCarObstacle(ctx, o, groundY, now) {
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    // Body
     ctx.fillStyle = '#78716c';
     ctx.beginPath();
     ctx.ellipse(x + 32, y + 2, 24, 10, 0, 0, Math.PI * 2);
@@ -1110,7 +1159,6 @@ function drawCarObstacle(ctx, o, groundY, now) {
     ctx.beginPath();
     ctx.ellipse(x + 28, y + 6, 12, 4, 0, 0, Math.PI * 2);
     ctx.fill();
-    // Head, angry brow and hooked beak (faces the car)
     ctx.fillStyle = '#78716c';
     ctx.beginPath();
     ctx.arc(x + 10, y - 2, 8, 0, Math.PI * 2);
@@ -1127,7 +1175,6 @@ function drawCarObstacle(ctx, o, groundY, now) {
     ctx.fillStyle = CAR_K;
     ctx.fillRect(x + 7, y - 5, 3, 3);
     ctx.fillRect(x + 5, y - 9, 8, 2);
-    // Tail
     ctx.fillStyle = '#57534e';
     ctx.beginPath();
     ctx.moveTo(x + 54, y);
@@ -1140,16 +1187,109 @@ function drawCarObstacle(ctx, o, groundY, now) {
   ctx.restore();
 }
 
+function drawIceLedge(ctx, p, groundY) {
+  const x0 = Math.round(p.a);
+  const w = Math.round(p.b - p.a);
+  const y = groundY - p.top;
+  ctx.save();
+  // Icicles under the slab
+  ctx.fillStyle = '#7dd3fc';
+  ctx.strokeStyle = '#0c4a6e';
+  ctx.lineWidth = 1.6;
+  for (let ix = x0 + 10; ix < x0 + w - 8; ix += 26) {
+    const len = 10 + ((ix - x0) % 3) * 5;
+    ctx.beginPath();
+    ctx.moveTo(ix, y + 18);
+    ctx.lineTo(ix + 5, y + 18 + len);
+    ctx.lineTo(ix + 10, y + 18);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  }
+  const g = ctx.createLinearGradient(0, y, 0, y + 22);
+  g.addColorStop(0, '#e0f2fe');
+  g.addColorStop(1, '#38bdf8');
+  ctx.fillStyle = g;
+  ctx.strokeStyle = '#0c4a6e';
+  ctx.lineWidth = 2.4;
+  ctx.beginPath();
+  ctx.roundRect(x0, y, w, 20, 6);
+  ctx.fill();
+  ctx.stroke();
+  // Snow cap
+  ctx.fillStyle = '#f8fafc';
+  ctx.beginPath();
+  ctx.roundRect(x0 - 3, y - 5, w + 6, 9, 5);
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  for (let ix = x0 + 6; ix < x0 + w - 10; ix += 34) ctx.fillRect(ix, y - 8, 14, 4);
+  ctx.restore();
+}
+
+function drawCarJelly(ctx, j, groundY, now) {
+  const bob = Math.sin(now * 0.008 + j.x * 0.03) * 2;
+  const x = j.x;
+  const y = groundY - j.h + bob;
+  ctx.save();
+  if (j.kind === 'jelly') {
+    // Little fish snack facing the car
+    ctx.fillStyle = '#7dd3fc';
+    ctx.strokeStyle = '#0c4a6e';
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(x + 6, y);
+    ctx.lineTo(x + 13, y - 6);
+    ctx.lineTo(x + 13, y + 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.ellipse(x - 1, y, 9, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(x - 5, y - 3, 3, 2);
+    ctx.fillStyle = CAR_K;
+    ctx.fillRect(x - 6, y - 2, 2, 2);
+  } else if (j.kind === 'gold') {
+    ctx.translate(x, y);
+    drawGoldenStarCollectible(ctx, 15, now);
+  } else {
+    const big = j.kind === 'potionBig';
+    const w = big ? 22 : 16;
+    const h = big ? 24 : 18;
+    ctx.fillStyle = 'rgba(244, 114, 182, 0.25)';
+    ctx.beginPath();
+    ctx.arc(x, y, w, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = CAR_K;
+    ctx.lineWidth = 2;
+    ctx.fillStyle = '#f472b6';
+    ctx.beginPath();
+    ctx.roundRect(x - w / 2, y - h / 2 + 3, w, h, 5);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(x - 4, y - h / 2 - 3, 8, 6);
+    ctx.strokeRect(x - 4, y - h / 2 - 3, 8, 6);
+    ctx.fillStyle = '#92400e';
+    ctx.fillRect(x - 3, y - h / 2 - 7, 6, 4);
+    drawPixelHeart(ctx, x, y + 4, big ? 2 : 1.5, '#ffffff');
+  }
+  ctx.restore();
+}
+
 // ---------------------------------------------------------------------------
-// Road + scrolling sky (bg_ref_skygame tiled with its mirror so the seam never shows)
+// Snow trail world: scrolling sky, pine ridge, trail markers, snow with tyre tracks, crevasses
 // ---------------------------------------------------------------------------
-function drawCarRoadBackground(ctx, now, scroll) {
+function drawCarSnowWorld(ctx, now, run) {
+  const scroll = run.distance;
   ensureIntroBackgrounds();
   const img = MOTION_STATE.bgRefSkyGameImg;
   if (MOTION_STATE.bgRefSkyGameLoaded && img) {
     ctx.imageSmoothingEnabled = true;
     const tile = 1920;
-    const off = -((scroll * 0.16) % tile);
+    const off = -((scroll * 0.12) % tile);
     for (let k = 0; k < 2; k++) {
       const x = Math.floor(off + k * tile);
       ctx.drawImage(img, x, 0, 961, 540);
@@ -1170,86 +1310,150 @@ function drawCarRoadBackground(ctx, now, scroll) {
   const G = CAR_CFG.GROUND_Y;
   const isXmas = INTRO_TOWN.id === 'xmas';
 
-  // String-light poles along the far edge of the road
-  const poleGap = 320;
-  const poleOff = -(scroll % poleGap);
+  // Snowy pine ridge (parallax)
+  const ridgeOff = -((scroll * 0.4) % 150);
+  ctx.fillStyle = '#e2e8f0';
+  ctx.fillRect(0, G - 40, 960, 40);
+  for (let k = -1; k < 8; k++) {
+    const tx = Math.round(ridgeOff + k * 150);
+    const idx = Math.floor(scroll * 0.4 / 150) + k;
+    const th = 46 + (Math.abs(idx * 37) % 3) * 14;
+    ctx.fillStyle = '#1e5a4f';
+    ctx.beginPath();
+    ctx.moveTo(tx + 40, G - 40 - th);
+    ctx.lineTo(tx + 64, G - 40);
+    ctx.lineTo(tx + 16, G - 40);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#f8fafc';
+    ctx.beginPath();
+    ctx.moveTo(tx + 40, G - 40 - th);
+    ctx.lineTo(tx + 50, G - 40 - th * 0.55);
+    ctx.lineTo(tx + 30, G - 40 - th * 0.55);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.fillStyle = '#cbd5e1';
+  ctx.fillRect(0, G - 42, 960, 3);
+
+  // Crevasse base under everything; the snow is drawn on top of it
+  const crev = ctx.createLinearGradient(0, G, 0, 540);
+  crev.addColorStop(0, '#0369a1');
+  crev.addColorStop(0.35, '#0c4a6e');
+  crev.addColorStop(1, '#020617');
+  ctx.fillStyle = crev;
+  ctx.fillRect(0, G - 2, 960, 540 - G + 2);
+
+  // Trail marker posts with string lights (only where there is snow under them)
+  const postGap = 300;
+  const postOff = -(scroll % postGap);
+  const onSnow = (px) => run.ground.some((g) => g.a < px && g.b > px);
   const bulbCols = isXmas ? ['#ef4444', '#22c55e', '#facc15', '#38bdf8'] : ['#f9a8d4', '#fff1f2', '#f472b6', '#fde047'];
   for (let k = -1; k < 5; k++) {
-    const px = Math.round(poleOff + k * poleGap);
-    const nx = px + poleGap;
-    ctx.strokeStyle = 'rgba(15, 23, 42, 0.7)';
-    ctx.lineWidth = 1.6;
-    ctx.beginPath();
-    ctx.moveTo(px, G - 96);
-    ctx.quadraticCurveTo(px + poleGap / 2, G - 70, nx, G - 96);
-    ctx.stroke();
-    for (let b = 1; b < 10; b++) {
-      const t = b / 10;
-      const bx = px + poleGap * t;
-      const by = G - 96 + 2 * t * (1 - t) * 26 + 3;
-      const lit = (Math.floor(now / 380) + b + k) % 3 !== 0;
-      ctx.fillStyle = CAR_K;
-      ctx.fillRect(Math.round(bx) - 3, Math.round(by) - 1, 6, 7);
-      ctx.fillStyle = lit ? bulbCols[(b + k + 8) % 4] : '#475569';
-      ctx.fillRect(Math.round(bx) - 2, Math.round(by), 4, 5);
+    const px = Math.round(postOff + k * postGap);
+    const nx = px + postGap;
+    if (onSnow(px) && onSnow(nx)) {
+      ctx.strokeStyle = 'rgba(15, 23, 42, 0.6)';
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.moveTo(px, G - 104);
+      ctx.quadraticCurveTo(px + postGap / 2, G - 80, nx, G - 104);
+      ctx.stroke();
+      for (let b = 1; b < 10; b++) {
+        const t = b / 10;
+        const bx = Math.round(px + postGap * t);
+        const by = Math.round(G - 104 + 2 * t * (1 - t) * 24 + 3);
+        const lit = (Math.floor(now / 380) + b + k) % 3 !== 0;
+        ctx.fillStyle = CAR_K;
+        ctx.fillRect(bx - 3, by - 1, 6, 7);
+        ctx.fillStyle = lit ? bulbCols[(b + k + 8) % 4] : '#475569';
+        ctx.fillRect(bx - 2, by, 4, 5);
+      }
     }
-    ctx.fillStyle = CAR_K;
-    ctx.fillRect(px - 3, G - 102, 6, 72);
-    ctx.fillStyle = '#64748b';
-    ctx.fillRect(px - 2, G - 100, 4, 68);
-    ctx.fillStyle = '#f8fafc';
-    ctx.fillRect(px - 5, G - 106, 10, 5);
+    if (onSnow(px)) {
+      ctx.fillStyle = CAR_K;
+      ctx.fillRect(px - 3, G - 108, 6, 86);
+      ctx.fillStyle = '#92400e';
+      ctx.fillRect(px - 2, G - 106, 4, 82);
+      ctx.fillStyle = '#f97316';
+      ctx.fillRect(px + 2, G - 106, 14, 9);
+      ctx.fillStyle = CAR_K;
+      ctx.fillRect(px + 2, G - 98, 14, 1);
+    }
   }
 
-  // Snowbank lip, neon road edge, asphalt, lane dashes, near shoulder
-  const lipOff = -(scroll % 32);
-  ctx.fillStyle = '#f1f5f9';
-  ctx.fillRect(0, G - 36, 960, 10);
-  for (let x = lipOff - 32; x < 960; x += 32) {
-    const bump = 4 + (Math.abs(Math.round((x - lipOff) / 32 + Math.floor(scroll / 32))) % 3) * 3;
-    ctx.fillStyle = '#f8fafc';
-    ctx.fillRect(Math.round(x), G - 36 - bump, 30, bump);
-    ctx.fillStyle = '#cbd5e1';
-    ctx.fillRect(Math.round(x), G - 28, 30, 2);
-  }
-  ctx.fillStyle = '#67e8f9';
-  ctx.fillRect(0, G - 26, 960, 3);
-  ctx.fillStyle = '#0b1020';
-  ctx.fillRect(0, G - 23, 960, 2);
-  ctx.fillStyle = '#1b2232';
-  ctx.fillRect(0, G - 21, 960, 540 - (G - 21));
-  ctx.fillStyle = '#232c40';
-  const grainOff = -(scroll % 74);
-  for (let x = grainOff - 74; x < 960; x += 74) {
-    ctx.fillRect(Math.round(x), G - 8, 6, 2);
-    ctx.fillRect(Math.round(x) + 33, G + 14, 8, 2);
-    ctx.fillRect(Math.round(x) + 51, G + 40, 5, 2);
-  }
-  const dashOff = -(scroll % 128);
-  for (let x = dashOff - 128; x < 960; x += 128) {
-    ctx.fillStyle = '#0b1020';
-    ctx.fillRect(Math.round(x) - 1, G + 25, 50, 7);
-    ctx.fillStyle = '#fde047';
-    ctx.fillRect(Math.round(x), G + 26, 48, 5);
-  }
-  ctx.fillStyle = '#0b1020';
-  ctx.fillRect(0, 528, 960, 2);
-  ctx.fillStyle = '#e2e8f0';
-  ctx.fillRect(0, 530, 960, 10);
+  // Snow segments
+  const trackOff = -(scroll % 44);
+  run.ground.forEach((g) => {
+    if (g.b < -30 || g.a > 990) return;
+    const x0 = Math.max(-30, Math.round(g.a));
+    const x1 = Math.min(990, Math.round(g.b));
+    const snow = ctx.createLinearGradient(0, G, 0, 540);
+    snow.addColorStop(0, '#ffffff');
+    snow.addColorStop(0.45, '#e0f2fe');
+    snow.addColorStop(1, '#bfdbfe');
+    ctx.fillStyle = snow;
+    ctx.fillRect(x0, G - 2, x1 - x0, 540 - G + 2);
+    // Drift bumps along the top
+    ctx.fillStyle = '#ffffff';
+    const bumpOff = -(scroll % 28);
+    for (let bx = bumpOff; bx < 990; bx += 28) {
+      if (bx + 22 < x0 || bx > x1) continue;
+      const bh = 3 + (Math.abs(Math.round((bx - bumpOff) / 28 + Math.floor(scroll / 28))) % 3) * 2;
+      const l = Math.max(x0, Math.round(bx));
+      const r = Math.min(x1, Math.round(bx) + 22);
+      if (r > l) ctx.fillRect(l, G - 2 - bh, r - l, bh);
+    }
+    ctx.fillStyle = '#bae6fd';
+    ctx.fillRect(x0, G + 6, x1 - x0, 2);
+    // Tyre tracks
+    ctx.fillStyle = 'rgba(100, 116, 139, 0.22)';
+    ctx.fillRect(x0, G + 18, x1 - x0, 7);
+    ctx.fillRect(x0, G + 34, x1 - x0, 7);
+    ctx.fillStyle = 'rgba(71, 85, 105, 0.3)';
+    for (let tx = trackOff; tx < 990; tx += 11) {
+      if (tx < x0 || tx + 5 > x1) continue;
+      ctx.fillRect(Math.round(tx), G + 19, 5, 5);
+      ctx.fillRect(Math.round(tx) + 4, G + 35, 5, 5);
+    }
+    // Crevasse walls + icicles where a pit starts or ends
+    [
+      [g.a, 1],
+      [g.b, -1],
+    ].forEach(([edge, dir]) => {
+      if (edge < -20 || edge > 980) return;
+      const ex = Math.round(edge);
+      const wallX = dir === 1 ? ex : ex - 10;
+      if (run.ground.some((o) => o !== g && Math.abs((dir === 1 ? o.b : o.a) - edge) < 1)) return; // joined segments
+      const wg = ctx.createLinearGradient(0, G, 0, 540);
+      wg.addColorStop(0, '#7dd3fc');
+      wg.addColorStop(1, '#0c4a6e');
+      ctx.fillStyle = wg;
+      ctx.fillRect(wallX, G, 10, 540 - G);
+      ctx.fillStyle = '#e0f2fe';
+      for (let iy = 0; iy < 3; iy++) {
+        const ix = ex - dir * (6 + iy * 9);
+        ctx.beginPath();
+        ctx.moveTo(ix - 4, G + 2);
+        ctx.lineTo(ix, G + 14 + iy * 4);
+        ctx.lineTo(ix + 4, G + 2);
+        ctx.closePath();
+        ctx.fill();
+      }
+    });
+  });
 
-  // Speed streaks get denser as the road speeds up
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
-  for (let w = 0; w < 9; w++) {
+  // Speed streaks + falling snow
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.32)';
+  for (let w = 0; w < 8; w++) {
     const wx = 960 - (((now * (0.5 + (w % 3) * 0.16) + w * 149 + scroll * 0.4) % 1100) | 0);
-    const wy = 92 + ((w * 47) % 250);
+    const wy = 92 + ((w * 47) % 220);
     ctx.fillRect(wx, wy, 60 + (w % 4) * 26, 2);
   }
-
-  // Falling snow
   if (isXmas) {
     ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
     for (let s = 0; s < 26; s++) {
-      const sx = (((s * 97 - scroll * 0.55 - now * 0.02) % 980) + 980) % 980 - 10;
+      const sx = ((((s * 97 - scroll * 0.55 - now * 0.02) % 980) + 980) % 980) - 10;
       const sy = (s * 53 + now * 0.06) % (G - 30);
       ctx.fillRect(Math.round(sx), Math.round(sy), s % 3 === 0 ? 4 : 2, s % 3 === 0 ? 4 : 2);
     }
@@ -1260,7 +1464,7 @@ function drawCarRunHud(ctx, now, run) {
   ctx.save();
   const hx = 16;
   const hy = 12;
-  const hw = 452;
+  const hw = 500;
   const hh = 34;
   ctx.fillStyle = 'rgba(9, 13, 26, 0.88)';
   ctx.fillRect(hx - 2, hy - 2, hw + 4, hh + 4);
@@ -1280,19 +1484,29 @@ function drawCarRunHud(ctx, now, run) {
   }
   ctx.fillStyle = '#ffffff';
   ctx.font = '900 12.5px "Pretendard", "Malgun Gothic", sans-serif';
-  ctx.fillText(`SCORE ${run.score.toLocaleString()}`, hx + 102, hy + hh / 2 + 1);
-  if (run.combo > 1) {
-    ctx.fillStyle = '#34d399';
-    ctx.fillText(`x${run.combo}`, hx + 212, hy + hh / 2 + 1);
-  }
-  for (let s = 0; s < CAR_CFG.HEARTS; s++) {
-    drawPixelHeart(ctx, hx + 256 + s * 22, hy + hh / 2, 2.1, s < run.hearts ? '#f472b6' : '#334155');
-  }
+  ctx.fillText(`SCORE ${run.score.toLocaleString()}`, hx + 100, hy + hh / 2 + 1);
+
+  // Energy bar (blinks when low)
+  const bx = hx + 222;
+  const bw = 150;
+  const ratio = Math.max(0, run.energy / CAR_CFG.ENERGY_MAX);
+  const low = ratio < 0.25;
+  ctx.fillStyle = '#1e293b';
+  ctx.fillRect(bx, hy + 11, bw, 12);
+  ctx.fillStyle = low && Math.floor(now / 200) % 2 === 0 ? '#fecdd3' : low ? '#fb7185' : '#f472b6';
+  ctx.fillRect(bx, hy + 11, Math.round(bw * ratio), 12);
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.35)';
+  ctx.fillRect(bx, hy + 11, Math.round(bw * ratio), 3);
+  ctx.strokeStyle = '#f8fafc';
+  ctx.lineWidth = 1.2;
+  ctx.strokeRect(bx, hy + 11, bw, 12);
+  drawPixelHeart(ctx, bx - 10, hy + hh / 2, 1.8, '#f472b6');
+
   const kmh = Math.round(run.speed * 12);
   ctx.fillStyle = run.level >= 7 ? '#fb7185' : run.level >= 4 ? '#fde047' : '#bae6fd';
   ctx.font = '900 12px "Pretendard", "Malgun Gothic", sans-serif';
   ctx.textAlign = 'right';
-  ctx.fillText(`LV.${run.level} · ${kmh}km/h`, hx + hw - 14, hy + hh / 2 + 1);
+  ctx.fillText(`LV.${run.level} · ${kmh}km/h`, hx + hw - 12, hy + hh / 2 + 1);
   ctx.restore();
 }
 
@@ -1410,54 +1624,54 @@ function drawCarRunnerFrame(ctx, now, spId) {
   const S = CAR_CFG.CAR_SCALE;
   const G = CAR_CFG.GROUND_Y;
   const carOriginY = () => G - CAR_CFG.WHEEL_BOTTOM * S - run.h;
+  const ko = CURRENT_LANG === 'ko';
 
   const events = carStep(run, dt, now, Math.random);
   let crashed = false;
   events.forEach((ev) => {
     if (ev.type === 'jump') {
-      spawnCarBurst(CAR_CFG.CAR_X - 50 * S, G - 4, ['#f8fafc', '#cbd5e1'], 6, 2.6, 6);
+      spawnCarBurst(CAR_CFG.CAR_X - 56 * S, carOriginY() + 54 * S, ['#f8fafc', '#cbd5e1'], 6, 2.6, 6);
+    } else if (ev.type === 'double') {
+      spawnCarBurst(CAR_CFG.CAR_X, carOriginY() + 40 * S, ['#67e8f9', '#f472b6', '#ffffff'], 12, 3.6, 5);
     } else if (ev.type === 'land') {
       CAR_GAME.landAt = now;
-      spawnCarBurst(CAR_CFG.CAR_X - 50 * S, G - 4, ['#f8fafc', '#e2e8f0', '#bae6fd'], 6, 3, 6);
-      spawnCarBurst(CAR_CFG.CAR_X + 54 * S, G - 4, ['#f8fafc', '#e2e8f0', '#bae6fd'], 6, 3, 6);
-    } else if (ev.type === 'star') {
+      spawnCarBurst(CAR_CFG.CAR_X - 56 * S, carOriginY() + 54 * S, ['#f8fafc', '#e2e8f0', '#bae6fd'], 6, 3, 6);
+      spawnCarBurst(CAR_CFG.CAR_X + 58 * S, carOriginY() + 54 * S, ['#f8fafc', '#e2e8f0', '#bae6fd'], 6, 3, 6);
+    } else if (ev.type === 'jelly') {
+      spawnCarBurst(ev.x, G - ev.h, ['#bae6fd', '#ffffff'], 3, 1.6, 3);
+    } else if (ev.type === 'gold') {
       CAR_GAME.popups.push({ x: ev.x, y: G - ev.h - 18, vy: -1.6, text: `+${ev.points}`, col: '#fde047', alpha: 1 });
-      spawnCarBurst(ev.x, G - ev.h, ['#fde047', '#fef08a', '#ffffff'], 7, 3.2, 5);
-    } else if (ev.type === 'clear') {
-      const o = ev.obstacle;
-      CAR_GAME.popups.push({ x: o.x + o.w / 2, y: G - o.clearH - 20, vy: -1.2, text: `+${ev.points}`, col: '#67e8f9', alpha: 0.9 });
+      spawnCarBurst(ev.x, G - ev.h, ['#fde047', '#fef08a', '#ffffff'], 8, 3.2, 5);
+    } else if (ev.type === 'potion') {
+      CAR_GAME.popups.push({ x: ev.x, y: G - ev.h - 20, vy: -1.4, text: `ENERGY +${ev.gain}`, col: '#f472b6', alpha: 1 });
+      spawnCarBurst(ev.x, G - ev.h, ['#f472b6', '#fbcfe8', '#ffffff'], 10, 3, 5);
     } else if (ev.type === 'hit') {
       const o = ev.obstacle;
-      const ox = o.x + o.w / 2;
-      const oy = G - o.lift - 24;
       const cols =
-        o.type === 'ICE'
+        o.type === 'SPIKE' || o.type === 'WALL'
           ? ['#e0f2fe', '#7dd3fc', '#ffffff']
           : o.type === 'GIFTS'
           ? ['#ef4444', '#22c55e', '#fde047']
           : o.type === 'SNOWMAN'
           ? ['#f8fafc', '#e2e8f0', '#f97316']
           : ['#78716c', '#e7e5e4', '#facc15'];
-      spawnCarBurst(ox, oy, cols, 16, 5, 7);
+      spawnCarBurst(o.x + o.w / 2, G - o.lift - 24, cols, 16, 5, 7);
       CAR_GAME.hitFlashUntil = now + 520;
       CAR_GAME.shakeUntil = now + 300;
+      CAR_GAME.popups.push({ x: CAR_CFG.CAR_X, y: carOriginY() - 100, vy: -1.5, text: `ENERGY -${ev.cost}`, col: '#fb7185', alpha: 1 });
+    } else if (ev.type === 'rescue') {
+      CAR_GAME.shakeUntil = now + 260;
+      spawnCarBurst(CAR_CFG.CAR_X, carOriginY(), ['#ffffff', '#67e8f9', '#fde047'], 18, 4.5, 6);
       CAR_GAME.popups.push({
-        x: CAR_CFG.CAR_X,
-        y: carOriginY() - 80,
-        vy: -1.5,
-        text: run.hearts > 0 ? 'BUMP -1' : 'CRASH',
-        col: '#fb7185',
-        alpha: 1,
-      });
-    } else if (ev.type === 'level') {
-      CAR_GAME.popups.push({
-        x: 480,
-        y: 92,
+        x: CAR_CFG.CAR_X + 40,
+        y: carOriginY() - 110,
         vy: -1.2,
-        text: `LV.${ev.level} SPEED UP! +${ev.points}`,
+        text: ko ? `크레바스 탈출! ENERGY -${CAR_CFG.PIT_RESCUE_ENERGY}` : `Pulled out! ENERGY -${CAR_CFG.PIT_RESCUE_ENERGY}`,
         col: '#fde047',
         alpha: 1,
       });
+    } else if (ev.type === 'level') {
+      CAR_GAME.popups.push({ x: 480, y: 92, vy: -1.2, text: `LV.${ev.level} SPEED UP! +${ev.points}`, col: '#fde047', alpha: 1 });
     } else if (ev.type === 'crash') {
       crashed = true;
     }
@@ -1469,41 +1683,44 @@ function drawCarRunnerFrame(ctx, now, spId) {
     ctx.translate((Math.random() - 0.5) * mag, (Math.random() - 0.5) * mag);
   }
 
-  drawCarRoadBackground(ctx, now, run.distance);
-
-  // Obstacles behind stars and the car
-  run.obstacles.forEach((o) => drawCarObstacle(ctx, o, G, now));
-  run.stars.forEach((s) => {
-    ctx.save();
-    ctx.translate(s.x, G - s.h + Math.sin(now * 0.01 + s.x * 0.02) * 3);
-    drawGoldenStarCollectible(ctx, 14, now);
-    ctx.restore();
+  drawCarSnowWorld(ctx, now, run);
+  run.ledges.forEach((p) => {
+    if (p.b > -40 && p.a < 1000) drawIceLedge(ctx, p, G);
+  });
+  run.obstacles.forEach((o) => {
+    if (o.x < 1000) drawCarObstacle(ctx, o, G, now);
+  });
+  run.jellies.forEach((j) => {
+    if (j.x < 990) drawCarJelly(ctx, j, G, now);
   });
 
-  // Car shadow + car
-  const shadowW = Math.max(60, 170 - run.h * 0.45);
-  ctx.fillStyle = `rgba(9, 13, 26, ${Math.max(0.12, 0.34 - run.h * 0.001)})`;
-  ctx.beginPath();
-  ctx.ellipse(CAR_CFG.CAR_X + 2, G + 2, shadowW / 2, 6, 0, 0, Math.PI * 2);
-  ctx.fill();
+  // Shadow on whatever surface is under the car
+  const under = carSurfacesUnder(run).filter((top) => top <= run.h + 0.5);
+  if (under.length) {
+    const top = Math.max(...under);
+    const gap = run.h - top;
+    ctx.fillStyle = `rgba(9, 13, 26, ${Math.max(0.1, 0.3 - gap * 0.001)})`;
+    ctx.beginPath();
+    ctx.ellipse(CAR_CFG.CAR_X + 2, G - top + 2, Math.max(60, 170 - gap * 0.45) / 2, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
 
   const sinceLand = now - CAR_GAME.landAt;
-  const squash = sinceLand < 140 && !run.jumping ? Math.sin((sinceLand / 140) * Math.PI) * 3 : 0;
-  const bob = run.jumping ? 0 : Math.round(Math.sin(now * 0.05) * 0.8) + squash;
-  const tilt = run.jumping ? Math.max(-0.2, Math.min(0.22, -run.vh * 0.012)) : 0;
+  const squash = sinceLand < 140 && run.grounded ? Math.sin((sinceLand / 140) * Math.PI) * 3 : 0;
+  const bob = run.grounded ? Math.round(Math.sin(now * 0.05) * 1.2) + squash : 0;
+  const tilt = run.grounded ? 0 : Math.max(-0.2, Math.min(0.22, -run.vh * 0.014));
   const invuln = now < run.invulnUntil;
   if (!invuln || Math.floor(now / 90) % 2 === 0) {
     drawCarWithPilot(ctx, CAR_CFG.CAR_X, carOriginY() + bob, tilt, now, {
       scale: S,
       spId,
-      isShocked: now < CAR_GAME.hitFlashUntil,
+      isShocked: now < CAR_GAME.hitFlashUntil || run.h < -10,
       isImpactBlink: now < CAR_GAME.hitFlashUntil - 420,
-      wheelAngle: run.distance / 16,
-      boost: run.jumping ? 1.4 : 0.6 + (run.speed - CAR_CFG.SPEED) / 12,
+      wheelAngle: run.distance / 20,
+      boost: run.grounded ? 0.6 + (run.speed - CAR_CFG.SPEED) / 10 : 1.4,
     });
   }
 
-  // Particles + popups (same feel as the UFO stage)
   for (let i = CAR_GAME.particles.length - 1; i >= 0; i--) {
     const pt = CAR_GAME.particles[i];
     pt.x += pt.vx * dt;
@@ -1543,10 +1760,8 @@ function drawCarRunnerFrame(ctx, now, spId) {
 
   drawCarRunHud(ctx, now, run);
 
-  // How-to hint until the first few jumps
-  if (run.jumps < 3 && now - run.startAt < 9000) {
-    const msg =
-      CURRENT_LANG === 'ko' ? '누르면 점프 · 길게 누르면 더 높이' : 'Tap to jump · hold to jump higher';
+  if (run.jumps < 4 && now - run.startAt < 10000) {
+    const msg = ko ? '누르면 점프 · 공중에서 한 번 더 누르면 2단 점프' : 'Tap to jump · tap again in the air to double jump';
     ctx.save();
     ctx.font = '800 14px "Pretendard", "Malgun Gothic", sans-serif';
     const tw = Math.ceil(ctx.measureText(msg).width) + 28;
@@ -1571,7 +1786,7 @@ function drawCarRunnerFrame(ctx, now, spId) {
 // ============================================================================
 // SCENE 1 — vehicle picker: the parked car on the right ice shelf + a marker over the chosen vehicle
 // ============================================================================
-const SCENE0_CAR_SPOT = { x: 860, y: 165, tilt: -0.16, scale: 0.8 };
+const SCENE0_CAR_SPOT = { x: 860, y: 158, tilt: -0.16, scale: 0.78 };
 const SCENE0_UFO_SPOT = { x: 480, y: 255 };
 
 function drawScene0VehiclePicker(ctx, now) {
@@ -1580,15 +1795,15 @@ function drawScene0VehiclePicker(ctx, now) {
   ctx.save();
   if (isCar) {
     const pulse = 0.3 + 0.3 * Math.sin(now * 0.008);
-    const g = ctx.createRadialGradient(spot.x, spot.y + 14, 6, spot.x, spot.y + 14, 110);
+    const g = ctx.createRadialGradient(spot.x, spot.y + 14, 6, spot.x, spot.y + 14, 120);
     g.addColorStop(0, `rgba(244, 114, 182, ${pulse * 0.5})`);
     g.addColorStop(1, 'rgba(244, 114, 182, 0)');
     ctx.fillStyle = g;
-    ctx.fillRect(spot.x - 120, spot.y - 90, 240, 200);
+    ctx.fillRect(spot.x - 130, spot.y - 110, 260, 220);
   }
   ctx.fillStyle = 'rgba(9, 13, 26, 0.3)';
   ctx.beginPath();
-  ctx.ellipse(spot.x - 2, spot.y + 38 * spot.scale, 82 * spot.scale, 6, spot.tilt, 0, Math.PI * 2);
+  ctx.ellipse(spot.x - 2, spot.y + 57 * spot.scale, 86 * spot.scale, 6, spot.tilt, 0, Math.PI * 2);
   ctx.fill();
   drawCarWithPilot(ctx, spot.x, spot.y, spot.tilt, now, {
     scale: spot.scale,
@@ -1597,8 +1812,7 @@ function drawScene0VehiclePicker(ctx, now) {
     wheelAngle: 0,
   });
 
-  // Bouncing pixel marker + label over the chosen vehicle
-  const target = isCar ? { x: spot.x, y: spot.y - 40 * spot.scale - 14 } : { x: SCENE0_UFO_SPOT.x, y: 104 };
+  const target = isCar ? { x: spot.x - 10, y: spot.y - 96 * spot.scale - 6 } : { x: SCENE0_UFO_SPOT.x, y: 104 };
   const bounce = Math.floor(now / 260) % 2 === 0 ? 0 : -4;
   const label = isCar ? (CURRENT_LANG === 'ko' ? '자동차' : 'CAR') : CURRENT_LANG === 'ko' ? '우주선' : 'UFO';
   const accent = isCar ? '#f472b6' : '#67e8f9';
@@ -1630,7 +1844,7 @@ function drawScene0VehiclePicker(ctx, now) {
 // Which vehicle a click on the scene 1 picture picks (null = neither)
 function scene0VehicleAt(mx, my) {
   const s = SCENE0_CAR_SPOT;
-  if (mx >= s.x - 100 * s.scale && mx <= s.x + 100 * s.scale && my >= s.y - 80 && my <= s.y + 50 * s.scale) return 'car';
+  if (mx >= s.x - 110 * s.scale && mx <= s.x + 110 * s.scale && my >= s.y - 100 * s.scale && my <= s.y + 60 * s.scale) return 'car';
   const dx = (mx - SCENE0_UFO_SPOT.x) / 270;
   const dy = (my - SCENE0_UFO_SPOT.y) / 130;
   if (dx * dx + dy * dy <= 1) return 'ufo';
@@ -1641,15 +1855,14 @@ function scene0VehicleAt(mx, my) {
 // SCENE 2 — car take-off: floors it across the cracking ice and launches off the edge
 // ============================================================================
 function drawCarScene1Liftoff(ctx, now, p, spId) {
-  const S = 1.22;
+  const S = 1.15;
   const launch = p > 0.6 ? (p - 0.6) / 0.4 : 0;
   const carX = 150 + p * 400;
   const groundY = 470;
-  const hop = Math.abs(Math.sin(now * 0.022)) * 5 * (1 - launch);
-  const carY = groundY - 47 * S - hop - launch * launch * 190;
+  const hop = Math.abs(Math.sin(now * 0.022)) * 6 * (1 - launch);
+  const carY = groundY - CAR_CFG.WHEEL_BOTTOM * S - hop - launch * launch * 190;
   const tilt = -0.04 - launch * 0.24 + Math.sin(now * 0.05) * 0.01;
 
-  // Horizontal anime speed lines
   ctx.save();
   ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
   for (let i = 0; i < 22; i++) {
@@ -1664,13 +1877,12 @@ function drawCarScene1Liftoff(ctx, now, p, spId) {
   }
   ctx.restore();
 
-  // Snow spray off the rear tyre
   ctx.save();
-  for (let t = 0; t < 12; t++) {
-    const tp = (now * 0.004 + t * 0.083) % 1;
-    const tx = carX - 70 * S - tp * 150 + Math.sin(t * 2.1) * 10;
-    const ty = groundY - 6 - hop - launch * 120 * tp - Math.sin(tp * Math.PI) * 40;
-    const sz = Math.max(4, Math.round((1 - tp) * 11));
+  for (let t = 0; t < 14; t++) {
+    const tp = (now * 0.004 + t * 0.071) % 1;
+    const tx = carX - 70 * S - tp * 160 + Math.sin(t * 2.1) * 10;
+    const ty = groundY - 6 - hop - launch * 120 * tp - Math.sin(tp * Math.PI) * 44;
+    const sz = Math.max(4, Math.round((1 - tp) * 12));
     ctx.fillStyle = CAR_K;
     ctx.fillRect(tx - 1, ty - 1, sz + 2, sz + 2);
     ctx.fillStyle = t % 3 === 0 ? '#bae6fd' : '#f8fafc';
@@ -1681,21 +1893,16 @@ function drawCarScene1Liftoff(ctx, now, p, spId) {
   if (launch < 0.6) {
     ctx.fillStyle = 'rgba(9, 13, 26, 0.3)';
     ctx.beginPath();
-    ctx.ellipse(carX, groundY + 2, 100 * (1 - launch), 7, 0, 0, Math.PI * 2);
+    ctx.ellipse(carX, groundY + 2, 104 * (1 - launch), 7, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 
-  drawCarWithPilot(ctx, carX, carY, tilt, now, {
-    scale: S,
-    spId,
-    wheelAngle: now * 0.06,
-    boost: 1.8,
-  });
+  drawCarWithPilot(ctx, carX, carY, tilt, now, { scale: S, spId, wheelAngle: now * 0.06, boost: 1.8 });
 
   drawRetroSpeechBubble(
     ctx,
     Math.min(520, carX + 10),
-    Math.max(64, carY - 112),
+    Math.max(64, carY - 130),
     CURRENT_LANG === 'ko' ? '야야 남극 깨진다!! 풀악셀 밟는다 꽉 잡아!!' : 'Antarctica is cracking!! Floor it, hold on!!',
     '#f472b6',
     now
