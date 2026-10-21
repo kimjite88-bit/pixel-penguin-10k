@@ -1760,6 +1760,166 @@ function drawAnimatedPixelPenguin(ctx, spEntry, x, y, size, now, options = {}) {
 }
 
 // Helper: Soft Stepped Pixel Ground Shadow (Replaces ugly gray bricks under feet!)
+// Pixel Christmas tree for the Christmas town, drawn on a 4px grid like the town art. Built the usual pixel-art
+// way: four stacked tiers, each with a shadow row under it and a lit left side; snow on the tier tops; a gold
+// garland; glossy baubles (white highlight, darker bottom); twinkling lights (one bright pixel with a 50% halo);
+// a five-pointed star with sparkles on top. The static part is cached once; lights and star glow animate.
+const XMAS_TREE_P = 4; // stage px per tree pixel
+const XMAS_TREE_W = 39; // grid width (centre column = 19)
+const XMAS_TREE_H = 58; // grid height: star 10 + tiers 37 + trunk 4 + tub 7
+let XMAS_TREE_CACHE = null;
+const XMAS_TREE_TIERS = [
+  // [top row, rows, half width at top, half width at bottom]
+  [10, 9, 1, 7],
+  [16, 11, 3, 11],
+  [24, 12, 5, 15],
+  [33, 14, 7, 19],
+];
+const XMAS_TREE_STAR = [
+  '.....K.....',
+  '....KYK....',
+  '....KYK....',
+  'KKKKYWYKKKK',
+  '.KYYYYYYOK.',
+  '..KYYYYOK..',
+  '..KYYKYOK..',
+  '.KYOK.KYOK.',
+  '.KOK...KOK.',
+  'KK.......KK',
+];
+const XMAS_TREE_LIGHTS = [
+  [17, 15], [21, 18], [15, 21], [22, 23], [13, 26], [19, 25], [25, 28],
+  [11, 31], [17, 32], [24, 33], [28, 36], [9, 37], [15, 38], [21, 40], [31, 42], [8, 43], [19, 44], [27, 45],
+];
+const XMAS_TREE_LIGHT_COLS = ['#fde047', '#fb7185', '#67e8f9', '#f9a8d4', '#a3e635'];
+
+function buildXmasTreeCache() {
+  const c = document.createElement('canvas');
+  c.width = XMAS_TREE_W;
+  c.height = XMAS_TREE_H;
+  const g = c.getContext('2d');
+  const px = (x, y, col) => {
+    g.fillStyle = col;
+    g.fillRect(x, y, 1, 1);
+  };
+  const cx = 19;
+  // Trunk and a wooden tub with a gold band
+  for (let y = 47; y < 51; y++) for (let x = cx - 2; x <= cx + 2; x++) px(x, y, x === cx - 2 || x === cx + 2 ? '#2a1608' : x < cx ? '#8b5a2b' : '#6b3f1d');
+  for (let y = 51; y < 58; y++) {
+    const hw = y === 51 ? 7 : 6;
+    for (let x = cx - hw; x <= cx + hw; x++) {
+      const edge = x === cx - hw || x === cx + hw || y === 57 || y === 51;
+      px(x, y, edge ? '#2a1608' : y === 54 ? '#facc15' : x < cx - 2 ? '#c2410c' : '#9a3412');
+    }
+  }
+  // Tiers, bottom one first so each upper tier's skirt overlaps the one below
+  for (let t = XMAS_TREE_TIERS.length - 1; t >= 0; t--) {
+    const [top, rows, w0, w1] = XMAS_TREE_TIERS[t];
+    for (let r = 0; r < rows; r++) {
+      const y = top + r;
+      const hw = Math.round(w0 + ((w1 - w0) * r) / (rows - 1));
+      const last = r === rows - 1;
+      for (let x = cx - hw; x <= cx + hw; x++) {
+        // Ragged bottom edge: every other pixel of the last row hangs one lower
+        if (last && (x + t) % 2 === 1) continue;
+        const outline = x === cx - hw || x === cx + hw || r === 0 || last;
+        let col;
+        if (outline) col = '#0b2e1f';
+        else if (r >= rows - 3) col = '#14532d'; // shadow under the layer
+        else if (x < cx - hw * 0.25) col = '#2f9e57'; // lit side
+        else if (x < cx + hw * 0.45) col = '#22803f';
+        else col = '#176233'; // shade side
+        px(x, y, col);
+      }
+      if (last) for (let x = cx - hw + ((t + 1) % 2); x <= cx + hw; x += 2) px(x, y + 1, '#0b2e1f');
+      // Snow on the tier top, heavier on the lit side
+      if (r === 1 || (r === 2 && t > 0)) {
+        for (let x = cx - hw + 1; x <= cx + Math.floor(hw * 0.3); x++) if ((x * 7 + r * 3 + t) % 5 !== 0) px(x, y, r === 1 ? '#f8fafc' : '#cbd5e1');
+      }
+    }
+    // Gold garland sweeping down-right across the tier
+    for (let k = 0; k < rows - 4; k++) {
+      const gy = top + 3 + k;
+      const hw = Math.round(w0 + ((w1 - w0) * (k + 3)) / (rows - 1));
+      const gx = cx - hw + 2 + Math.round(((2 * hw - 4) * k) / Math.max(1, rows - 5));
+      px(gx, gy, '#facc15');
+      px(gx + 1, gy, '#b45309');
+    }
+  }
+  // Baubles: 2x2 with a white highlight and a dark bottom
+  [
+    [14, 24, '#dc2626'], [23, 29, '#2563eb'], [12, 35, '#9333ea'], [20, 36, '#dc2626'], [27, 40, '#facc15'],
+    [10, 44, '#2563eb'], [16, 42, '#f472b6'], [24, 45, '#dc2626'], [18, 20, '#facc15'],
+  ].forEach(([bx, by, col]) => {
+    px(bx, by, '#ffffff');
+    px(bx + 1, by, col);
+    px(bx, by + 1, col);
+    px(bx + 1, by + 1, '#0b1020');
+  });
+  // Star (11x10) centred on top
+  XMAS_TREE_STAR.forEach((row, ry) => {
+    [...row].forEach((ch, rx) => {
+      const col = { K: '#7c2d12', Y: '#fde047', O: '#f59e0b', W: '#ffffff' }[ch];
+      if (col) px(cx - 5 + rx, ry, col);
+    });
+  });
+  return c;
+}
+
+function drawPixelXmasTree(ctx, centerX, baseY, now) {
+  if (!XMAS_TREE_CACHE) XMAS_TREE_CACHE = buildXmasTreeCache();
+  const P = XMAS_TREE_P;
+  const left = Math.round(centerX - (XMAS_TREE_W * P) / 2);
+  const top = Math.round(baseY - XMAS_TREE_H * P);
+  const at = (gx, gy) => [left + gx * P, top + gy * P];
+  ctx.save();
+  // Ground shadow
+  ctx.fillStyle = 'rgba(9, 13, 26, 0.28)';
+  ctx.fillRect(left + 7 * P, baseY - P, 25 * P, P * 2);
+  // Star glow behind everything
+  const pulse = 0.5 + 0.5 * Math.sin(now * 0.004);
+  const [sx, sy] = at(19.5, 4.5);
+  const glow = ctx.createRadialGradient(sx, sy, 2, sx, sy, 46 + pulse * 10);
+  glow.addColorStop(0, `rgba(253, 224, 71, ${(0.45 + pulse * 0.25).toFixed(2)})`);
+  glow.addColorStop(1, 'rgba(253, 224, 71, 0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(sx - 60, sy - 60, 120, 120);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(XMAS_TREE_CACHE, left, top, XMAS_TREE_W * P, XMAS_TREE_H * P);
+  // Twinkling lights: a bright pixel with a 50% halo, each on its own beat
+  XMAS_TREE_LIGHTS.forEach(([gx, gy], i) => {
+    const on = Math.floor(now / 420 + i * 0.37) % 3 !== 0;
+    const col = XMAS_TREE_LIGHT_COLS[(i + Math.floor(now / 1260)) % XMAS_TREE_LIGHT_COLS.length];
+    const [lx, ly] = at(gx, gy);
+    if (on) {
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = col;
+      ctx.fillRect(lx - P, ly, P * 3, P);
+      ctx.fillRect(lx, ly - P, P, P * 3);
+      ctx.globalAlpha = 1;
+    }
+    ctx.fillStyle = on ? col : '#1e293b';
+    ctx.fillRect(lx, ly, P, P);
+  });
+  // Sparkles turning round the star
+  for (let k = 0; k < 4; k++) {
+    const a = now * 0.002 + (k * Math.PI) / 2;
+    const r = 30 + 6 * Math.sin(now * 0.006 + k);
+    const kx = Math.round((sx + Math.cos(a) * r) / P) * P;
+    const ky = Math.round((sy + Math.sin(a) * r * 0.8) / P) * P;
+    const big = Math.floor(now / 300 + k) % 2 === 0;
+    ctx.fillStyle = '#fef9c3';
+    ctx.fillRect(kx, ky, P, P);
+    if (big) {
+      ctx.fillRect(kx - P, ky, P, P);
+      ctx.fillRect(kx + P, ky, P, P);
+      ctx.fillRect(kx, ky - P, P, P);
+      ctx.fillRect(kx, ky + P, P, P);
+    }
+  }
+  ctx.restore();
+}
+
 function drawPixelGroundShadow(ctx, centerX, groundY, width = 62, hopOffset = 0) {
   const shrink = Math.max(0.72, 1 - Math.abs(hopOffset) * 0.018);
   const w1 = Math.round((width * shrink) / 4) * 4;
@@ -3287,7 +3447,7 @@ function initPixelMotionStudio() {
 
       if (MOTION_STATE.skippedEscape) {
         const defaultEntry = ensureSpeciesSprite('01');
-        const heroX = Math.round(210 + Math.sin(now * 0.0022) * 18);
+        const heroX = Math.round(322 + Math.sin(now * 0.0022) * 6); // right next to the welcoming friends
         const heroY = 338;
         drawPixelGroundShadow(ctx, heroX + spriteSize / 2, heroY + spriteSize - 6, 58, 0);
         drawAnimatedPixelPenguin(ctx, defaultEntry, heroX, heroY, spriteSize, now, {
@@ -3368,12 +3528,15 @@ function initPixelMotionStudio() {
       }
 
       // 4 Colorful Pixel Penguin Friends on the Right Walking Up & Welcoming the Protagonist
+      // Shoulder to shoulder (88px apart, a small sway so they never bump); the Christmas tree fills the space
+      // left behind the purple one
       const colorfulFriends = [
-        { sp: '05', baseX: 432, y: 342, seed: 2, amp: 18, speed: 0.0026 },
-        { sp: '04', baseX: 544, y: 336, seed: 3, amp: 20, speed: 0.0023 },
-        { sp: '09', baseX: 656, y: 342, seed: 4, amp: 18, speed: 0.0027 },
-        { sp: '06', baseX: 768, y: 336, seed: 5, amp: 16, speed: 0.0024 },
+        { sp: '05', baseX: 418, y: 342, seed: 2, amp: 6, speed: 0.0026 },
+        { sp: '04', baseX: 506, y: 336, seed: 3, amp: 6, speed: 0.0023 },
+        { sp: '09', baseX: 594, y: 342, seed: 4, amp: 6, speed: 0.0027 },
+        { sp: '06', baseX: 682, y: 336, seed: 5, amp: 6, speed: 0.0024 },
       ];
+      if (INTRO_TOWN.id === 'xmas') drawPixelXmasTree(ctx, 846, 462, now);
 
       const walkInP = Math.min(1, s5P / 0.20);
       const renderedFriends = [];
@@ -3396,15 +3559,15 @@ function initPixelMotionStudio() {
       });
 
       // B-Grade Retro Pixel Speech Bubbles in Scene 5 (Crash-landing + Pixel Penguins Welcoming!)
-      const speaker1 = renderedFriends[0] || { fx: 432, fy: 342 };
-      const speaker2 = renderedFriends[1] || { fx: 544, fy: 336 };
+      const speaker1 = renderedFriends[0] || { fx: 418, fy: 342 };
+      const speaker2 = renderedFriends[1] || { fx: 506, fy: 336 };
       if (MOTION_STATE.skippedEscape) {
         const skipPhase = Math.floor(elapsed / 3400) % 2;
         if (skipPhase === 0) {
-          drawPixelHeart(ctx, 275, 315 - ((now * 0.03) % 18), 2.6, '#38bdf8');
+          drawPixelHeart(ctx, 387, 315 - ((now * 0.03) % 18), 2.6, '#38bdf8');
           drawRetroSpeechBubble(
             ctx,
-            268,
+            380,
             318,
             CURRENT_LANG === 'ko'
               ? `남극 탈출이고 나발이고 귀찮아서 바로 ${INTRO_TOWN.ko}로 째버렸지롱~`
