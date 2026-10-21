@@ -1769,59 +1769,111 @@ function drawCarRunnerFrame(ctx, now, spId) {
 }
 
 // ============================================================================
-// SCENE 2 — car take-off: floors it across the cracking ice and launches off the edge
+// SCENE 2 — car escape: the pillar behind (left) sucks at the car; it floors it, gets dragged back with the tyres
+// spinning, breaks free and races off to the right. It never leaves the ground: running away, not lifting off.
 // ============================================================================
 function drawCarScene1Liftoff(ctx, now, p, spId) {
   const S = 1.15;
-  const launch = p > 0.6 ? (p - 0.6) / 0.4 : 0;
-  const carX = 150 + p * 400;
-  const groundY = 470;
-  const hop = Math.abs(Math.sin(now * 0.022)) * 6 * (1 - launch);
-  const carY = groundY - CAR_CFG.WHEEL_BOTTOM * S - hop - launch * launch * 190;
-  const tilt = -0.04 - launch * 0.24 + Math.sin(now * 0.05) * 0.01;
+  const groundY = 478;
+  const ko = CURRENT_LANG === 'ko';
+  // 0-0.3 floor it | 0.3-0.58 dragged back, struggling | 0.58-1 breaks free and races off
+  let carX;
+  let phase;
+  if (p < 0.3) {
+    carX = 190 + (p / 0.3) * 190;
+    phase = 'go';
+  } else if (p < 0.58) {
+    const d = (p - 0.3) / 0.28;
+    carX = 380 - Math.sin(d * Math.PI * 0.5) * 90 + Math.sin(now * 0.08) * 3;
+    phase = 'drag';
+  } else {
+    const f = (p - 0.58) / 0.42;
+    carX = 290 + f * f * 860;
+    phase = 'free';
+  }
+  const shake = phase === 'drag' ? Math.sin(now * 0.11) * 2 : 0;
+  const hop = Math.abs(Math.sin(now * 0.03)) * (phase === 'free' ? 2 : 4);
+  const carY = groundY - CAR_CFG.WHEEL_BOTTOM * S - hop + shake;
+  // Rear squats while dragged (nose up), nose dips as it breaks free
+  const tilt = phase === 'drag' ? -0.07 + Math.sin(now * 0.06) * 0.02 : phase === 'free' ? 0.03 : -0.02;
+  const scroll = now * (phase === 'free' ? 0.9 : phase === 'go' ? 0.5 : 0.25);
 
   ctx.save();
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
-  for (let i = 0; i < 22; i++) {
-    const ly = 70 + ((i * 53) % 420);
-    const len = 90 + ((i * 37) % 160);
-    const lx = 960 - ((now * (0.9 + (i % 4) * 0.25) + i * 211) % 1260);
-    ctx.lineWidth = i % 3 === 0 ? 3 : 1.6;
-    ctx.beginPath();
-    ctx.moveTo(lx, ly);
-    ctx.lineTo(lx + len, ly);
-    ctx.stroke();
+  // Snow road across the front: packed snow, ruts and marker posts streaming past
+  ctx.fillStyle = '#e8f1f8';
+  ctx.fillRect(0, groundY - 30, 960, 100);
+  ctx.fillStyle = '#c9dcea';
+  ctx.fillRect(0, groundY - 30, 960, 6);
+  ctx.fillStyle = '#b8cfe0';
+  ctx.fillRect(0, groundY - 6, 960, 4);
+  ctx.fillRect(0, groundY + 18, 960, 4);
+  for (let k = 0; k < 8; k++) {
+    const mx = 960 - ((scroll + k * 160) % 1120) + 80;
+    ctx.fillStyle = CAR_K;
+    ctx.fillRect(Math.round(mx) - 1, groundY - 58, 8, 32);
+    ctx.fillStyle = k % 2 ? '#ef4444' : '#f8fafc';
+    ctx.fillRect(Math.round(mx), groundY - 57, 6, 10);
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(Math.round(mx), groundY - 47, 6, 20);
   }
+  // The crack chasing the car from the pillar side
+  const crackEnd = Math.min(carX - 120 * S, 120 + p * 520);
+  ctx.strokeStyle = CAR_K;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(0, groundY + 6);
+  for (let x = 0; x <= crackEnd; x += 24) ctx.lineTo(x, groundY + 6 + (((x * 7) % 13) - 6));
+  ctx.stroke();
+  ctx.strokeStyle = '#67e8f9';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
   ctx.restore();
 
+  // Snow thrown back by the tyres: a big rooster tail while it fights the pull
   ctx.save();
-  for (let t = 0; t < 14; t++) {
-    const tp = (now * 0.004 + t * 0.071) % 1;
-    const tx = carX - 70 * S - tp * 160 + Math.sin(t * 2.1) * 10;
-    const ty = groundY - 6 - hop - launch * 120 * tp - Math.sin(tp * Math.PI) * 44;
+  const n = phase === 'drag' ? 18 : 12;
+  for (let t = 0; t < n; t++) {
+    const tp = (now * (phase === 'drag' ? 0.006 : 0.004) + t / n) % 1;
+    const tx = carX - 70 * S - tp * (phase === 'drag' ? 120 : 170) + Math.sin(t * 2.1) * 10;
+    const ty = groundY - 6 - Math.sin(tp * Math.PI) * (phase === 'drag' ? 70 : 40);
     const sz = Math.max(4, Math.round((1 - tp) * 12));
     ctx.fillStyle = CAR_K;
     ctx.fillRect(tx - 1, ty - 1, sz + 2, sz + 2);
     ctx.fillStyle = t % 3 === 0 ? '#bae6fd' : '#f8fafc';
     ctx.fillRect(tx, ty, sz, sz);
   }
+  // Speed lines once it is free
+  if (phase === 'free') {
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.75)';
+    for (let i = 0; i < 12; i++) {
+      const ly = 300 + ((i * 47) % 170);
+      const lx = ((now * 1.4 + i * 211) % 1100) - 140;
+      ctx.lineWidth = i % 3 === 0 ? 3 : 1.6;
+      ctx.beginPath();
+      ctx.moveTo(960 - lx, ly);
+      ctx.lineTo(960 - lx - 120, ly);
+      ctx.stroke();
+    }
+  }
+  ctx.fillStyle = 'rgba(9, 13, 26, 0.3)';
+  ctx.beginPath();
+  ctx.ellipse(carX, groundY + 2, 104, 7, 0, 0, Math.PI * 2);
+  ctx.fill();
   ctx.restore();
 
-  if (launch < 0.6) {
-    ctx.fillStyle = 'rgba(9, 13, 26, 0.3)';
-    ctx.beginPath();
-    ctx.ellipse(carX, groundY + 2, 104 * (1 - launch), 7, 0, 0, Math.PI * 2);
-    ctx.fill();
-  }
+  drawCarWithPilot(ctx, carX, carY, tilt, now, {
+    scale: S,
+    spId,
+    isShocked: phase === 'drag',
+    wheelAngle: now * (phase === 'drag' ? 0.12 : 0.06),
+    boost: phase === 'free' ? 2.2 : phase === 'drag' ? 2.6 : 1.4,
+  });
 
-  drawCarWithPilot(ctx, carX, carY, tilt, now, { scale: S, spId, wheelAngle: now * 0.06, boost: 1.8 });
-
-  drawRetroSpeechBubble(
-    ctx,
-    Math.min(520, carX + 10),
-    Math.max(64, carY - 130),
-    CURRENT_LANG === 'ko' ? '야야 남극 깨진다!! 풀악셀 밟는다 꽉 잡아!!' : 'Antarctica is cracking!! Floor it, hold on!!',
-    '#f472b6',
-    now
-  );
+  const line =
+    phase === 'go'
+      ? ko ? '기둥이 다 빨아들인다!! 풀악셀 밟는다!!' : 'The pillar is sucking everything in!! Floor it!!'
+      : phase === 'drag'
+      ? ko ? '끌려간다 끌려가!! 바퀴야 버텨어어!!' : 'It is dragging us back!! Hold on, tyres!!'
+      : ko ? '빠져나왔다!! 최대한 멀리 도망간다!!' : 'We broke free!! As far away as we can!!';
+  drawRetroSpeechBubble(ctx, Math.max(300, Math.min(560, carX + 10)), carY - 130, line, phase === 'drag' ? '#fb7185' : '#f472b6', now);
 }

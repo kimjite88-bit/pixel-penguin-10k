@@ -8,11 +8,13 @@
 //   - holding the button backs the ship off and fills the ram gauge; it peaks and falls back if held too long;
 //   - a ram at least as strong as the ice breaks it; a weaker one only cracks it (the next ram needs less);
 //   - a ram much stronger than needed breaks the ice but dents the hull (the contact load);
-//   - the sea freezes behind the ship, so every stalled ram costs lead; the freeze catching the stern or the
-//     hull giving out ends the run. Penguins stranded on a floe come aboard when it breaks.
+//   - an iceberg pack drifts in behind the ship, so every stalled ram costs lead; the pack catching the stern
+//     or the hull giving out ends the run. Penguins stranded on a floe come aboard when it breaks;
+//   - only a ram in the green zone is clean: one that breaks the ice but misses the green scrapes the hull,
+//     one too weak to break it bounces off and scrapes it harder.
 // Letting go just short of a floe (within RAM_REACH) rams it without stopping, so a good run never stalls.
-// Tuned with a release-timing bot (scratch/boat_mode/sim_boat.js, 200 runs each): an exact player never freezes;
-// a 67ms-accurate one lasts ~75-100 s, 100ms ~60-80 s, 150ms ~43 s.
+// Tuned with a release-timing bot (scratch/boat_mode/sim_boat.js, 200 runs each): an exact player never sinks;
+// a 67ms-accurate one lasts ~70-85 s, 100ms ~38 s, 150ms ~20 s (close to the car run).
 // Units: 960x540 stage, px per 60fps frame. World y grows ahead of the ship; the bow sits at screen y BOW_Y.
 // Nothing at the top level touches the DOM, so the rules can be simulated outside the browser.
 // ============================================================================
@@ -27,22 +29,24 @@ const BOAT_CFG = {
   CHANNEL_R: 810,
   // Everything speeds up with time, not with floes broken: cruise speed, the freeze line, the ram gauge and the
   // ice thickness. First ramp ~110 s (the Chrome dino needs ~2 min to reach top speed), then a slower overdrive.
-  CRUISE: 4.2,
-  CRUISE_KNEE: 6.6,
-  MAX_CRUISE: 7.4,
+  CRUISE: 5.4,
+  CRUISE_KNEE: 8.4,
+  MAX_CRUISE: 9.4,
   CRUISE_ACCEL: 0.08, // per frame towards the cruise speed
-  CRUISE_RAMP: 0.0006, // cruise speed gain per frame up to CRUISE_KNEE
-  CRUISE_OVERDRIVE: 0.00015,
+  CRUISE_RAMP: 0.00045, // cruise speed gain per frame up to CRUISE_KNEE (~110 s)
+  CRUISE_OVERDRIVE: 0.00012,
   SECONDS_PER_LEVEL: 11,
-  LUNGE_SPEED: 13,
+  LUNGE_SPEED: 16,
   RAM_REACH: 150, // letting go this close to a floe rams it without stopping
   BACK_OFF: 46, // how far a full charge backs the ship off (drawn; the lunge covers it again)
   CHARGE_MS: 900, // empty to full at LV.1
   MIN_CHARGE_MS: 560, // at LV.10
-  PERFECT: 10, // power - ice in [0, PERFECT] = perfect ram
+  PERFECT: 12, // power - ice in [0, PERFECT] = perfect ram (the green)
   SAFE: 22, // power - ice above this dents the hull
   HULL_MAX: 100,
   HULL_PER_EXCESS: 1.6,
+  MISS_GREEN_HULL: 3, // broke the ice but outside the green
+  WEAK_HULL: 6, // too weak: bounced off
   CRACK: 0.4, // a weak ram takes power * CRACK off the ice
   MIN_ICE: 12,
   BOUNCE: 34, // a weak ram pushes the ship back this far
@@ -215,10 +219,9 @@ function boatImpact(run, band, now, events) {
       run.boost = BOAT_CFG.GOOD_BOOST;
     }
     let dent = 0;
-    if (excess > BOAT_CFG.SAFE) {
-      dent = Math.round((excess - BOAT_CFG.SAFE) * BOAT_CFG.HULL_PER_EXCESS);
-      run.hull = Math.max(0, run.hull - dent);
-    }
+    if (!perfect) dent += BOAT_CFG.MISS_GREEN_HULL;
+    if (excess > BOAT_CFG.SAFE) dent += Math.round((excess - BOAT_CFG.SAFE) * BOAT_CFG.HULL_PER_EXCESS);
+    run.hull = Math.max(0, run.hull - dent);
     const saved = band.penguins.length;
     run.rescued += saved;
     points += saved * BOAT_CFG.PENGUIN_POINTS;
@@ -235,7 +238,9 @@ function boatImpact(run, band, now, events) {
     run.state = 'bounce';
     run.bounceLeft = BOAT_CFG.BOUNCE_FRAMES;
     run.v = 0;
-    events.push({ type: 'stuck', band, power: p, left: band.T });
+    run.hull = Math.max(0, run.hull - BOAT_CFG.WEAK_HULL);
+    events.push({ type: 'stuck', band, power: p, left: band.T, dent: BOAT_CFG.WEAK_HULL });
+    if (run.hull <= 0) boatEndRun(run, 'hull', events);
   }
 }
 
@@ -696,25 +701,51 @@ function drawBoatWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
   ctx.restore();
 }
 
-// Freeze line creeping up from behind the stern
+// The iceberg pack drifting in behind the stern: always peeking in at the bottom, closer as the lead shrinks
 function drawBoatFreeze(ctx, run, now) {
   const stern = BOAT_CFG.BOW_Y + BOAT_CFG.BOAT_LEN;
-  const edge = stern + run.lead * 0.5;
-  if (edge > 560) return;
+  const edge = stern + 6 + (run.lead / BOAT_CFG.LEAD_MAX) * 92;
+  const danger = run.lead < 120;
   ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(0, 560);
-  for (let x = 0; x <= 960; x += 24) {
-    const j = Math.sin(x * 0.07 + now * 0.004) * 5 + (boatHash(x) - 0.5) * 10;
-    ctx.lineTo(x, edge + j);
+  if (danger) ctx.translate(Math.round((Math.random() - 0.5) * 3), 0);
+  // Brash ice and mist ahead of the pack
+  ctx.fillStyle = 'rgba(224, 242, 254, 0.55)';
+  ctx.fillRect(0, edge - 10, 960, 560 - edge + 10);
+  // Bergs: blocky white tops with blue faces, bobbing and jostling
+  for (let k = 0; k < 13; k++) {
+    const bx = -30 + k * 78 + (boatHash(k * 3) - 0.5) * 30;
+    const bw = 70 + boatHash(k) * 46;
+    const bh = 34 + boatHash(k + 7) * 40;
+    const by = edge - bh * 0.55 + Math.sin(now * 0.003 + k * 1.3) * 3 + boatHash(k + 2) * 14;
+    ctx.fillStyle = BOAT_K;
+    ctx.beginPath();
+    ctx.moveTo(bx - 2, by + bh);
+    ctx.lineTo(bx + bw * 0.18 - 2, by - 2);
+    ctx.lineTo(bx + bw * 0.55, by - bh * 0.35 - 2);
+    ctx.lineTo(bx + bw * 0.85 + 2, by + bh * 0.05);
+    ctx.lineTo(bx + bw + 2, by + bh);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#93c5fd';
+    ctx.beginPath();
+    ctx.moveTo(bx, by + bh);
+    ctx.lineTo(bx + bw * 0.18, by);
+    ctx.lineTo(bx + bw * 0.55, by - bh * 0.35);
+    ctx.lineTo(bx + bw * 0.85, by + bh * 0.05);
+    ctx.lineTo(bx + bw, by + bh);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#f8fafc';
+    ctx.beginPath();
+    ctx.moveTo(bx + bw * 0.18, by);
+    ctx.lineTo(bx + bw * 0.55, by - bh * 0.35);
+    ctx.lineTo(bx + bw * 0.85, by + bh * 0.05);
+    ctx.lineTo(bx + bw * 0.5, by + bh * 0.25);
+    ctx.closePath();
+    ctx.fill();
   }
-  ctx.lineTo(960, 560);
-  ctx.closePath();
-  ctx.fillStyle = 'rgba(240, 249, 255, 0.92)';
-  ctx.fill();
-  ctx.strokeStyle = '#7dd3fc';
-  ctx.lineWidth = 3;
-  ctx.stroke();
+  ctx.fillStyle = 'rgba(240, 249, 255, 0.9)';
+  ctx.fillRect(0, edge + 30, 960, 560 - edge);
   ctx.restore();
 }
 
@@ -931,13 +962,16 @@ function drawBoatRunnerFrame(ctx, now, spId) {
       if (ev.dent) {
         BOAT_GAME.hitFlashUntil = now + 520;
         BOAT_GAME.shakeUntil = now + 360;
-        BOAT_GAME.popups.push({ x: X, y: bowY + 40, vy: -1.3, text: ko ? `너무 셌다! 선체 -${ev.dent}` : `Too hard! Hull -${ev.dent}`, col: '#fb7185', alpha: 1 });
+        const tooHard = ev.excess > BOAT_CFG.SAFE;
+        const label = tooHard ? (ko ? '너무 셌다!' : 'Too hard!') : ko ? '초록 칸 놓침!' : 'Missed the green!';
+        BOAT_GAME.popups.push({ x: X, y: bowY + 40, vy: -1.3, text: `${label} ${ko ? '선체' : 'Hull'} -${ev.dent}`, col: '#fb7185', alpha: 1 });
         spawnBoatBurst(X, bowY + 10, ['#fb7185', '#fecaca', '#ffffff'], 10, 3.4, 5);
       }
     } else if (ev.type === 'stuck') {
       BOAT_GAME.shakeUntil = now + 200;
       spawnBoatBurst(X, bowY - 4, ['#e0f2fe', '#ffffff'], 8, 3, 5);
-      BOAT_GAME.popups.push({ x: X, y: bowY - 40, vy: -1.3, text: ko ? '약했다! 금만 갔다' : 'Too weak! Only cracked', col: '#93c5fd', alpha: 1 });
+      BOAT_GAME.hitFlashUntil = now + 520;
+      BOAT_GAME.popups.push({ x: X, y: bowY - 40, vy: -1.3, text: ko ? `약했다! 튕겨남 선체 -${ev.dent}` : `Too weak! Bounced, hull -${ev.dent}`, col: '#fb7185', alpha: 1 });
     } else if (ev.type === 'whiff') {
       BOAT_GAME.popups.push({ x: X, y: bowY - 40, vy: -1.2, text: ko ? '너무 멀어요' : 'Too far away', col: '#cbd5e1', alpha: 1 });
     } else if (ev.type === 'level') {
@@ -1008,7 +1042,7 @@ function drawBoatRunnerFrame(ctx, now, spId) {
   drawBoatHud(ctx, now, run);
 
   if (run.rams < 3 && now - run.startAt < 15000) {
-    const msg = ko ? '누르고 있으면 힘이 모이고 · 떼면 들이받기 · 초록 칸에서 떼면 PERFECT' : 'Hold to charge · let go to ram · let go in the green for PERFECT';
+    const msg = ko ? '누르고 있으면 힘이 모이고 · 떼면 들이받기 · 초록 칸을 놓치면 선체가 깎여요' : 'Hold to charge · let go to ram · miss the green and the hull takes damage';
     ctx.save();
     ctx.font = '800 14px "Pretendard", "Malgun Gothic", sans-serif';
     const tw = Math.ceil(ctx.measureText(msg).width) + 28;
@@ -1029,7 +1063,7 @@ function drawBoatRunnerFrame(ctx, now, spId) {
     ctx.font = '900 15px "Pretendard", "Malgun Gothic", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillStyle = Math.floor(now / 220) % 2 === 0 ? '#fb7185' : '#ffffff';
-    ctx.fillText(ko ? '뒤에서 바다가 얼어붙는다!' : 'The sea is freezing behind you!', 480, 524);
+    ctx.fillText(ko ? '뒤에서 빙하떼가 몰려온다!' : 'The iceberg pack is right behind you!', 480, 524);
     ctx.restore();
   }
   ctx.restore();

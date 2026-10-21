@@ -523,6 +523,11 @@ const INTRO_TOWN = (() => {
   };
 })();
 
+// Skip mode (no vehicle on the left) row offset. Penguin sprites are opaque from 8 to 118 px of their 124 px
+// box (frame bbox 17..244 of 256), so the visible row runs from heroX + 8 to the tree's widest tier at heroX + 602
+// (Christmas) or the last friend's edge at heroX + 478 (cherry); heroX = 175 / 237 centres it on x = 480
+const SCENE5_SKIP_SHIFT = INTRO_TOWN.id === 'xmas' ? -147 : -85;
+
 // Escape vehicle picked on the first screen: 'ufo' = light plane (sky-runner.js), 'car' (car-runner.js) or 'boat' =
 // icebreaker (boat-runner.js). ?vehicle=car|ufo|boat forces one; otherwise the last pick on this device.
 const ESCAPE_VEHICLES = ['ufo', 'boat', 'car'];
@@ -2965,7 +2970,9 @@ function initPixelMotionStudio() {
     if (MOTION_STATE.sceneIdx === 2) return; // play input comes from mousedown / touchstart
 
     if (MOTION_STATE.sceneIdx === 3) {
-      setIntroScene(4, true);
+      // Skip the capture only with a fresh tap made during it: the release of the press that was still steering
+      // when the run ended (the plane is usually held) also fires a click, and used to skip the pixelation
+      if (MOTION_STATE.pressScene === 3 && performance.now() - MOTION_STATE.sceneStartTime > 1500) setIntroScene(4, true);
       return;
     }
 
@@ -2988,6 +2995,11 @@ function initPixelMotionStudio() {
     }
   });
 
+  // Which scene a press started in (see the scene 4 click above)
+  const notePressScene = () => {
+    MOTION_STATE.pressScene = MOTION_STATE.sceneIdx;
+  };
+  canvas.addEventListener('pointerdown', notePressScene);
   canvas.addEventListener('mousedown', (e) => {
     if (e.button === 0) pressAction();
   });
@@ -3439,7 +3451,7 @@ function initPixelMotionStudio() {
 
       if (MOTION_STATE.skippedEscape) {
         const defaultEntry = ensureSpeciesSprite('01');
-        const heroX = Math.round(322 + Math.sin(now * 0.0022) * 6); // right next to the welcoming friends
+        const heroX = Math.round(322 + SCENE5_SKIP_SHIFT + Math.sin(now * 0.0022) * 6); // right next to the welcoming friends
         const heroY = 338;
         drawPixelGroundShadow(ctx, heroX + spriteSize / 2, heroY + spriteSize - 6, 58, 0);
         drawAnimatedPixelPenguin(ctx, defaultEntry, heroX, heroY, spriteSize, now, {
@@ -3528,7 +3540,9 @@ function initPixelMotionStudio() {
         { sp: '09', baseX: 594, y: 342, seed: 4, amp: 6, speed: 0.0027 },
         { sp: '06', baseX: 682, y: 336, seed: 5, amp: 6, speed: 0.0024 },
       ];
-      if (INTRO_TOWN.id === 'xmas') drawPixelXmasTree(ctx, 846, 462, now);
+      // Skipped (no vehicle on the left): the whole row slides left so hero + friends + tree sit centred
+      const rowShift = MOTION_STATE.skippedEscape ? SCENE5_SKIP_SHIFT : 0;
+      if (INTRO_TOWN.id === 'xmas') drawPixelXmasTree(ctx, 846 + rowShift, 462, now);
 
       const walkInP = Math.min(1, s5P / 0.20);
       const renderedFriends = [];
@@ -3536,7 +3550,7 @@ function initPixelMotionStudio() {
       colorfulFriends.forEach((fr, idx) => {
         const spEntry = ensureSpeciesSprite(fr.sp);
         const strollX = walkInP >= 1 ? Math.sin(now * fr.speed + idx * 1.4) * fr.amp : 0;
-        const fx = Math.round(fr.baseX + (1 - walkInP) * 95 + strollX);
+        const fx = Math.round(fr.baseX + rowShift + (1 - walkInP) * 95 + strollX);
         const fy = fr.y;
 
         drawPixelGroundShadow(ctx, fx + spriteSize / 2, fy + spriteSize - 6, 56, 0);
@@ -3556,10 +3570,10 @@ function initPixelMotionStudio() {
       if (MOTION_STATE.skippedEscape) {
         const skipPhase = Math.floor(elapsed / 3400) % 2;
         if (skipPhase === 0) {
-          drawPixelHeart(ctx, 387, 315 - ((now * 0.03) % 18), 2.6, '#38bdf8');
+          drawPixelHeart(ctx, 387 + SCENE5_SKIP_SHIFT, 315 - ((now * 0.03) % 18), 2.6, '#38bdf8');
           drawRetroSpeechBubble(
             ctx,
-            380,
+            380 + SCENE5_SKIP_SHIFT,
             318,
             CURRENT_LANG === 'ko'
               ? `남극 탈출이고 나발이고 귀찮아서 바로 ${INTRO_TOWN.ko}로 째버렸지롱~`
