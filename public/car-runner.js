@@ -33,13 +33,15 @@ const CAR_CFG = {
   PIT_NO_JUMP: -16, // below the rim there is nothing to jump off
   JUMP_BUFFER_MS: 140,
   ENERGY_MAX: 100,
-  ENERGY_DRAIN_PER_SEC: 0.55,
-  HIT_ENERGY: 20,
-  SMALL_HIT_ENERGY: 10,
-  POTION_SMALL: 8,
-  POTION_BIG: 25,
+  // Difficulty lives in the energy numbers (course stays the same); tuned so a 67ms-accurate player averages
+  // ~2 min and a 100ms one ~50 s (scratch/car_mode/hp_estimate.py on the measured per-chunk success rates)
+  ENERGY_DRAIN_PER_SEC: 1.1,
+  HIT_ENERGY: 34,
+  SMALL_HIT_ENERGY: 17,
+  POTION_SMALL: 6,
+  POTION_BIG: 19,
   PIT_RESCUES: 2,
-  PIT_RESCUE_ENERGY: 25,
+  PIT_RESCUE_ENERGY: 34,
   INVULN_MS: 1000,
   CLEAR_DISTANCE: 700,
   CHUNK_RUNUP: 260, // flat snow between chunks
@@ -455,15 +457,21 @@ const CAR_K = '#090d1a';
 const CAR_WHEELS = [-56, 58]; // wheel centres (local x); y = 36, tyre radius 21
 const CAR_WHEEL_Y = 36;
 
+// rect / clip let the plane reuse this: its pilot sits smaller, behind a side window
 function drawCarPilot(ctx, pixelMode, now, options = {}) {
-  const { spId = UFO_GAME.pilotSpeciesId || '01', isShocked = false, isImpactBlink = false, lift = 0 } = options;
+  const { spId = UFO_GAME.pilotSpeciesId || '01', isShocked = false, isImpactBlink = false, lift = 0, rect = null, clip = null } = options;
   ensureDefaultPilotSheets();
-  const r = PILOT_DRAW_RECT;
-  const px = r.x + CAR_PILOT_DX;
+  const r = rect || { x: PILOT_DRAW_RECT.x + CAR_PILOT_DX, y: PILOT_DRAW_RECT.y, size: PILOT_DRAW_RECT.size };
+  const px = r.x;
   const py = r.y - lift;
+  // Species-sprite fallback (sheet still loading): same footprint as the composed pilot
+  const fbSize = Math.round(r.size * (86 / 79));
+  const fbH = Math.round(fbSize * (220 / 256));
+  const fbY = py + r.size - fbH;
   ctx.save();
   ctx.beginPath();
-  ctx.rect(px - 16, -130, r.size + 32, 134); // the door line (y = +4) hides the waist
+  if (clip) clip(ctx);
+  else ctx.rect(px - 16, -130, r.size + 32, 134); // the door line (y = +4) hides the waist
   ctx.clip();
   if (pixelMode) {
     ctx.imageSmoothingEnabled = false;
@@ -476,8 +484,7 @@ function drawCarPilot(ctx, pixelMode, now, options = {}) {
       const spEntry = ensureSpeciesSprite(spId);
       const src = spEntry && spEntry.sheetLoaded ? spEntry.sheet : spEntry && spEntry.loaded ? spEntry.img : null;
       if (src) {
-        const drawH = Math.round(86 * (220 / 256));
-        ctx.drawImage(src, src === spEntry.sheet ? anim.frameIdx * 256 : 0, 0, 256, 220, px - 2, 9 - drawH - lift, 86, drawH);
+        ctx.drawImage(src, src === spEntry.sheet ? anim.frameIdx * 256 : 0, 0, 256, 220, px - 2, fbY, fbSize, fbH);
       }
     }
   } else {
@@ -490,8 +497,7 @@ function drawCarPilot(ctx, pixelMode, now, options = {}) {
     } else {
       const heroSheet = getHero2DSheetForSpecies(spId);
       if (heroSheet && (MOTION_STATE.hero2DSheetLoaded || heroSheet.width)) {
-        const drawH = 86 * (220 / 256);
-        ctx.drawImage(heroSheet, anim.frameIdx * 256, 0, 256, 220, px - 2, 9 - drawH - lift, 86, drawH);
+        ctx.drawImage(heroSheet, anim.frameIdx * 256, 0, 256, 220, px - 2, fbY, fbSize, fbH);
       }
     }
   }
@@ -1786,36 +1792,38 @@ function drawCarRunnerFrame(ctx, now, spId) {
 // ============================================================================
 // SCENE 1 — vehicle picker: the parked car on the right ice shelf + a marker over the chosen vehicle
 // ============================================================================
-const SCENE0_CAR_SPOT = { x: 860, y: 158, tilt: -0.16, scale: 0.78 };
-const SCENE0_UFO_SPOT = { x: 480, y: 255 };
+// Parked on the ice-canyon background: plane on the igloo plateau (snow line y = 296), car on the floe
+// right of the beam (y = 366)
+const SCENE0_CAR_SPOT = { x: 880, y: 366 - 57 * 0.64, tilt: 0, scale: 0.64 };
+const SCENE0_UFO_SPOT = { x: 330, y: 296 - 45 * 0.74, tilt: 0, scale: 0.74 }; // the plane ('ufo' key kept for saved picks + the board)
 
 function drawScene0VehiclePicker(ctx, now) {
   const isCar = MOTION_STATE.vehicle === 'car';
-  const spot = SCENE0_CAR_SPOT;
+  const car = SCENE0_CAR_SPOT;
+  const plane = SCENE0_UFO_SPOT;
   ctx.save();
-  if (isCar) {
-    const pulse = 0.3 + 0.3 * Math.sin(now * 0.008);
-    const g = ctx.createRadialGradient(spot.x, spot.y + 14, 6, spot.x, spot.y + 14, 120);
-    g.addColorStop(0, `rgba(244, 114, 182, ${pulse * 0.5})`);
-    g.addColorStop(1, 'rgba(244, 114, 182, 0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(spot.x - 130, spot.y - 110, 260, 220);
-  }
-  ctx.fillStyle = 'rgba(9, 13, 26, 0.3)';
-  ctx.beginPath();
-  ctx.ellipse(spot.x - 2, spot.y + 57 * spot.scale, 86 * spot.scale, 6, spot.tilt, 0, Math.PI * 2);
-  ctx.fill();
-  drawCarWithPilot(ctx, spot.x, spot.y, spot.tilt, now, {
-    scale: spot.scale,
-    withPilot: false,
-    lightsOn: isCar,
-    wheelAngle: 0,
-  });
+  const spot = isCar ? car : plane;
+  const pulse = 0.3 + 0.3 * Math.sin(now * 0.008);
+  const g = ctx.createRadialGradient(spot.x - (isCar ? 0 : 30), spot.y, 6, spot.x - (isCar ? 0 : 30), spot.y, 140);
+  g.addColorStop(0, isCar ? `rgba(244, 114, 182, ${pulse * 0.5})` : `rgba(251, 146, 60, ${pulse * 0.5})`);
+  g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(spot.x - 170, spot.y - 120, 340, 240);
 
-  const target = isCar ? { x: spot.x - 10, y: spot.y - 96 * spot.scale - 6 } : { x: SCENE0_UFO_SPOT.x, y: 104 };
+  // Parked plane (prop still) and car, each with a contact shadow
+  ctx.fillStyle = 'rgba(9, 13, 26, 0.28)';
+  ctx.beginPath();
+  ctx.ellipse(plane.x - 40 * plane.scale, plane.y + 45 * plane.scale, 120 * plane.scale, 5, 0, 0, Math.PI * 2);
+  ctx.ellipse(car.x, car.y + 57 * car.scale, 86 * car.scale, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  drawPlaneWithPilot(ctx, plane.x, plane.y, plane.tilt, now, { scale: plane.scale, withPilot: false, propSpin: !isCar && Math.floor(now / 1600) % 2 === 0 });
+  drawCarWithPilot(ctx, car.x, car.y, car.tilt, now, { scale: car.scale, withPilot: false, lightsOn: isCar, wheelAngle: 0 });
+
+  // Bouncing pixel marker + label over the chosen vehicle
+  const target = isCar ? { x: car.x - 10, y: car.y - 98 * car.scale - 6 } : { x: plane.x - 40, y: plane.y - 62 * plane.scale - 4 };
   const bounce = Math.floor(now / 260) % 2 === 0 ? 0 : -4;
-  const label = isCar ? (CURRENT_LANG === 'ko' ? '자동차' : 'CAR') : CURRENT_LANG === 'ko' ? '우주선' : 'UFO';
-  const accent = isCar ? '#f472b6' : '#67e8f9';
+  const label = isCar ? (CURRENT_LANG === 'ko' ? '자동차' : 'CAR') : CURRENT_LANG === 'ko' ? '경비행기' : 'PLANE';
+  const accent = isCar ? '#f472b6' : '#fb923c';
   ctx.font = '900 13px "Pretendard", "Malgun Gothic", sans-serif';
   const lw = Math.ceil(ctx.measureText(label).width) + 22;
   const lx = Math.round(target.x - lw / 2);
@@ -1843,11 +1851,10 @@ function drawScene0VehiclePicker(ctx, now) {
 
 // Which vehicle a click on the scene 1 picture picks (null = neither)
 function scene0VehicleAt(mx, my) {
-  const s = SCENE0_CAR_SPOT;
-  if (mx >= s.x - 110 * s.scale && mx <= s.x + 110 * s.scale && my >= s.y - 100 * s.scale && my <= s.y + 60 * s.scale) return 'car';
-  const dx = (mx - SCENE0_UFO_SPOT.x) / 270;
-  const dy = (my - SCENE0_UFO_SPOT.y) / 130;
-  if (dx * dx + dy * dy <= 1) return 'ufo';
+  const c = SCENE0_CAR_SPOT;
+  if (mx >= c.x - 110 * c.scale && mx <= c.x + 110 * c.scale && my >= c.y - 100 * c.scale && my <= c.y + 60 * c.scale) return 'car';
+  const p = SCENE0_UFO_SPOT;
+  if (mx >= p.x - 170 * p.scale && mx <= p.x + 110 * p.scale && my >= p.y - 66 * p.scale && my <= p.y + 50 * p.scale) return 'ufo';
   return null;
 }
 

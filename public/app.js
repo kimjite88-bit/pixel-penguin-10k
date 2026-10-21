@@ -714,7 +714,6 @@ const UFO_GAME = {
   lastRank: null,
   kills: 0,
   combo: 1,
-  lastFireAt: 0,
   lastSpawnAt: 0,
   hitFlashUntil: 0,
   shakeUntil: 0,
@@ -722,7 +721,6 @@ const UFO_GAME = {
   shotDownY: 250,
   scoreSubmitted: false,
   keys: {},
-  lasers: [],
   entities: [], // { type: 'banana'|'meteor'|'mine'|'fish'|'core', x, y, vx, vy, r, hp, rot, vrot }
   particles: [], // { x, y, vx, vy, col, sz, alpha, decay }
   popups: [], // { x, y, vy, text, col, alpha }
@@ -751,12 +749,10 @@ function resetUfoGame(now = performance.now(), keepUserControl = false) {
   UFO_GAME.kills = 0;
   UFO_GAME.combo = 1;
   UFO_GAME.lastDiffLevel = 1;
-  UFO_GAME.lastFireAt = now;
   UFO_GAME.lastSpawnAt = now;
   UFO_GAME.hitFlashUntil = 0;
   UFO_GAME.shakeUntil = 0;
   UFO_GAME.scoreSubmitted = false;
-  UFO_GAME.lasers = [];
   // Pre-seed Reference Image #3 entities across the sky corridor (3-Star Arc, Pink Neon Warp Ring, 3D Neon Cubes & Dark Purple Spiked Mines!)
   UFO_GAME.entities = [
     { type: 'star', x: 375, y: 205, vx: -4.2, vy: 0, r: 17, hp: 1, rot: 0, vrot: 0 },
@@ -1226,8 +1222,8 @@ function updateVehicleUI() {
   if (theaterEl) theaterEl.dataset.vehicle = vehicle;
   const padText = document.querySelector('#mobile-fullscreen-touchpad .touchpad-text');
   if (padText) {
-    const ko = vehicle === 'car' ? '아무 데나 누르면 점프 · 공중에서 한 번 더 = 2단 점프' : '아무 데나 대고 끌면 우주선이 따라 움직여요';
-    const en = vehicle === 'car' ? 'Press anywhere to jump · again in the air to double jump' : 'Drag anywhere here to steer the UFO';
+    const ko = vehicle === 'car' ? '아무 데나 누르면 점프 · 공중에서 한 번 더 = 2단 점프' : '아무 데나 대고 끌면 비행기가 따라 움직여요';
+    const en = vehicle === 'car' ? 'Press anywhere to jump · again in the air to double jump' : 'Drag anywhere here to steer the plane';
     padText.dataset.ko = ko;
     padText.dataset.en = en;
     padText.textContent = CURRENT_LANG === 'ko' ? ko : en;
@@ -1595,399 +1591,6 @@ function jumpToRankedNft(edition) {
   openTokenModal(num);
 }
 
-// Helper: Draw GIANT 2D UFO Spaceship with Upper-Body Penguin Pilot (Normal Head Size + Full Upper Torso & Wings Visible!)
-// Cropped at srcH = 216 (out of 256) so Head + Neck + Chest + Both Side Flippers show 100%, hiding ONLY the feet inside the saucer hull!
-function drawUfoSpaceshipWithPilot(
-  ctx,
-  cx,
-  cy,
-  tiltRad = 0,
-  now = 0,
-  isShocked = false,
-  isImpactBlink = false,
-  shields = 3,
-  options = {}
-) {
-  const {
-    scale = 1.40,
-    openHatchRatio = 0,
-    spId = UFO_GAME.pilotSpeciesId || '01',
-    thrusterBoost = 1,
-  } = options;
-
-  const sheet2D = getHero2DSheetForSpecies(spId);
-  const anim = getPenguinAnimState(
-    isImpactBlink ? 320 : now,
-    0,
-    false,
-    isImpactBlink,
-    isShocked && !isImpactBlink
-  );
-
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(tiltRad);
-  ctx.scale(scale, scale);
-
-  // 1. Rear Propulsion Plasma Flame + Bottom Anti-Gravity Core Glow
-  if (thrusterBoost > 0) {
-    const jetFlicker = (18 + Math.sin(now * 0.06) * 7) * thrusterBoost;
-    ctx.fillStyle = 'rgba(56, 189, 248, 0.38)';
-    ctx.beginPath();
-    ctx.ellipse(-60 - jetFlicker * 0.4, 10, jetFlicker, 7.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = '#fde047';
-    ctx.beginPath();
-    ctx.ellipse(-58 - jetFlicker * 0.2, 10, jetFlicker * 0.55, 4.2, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Bottom anti-gravity rings
-    const ringSpread = (now * 0.04) % 14;
-    ctx.strokeStyle = `rgba(103, 232, 249, ${0.68 - ringSpread / 22})`;
-    ctx.lineWidth = 2.2;
-    ctx.beginPath();
-    ctx.ellipse(0, 24 + ringSpread * 0.6 * thrusterBoost, 32 - ringSpread * 0.8, 5.5, 0, 0, Math.PI * 2);
-    ctx.stroke();
-  }
-
-  // 2. Pilot Seat Backrest behind Penguin's Torso
-  ctx.fillStyle = '#1e293b';
-  ctx.strokeStyle = '#090d1a';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.roundRect(-24, -42, 14, 44, 5);
-  ctx.fill();
-  ctx.stroke();
-
-  // 3. UPPER-BODY PENGUIN PILOT (Non-Pixel 2D Smooth Cartoon with All 6 Character Part Categories!)
-  //    288x288 frame drawn into PILOT_DRAW_RECT so the waist tucks behind the cockpit collar (y=+9)
-  //    and the tallest hats stay under the glass dome arch.
-  //    An NFT pilot whose sheet is still loading falls back to its species-coloured hero sprite, never to
-  //    another penguin's parts.
-  ensureDefaultPilotSheets();
-  const custom2D = UFO_GAME.hasNft
-    ? UFO_GAME.pilot2DSheet
-    : UFO_GAME.pilot2DSheet || MOTION_STATE.defaultPilot2DSheet;
-  const f3 =
-    anim.frameIdx === 6
-      ? 2
-      : anim.frameIdx === 1 || anim.frameIdx === 4 || anim.frameIdx === 5
-      ? 1
-      : 0;
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(-58, -92, 116, 101); // Clips at y = +9 (deep inside the opaque cockpit collar & saucer hull!)
-  ctx.clip();
-
-  ctx.imageSmoothingEnabled = true;
-  if (custom2D) {
-    const r = PILOT_DRAW_RECT;
-    ctx.drawImage(custom2D, f3 * 288, 0, 288, 288, r.x, r.y, r.size, r.size);
-  } else if (sheet2D) {
-    const pilotSize = 86;
-    const srcCropH = 220;
-    const drawH = pilotSize * (srcCropH / 256);
-    const pilotTopY = 9 - drawH;
-    ctx.drawImage(
-      sheet2D,
-      anim.frameIdx * 256,
-      0,
-      256,
-      srcCropH,
-      -pilotSize / 2 + 1,
-      pilotTopY,
-      pilotSize,
-      drawH
-    );
-  } else if (MOTION_STATE.hero2DLoaded && MOTION_STATE.hero2DImg) {
-    const pilotSize = 86;
-    const srcCropH = 220;
-    const drawH = pilotSize * (srcCropH / 256);
-    const pilotTopY = 9 - drawH;
-    ctx.drawImage(
-      MOTION_STATE.hero2DImg,
-      0,
-      0,
-      256,
-      srcCropH,
-      -pilotSize / 2 + 1,
-      pilotTopY,
-      pilotSize,
-      drawH
-    );
-  }
-  ctx.restore();
-
-  // 4. Cockpit Control Collar (Wraps around the lower waist at y = +4..+8)
-  ctx.fillStyle = '#0f172a';
-  ctx.strokeStyle = '#67e8f9';
-  ctx.lineWidth = 1.8;
-  ctx.beginPath();
-  ctx.ellipse(0, 5, 45, 7, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.fillStyle = '#34d399';
-  ctx.fillRect(-14, 3, 5, 3);
-  ctx.fillStyle = '#facc15';
-  ctx.fillRect(-4, 4, 5, 3);
-  ctx.fillStyle = '#38bdf8';
-  ctx.fillRect(7, 3, 5, 3);
-
-  // 5. Top Glass Dome Hatch (Border & Reflection Glints ONLY — 0% Interior Color Tint so True Species & Part Colors Shine!)
-  const P = 4;
-  ctx.save();
-  ctx.imageSmoothingEnabled = false;
-  ctx.translate(-44, 3);
-  ctx.rotate(-openHatchRatio * 0.95);
-  ctx.translate(44, -3);
-
-  // Stepped 16-Bit Pixel Arch Outline (#7dd3fc)
-  ctx.fillStyle = '#7dd3fc';
-  ctx.fillRect(-28, -72, 56, P);
-  ctx.fillRect(-36, -68, 8, P);
-  ctx.fillRect(28, -68, 8, P);
-  ctx.fillRect(-40, -64, P, 8);
-  ctx.fillRect(36, -64, P, 8);
-  ctx.fillRect(-44, -56, P, 56);
-  ctx.fillRect(40, -56, P, 56);
-
-  // Crisp white pixel glass reflection blocks at upper-left corner of dome
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(-28, -64, 12, P);
-  ctx.fillRect(-32, -60, P, 14);
-  ctx.restore();
-
-  // 6. Metallic UFO Saucer Main Hull (Completely covers y = 3..25, hiding only the feet!)
-  ctx.fillStyle = '#0f172a';
-  ctx.strokeStyle = '#090d1a';
-  ctx.lineWidth = 2.2;
-  ctx.beginPath();
-  ctx.ellipse(0, 18, 32, 9, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-
-  const hullGrad = ctx.createLinearGradient(0, -1, 0, 23);
-  hullGrad.addColorStop(0, '#e2e8f0');
-  hullGrad.addColorStop(0.35, '#38bdf8');
-  hullGrad.addColorStop(0.75, '#0284c7');
-  hullGrad.addColorStop(1, '#0f172a');
-  ctx.fillStyle = hullGrad;
-  ctx.strokeStyle = '#090d1a';
-  ctx.lineWidth = 2.6;
-  ctx.beginPath();
-  ctx.ellipse(0, 11, 64, 14, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.ellipse(0, 9, 58, 9, 0, 0.1 * Math.PI, 0.9 * Math.PI);
-  ctx.stroke();
-
-  // 5 Rotating Neon Rim Lights
-  const lightPhase = Math.floor(now / 110);
-  const rimPositions = [-44, -22, 0, 22, 44];
-  rimPositions.forEach((lx, idx) => {
-    const ly = 12 + Math.cos((lx / 50) * (Math.PI / 2)) * 3.5;
-    const isLit = (lightPhase + idx) % 2 === 0;
-    ctx.fillStyle = '#090d1a';
-    ctx.beginPath();
-    ctx.ellipse(lx, ly, 5.5, 3.5, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = isLit ? '#facc15' : '#67e8f9';
-    ctx.beginPath();
-    ctx.ellipse(lx, ly, 4, 2.3, 0, 0, Math.PI * 2);
-    ctx.fill();
-  });
-
-  // Twin Front Plasma Laser Cannon Nozzles
-  ctx.fillStyle = '#facc15';
-  ctx.strokeStyle = '#090d1a';
-  ctx.lineWidth = 1.8;
-  ctx.beginPath();
-  ctx.roundRect(56, 5, 13, 5, 2);
-  ctx.roundRect(52, 12, 13, 5, 2);
-  ctx.fill();
-  ctx.stroke();
-
-  ctx.restore();
-}
-
-// Helper: Draw GIANT 16-BIT PIXEL UFO Spaceship with Upper-Body Pixel Penguin Pilot (Normal Head Size + Full Upper Torso & Wings Visible!)
-function drawPixelUfoSpaceshipWithPilot(
-  ctx,
-  cx,
-  cy,
-  tiltRad = 0,
-  now = 0,
-  options = {}
-) {
-  const {
-    scale = 1.42,
-    openHatchRatio = 0,
-    spId = UFO_GAME.pilotSpeciesId || '01',
-    forceBlink = false,
-    isShocked = false,
-    showSmoke = false,
-  } = options;
-
-  const spEntry = ensureSpeciesSprite(spId);
-  const anim = getPenguinAnimState(now, 1, false, forceBlink, isShocked);
-  const P = 4; // Stepped 16-bit pixel block size
-
-  ctx.save();
-  ctx.translate(cx, cy);
-  ctx.rotate(tiltRad);
-  ctx.scale(scale, scale);
-  ctx.imageSmoothingEnabled = false;
-
-  // Optional cute pixel smoke puffs after crash-landing
-  if (showSmoke) {
-    for (let s = 0; s < 3; s++) {
-      const sp = ((now * 0.0022 + s * 0.33) % 1);
-      const sx = Math.round((-46 - sp * 18) / P) * P;
-      const sy = Math.round((-2 - sp * 28) / P) * P;
-      const sz = s % 2 === 0 ? 8 : 6;
-      ctx.fillStyle = s % 2 === 0 ? 'rgba(148, 163, 184, 0.65)' : 'rgba(250, 204, 21, 0.72)';
-      ctx.fillRect(sx, sy, sz, sz);
-    }
-  }
-
-  // 1. Stepped Pixel Pilot Seat Backrest behind Penguin's Torso
-  ctx.fillStyle = '#090d1a';
-  ctx.fillRect(-25, -42, 15, 44);
-  ctx.fillStyle = '#334155';
-  ctx.fillRect(-22, -39, 9, 38);
-
-  // 2. UPPER-BODY 16-BIT PIXEL PENGUIN PILOT (100% Stationary inside Cockpit + Zero Lower-Edge Gap!)
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(-58, -88, 116, 97); // Clips at y = +9 (deep inside the opaque pixel cockpit collar & saucer hull!)
-  ctx.clip();
-
-  ensureDefaultPilotSheets();
-  const customPx = UFO_GAME.hasNft
-    ? UFO_GAME.pilotPixelSheet
-    : UFO_GAME.pilotPixelSheet || MOTION_STATE.defaultPilotPixelSheet;
-  const f3 = isShocked ? 2 : anim.frameIdx === 1 ? 1 : 0;
-
-  if (customPx) {
-    const r = PILOT_DRAW_RECT;
-    ctx.drawImage(customPx, f3 * 48, 0, 48, 48, r.x, r.y, r.size, r.size);
-  } else {
-    const pilotSize = 86;
-    const srcCropH = 220;
-    const drawH = Math.round(pilotSize * (srcCropH / 256)); // 74px tall
-    const pilotTopY = 9 - drawH;
-    if (spEntry && spEntry.sheetLoaded && spEntry.sheet) {
-      ctx.drawImage(
-        spEntry.sheet,
-        anim.frameIdx * 256,
-        0,
-        256,
-        srcCropH,
-        -pilotSize / 2 + 2,
-        pilotTopY,
-        pilotSize,
-        drawH
-      );
-    } else if (spEntry && spEntry.loaded && spEntry.img) {
-      ctx.drawImage(
-        spEntry.img,
-        0,
-        0,
-        256,
-        srcCropH,
-        -pilotSize / 2 + 2,
-        pilotTopY,
-        pilotSize,
-        drawH
-      );
-    }
-  }
-  ctx.restore();
-
-  // 3. Stepped 16-Bit Pixel Cockpit Collar (y = 0..9, overlaps penguin's lower waist y = 0..9 with ZERO gap!)
-  ctx.fillStyle = '#090d1a';
-  ctx.fillRect(-46, 0, 92, 9);
-  ctx.fillStyle = '#1e293b';
-  ctx.fillRect(-42, 2, 84, 5);
-  ctx.fillStyle = '#34d399';
-  ctx.fillRect(-16, 3, 6, 4);
-  ctx.fillStyle = '#facc15';
-  ctx.fillRect(-3, 3, 6, 4);
-  ctx.fillStyle = '#38bdf8';
-  ctx.fillRect(10, 3, 6, 4);
-
-  // 4. Stepped 16-Bit Pixel Glass Dome Hatch ("우주선 대가리" — Hinges open on left pivot (-44, 3)!)
-  //    NO interior color fill so true Species & Clothes colors are 100% unaltered — outline & reflection glints only!
-  ctx.save();
-  ctx.translate(-44, 3);
-  ctx.rotate(-openHatchRatio * 0.95);
-  ctx.translate(44, -3);
-
-  // Stepped 16-Bit Pixel Arch Outline (#7dd3fc)
-  ctx.fillStyle = '#7dd3fc';
-  ctx.fillRect(-28, -72, 56, P);
-  ctx.fillRect(-36, -68, 8, P);
-  ctx.fillRect(28, -68, 8, P);
-  ctx.fillRect(-40, -64, P, 8);
-  ctx.fillRect(36, -64, P, 8);
-  ctx.fillRect(-44, -56, P, 56);
-  ctx.fillRect(40, -56, P, 56);
-
-  // Crisp white pixel glass reflection blocks
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(-28, -64, 12, P);
-  ctx.fillRect(-32, -60, P, 14);
-  ctx.restore();
-
-  // 5. Stepped 16-Bit Pixel UFO Saucer Hull (Covers y = 3..27 completely!)
-  // Bottom dark pixel engine pod
-  ctx.fillStyle = '#090d1a';
-  ctx.fillRect(-32, 19, 64, 8);
-  ctx.fillStyle = '#1e293b';
-  ctx.fillRect(-28, 19, 56, 5);
-
-  // Main stepped pixel saucer body
-  ctx.fillStyle = '#090d1a';
-  ctx.fillRect(-56, 3, 112, 18);
-  ctx.fillRect(-64, 7, 128, 10);
-
-  // Top silver-white pixel bevel
-  ctx.fillStyle = '#e2e8f0';
-  ctx.fillRect(-52, 5, 104, 4);
-  // Mid cyan pixel band
-  ctx.fillStyle = '#38bdf8';
-  ctx.fillRect(-60, 9, 120, 5);
-  // Lower royal blue pixel shadow band
-  ctx.fillStyle = '#0284c7';
-  ctx.fillRect(-52, 14, 104, 5);
-
-  // 5 Blinking 16-Bit Pixel Neon Rim Lights
-  const lightPhase = Math.floor(now / 140);
-  const rimX = [-44, -22, 0, 22, 44];
-  rimX.forEach((lx, idx) => {
-    const isLit = (lightPhase + idx) % 2 === 0;
-    ctx.fillStyle = '#090d1a';
-    ctx.fillRect(lx - 5, 9, 10, 6);
-    ctx.fillStyle = isLit ? '#facc15' : '#67e8f9';
-    ctx.fillRect(lx - 3, 10, 6, 4);
-  });
-
-  // Stepped Pixel Twin Nose Laser Cannons
-  ctx.fillStyle = '#090d1a';
-  ctx.fillRect(54, 5, 14, 12);
-  ctx.fillStyle = '#facc15';
-  ctx.fillRect(56, 7, 10, 3);
-  ctx.fillRect(54, 12, 10, 3);
-
-  ctx.restore();
-}
-
 function ensureHero2DSprite() {
   if (MOTION_STATE.hero2DImg) return MOTION_STATE.hero2DImg;
   const img = new Image();
@@ -2007,14 +1610,6 @@ function ensureHero2DSprite() {
 }
 
 function ensureIntroBackgrounds() {
-  if (!MOTION_STATE.bgRefScene1Img) {
-    const r1 = new Image();
-    r1.onload = () => {
-      MOTION_STATE.bgRefScene1Loaded = true;
-    };
-    r1.src = '/assets/motion_sprites/bg_ref_scene1.jpg?v=5.3.0';
-    MOTION_STATE.bgRefScene1Img = r1;
-  }
   if (!MOTION_STATE.bgRefVortexImg) {
     const rv = new Image();
     rv.onload = () => {
@@ -2582,8 +2177,8 @@ function drawPixelScanHudPill(ctx, cx, y, pct) {
         ? `CAR & PILOT PIXEL SCAN · ${pct}%`
         : 'PIXEL CAR COMPLETE!'
       : pct < 100
-      ? `UFO & PILOT PIXEL SCAN · ${pct}%`
-      : 'PIXEL UFO COMPLETE!',
+      ? `PLANE & PILOT PIXEL SCAN · ${pct}%`
+      : 'PIXEL PLANE COMPLETE!',
     cx,
     topY + 12
   );
@@ -2786,32 +2381,11 @@ function drawPixelOutlinedSubtitle(ctx, text, cx, cy) {
   ctx.restore();
 }
 
-// Helper: Scene 1 Background — Reference Image #1 (Empty UFO on Crumbling Antarctica Cliff)
+// Helper: Scene 1 background — the cracking ice canyon (the old picture had the UFO painted in); the parked
+// plane and car are drawn on it by drawScene0VehiclePicker
 function drawRefScene1ChoiceBackground(ctx, now) {
-  ensureIntroBackgrounds();
-  if (MOTION_STATE.bgRefScene1Loaded && MOTION_STATE.bgRefScene1Img) {
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(MOTION_STATE.bgRefScene1Img, 0, 0, 960, 540);
-  } else {
-    const skyGrad = ctx.createLinearGradient(0, 0, 0, 540);
-    skyGrad.addColorStop(0, '#0284c7');
-    skyGrad.addColorStop(0.65, '#bae6fd');
-    skyGrad.addColorStop(1, '#1e1b4b');
-    ctx.fillStyle = skyGrad;
-    ctx.fillRect(0, 0, 960, 540);
-  }
-
-  // Subtle animated glowing cyan ice-fissure sparks & UFO beacon pulse over Reference #1
+  drawRefVortexBackground(ctx, now);
   ctx.save();
-  const pulse = 0.35 + 0.35 * Math.sin(now * 0.008);
-  const beaconGrad = ctx.createRadialGradient(480, 290, 12, 480, 290, 170);
-  beaconGrad.addColorStop(0, `rgba(103, 232, 249, ${pulse * 0.38})`);
-  beaconGrad.addColorStop(0.6, `rgba(56, 189, 248, ${pulse * 0.14})`);
-  beaconGrad.addColorStop(1, 'rgba(56, 189, 248, 0)');
-  ctx.fillStyle = beaconGrad;
-  ctx.fillRect(280, 110, 400, 350);
-
-  // Drifting Antarctic snow & ice shards
   ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
   for (let s = 0; s < 18; s++) {
     const sx = (s * 59 + now * 0.035) % 960;
@@ -3160,64 +2734,6 @@ function drawNeonWireframeCube(ctx, r = 18, colorMode = 'cyan', rot = 0) {
   ctx.restore();
 }
 
-// Helper: Draw a Dark Purple Spiked Naval Mine with Glowing Magenta Spikes (Matches Reference Image #3!)
-function drawDarkPurpleSpikedMine(ctx, r = 20, rot = 0) {
-  ctx.save();
-  ctx.rotate(rot);
-
-  // 8 Conical Spikes around circumference with glowing pink/magenta tips
-  const numSpikes = 8;
-  for (let i = 0; i < numSpikes; i++) {
-    const a = (i * Math.PI * 2) / numSpikes;
-    ctx.save();
-    ctx.rotate(a);
-    ctx.beginPath();
-    ctx.moveTo(-5, -r * 0.78);
-    ctx.lineTo(0, -r * 1.42);
-    ctx.lineTo(5, -r * 0.78);
-    ctx.closePath();
-    ctx.fillStyle = '#311042';
-    ctx.strokeStyle = '#090d1a';
-    ctx.lineWidth = 2;
-    ctx.fill();
-    ctx.stroke();
-
-    // Glowing magenta tip
-    ctx.fillStyle = '#f472b6';
-    ctx.beginPath();
-    ctx.arc(0, -r * 1.28, 2.6, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-  }
-
-  // Main dark purple metallic sphere body
-  const mGrad = ctx.createRadialGradient(-r * 0.28, -r * 0.28, 2, 0, 0, r);
-  mGrad.addColorStop(0, '#6d28d9');
-  mGrad.addColorStop(0.55, '#3b0764');
-  mGrad.addColorStop(1, '#0f0720');
-  ctx.fillStyle = mGrad;
-  ctx.strokeStyle = '#090d1a';
-  ctx.lineWidth = 2.5;
-  ctx.beginPath();
-  ctx.arc(0, 0, r, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-
-  // Circular dimples / pores on the mine surface
-  ctx.fillStyle = '#1e1b4b';
-  ctx.beginPath();
-  ctx.arc(-r * 0.35, -r * 0.2, r * 0.18, 0, Math.PI * 2);
-  ctx.arc(r * 0.28, -r * 0.32, r * 0.15, 0, Math.PI * 2);
-  ctx.arc(r * 0.22, r * 0.32, r * 0.18, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Center glowing magenta danger core
-  ctx.fillStyle = '#ec4899';
-  ctx.beginPath();
-  ctx.arc(-2, 2, r * 0.22, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.restore();
-}
 
 // Helper: Draw Entities in Scene 3 — Matches Reference Image #3
 function drawUfoEntity(ctx, ent, now) {
@@ -3233,7 +2749,8 @@ function drawUfoEntity(ctx, ent, now) {
   } else if (ent.type === 'cube') {
     drawNeonWireframeCube(ctx, ent.r || 18, ent.colorMode || 'cyan', ent.rot || 0);
   } else if (ent.type === 'mine') {
-    drawDarkPurpleSpikedMine(ctx, ent.r || 20, ent.rot || 0);
+    // Storm cell: a light plane has to fly around it
+    drawStormCloud(ctx, (ent.r || 20) * 1.15, now, Math.round(ent.y));
   }
   ctx.restore();
 }
@@ -3503,7 +3020,7 @@ function initPixelMotionStudio() {
     if (MOTION_STATE.sceneIdx === 2) {
       if (MOTION_STATE.vehicle === 'car') return; // jumps come from mousedown / touchstart
       UFO_GAME.userControlled = true;
-      UFO_GAME.targetX = Math.max(125, Math.min(680, mx));
+      UFO_GAME.targetX = Math.max(150, Math.min(680, mx));
       UFO_GAME.targetY = Math.max(92, Math.min(390, my));
       return;
     }
@@ -3543,7 +3060,7 @@ function initPixelMotionStudio() {
       if (MOTION_STATE.vehicle === 'car') return;
       if (my > 54 && mx < 780) {
         UFO_GAME.userControlled = true;
-        UFO_GAME.targetX = Math.max(125, Math.min(680, mx));
+        UFO_GAME.targetX = Math.max(150, Math.min(680, mx));
         UFO_GAME.targetY = Math.max(92, Math.min(390, my));
       }
       return;
@@ -3567,7 +3084,7 @@ function initPixelMotionStudio() {
       }
       const { mx, my } = getLogicalCoords(touch.clientX, touch.clientY);
       UFO_GAME.userControlled = true;
-      UFO_GAME.targetX = Math.max(125, Math.min(680, mx));
+      UFO_GAME.targetX = Math.max(150, Math.min(680, mx));
       UFO_GAME.targetY = Math.max(92, Math.min(390, my - 36));
     }
   };
@@ -3596,7 +3113,7 @@ function initPixelMotionStudio() {
       if (!padLast) return;
       const g = padGain();
       UFO_GAME.userControlled = true;
-      UFO_GAME.targetX = Math.max(125, Math.min(680, UFO_GAME.targetX + (clientX - padLast.x) * g));
+      UFO_GAME.targetX = Math.max(150, Math.min(680, UFO_GAME.targetX + (clientX - padLast.x) * g));
       UFO_GAME.targetY = Math.max(92, Math.min(390, UFO_GAME.targetY + (clientY - padLast.y) * g));
       padLast.x = clientX;
       padLast.y = clientY;
@@ -3704,102 +3221,16 @@ function initPixelMotionStudio() {
     }
 
     // ========================================================================
-    // SCENE 2 (sceneIdx === 1 — Reference Image #2):
-    //   Motion graphic of the Penguin inside the UFO dome blasting off from crumbling Antarctica
-    //   toward the sky with radial anime speed lines and speech bubble.
+    // SCENE 2 (sceneIdx === 1): the light plane's take-off run on skis across the cracking ice (plane.js)
     // ========================================================================
     else if (MOTION_STATE.sceneIdx === 1) {
       ctx.save();
-      const shakeMag = 3.2;
-      ctx.translate(
-        Math.sin(now * 0.065) * shakeMag,
-        Math.cos(now * 0.055) * (shakeMag * 0.75)
-      );
-
+      ctx.translate(Math.sin(now * 0.065) * 2.4, Math.cos(now * 0.055) * 1.8);
       drawRefVortexBackground(ctx, now);
-
-      // Dynamic Anime Radial White Speed Lines (Matching Reference Image #2)
-      const ufoX = 240 + p * 165;
-      const ufoY = 335 - p * 85 + Math.sin(now * 0.025) * 4;
-      const ufoTilt = -0.22;
-
-      ctx.save();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.55)';
-      for (let i = 0; i < 28; i++) {
-        const ang = (i * Math.PI * 2) / 28 + Math.sin(now * 0.01 + i) * 0.02;
-        const r1 = 155 + ((i * 31 + Math.floor(now * 0.25)) % 95);
-        const r2 = r1 + 120 + (i % 3) * 65;
-        ctx.lineWidth = i % 3 === 0 ? 3.2 : 1.8;
-        ctx.beginPath();
-        ctx.moveTo(ufoX + Math.cos(ang) * r1, ufoY + Math.sin(ang) * r1 * 0.68);
-        ctx.lineTo(ufoX + Math.cos(ang) * r2, ufoY + Math.sin(ang) * r2 * 0.68);
-        ctx.stroke();
-      }
+      drawPlaneScene1Takeoff(ctx, now, p, activeSpId);
       ctx.restore();
 
-      // Trailing cyan & yellow pixel squares behind the blasting-off UFO
-      ctx.save();
-      for (let t = 0; t < 12; t++) {
-        const trailT = ((now * 0.004 + t * 0.083) % 1);
-        const tx = ufoX - 75 - trailT * 160 + Math.sin(t * 2.1) * 14;
-        const ty = ufoY + 18 + trailT * 55 + Math.cos(t * 1.7) * 12;
-        const tSz = Math.max(4, Math.round((1 - trailT) * 12));
-        ctx.fillStyle = '#090d1a';
-        ctx.fillRect(tx - 1, ty - 1, tSz + 2, tSz + 2);
-        ctx.fillStyle = t % 2 === 0 ? '#67e8f9' : '#fde047';
-        ctx.fillRect(tx, ty, tSz, tSz);
-      }
-      ctx.restore();
-
-      // Draw Giant UFO with Penguin Pilot inside (stationary in cockpit)
-      drawUfoSpaceshipWithPilot(
-        ctx,
-        ufoX,
-        ufoY,
-        ufoTilt,
-        now,
-        false,
-        false,
-        3,
-        {
-          scale: 1.48,
-          openHatchRatio: 0,
-          spId: activeSpId,
-          thrusterBoost: 2.2,
-        }
-      );
-
-      // Anime droplets flying off near the dome like Reference Image #2
-      ctx.save();
-      ctx.fillStyle = '#7dd3fc';
-      ctx.strokeStyle = '#0284c7';
-      ctx.lineWidth = 1.8;
-      const swOff = (now * 0.015) % 8;
-      for (const [sx, sy] of [
-        [ufoX - 48 - swOff, ufoY - 62 - swOff * 0.5],
-        [ufoX + 54 + swOff, ufoY - 56 - swOff * 0.5],
-      ]) {
-        ctx.beginPath();
-        ctx.arc(sx, sy, 4.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      }
-      ctx.restore();
-
-      drawRetroSpeechBubble(
-        ctx,
-        Math.min(460, ufoX + 15),
-        Math.max(64, ufoY - 128),
-        CURRENT_LANG === 'ko'
-          ? '야야 남극 깨진다!! 브레이크 없고 일단 쏜다 꽉 잡아!!'
-          : 'Antarctica is cracking!! No brakes, hold on tight!!',
-        '#fb7185',
-        now
-      );
-
-      ctx.restore();
-
-      // Auto-advance from Scene 2 Motion Graphic to Scene 3 Sky Game after 2.5s
+      // Auto-advance from the take-off to the sky game after 2.6s
       if (elapsed >= curDuration) {
         setIntroScene(2, true);
       }
@@ -3866,7 +3297,7 @@ function initPixelMotionStudio() {
         keyMoved = true;
       }
       if (keyMoved) {
-        UFO_GAME.targetX = Math.max(125, Math.min(680, UFO_GAME.targetX));
+        UFO_GAME.targetX = Math.max(150, Math.min(680, UFO_GAME.targetX));
         UFO_GAME.targetY = Math.max(92, Math.min(390, UFO_GAME.targetY));
       }
 
@@ -3878,25 +3309,14 @@ function initPixelMotionStudio() {
       UFO_GAME.y += UFO_GAME.vy * dt;
       UFO_GAME.tiltRad = Math.max(-0.22, Math.min(0.22, UFO_GAME.vy * 0.03 + UFO_GAME.vx * 0.01));
 
-      // 2. Auto-Fire Twin Plasma Lasers from Giant UFO Nose Cannons every 175ms
-      if (now - UFO_GAME.lastFireAt >= 175) {
-        UFO_GAME.lastFireAt = now;
-        UFO_GAME.lasers.push(
-          { x: UFO_GAME.x + 88, y: UFO_GAME.y + 5, vx: 14.5 },
-          { x: UFO_GAME.x + 82, y: UFO_GAME.y + 17, vx: 14.5 }
-        );
-      }
-
-      // 3. Spawn Reference Image #3 Entities with Progressive Difficulty Scaling:
-      //    - Spawn interval tightens from 420ms (LV.1) down to 130ms (LV.8+)
-      //    - Mine probability rises from 28% (LV.1) up to 72% (LV.7+)
-      //    - Mine speed, HP, and multi-mine spread formations scale up with diffLevel
-      const spawnInterval = Math.max(130, 420 - (diffLevel - 1) * 40);
+      // 2. The light plane carries no guns: storm cells can only be flown around, so they come less often
+      //    than the old shootable mines. Spawn interval 440ms (LV.1) -> 200ms; storm share 30% -> 60%.
+      const spawnInterval = Math.max(200, 440 - (diffLevel - 1) * 30);
       if (now - UFO_GAME.lastSpawnAt >= spawnInterval) {
         UFO_GAME.lastSpawnAt = now;
         const roll = Math.random();
         const baseY = 115 + Math.random() * 245;
-        const mineProb = Math.min(0.72, 0.28 + (diffLevel - 1) * 0.07);
+        const mineProb = Math.min(0.6, 0.3 + (diffLevel - 1) * 0.04);
         const starCut = (1 - mineProb) * 0.46;
         const ringCut = (1 - mineProb) * 0.72;
         const cubeCut = 1 - mineProb;
@@ -3942,9 +3362,9 @@ function initPixelMotionStudio() {
           });
         } else {
           const mineHp = diffLevel >= 4 ? 4 : diffLevel >= 2 ? 3 : 2;
-          const mineCount = diffLevel >= 5 ? 3 : diffLevel >= 2 && Math.random() < 0.55 ? 2 : 1;
+          const mineCount = diffLevel >= 6 ? 2 : diffLevel >= 3 && Math.random() < 0.4 ? 2 : 1;
           for (let m = 0; m < mineCount; m++) {
-            // Aimed/off-axis lane targeting on first mine at LV.2+ so idle UFOs cannot survive indefinitely via nose lasers
+            // Aimed/off-axis lane on the first storm at LV.2+ so a plane that never moves cannot survive
             const targetLaneY =
               m === 0 && diffLevel >= 2 && Math.random() < 0.55
                 ? Math.max(105, Math.min(375, UFO_GAME.y + (Math.random() < 0.5 ? -36 : 38)))
@@ -3964,25 +3384,8 @@ function initPixelMotionStudio() {
         }
       }
 
-      // 4. Update & Draw Twin Plasma Lasers
-      ctx.save();
-      for (let i = UFO_GAME.lasers.length - 1; i >= 0; i--) {
-        const b = UFO_GAME.lasers[i];
-        b.x += b.vx * dt;
-        if (b.x > 960) {
-          UFO_GAME.lasers.splice(i, 1);
-          continue;
-        }
-        ctx.fillStyle = '#0284c7';
-        ctx.fillRect(b.x - 2, b.y - 3, 24, 7);
-        ctx.fillStyle = '#67e8f9';
-        ctx.fillRect(b.x, b.y - 2, 20, 5);
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(b.x + 4, b.y - 1, 14, 2);
-      }
-      ctx.restore();
-
-      // 5. Update & Draw Entities + Laser/UFO Collisions
+      // 4. Update & Draw Entities + plane collisions
+      const planeScale = 0.8;
       for (let i = UFO_GAME.entities.length - 1; i >= 0; i--) {
         const ent = UFO_GAME.entities[i];
         ent.x += ent.vx * dt;
@@ -3997,52 +3400,8 @@ function initPixelMotionStudio() {
         const isCollectible =
           ent.type === 'star' || ent.type === 'ring' || ent.type === 'cube';
 
-        if (!isCollectible) {
-          let destroyedByLaser = false;
-          for (let j = UFO_GAME.lasers.length - 1; j >= 0; j--) {
-            const b = UFO_GAME.lasers[j];
-            if (Math.hypot(b.x - ent.x, b.y - ent.y) <= ent.r + 12) {
-              UFO_GAME.lasers.splice(j, 1);
-              ent.hp -= 1;
-              if (ent.hp <= 0) {
-                destroyedByLaser = true;
-                const pts = 250 * UFO_GAME.combo;
-                UFO_GAME.score += pts;
-                UFO_GAME.kills += 1;
-                UFO_GAME.popups.push({
-                  x: ent.x,
-                  y: ent.y - 10,
-                  vy: -1.4,
-                  text: `+${pts}`,
-                  col: '#67e8f9',
-                  alpha: 1,
-                });
-                for (let k = 0; k < 7; k++) {
-                  const a = (k / 7) * Math.PI * 2;
-                  UFO_GAME.particles.push({
-                    x: ent.x,
-                    y: ent.y,
-                    vx: Math.cos(a) * 3.2,
-                    vy: Math.sin(a) * 3.2,
-                    col: k % 2 === 0 ? '#f472b6' : '#67e8f9',
-                    sz: 5,
-                    alpha: 1,
-                    decay: 0.04,
-                  });
-                }
-                break;
-              }
-            }
-          }
-          if (destroyedByLaser) {
-            UFO_GAME.entities.splice(i, 1);
-            continue;
-          }
-        }
-
-        // Check collision with Giant UFO Spaceship
-        const distToUfo = Math.hypot(ent.x - UFO_GAME.x, ent.y - UFO_GAME.y);
-        if (distToUfo <= ent.r + 54) {
+        // Collision with the plane (ellipse around fuselage + wing)
+        if (planeHits(UFO_GAME.x, UFO_GAME.y, planeScale, ent.x, ent.y, isCollectible ? ent.r : ent.r * 0.85)) {
           if (isCollectible) {
             const baseVal =
               ent.type === 'ring' ? 500 : ent.type === 'cube' ? 350 : 200;
@@ -4069,7 +3428,7 @@ function initPixelMotionStudio() {
               x: UFO_GAME.x,
               y: UFO_GAME.y - 48,
               vy: -1.5,
-              text: UFO_GAME.shields > 0 ? 'SHIELD -1' : 'BEAM ENTRY',
+              text: UFO_GAME.shields > 0 ? 'HP -1' : 'MAYDAY',
               col: '#fb7185',
               alpha: 1,
             });
@@ -4084,39 +3443,29 @@ function initPixelMotionStudio() {
         drawUfoEntity(ctx, ent, now);
       }
 
-      // 6. Trailing Cyan & Yellow Pixel Squares behind the UFO (Matching Reference Image #3)
+      // 5. Wingtip vapour / exhaust puffs behind the tail
       ctx.save();
       for (let t = 0; t < 8; t++) {
         const trailP = ((now * 0.005 + t * 0.125) % 1);
-        const tx = UFO_GAME.x - 78 - trailP * 110;
-        const ty = UFO_GAME.y + 8 + Math.sin(now * 0.02 + t * 1.7) * 9;
-        const sz = Math.max(4, Math.round((1 - trailP) * 9));
-        ctx.fillStyle = '#090d1a';
-        ctx.fillRect(tx - 1, ty - 1, sz + 2, sz + 2);
-        ctx.fillStyle = t % 2 === 0 ? '#fde047' : '#67e8f9';
+        const tx = UFO_GAME.x - 135 - trailP * 110;
+        const ty = UFO_GAME.y - 6 + Math.sin(now * 0.02 + t * 1.7) * 5;
+        const sz = Math.max(3, Math.round((1 - trailP) * 8));
+        ctx.globalAlpha = 0.8 * (1 - trailP);
+        ctx.fillStyle = t % 2 === 0 ? '#ffffff' : '#cbd5e1';
         ctx.fillRect(tx, ty, sz, sz);
       }
       ctx.restore();
 
-      // 7. Draw the GIANT 2D UFO Spaceship (scale = 1.36) with Upper-Body Penguin Pilot
+      // 6. The light plane with the penguin behind the side window
       const isHitShocked = now < UFO_GAME.hitFlashUntil;
       const isHitImpactBlink = now < UFO_GAME.hitFlashUntil - 420;
-      drawUfoSpaceshipWithPilot(
-        ctx,
-        UFO_GAME.x,
-        UFO_GAME.y,
-        UFO_GAME.tiltRad,
-        now,
-        isHitShocked,
-        isHitImpactBlink,
-        UFO_GAME.shields,
-        {
-          scale: 1.36,
-          openHatchRatio: 0,
-          spId: activeSpId,
-          thrusterBoost: 1.35,
-        }
-      );
+      drawPlaneWithPilot(ctx, UFO_GAME.x, UFO_GAME.y, UFO_GAME.tiltRad, now, {
+        scale: planeScale,
+        spId: activeSpId,
+        isShocked: isHitShocked,
+        isImpactBlink: isHitImpactBlink,
+        skis: true,
+      });
 
       drawUfoCombatHud(ctx, now, diffLevel);
 
@@ -4186,7 +3535,6 @@ function initPixelMotionStudio() {
         startY +
         smoothPull * (targetBeamY - startY) +
         Math.sin(now * 0.012) * 4;
-      const ufoScale = 1.44;
       const ufoTilt = (1 - smoothPull) * -0.18 + Math.sin(now * 0.02) * 0.04;
 
       // Upper Glowing Cyan Halo Ring high in the Voxel Beam (Matches Reference Image #4)
@@ -4219,6 +3567,7 @@ function initPixelMotionStudio() {
       // The lifted car reaches higher (light bar) and lower (tyres) than the saucer, so its scan is longer
       const isCar = MOTION_STATE.vehicle === 'car';
       const carScale = 1.3;
+      const planeScanScale = 1.05; // the plane is long: at this size it stays inside the 360px scan window
       const topEdge = isCar ? ufoY - 136 : ufoY - 120;
       const botEdge = isCar ? ufoY + 80 : ufoY + 52;
       const totalSpanH = botEdge - topEdge;
@@ -4240,13 +3589,10 @@ function initPixelMotionStudio() {
             wheelAngle: now * 0.03,
           });
         } else {
-          drawPixelUfoSpaceshipWithPilot(ctx, ufoX, ufoY, ufoTilt, now, {
-            scale: ufoScale,
-            openHatchRatio: 0,
+          drawPixelPlaneWithPilot(ctx, ufoX, ufoY, ufoTilt, now, {
+            scale: planeScanScale,
             spId: activeSpId,
             forceBlink: pixelBlinkDuringBeam,
-            isShocked: false,
-            showSmoke: false,
           });
         }
         ctx.restore();
@@ -4272,22 +3618,11 @@ function initPixelMotionStudio() {
         ctx.beginPath();
         ctx.rect(ufoX - 180, scanY, 360, botEdge - scanY + 50);
         ctx.clip();
-        drawUfoSpaceshipWithPilot(
-          ctx,
-          ufoX,
-          ufoY,
-          ufoTilt,
-          now,
-          false,
-          subP < 0.09,
-          0,
-          {
-            scale: ufoScale,
-            openHatchRatio: 0,
-            spId: activeSpId,
-            thrusterBoost: 0.6,
-          }
-        );
+        drawPlaneWithPilot(ctx, ufoX, ufoY, ufoTilt, now, {
+          scale: planeScanScale,
+          spId: activeSpId,
+          isImpactBlink: subP < 0.09,
+        });
         ctx.restore();
       }
 
@@ -4496,8 +3831,8 @@ function initPixelMotionStudio() {
 
         const ufoLandX = 228;
         const ufoGroundY = 418;
-        // The car origin sits 42px higher so its tyres (+57 x 1.3) touch the same walkway line as the saucer hull
-        const landY = isCarRun ? ufoGroundY - 42 : ufoGroundY;
+        // Car tyres (+57 x 1.3) and plane skis (+45 x 1.15) end on the same walkway line (y = 450)
+        const landY = isCarRun ? ufoGroundY - 42 : ufoGroundY - 20;
         const ufoCurY =
           crashP < 1
             ? Math.round(90 + crashP * crashP * (landY - 90))
@@ -4505,7 +3840,7 @@ function initPixelMotionStudio() {
         ufoRenderY = ufoCurY;
         const ufoCrashTilt = crashP < 1 ? 0.18 : 0.04;
 
-        drawPixelGroundShadow(ctx, ufoLandX, ufoGroundY + 32, isCarRun ? 236 : 162, bounceOffset);
+        drawPixelGroundShadow(ctx, ufoLandX, ufoGroundY + 32, isCarRun ? 236 : 250, bounceOffset);
 
         // Ground impact pixel dust & spark burst when the UFO slams into the stone walkway
         if (s5P >= 0.13 && s5P <= 0.28) {
@@ -4536,13 +3871,14 @@ function initPixelMotionStudio() {
             pilotLift: openHatchRatio > 0 && openHatchRatio < 1 ? Math.sin(openHatchRatio * Math.PI) * 14 : 0,
           });
         } else {
-          drawPixelUfoSpaceshipWithPilot(ctx, ufoLandX, ufoCurY, ufoCrashTilt, now, {
-            scale: 1.42,
-            openHatchRatio,
+          // Ski landing gone wrong: prop stops, the pilot pops up in the window
+          drawPixelPlaneWithPilot(ctx, ufoLandX + 20, ufoCurY, crashP < 1 ? 0.24 : 0.05, now, {
+            scale: 1.15,
             spId: activeSpId,
-            forceBlink: false,
             isShocked: crashP < 1,
             showSmoke: true,
+            propSpin: crashP < 1,
+            pilotLift: openHatchRatio > 0 && openHatchRatio < 1 ? Math.sin(openHatchRatio * Math.PI) * 8 : 0,
           });
         }
       }
@@ -4599,8 +3935,8 @@ function initPixelMotionStudio() {
             speaker1.fx + spriteSize / 2 + 12,
             speaker1.fy - 4,
             CURRENT_LANG === 'ko'
-              ? `ㅋㅋㅋ ${isCarRun ? '차' : '우주선'}도 안 타고 날로 먹었네?! 어쨌든 ${INTRO_TOWN.ko} 환영한다!!`
-              : `Haha you skipped the ${isCarRun ? 'car' : 'UFO'} ride?! Welcome to ${INTRO_TOWN.en} anyway!!`,
+              ? `ㅋㅋㅋ ${isCarRun ? '차' : '비행기'}도 안 타고 날로 먹었네?! 어쨌든 ${INTRO_TOWN.ko} 환영한다!!`
+              : `Haha you skipped the ${isCarRun ? 'car' : 'plane'} ride?! Welcome to ${INTRO_TOWN.en} anyway!!`,
             '#ff4d6d',
             now
           );
@@ -4625,10 +3961,10 @@ function initPixelMotionStudio() {
           CURRENT_LANG === 'ko'
             ? isCarRun
               ? '쿠과광—!! 어우 내 허리... 차는 폐차각인데 도착은 성공이다!!'
-              : '쿠과광—!! 어우 내 허리... 우주선은 폐차각인데 불시착은 성공이다!!'
+              : '쿠과광—!! 어우 내 허리... 비행기는 폐기각인데 불시착은 성공이다!!'
             : isCarRun
             ? 'CRAAASH—!! Ow my back... the car is totaled, but we made it!!'
-            : 'CRAAASH—!! Ow my back... UFO is totaled, but we made it!!',
+            : 'CRAAASH—!! Ow my back... the plane is totaled, but we made it!!',
           '#38bdf8',
           now
         );
@@ -4642,8 +3978,8 @@ function initPixelMotionStudio() {
             speaker1.fx + spriteSize / 2 + 14,
             speaker1.fy - 4,
             CURRENT_LANG === 'ko'
-              ? `우와 ${isCarRun ? '하늘에서 차가 떨어졌어' : '우주선 추락했어'} ㅋㅋ 살아있냐?! ${INTRO_TOWN.koPixel}에 온 걸 환영해!!`
-              : `Whoa ${isCarRun ? 'a car fell from the sky' : 'your UFO crashed'} haha—you alive?! Welcome to ${INTRO_TOWN.en}!!`,
+              ? `우와 ${isCarRun ? '하늘에서 차가 떨어졌어' : '비행기 불시착했어'} ㅋㅋ 살아있냐?! ${INTRO_TOWN.koPixel}에 온 걸 환영해!!`
+              : `Whoa ${isCarRun ? 'a car fell from the sky' : 'your plane crash-landed'} haha—you alive?! Welcome to ${INTRO_TOWN.en}!!`,
             '#ff4d6d',
             now
           );
@@ -4664,8 +4000,8 @@ function initPixelMotionStudio() {
             262,
             306,
             CURRENT_LANG === 'ko'
-              ? `${isCarRun ? '차' : '우주선'} 수리비도 안 주네... 에라 모르겠다 10,000 도감도나 구경 가자!!`
-              : `Not even paying for ${isCarRun ? 'car' : 'UFO'} repairs... Whatever, let us check the 10K Codex!!`,
+              ? `${isCarRun ? '차' : '비행기'} 수리비도 안 주네... 에라 모르겠다 10,000 도감도나 구경 가자!!`
+              : `Not even paying for ${isCarRun ? 'car' : 'plane'} repairs... Whatever, let us check the 10K Codex!!`,
             '#38bdf8',
             now
           );
