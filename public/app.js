@@ -549,6 +549,12 @@ const TOWN_SKIP_TREE_CX = 790;
 
 // Town command box (10,000 도감 / 다시 플레이). On a phone (stageUiK) the box and its text are drawn 1.5x; the
 // click and hover areas use the same numbers.
+// Scene 5 talk timing after a crash landing (ms from the scene start). The vehicle falls until 952 and bounces
+// until 1632 (s5P 0.14 / 0.24 of 6800); the pilot speaks only once that has settled, after a short beat (the
+// action -> reaction order of the animation principles), and keeps the line up long enough to read: ~38 Korean
+// characters at ~12 per second (the rate given for Korean subtitles) is ~3.2 s. Then the locals take turns.
+const TOWN_TALK = { pilotFrom: 1800, friendsFrom: 5000, turnMs: 3400 };
+
 // Phone town layout. Stage text is 1.6x there, so the top stack (banner 10-66, logo, 1.5x menu) used to push the
 // speech bubbles down onto the landed pilot's head (~y 305). On phones the logo is drawn at 0.65x so the menu sits
 // at y 158 (bubbles from y 289), and the town picture is zoomed TOWN_PHONE_ZOOM about its top centre so the
@@ -3791,19 +3797,10 @@ function initPixelMotionStudio() {
             now
           );
         }
-      } else if (s5P < 0.14) {
-        drawRetroSpeechBubble(
-          ctx,
-          248,
-          Math.max(108, ufoRenderY - 94),
-          CURRENT_LANG === 'ko'
-            ? `으아아악 브레이크 고장났다!! ${INTRO_TOWN.ko} ${INTRO_TOWN.koGround}에 박는다아악!!`
-            : `AAAAGH brakes are dead!! Crashing into ${INTRO_TOWN.en}!!`,
-          '#fb7185',
-          now
-        );
-      } else if (s5P < 0.42) {
-        drawPixelHeart(ctx, 304, 336 - ((now * 0.03) % 18), 2.6, '#38bdf8');
+      } else if (elapsed < TOWN_TALK.pilotFrom) {
+        // Falling, slamming in and bouncing: no talking yet (anticipation -> action -> reaction)
+      } else if (elapsed < TOWN_TALK.friendsFrom) {
+        drawPixelHeart(ctx, 304, 336 + townDrop() - ((now * 0.03) % 18), 2.6, '#38bdf8');
         drawRetroSpeechBubble(
           ctx,
           256,
@@ -3823,7 +3820,7 @@ function initPixelMotionStudio() {
           now
         );
       } else {
-        const talkPhase = Math.floor(Math.max(0, elapsed - 2850) / 3400) % 3;
+        const talkPhase = Math.floor(Math.max(0, elapsed - TOWN_TALK.friendsFrom) / TOWN_TALK.turnMs) % 3;
         drawPixelHeart(ctx, speaker1.fx + spriteSize / 2, spriteY - 8 - ((now * 0.03) % 20), 2.6, '#ff4d6d');
         drawPixelHeart(ctx, speaker2.fx + spriteSize / 2, spriteY - 12 - ((now * 0.03) % 20), 2.6, '#fbbf24');
         // The friends' bubbles stay right of the landed vehicle (the ship's bow ends at x ~394) so they never cover
