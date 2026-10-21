@@ -360,6 +360,9 @@ function scrollToSection(id) {
   if (tabKey === 'tab-ranking' && typeof fetchAndRenderRankingPage === 'function') {
     fetchAndRenderRankingPage();
   }
+  if (tabKey === 'tab-codex') {
+    centerActiveTraitTab();
+  }
 
   if (
     id === 'tab-intro' ||
@@ -4110,6 +4113,8 @@ function renderTraitDirectory() {
     });
   });
 
+  centerActiveTraitTab();
+
   const rows = APP_CONFIG.trait_summary[ACTIVE_TRAIT_TAB] || [];
   gridWrap.innerHTML = rows
     .map(
@@ -4124,6 +4129,16 @@ function renderTraitDirectory() {
   `
     )
     .join('');
+}
+
+// On mobile the tab bar side-scrolls; keep the selected category in view (no-op while the codex tab is hidden)
+function centerActiveTraitTab() {
+  const tabsWrap = document.getElementById('trait-cat-tabs');
+  const activeTab = tabsWrap?.querySelector('.trait-tab-btn.active');
+  if (!activeTab || tabsWrap.scrollWidth <= tabsWrap.clientWidth) return;
+  const barBox = tabsWrap.getBoundingClientRect();
+  const tabBox = activeTab.getBoundingClientRect();
+  tabsWrap.scrollLeft += tabBox.left - barBox.left - (barBox.width - tabBox.width) / 2;
 }
 
 function catLabel(cat) {

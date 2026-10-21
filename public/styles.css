@@ -1269,10 +1269,48 @@ body.ufo-fullscreen-lock {
   border-bottom: 1px solid var(--line);
 }
 
+.rarity-rules-head {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
 .rarity-rules-hint {
-  margin-left: auto;
-  font-size: 12px;
+  font-size: 12.5px;
   color: var(--text-3);
+  line-height: 1.45;
+}
+
+.rarity-tie-cases {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.rarity-tie-cases > span {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 6px 9px;
+  line-height: 1.7;
+}
+
+.rarity-tie-cases b {
+  display: block;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.tie-line {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
 .rarity-steps {
@@ -2461,19 +2499,17 @@ body.ufo-fullscreen-lock {
   .ranking-pagination-bar {
     flex-wrap: nowrap;
   }
+  /* 10 pages in two rows of 5 instead of a hidden side-scroll */
   .rank-page-numbers {
-    flex-wrap: nowrap;
-    justify-content: flex-start;
-    overflow-x: auto;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+    flex: 1 1 auto;
     min-width: 0;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-  .rank-page-numbers::-webkit-scrollbar {
-    display: none;
   }
   .rank-page-num-btn {
-    flex-shrink: 0;
+    min-width: 0;
+    width: 100%;
   }
   .rank-score-val {
     font-size: 14px;
@@ -2483,8 +2519,31 @@ body.ufo-fullscreen-lock {
     display: none;
   }
   .rank-page-num-btn {
-    min-width: 32px;
-    height: 32px;
+    height: 38px;
+  }
+  .lang-btn {
+    min-height: 36px;
+    min-width: 40px;
+  }
+  .rank-game-btn,
+  .trait-tab-btn {
+    min-height: 38px;
+  }
+  .trait-b-val {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    line-height: 1.3;
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+  }
+  .trait-b-score {
+    flex-wrap: wrap;
+    row-gap: 2px;
+  }
+  .trait-b-score > span {
+    white-space: nowrap;
   }
   .modal-backdrop {
     padding: 0;

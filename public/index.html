@@ -15,7 +15,7 @@
   <link rel="icon" type="image/png" href="/img/P4441.png?v=v322" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-  <link rel="stylesheet" href="/styles.css?v=5.15.2" />
+  <link rel="stylesheet" href="/styles.css?v=5.16.0" />
 </head>
 <body>
   <!-- Full-Viewport Stepped Pixel Ambient Particle Canvas -->
@@ -242,8 +242,10 @@
 
         <details class="verychat-panel rarity-rules" id="sec-rarity">
           <summary class="rarity-rules-summary">
-            <span class="verychat-panel-title" data-ko="희귀도·등급 기준" data-en="How rarity and tiers work">희귀도·등급 기준</span>
-            <span class="rarity-rules-hint" data-ko="rarity.tools 방식" data-en="rarity.tools method">rarity.tools 방식</span>
+            <span class="rarity-rules-head">
+              <span class="verychat-panel-title" data-ko="희귀도·등급 기준" data-en="How rarity and tiers work">희귀도·등급 기준</span>
+              <span class="rarity-rules-hint" data-ko="rarity.tools 총점 순 · 동점은 번호 작은 순 · 순위 구간으로 등급" data-en="rarity.tools score order · ties by lower number · tiers by rank range">rarity.tools 총점 순 · 동점은 번호 작은 순 · 순위 구간으로 등급</span>
+            </span>
           </summary>
 
           <ol class="rarity-steps">
@@ -259,7 +261,24 @@
             </li>
             <li>
               <strong data-ko="순위" data-en="Rank">순위</strong>
-              <span class="rarity-note" data-ko="두 점수를 더한 총점이 높은 순으로 #1~#10,000. 총점이 같으면 번호가 작은 펭귄이 앞 순위입니다. Genesis 11마리(#0~#10)는 1~11위 고정." data-en="Total of both scores, highest first, #1 to #10,000. Equal totals are ordered by the lower token number. The 11 Genesis penguins (#0–#10) hold ranks 1–11.">두 점수를 더한 총점이 높은 순으로 #1~#10,000. 총점이 같으면 번호가 작은 펭귄이 앞 순위입니다. Genesis 11마리(#0~#10)는 1~11위 고정.</span>
+              <span class="rarity-note" data-ko="두 점수를 더한 총점이 높은 순으로 #1~#10,000. Genesis 11마리(#0~#10)는 1~11위 고정." data-en="Total of both scores, highest first, #1 to #10,000. The 11 Genesis penguins (#0–#10) hold ranks 1–11.">두 점수를 더한 총점이 높은 순으로 #1~#10,000. Genesis 11마리(#0~#10)는 1~11위 고정.</span>
+            </li>
+            <li>
+              <strong data-ko="동점자" data-en="Ties">동점자</strong>
+              <code data-ko="번호가 작은 펭귄이 앞 순위" data-en="lower token number ranks first">번호가 작은 펭귄이 앞 순위</code>
+              <span class="rarity-note" data-ko="같은 순위는 없습니다. 그래서 등급 경계에서는 점수가 같아도 등급이 갈립니다." data-en="No two penguins share a rank, so at a tier boundary equal scores can land in different tiers.">같은 순위는 없습니다. 그래서 등급 경계에서는 점수가 같아도 등급이 갈립니다.</span>
+              <span class="rarity-tie-cases">
+                <span>
+                  <b data-ko="371.41점 동점 4마리" data-en="4 penguins tied at 371.41">371.41점 동점 4마리</b>
+                  <span class="tie-line"><span class="tier-pill tier-Epic">Epic</span> #4270 · <span data-ko="700위" data-en="rank 700">700위</span></span>
+                  <span class="tie-line"><span class="tier-pill tier-Rare">Rare</span> #5804 · #8871 · #9973 · <span data-ko="701~703위" data-en="ranks 701–703">701~703위</span></span>
+                </span>
+                <span>
+                  <b data-ko="207.42점 동점 2마리" data-en="2 penguins tied at 207.42">207.42점 동점 2마리</b>
+                  <span class="tie-line"><span class="tier-pill tier-Uncommon">Uncommon</span> #1172 · <span data-ko="4,500위" data-en="rank 4,500">4,500위</span></span>
+                  <span class="tie-line"><span class="tier-pill tier-Common">Common</span> #7690 · <span data-ko="4,501위" data-en="rank 4,501">4,501위</span></span>
+                </span>
+              </span>
             </li>
           </ol>
 
@@ -463,12 +482,12 @@
     </div>
   </footer>
 
-  <script src="/car-runner.js?v=5.15.2"></script>
-  <script src="/boat-runner.js?v=5.15.2"></script>
-  <script src="/plane.js?v=5.15.2"></script>
-  <script src="/sky-runner.js?v=5.15.2"></script>
-  <script src="/escape-scene.js?v=5.15.2"></script>
-  <script src="/scene-pull.js?v=5.15.2"></script>
-  <script src="/app.js?v=5.15.2"></script>
+  <script src="/car-runner.js?v=5.16.0"></script>
+  <script src="/boat-runner.js?v=5.16.0"></script>
+  <script src="/plane.js?v=5.16.0"></script>
+  <script src="/sky-runner.js?v=5.16.0"></script>
+  <script src="/escape-scene.js?v=5.16.0"></script>
+  <script src="/scene-pull.js?v=5.16.0"></script>
+  <script src="/app.js?v=5.16.0"></script>
 </body>
 </html>

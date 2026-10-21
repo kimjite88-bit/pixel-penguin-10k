@@ -28,14 +28,14 @@ const BOAT_CFG = {
   CHANNEL_L: 150, // the pack ice shelves either side of the lead
   CHANNEL_R: 810,
   // Everything speeds up with time, not with floes broken: cruise speed, the freeze line, the ram gauge and the
-  // ice thickness. First ramp ~110 s (the Chrome dino needs ~2 min to reach top speed), then a slower overdrive.
+  // ice thickness. First ramp ~70-80 s, then a slower overdrive that keeps going.
   CRUISE: 5.4,
   CRUISE_KNEE: 8.4,
-  MAX_CRUISE: 9.4,
+  MAX_CRUISE: 10.4,
   CRUISE_ACCEL: 0.08, // per frame towards the cruise speed
-  CRUISE_RAMP: 0.00045, // cruise speed gain per frame up to CRUISE_KNEE (~110 s)
-  CRUISE_OVERDRIVE: 0.00012,
-  SECONDS_PER_LEVEL: 11,
+  CRUISE_RAMP: 0.0007, // cruise speed gain per frame up to CRUISE_KNEE (~70 s)
+  CRUISE_OVERDRIVE: 0.0002,
+  SECONDS_PER_LEVEL: 8,
   LUNGE_SPEED: 16,
   RAM_REACH: 150, // letting go this close to a floe rams it without stopping
   BACK_OFF: 46, // how far a full charge backs the ship off (drawn; the lunge covers it again)
@@ -54,10 +54,10 @@ const BOAT_CFG = {
   LEAD_START: 320, // freeze line distance behind the stern
   LEAD_MAX: 420,
   FREEZE: 1.8, // freeze line speed at the start
-  FREEZE_RAMP: 0.0164, // per second for the first 110 s (1.8 -> 3.6)
-  FREEZE_KNEE_SEC: 110,
-  FREEZE_OVERDRIVE: 0.006, // per second after that
-  MAX_FREEZE: 4.4,
+  FREEZE_RAMP: 0.025, // per second for the first 80 s (1.8 -> 3.8)
+  FREEZE_KNEE_SEC: 80,
+  FREEZE_OVERDRIVE: 0.009, // per second after that
+  MAX_FREEZE: 5.2,
   PERFECT_LEAD: 70,
   PERFECT_BOOST: 3,
   GOOD_BOOST: 1.2,

@@ -24,12 +24,12 @@ const CAR_CFG = {
   WHEEL_BOTTOM: 57, // local y of the tyre contact point below the car origin
   SUPPORT_HALF: 34, // the car stands on whatever is under its middle +-34px
   SPEED: 9.6,
-  // Speed climbs for the whole run: 9.6 -> SPEED_KNEE in ~75 s, then slower (OVERDRIVE_ACCELERATION) up to
+  // Speed climbs for the whole run: 9.6 -> SPEED_KNEE in ~60 s, then slower (OVERDRIVE_ACCELERATION) up to
   // MAX_SPEED, so the run keeps getting harder after the first ramp (every chunk is re-checked at MAX_SPEED)
   SPEED_KNEE: 15,
-  MAX_SPEED: 16.5,
-  ACCELERATION: 0.0012,
-  OVERDRIVE_ACCELERATION: 0.0003,
+  MAX_SPEED: 18,
+  ACCELERATION: 0.0015,
+  OVERDRIVE_ACCELERATION: 0.00035,
   // Chunks stretch with speed by only this share of the speed-up, so at higher speed the next hazard comes
   // sooner (the Chrome dino does the same: gap = width * speed + a fixed minimum gap)
   CHUNK_STRETCH: 0.6,
@@ -40,8 +40,8 @@ const CAR_CFG = {
   PIT_NO_JUMP: -16, // below the rim there is nothing to jump off
   JUMP_BUFFER_MS: 140,
   ENERGY_MAX: 100,
-  // Difficulty lives in the energy numbers (course stays the same); tuned so a 67ms-accurate player averages
-  // ~2 min and a 100ms one ~50 s (scratch/car_mode/hp_estimate.py on the measured per-chunk success rates)
+  // Energy drain at the start speed; it grows with speed (carStep). With the v5.16 ramp a 67ms-accurate player
+  // averages ~1 min and a 100ms one ~40 s (scratch/car_mode/car_ramp_est.py on the measured per-chunk rates)
   ENERGY_DRAIN_PER_SEC: 1.1,
   HIT_ENERGY: 34,
   SMALL_HIT_ENERGY: 17,
@@ -436,7 +436,8 @@ function carStep(run, dt, now, rng = Math.random) {
   }
 
   // 4. Energy drains while running (CookieRun), distance, speed
-  run.energy -= (CAR_CFG.ENERGY_DRAIN_PER_SEC / 60) * dt;
+  // Faster = the engine burns more: drain grows with speed (x1.9 at 18), so the speed-up really bites
+  run.energy -= (CAR_CFG.ENERGY_DRAIN_PER_SEC / 60) * (run.speed / CAR_CFG.SPEED) * dt;
   run.distance += dx;
   run.distScore = Math.floor(run.distance * CAR_CFG.DISTANCE_SCORE);
   const accel = run.speed < CAR_CFG.SPEED_KNEE ? CAR_CFG.ACCELERATION : CAR_CFG.OVERDRIVE_ACCELERATION;
