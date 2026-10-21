@@ -147,7 +147,7 @@ function drawScene0FallingIce(ctx, now, esc) {
 // The ledge the penguin stands on, cracking under its feet
 function drawScene0HeroLedge(ctx, now, esc, quake) {
   const { x } = SCENE0_HERO;
-  const feet = SCENE0_HERO.feet + scene0FloeBob(now, quake);
+  const feet = SCENE0_HERO.feet;
   ctx.save();
   // Ripples round the floe
   ctx.strokeStyle = 'rgba(224, 242, 254, 0.7)';
@@ -214,33 +214,27 @@ function drawScene0HeroLedge(ctx, now, esc, quake) {
   }
 }
 
-// The default 2D penguin, before it gets pixelated: shaking, sweating, ! and ? popping over its head
-function scene0FloeBob(now, quake) {
-  return Math.round(Math.sin(now * 0.004) * 2 + quake * Math.sin(now * 0.09) * 4);
-}
-
+// The default 2D penguin, before it gets pixelated: sweating, ! and ? popping over its head
 function drawScene0Hero(ctx, now, esc, quake) {
   const { x, size } = SCENE0_HERO;
-  const feet = SCENE0_HERO.feet + scene0FloeBob(now, quake);
+  const feet = SCENE0_HERO.feet;
   ensureHero2DSprite();
   const sheet = MOTION_STATE.hero2DSheetLoaded ? MOTION_STATE.hero2DSheet : null;
-  const panicBeat = Math.floor(now / (190 - esc * 70)) % 2;
-  const frame = quake > 0.15 || panicBeat === 0 ? 6 : 0; // 6 = shocked with a sweat drop
-  const jitter = Math.round(Math.sin(now * 0.09) * (1.5 + esc * 1.5) + quake * Math.sin(now * 0.21) * 4);
-  const hop = quake > 0.2 ? -Math.round(Math.abs(Math.sin(now * 0.03)) * 8) : 0;
-  const top = feet - size + 6 + hop;
+  // The penguin and its floe only move with the scene's own shake: no extra jitter, hops or bobbing
+  const frame = 6; // shocked with a sweat drop
+  const top = feet - size + 6;
   ctx.save();
   if (sheet) {
     ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(sheet, frame * 256, 0, 256, 256, x - size / 2 + jitter, top, size, size);
+    ctx.drawImage(sheet, frame * 256, 0, 256, 256, x - size / 2, top, size, size);
   } else if (MOTION_STATE.hero2DLoaded && MOTION_STATE.hero2DImg) {
-    ctx.drawImage(MOTION_STATE.hero2DImg, x - size / 2 + jitter, top, size, size);
+    ctx.drawImage(MOTION_STATE.hero2DImg, x - size / 2, top, size, size);
   }
   // Sweat drops flying off
   for (let s = 0; s < 3; s++) {
     const sp = ((now * 0.0022 + s * 0.33) % 1);
     const side = s % 2 ? 1 : -1;
-    const sx = x + side * (30 + sp * 26) + jitter;
+    const sx = x + side * (30 + sp * 26);
     const sy = top + 30 - Math.sin(sp * Math.PI) * 18 + sp * 14;
     ctx.globalAlpha = 1 - sp;
     ctx.fillStyle = SCENE0_K;
@@ -253,8 +247,8 @@ function drawScene0Hero(ctx, now, esc, quake) {
   ctx.globalAlpha = 1;
   // ! and ? marks popping in turn
   const markBeat = Math.floor(now / 420) % 2;
-  drawScene0Mark(ctx, x - 34 + jitter, top + 2 - (markBeat ? 6 : 0), '!', '#fb7185');
-  drawScene0Mark(ctx, x + 36 + jitter, top + 8 - (markBeat ? 0 : 6), '?', '#fde047');
+  drawScene0Mark(ctx, x - 34, top + 2 - (markBeat ? 6 : 0), '!', '#fb7185');
+  drawScene0Mark(ctx, x + 36, top + 8 - (markBeat ? 0 : 6), '?', '#fde047');
   ctx.restore();
 }
 
