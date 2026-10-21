@@ -326,7 +326,7 @@ const PARADE_ROW_2_ITEMS = [
 
 function scrollToSection(id) {
   let tabKey = 'tab-intro';
-  if (id === 'tab-codex' || id === 'sec-explorer' || id === 'sec-traits' || id === 'sec-provenance') {
+  if (id === 'tab-codex' || id === 'sec-explorer' || id === 'sec-rarity' || id === 'sec-traits' || id === 'sec-provenance') {
     tabKey = 'tab-codex';
   } else if (id === 'tab-ranking' || id === 'sec-ranking') {
     tabKey = 'tab-ranking';
@@ -2883,6 +2883,13 @@ function initPixelMotionStudio() {
 
   // Default initial state: Guest ('기본 펭귄 · 기록 미저장') with Default Blue Penguin ('01')
   updateUfoBoardingDockUI();
+
+  document.getElementById('kpi-rarity-link')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    const rules = document.getElementById('sec-rarity');
+    if (rules) rules.open = true;
+    scrollToSection('sec-rarity');
+  });
 
   document.getElementById('btn-open-leaderboard')?.addEventListener('click', () => {
     openLeaderboardModal();

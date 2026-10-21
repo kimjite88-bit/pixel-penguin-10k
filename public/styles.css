@@ -1233,6 +1233,122 @@ body.ufo-fullscreen-lock {
   font-weight: 700;
 }
 
+/* ===== Rarity rules (codex) ===== */
+.verychat-panel.rarity-rules {
+  margin-bottom: 14px;
+  padding: 0;
+  scroll-margin-top: 110px;
+}
+
+.rarity-rules-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 18px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.rarity-rules-summary::-webkit-details-marker {
+  display: none;
+}
+
+.rarity-rules-summary::after {
+  content: '+';
+  font-size: 18px;
+  line-height: 1;
+  color: var(--text-3);
+}
+
+.rarity-rules[open] .rarity-rules-summary::after {
+  content: '−';
+}
+
+.rarity-rules[open] .rarity-rules-summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.rarity-rules-hint {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.rarity-steps {
+  margin: 0;
+  padding: 14px 18px 4px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--text-2);
+  line-height: 1.6;
+}
+
+.rarity-steps strong {
+  color: var(--text);
+  margin-right: 6px;
+}
+
+.rarity-steps code {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+
+.rarity-note {
+  display: block;
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+.rarity-tier-table {
+  width: calc(100% - 36px);
+  max-width: 640px;
+  margin: 10px 18px 0;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.rarity-tier-table th {
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-3);
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.rarity-tier-table td {
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--line);
+  color: var(--text-2);
+}
+
+.rarity-tier-table th:last-child,
+.rarity-tier-table td:last-child {
+  text-align: right;
+}
+
+.rarity-foot {
+  padding: 12px 18px 16px;
+  font-size: 13px;
+  color: var(--text-3);
+}
+
+.kpi-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--line);
+  text-underline-offset: 3px;
+}
+
 .tier-pill {
   font-size: 10.5px;
   font-weight: 700;

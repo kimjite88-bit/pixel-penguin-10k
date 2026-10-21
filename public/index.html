@@ -15,7 +15,7 @@
   <link rel="icon" type="image/png" href="/img/P4441.png?v=v322" />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
-  <link rel="stylesheet" href="/styles.css?v=5.15.0" />
+  <link rel="stylesheet" href="/styles.css?v=5.15.1" />
 </head>
 <body>
   <!-- Full-Viewport Stepped Pixel Ambient Particle Canvas -->
@@ -148,7 +148,7 @@
             </div>
             <div class="kpi-box">
               <dt class="kpi-label" data-ko="희귀도" data-en="Rarity">희귀도</dt>
-              <dd class="kpi-val">rarity.tools</dd>
+              <dd class="kpi-val"><a href="#sec-rarity" class="kpi-link" id="kpi-rarity-link">rarity.tools</a></dd>
             </div>
             <div class="kpi-box">
               <dt class="kpi-label" data-ko="로드맵·혜택" data-en="Roadmap">로드맵·혜택</dt>
@@ -239,6 +239,51 @@
             <p class="section-sub" data-ko="카드를 누르면 상세 정보, 프사 미리보기, 고해상도 저장이 있습니다." data-en="Tap a card for details, a PFP preview and a high-res download.">카드를 누르면 상세 정보, 프사 미리보기, 고해상도 저장이 있습니다.</p>
           </div>
         </div>
+
+        <details class="verychat-panel rarity-rules" id="sec-rarity">
+          <summary class="rarity-rules-summary">
+            <span class="verychat-panel-title" data-ko="희귀도·등급 기준" data-en="How rarity and tiers work">희귀도·등급 기준</span>
+            <span class="rarity-rules-hint" data-ko="rarity.tools 방식" data-en="rarity.tools method">rarity.tools 방식</span>
+          </summary>
+
+          <ol class="rarity-steps">
+            <li>
+              <strong data-ko="파츠 점수" data-en="Trait score">파츠 점수</strong>
+              <code>10,000 ÷ <span data-ko="그 파츠를 가진 마리 수" data-en="penguins with that trait">그 파츠를 가진 마리 수</span></code>
+              <span class="rarity-note" data-ko="배경, 오라, 등 소품, 깃털 스킨, 의상, 눈, 입 소품, 안경, 모자 9칸을 각각 계산합니다. 100마리만 가진 모자는 100점, 5,000마리가 가진 배경은 2점." data-en="Scored separately for 9 slots: background, aura, back, skin, clothes, eyes, mouth, eyewear and hat. A hat 100 penguins have = 100 pts, a background 5,000 have = 2 pts.">배경, 오라, 등 소품, 깃털 스킨, 의상, 눈, 입 소품, 안경, 모자 9칸을 각각 계산합니다. 100마리만 가진 모자는 100점, 5,000마리가 가진 배경은 2점.</span>
+            </li>
+            <li>
+              <strong data-ko="착용 수 점수" data-en="Trait-count score">착용 수 점수</strong>
+              <code>10,000 ÷ <span data-ko="같은 개수를 착용한 마리 수" data-en="penguins with the same count">같은 개수를 착용한 마리 수</span></code>
+              <span class="rarity-note" data-ko="오라, 등 소품, 의상, 입 소품, 안경, 모자 중 비어 있지 않은 칸 수(0~5개). 0개 120마리, 5개 211마리라 양 끝이 점수를 많이 받습니다." data-en="How many of aura, back, clothes, mouth, eyewear and hat are filled (0–5). Only 120 have 0 and 211 have 5, so both ends score high.">오라, 등 소품, 의상, 입 소품, 안경, 모자 중 비어 있지 않은 칸 수(0~5개). 0개 120마리, 5개 211마리라 양 끝이 점수를 많이 받습니다.</span>
+            </li>
+            <li>
+              <strong data-ko="순위" data-en="Rank">순위</strong>
+              <span class="rarity-note" data-ko="두 점수를 더한 총점이 높은 순으로 #1~#10,000. 총점이 같으면 번호가 작은 펭귄이 앞 순위입니다. Genesis 11마리(#0~#10)는 1~11위 고정." data-en="Total of both scores, highest first, #1 to #10,000. Equal totals are ordered by the lower token number. The 11 Genesis penguins (#0–#10) hold ranks 1–11.">두 점수를 더한 총점이 높은 순으로 #1~#10,000. 총점이 같으면 번호가 작은 펭귄이 앞 순위입니다. Genesis 11마리(#0~#10)는 1~11위 고정.</span>
+            </li>
+          </ol>
+
+          <table class="rarity-tier-table">
+            <thead>
+              <tr>
+                <th data-ko="등급" data-en="Tier">등급</th>
+                <th data-ko="순위" data-en="Rank">순위</th>
+                <th data-ko="마리" data-en="Count">마리</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td><span class="tier-pill tier-Genesis">Genesis</span></td><td>#1 – #11</td><td>11</td></tr>
+              <tr><td><span class="tier-pill tier-Mythic">Mythic</span></td><td>#12 – #50</td><td>39</td></tr>
+              <tr><td><span class="tier-pill tier-Legendary">Legendary</span></td><td>#51 – #250</td><td>200</td></tr>
+              <tr><td><span class="tier-pill tier-Epic">Epic</span></td><td>#251 – #700</td><td>450</td></tr>
+              <tr><td><span class="tier-pill tier-Rare">Rare</span></td><td>#701 – #2,000</td><td>1,300</td></tr>
+              <tr><td><span class="tier-pill tier-Uncommon">Uncommon</span></td><td>#2,001 – #4,500</td><td>2,500</td></tr>
+              <tr><td><span class="tier-pill tier-Common">Common</span></td><td>#4,501 – #10,000</td><td>5,500</td></tr>
+            </tbody>
+          </table>
+
+          <p class="rarity-foot" data-ko="등급은 점수가 아니라 순위 구간으로 나눕니다. 등급이 높아도 혜택은 없습니다." data-en="Tiers come from rank ranges, not score cut-offs. A higher tier comes with no perks.">등급은 점수가 아니라 순위 구간으로 나눕니다. 등급이 높아도 혜택은 없습니다.</p>
+        </details>
 
         <div class="explorer-toolbar">
           <div class="toolbar-top">
@@ -418,12 +463,12 @@
     </div>
   </footer>
 
-  <script src="/car-runner.js?v=5.15.0"></script>
-  <script src="/boat-runner.js?v=5.15.0"></script>
-  <script src="/plane.js?v=5.15.0"></script>
-  <script src="/sky-runner.js?v=5.15.0"></script>
-  <script src="/escape-scene.js?v=5.15.0"></script>
-  <script src="/scene-pull.js?v=5.15.0"></script>
-  <script src="/app.js?v=5.15.0"></script>
+  <script src="/car-runner.js?v=5.15.1"></script>
+  <script src="/boat-runner.js?v=5.15.1"></script>
+  <script src="/plane.js?v=5.15.1"></script>
+  <script src="/sky-runner.js?v=5.15.1"></script>
+  <script src="/escape-scene.js?v=5.15.1"></script>
+  <script src="/scene-pull.js?v=5.15.1"></script>
+  <script src="/app.js?v=5.15.1"></script>
 </body>
 </html>
