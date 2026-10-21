@@ -418,14 +418,18 @@ let ufoLeaderboardMap = new Map();
 // no seeded baseline scores.
 const CAR_LEADERBOARD_JSON_PATH = path.join(DATA_DIR, 'car_leaderboard.json');
 const carLeaderboardMap = new Map();
+// ICEBREAKER (boat) board, same rules, also starts empty
+const BOAT_LEADERBOARD_JSON_PATH = path.join(DATA_DIR, 'boat_leaderboard.json');
+const boatLeaderboardMap = new Map();
 const LEADERBOARDS = {
   ufo: { map: ufoLeaderboardMap, path: LEADERBOARD_JSON_PATH, seed: true },
   car: { map: carLeaderboardMap, path: CAR_LEADERBOARD_JSON_PATH, seed: false },
+  boat: { map: boatLeaderboardMap, path: BOAT_LEADERBOARD_JSON_PATH, seed: false },
 };
 
 // Missing or unknown game = the original UFO board, so old clients keep working
 function getLeaderboard(game) {
-  return LEADERBOARDS[game === 'car' ? 'car' : 'ufo'];
+  return LEADERBOARDS[game === 'car' || game === 'boat' ? game : 'ufo'];
 }
 
 function seedDefaultLeaderboard() {
@@ -522,6 +526,7 @@ function getFormattedLeaderboard(limit = 100, board = LEADERBOARDS.ufo) {
 
 loadLeaderboardData(LEADERBOARDS.ufo);
 loadLeaderboardData(LEADERBOARDS.car);
+loadLeaderboardData(LEADERBOARDS.boat);
 
 app.get('/api/leaderboard', (req, res) => {
   const limit = Math.min(100, Math.max(5, parseInt(req.query.limit, 10) || 100));

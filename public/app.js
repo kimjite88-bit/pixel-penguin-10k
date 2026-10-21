@@ -523,19 +523,20 @@ const INTRO_TOWN = (() => {
   };
 })();
 
-// Escape vehicle picked on the first screen: 'ufo' (drag to steer) or 'car' (auto-run, tap to jump; car-runner.js).
-// ?vehicle=car or ?vehicle=ufo forces one; otherwise the last pick on this device.
+// Escape vehicle picked on the first screen: 'ufo' = light plane (sky-runner.js), 'car' (car-runner.js) or 'boat' =
+// icebreaker (boat-runner.js). ?vehicle=car|ufo|boat forces one; otherwise the last pick on this device.
+const ESCAPE_VEHICLES = ['ufo', 'boat', 'car'];
 const VEHICLE_STORAGE_KEY = 'ppeng_vehicle';
 function readInitialVehicle() {
   try {
     const forced = new URLSearchParams(window.location.search).get('vehicle');
-    if (forced === 'car' || forced === 'ufo') return forced;
+    if (ESCAPE_VEHICLES.includes(forced)) return forced;
   } catch (e) {
     // Fall through to the saved pick
   }
   try {
     const saved = window.localStorage.getItem(VEHICLE_STORAGE_KEY);
-    if (saved === 'car' || saved === 'ufo') return saved;
+    if (ESCAPE_VEHICLES.includes(saved)) return saved;
   } catch (e) {
     // Storage blocked (private mode, some WebViews)
   }
@@ -1103,7 +1104,7 @@ function triggerScene0Liftoff() {
 }
 
 function setEscapeVehicle(vehicle) {
-  if (vehicle !== 'car' && vehicle !== 'ufo') return;
+  if (!ESCAPE_VEHICLES.includes(vehicle)) return;
   MOTION_STATE.vehicle = vehicle;
   try {
     window.localStorage.setItem(VEHICLE_STORAGE_KEY, vehicle);
@@ -1124,8 +1125,18 @@ function updateVehicleUI() {
   if (theaterEl) theaterEl.dataset.vehicle = vehicle;
   const padText = document.querySelector('#mobile-fullscreen-touchpad .touchpad-text');
   if (padText) {
-    const ko = vehicle === 'car' ? '아무 데나 누르면 점프 · 공중에서 한 번 더 = 2단 점프' : '누르고 있으면 상승 · 떼면 하강';
-    const en = vehicle === 'car' ? 'Press anywhere to jump · again in the air to double jump' : 'Hold to climb · release to dive';
+    const ko =
+      vehicle === 'car'
+        ? '아무 데나 누르면 점프 · 공중에서 한 번 더 = 2단 점프'
+        : vehicle === 'boat'
+        ? '누르고 있으면 힘이 모이고 · 떼면 들이받기'
+        : '누르고 있으면 상승 · 떼면 하강';
+    const en =
+      vehicle === 'car'
+        ? 'Press anywhere to jump · again in the air to double jump'
+        : vehicle === 'boat'
+        ? 'Hold to charge · let go to ram'
+        : 'Hold to climb · release to dive';
     padText.dataset.ko = ko;
     padText.dataset.en = en;
     padText.textContent = CURRENT_LANG === 'ko' ? ko : en;
@@ -1254,7 +1265,7 @@ async function setUfoPilotTokenId(tokenNum, triggerPfp = true, startEscape = fal
 }
 
 let RANKING_PAGE_CACHE = [];
-let RANKING_GAME = MOTION_STATE.vehicle; // which board the ranking tab shows: 'ufo' | 'car'
+let RANKING_GAME = MOTION_STATE.vehicle; // which board the ranking tab shows: 'ufo' | 'boat' | 'car'
 const RANKING_PAGE_SIZE = 10;
 let CURRENT_RANKING_PAGE = 1;
 let RANKING_TOTAL_PAGES = 10;
@@ -1419,9 +1430,9 @@ function renderRankingPageList() {
   }
 }
 
-// Switch the ranking tab between the UFO and car boards
+// Switch the ranking tab between the plane, icebreaker and car boards
 function setRankingGame(game) {
-  if (game !== 'ufo' && game !== 'car') return;
+  if (!ESCAPE_VEHICLES.includes(game)) return;
   const changed = RANKING_GAME !== game;
   RANKING_GAME = game;
   document.querySelectorAll('.rank-game-btn').forEach((btn) => {
@@ -1597,6 +1608,8 @@ function setIntroScene(sceneIdx, resetTimer = true) {
     } else if (MOTION_STATE.sceneIdx === 2) {
       if (MOTION_STATE.vehicle === 'car') {
         resetCarGame(MOTION_STATE.sceneStartTime);
+      } else if (MOTION_STATE.vehicle === 'boat') {
+        resetBoatGame(MOTION_STATE.sceneStartTime);
       } else {
         resetSkyGame(MOTION_STATE.sceneStartTime);
       }
@@ -2075,6 +2088,10 @@ function drawPixelScanHudPill(ctx, cx, y, pct) {
       ? pct < 100
         ? `CAR & PILOT PIXEL SCAN · ${pct}%`
         : 'PIXEL CAR COMPLETE!'
+      : MOTION_STATE.vehicle === 'boat'
+      ? pct < 100
+        ? `SHIP & PILOT PIXEL SCAN · ${pct}%`
+        : 'PIXEL SHIP COMPLETE!'
       : pct < 100
       ? `PLANE & PILOT PIXEL SCAN · ${pct}%`
       : 'PIXEL PLANE COMPLETE!',
@@ -2281,7 +2298,7 @@ function drawPixelOutlinedSubtitle(ctx, text, cx, cy) {
 }
 
 // Helper: Scene 1 background — the cracking ice canyon (the old picture had the UFO painted in); the parked
-// plane and car are drawn on it by drawScene0VehiclePicker
+// plane, icebreaker and car are drawn on it by drawScene0Escape (escape-scene.js)
 function drawRefScene1ChoiceBackground(ctx, now) {
   drawRefVortexBackground(ctx, now);
   ctx.save();
@@ -2715,20 +2732,23 @@ function initPixelMotionStudio() {
     if (e.target.id === 'leaderboard-modal') closeLeaderboardModal();
   });
 
-  // One-button controls for both vehicles in Scene 3 (sceneIdx === 2): the car jumps on press (again in the
-  // air = double jump), the plane climbs while held and dives when released. Space / ArrowUp / W, the mouse
+  // One-button controls for all vehicles in Scene 3 (sceneIdx === 2): the car jumps on press (again in the
+  // air = double jump), the plane climbs while held and dives when released, the icebreaker charges while held
+  // and rams on release. Space / ArrowUp / W, the mouse
   // button, a finger on the stage or on the fullscreen pad all drive the same press / release.
   const isActionKey = (code) => code === 'Space' || code === 'ArrowUp' || code === 'KeyW';
   const pressAction = () => {
     if (carGameActive()) carJumpPress(performance.now());
+    else if (boatGameActive()) boatRamPress(performance.now());
     else if (skyGameActive()) skyPress();
   };
   const releaseAction = () => {
     carJumpRelease();
+    boatRamRelease(performance.now());
     skyRelease();
   };
   window.addEventListener('keydown', (e) => {
-    if (!isActionKey(e.code) || !(carGameActive() || skyGameActive())) return;
+    if (!isActionKey(e.code) || !(carGameActive() || boatGameActive() || skyGameActive())) return;
     const activeTag = document.activeElement?.tagName;
     if (activeTag === 'INPUT' || activeTag === 'SELECT' || activeTag === 'TEXTAREA') return;
     e.preventDefault();
@@ -2771,7 +2791,7 @@ function initPixelMotionStudio() {
     const { mx, my } = getLogicalCoords(e.clientX, e.clientY);
 
     if (MOTION_STATE.sceneIdx === 0) {
-      // Tapping the UFO or the parked car picks it
+      // Tapping the plane, the icebreaker or the car picks it
       const picked = scene0VehicleAt(mx, my);
       if (picked) setEscapeVehicle(picked);
       return;
@@ -2882,15 +2902,22 @@ function initPixelMotionStudio() {
     ctx.clearRect(0, 0, 960, 540);
 
     // ========================================================================
-    // SCENE 1 (sceneIdx === 0 — Reference Image #1):
-    //   Clean empty UFO resting on crumbling Antarctica glacier cliffs (bg_ref_scene1.jpg).
+    // SCENE 1 (sceneIdx === 0): Antarctica collapsing, the default penguin picks plane / icebreaker / car
     // ========================================================================
     if (MOTION_STATE.sceneIdx === 0) {
+      drawScene0Escape(ctx, now); // escape-scene.js
+    }
+
+    // SCENE 2 for the icebreaker: shoves off through the floes as the sea starts to freeze
+    else if (MOTION_STATE.sceneIdx === 1 && MOTION_STATE.vehicle === 'boat') {
       ctx.save();
-      ctx.translate(Math.sin(now * 0.045) * 1.4, Math.cos(now * 0.04) * 1.0);
-      drawRefScene1ChoiceBackground(ctx, now);
-      drawScene0VehiclePicker(ctx, now);
+      ctx.translate(Math.sin(now * 0.065) * 2.4, Math.cos(now * 0.055) * 1.8);
+      drawRefVortexBackground(ctx, now);
+      drawBoatScene1Departure(ctx, now, p, activeSpId);
       ctx.restore();
+      if (elapsed >= curDuration) {
+        setIntroScene(2, true);
+      }
     }
 
     // SCENE 2 for the car: floors it across the cracking ice and launches off the edge
@@ -2924,6 +2951,11 @@ function initPixelMotionStudio() {
     // SCENE 3 for the car: the auto-run road (car-runner.js)
     else if (MOTION_STATE.sceneIdx === 2 && MOTION_STATE.vehicle === 'car') {
       drawCarRunnerFrame(ctx, now, activeSpId);
+    }
+
+    // SCENE 3 for the icebreaker: ramming through the pack ice (boat-runner.js)
+    else if (MOTION_STATE.sceneIdx === 2 && MOTION_STATE.vehicle === 'boat') {
+      drawBoatRunnerFrame(ctx, now, activeSpId);
     }
 
     // SCENE 3 for the plane: the one-touch flying run (sky-runner.js)
@@ -2987,6 +3019,7 @@ function initPixelMotionStudio() {
 
       // The lifted car's tyres hang lower than the plane's skis, so its scan runs further down
       const isCar = MOTION_STATE.vehicle === 'car';
+      const isBoat = MOTION_STATE.vehicle === 'boat';
       const carScale = 1.3;
       const planeScanScale = 1.02; // the plane is long: at this size it stays inside the 360px scan window
       const topEdge = ufoY - 120;
@@ -3009,6 +3042,8 @@ function initPixelMotionStudio() {
             beam: false,
             wheelAngle: now * 0.03,
           });
+        } else if (isBoat) {
+          drawBoatWithPilot(ctx, ufoX, ufoY, ufoTilt, now, { scale: 1.0, spId: activeSpId, pixelMode: true, isImpactBlink: pixelBlinkDuringBeam });
         } else {
           drawPixelPlaneWithPilot(ctx, ufoX, ufoY, ufoTilt, now, {
             scale: planeScanScale,
@@ -3020,7 +3055,14 @@ function initPixelMotionStudio() {
       }
 
       // 2. Bottom Portion (Below Laser Scan Line): GIANT 2D UFO + 2D PENGUIN PILOT
-      if (scanRatio < 1 && isCar) {
+      if (scanRatio < 1 && isBoat) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(ufoX - 180, scanY, 360, botEdge - scanY + 50);
+        ctx.clip();
+        drawBoatWithPilot(ctx, ufoX, ufoY, ufoTilt, now, { scale: 1.0, spId: activeSpId, isImpactBlink: subP < 0.09 });
+        ctx.restore();
+      } else if (scanRatio < 1 && isCar) {
         ctx.save();
         ctx.beginPath();
         ctx.rect(ufoX - 180, scanY, 360, botEdge - scanY + 50);
@@ -3102,16 +3144,24 @@ function initPixelMotionStudio() {
         Math.max(64, topEdge - 6),
         pct < 78
           ? CURRENT_LANG === 'ko'
-            ? isCar
+            ? isBoat
+              ? '어어 배가 통째로 하늘로 빨려 올라가!! 쇄빙선까지 도트 찍히잖아?!!'
+              : isCar
               ? '어어 차가 하늘로 빨려 올라가!! 내 차까지 도트 찍히잖아?!!'
               : '으악 내 뽀샤시한 몸이!! 강제로 도트 찍히고 있잖아?!!'
+            : isBoat
+            ? 'The whole ship is getting sucked up!! Even the icebreaker is going pixel?!!'
             : isCar
             ? 'The car is getting sucked up!! Even my ride is going pixel?!!'
             : 'Aaagh my smooth body!! I am being forcibly pixelated?!!'
           : CURRENT_LANG === 'ko'
-          ? isCar
+          ? isBoat
+            ? '강제 도트화 완료... 어 잠깐 여기 바다가 없잖아 떨어진다아악!!'
+            : isCar
             ? '강제 도트화 완료... 어 잠깐 바퀴가 허공에서 헛돈다 떨어진다아악!!'
             : '강제 도트화 완료... 어어 잠깐만 계기판 왜 꺼져 추락한다아악!!'
+          : isBoat
+          ? 'Pixelation complete... Wait, there is no sea up here?! FALLING!!'
           : isCar
           ? 'Pixelation complete... Wait, the wheels are spinning on air?! FALLING!!'
           : 'Pixelation complete... Wait why did the engine die?! CRASHING!!',
@@ -3136,8 +3186,11 @@ function initPixelMotionStudio() {
 
       // 1. Top Arcade Landing Score & Leaderboard Banner (Clickable to open #tab-ranking)
       const isCarRun = MOTION_STATE.vehicle === 'car';
-      const runResult = isCarRun ? CAR_GAME : UFO_GAME; // score, best and rank of the run just played
-      const finalPts = runResult.lastFinalScore || (isCarRun ? 0 : UFO_GAME.score) || 3450;
+      const isBoatRun = MOTION_STATE.vehicle === 'boat';
+      const runResult = isCarRun ? CAR_GAME : isBoatRun ? BOAT_GAME : UFO_GAME; // score, best and rank of the run just played
+      const finalPts = runResult.lastFinalScore || (isCarRun || isBoatRun ? 0 : UFO_GAME.score) || 3450;
+      const rideKo = isCarRun ? '차' : isBoatRun ? '배' : '비행기';
+      const rideEn = isCarRun ? 'car' : isBoatRun ? 'ship' : 'plane';
       const banW = 560;
       const banH = 32;
       const banX = 480 - banW / 2;
@@ -3253,7 +3306,8 @@ function initPixelMotionStudio() {
         const ufoLandX = 228;
         const ufoGroundY = 418;
         // Car tyres (+57 x 1.3) and plane skis (+66 x 1.0) end on the same walkway line (y = 450)
-        const landY = isCarRun ? ufoGroundY - 42 : ufoGroundY - 34;
+        // The ship's keel (+48 x 0.9) ends on the same line
+        const landY = isCarRun ? ufoGroundY - 42 : isBoatRun ? ufoGroundY - 11 : ufoGroundY - 34;
         const ufoCurY =
           crashP < 1
             ? Math.round(90 + crashP * crashP * (landY - 90))
@@ -3280,7 +3334,16 @@ function initPixelMotionStudio() {
           ctx.restore();
         }
 
-        if (isCarRun) {
+        if (isBoatRun) {
+          // Beached on the walkway, listing to one side; the pilot is still on the foredeck
+          drawBoatWithPilot(ctx, ufoLandX + 10, ufoCurY, crashP < 1 ? 0.16 : 0.06, now, {
+            scale: 0.9,
+            spId: activeSpId,
+            pixelMode: true,
+            isShocked: crashP < 1,
+            smokeOn: true,
+          });
+        } else if (isCarRun) {
           // No hatch to open: the pilot pops up out of the seat once the car lands
           drawPixelCarWithPilot(ctx, ufoLandX, ufoCurY, ufoCrashTilt, now, {
             scale: 1.3,
@@ -3356,8 +3419,8 @@ function initPixelMotionStudio() {
             speaker1.fx + spriteSize / 2 + 12,
             speaker1.fy - 4,
             CURRENT_LANG === 'ko'
-              ? `ㅋㅋㅋ ${isCarRun ? '차' : '비행기'}도 안 타고 날로 먹었네?! 어쨌든 ${INTRO_TOWN.ko} 환영한다!!`
-              : `Haha you skipped the ${isCarRun ? 'car' : 'plane'} ride?! Welcome to ${INTRO_TOWN.en} anyway!!`,
+              ? `ㅋㅋㅋ ${rideKo}도 안 타고 날로 먹었네?! 어쨌든 ${INTRO_TOWN.ko} 환영한다!!`
+              : `Haha you skipped the ${rideEn} ride?! Welcome to ${INTRO_TOWN.en} anyway!!`,
             '#ff4d6d',
             now
           );
@@ -3380,9 +3443,13 @@ function initPixelMotionStudio() {
           256,
           306,
           CURRENT_LANG === 'ko'
-            ? isCarRun
+            ? isBoatRun
+              ? '쿠과광—!! 어우 내 허리... 배는 땅바닥에 처박혔는데 도착은 성공이다!!'
+              : isCarRun
               ? '쿠과광—!! 어우 내 허리... 차는 폐차각인데 도착은 성공이다!!'
               : '쿠과광—!! 어우 내 허리... 비행기는 폐기각인데 불시착은 성공이다!!'
+            : isBoatRun
+            ? 'CRAAASH—!! Ow my back... the ship ran aground on dry land, but we made it!!'
             : isCarRun
             ? 'CRAAASH—!! Ow my back... the car is totaled, but we made it!!'
             : 'CRAAASH—!! Ow my back... the plane is totaled, but we made it!!',
@@ -3399,8 +3466,8 @@ function initPixelMotionStudio() {
             speaker1.fx + spriteSize / 2 + 14,
             speaker1.fy - 4,
             CURRENT_LANG === 'ko'
-              ? `우와 ${isCarRun ? '하늘에서 차가 떨어졌어' : '비행기 불시착했어'} ㅋㅋ 살아있냐?! ${INTRO_TOWN.koPixel}에 온 걸 환영해!!`
-              : `Whoa ${isCarRun ? 'a car fell from the sky' : 'your plane crash-landed'} haha—you alive?! Welcome to ${INTRO_TOWN.en}!!`,
+              ? `우와 ${isCarRun ? '하늘에서 차가 떨어졌어' : isBoatRun ? '하늘에서 배가 떨어졌어' : '비행기 불시착했어'} ㅋㅋ 살아있냐?! ${INTRO_TOWN.koPixel}에 온 걸 환영해!!`
+              : `Whoa ${isCarRun ? 'a car fell from the sky' : isBoatRun ? 'a ship fell from the sky' : 'your plane crash-landed'} haha—you alive?! Welcome to ${INTRO_TOWN.en}!!`,
             '#ff4d6d',
             now
           );
@@ -3421,8 +3488,8 @@ function initPixelMotionStudio() {
             262,
             306,
             CURRENT_LANG === 'ko'
-              ? `${isCarRun ? '차' : '비행기'} 수리비도 안 주네... 에라 모르겠다 10,000 도감도나 구경 가자!!`
-              : `Not even paying for ${isCarRun ? 'car' : 'plane'} repairs... Whatever, let us check the 10K Codex!!`,
+              ? `${rideKo} 수리비도 안 주네... 에라 모르겠다 10,000 도감도나 구경 가자!!`
+              : `Not even paying for ${rideEn} repairs... Whatever, let us check the 10K Codex!!`,
             '#38bdf8',
             now
           );

@@ -1,0 +1,506 @@
+// ============================================================================
+// SCENE 1 — "남극이 무너진다, 뭐 타고 도망가?" — the escape picker (plane / icebreaker / car)
+//
+// Layout follows the reference the owner gave: the plane on the igloo plateau (left), the icebreaker in an
+// open lead in the middle, the car on the right floe, the vortex beam top right, the default 2D penguin (before
+// it gets pixelated) in front, panicking. The longer the player waits, the worse it gets (an "Evil Egg": the
+// cost of doing nothing grows in visible stages instead of a win/lose timer — Yu-kai Chou, Octalysis #115):
+// quakes come closer together and harder, cracks spread and stay (permanence, Vlambeer's "Art of Screenshake"),
+// ice drops off the cliffs, the red alarm pulses brighter, and the penguin yells at you to pick. Each quake is a
+// short burst, not a constant wobble, so the picture stays readable between them.
+// ============================================================================
+const SCENE0_UFO_SPOT = { x: 300, y: 296 - 66 * 0.74, tilt: 0, scale: 0.74 }; // plane ('ufo' key kept for saved picks + the board)
+const SCENE0_BOAT_SPOT = { x: 565, y: 352 - 34 * 0.44, tilt: 0, scale: 0.44 }; // waterline in the lead at y = 352
+const SCENE0_CAR_SPOT = { x: 880, y: 366 - 57 * 0.64, tilt: 0, scale: 0.64 };
+// The penguin stands front and centre on a floe in the glowing crevasse; the start card sits bottom-left over the cliff
+const SCENE0_HERO = { x: 590, feet: 496, size: 140 };
+const SCENE0_K = '#0b1020';
+
+const SCENE0_ACCENT = { ufo: '#fb923c', boat: '#38bdf8', car: '#f472b6' };
+
+// 0 at the start, 1 after ~24 s of waiting
+function scene0Escalation(now) {
+  return Math.min(1, Math.max(0, (now - MOTION_STATE.sceneStartTime) / 24000));
+}
+
+// Quakes: a 480ms burst every 3.4 s at first, every 1.7 s when it is at its worst. Returns 0..1 strength.
+function scene0Quake(now) {
+  const t = now - MOTION_STATE.sceneStartTime;
+  if (t < 900) return 0;
+  const esc = scene0Escalation(now);
+  const period = 3400 - esc * 1700;
+  const ph = (t - 900) % period;
+  return ph < 480 ? Math.sin((ph / 480) * Math.PI) * (0.55 + esc * 0.45) : 0;
+}
+
+function scene0Hash(n) {
+  const x = Math.sin(n * 91.7 + 17.3) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+// Zigzag crack from (x, y) heading at angle a; grows with esc and never closes again
+function drawScene0Crack(ctx, x, y, a, len, seed, grow) {
+  const n = 7;
+  const shown = Math.max(0, Math.min(1, grow)) * len;
+  if (shown < 4) return;
+  ctx.beginPath();
+  ctx.moveTo(x, y);
+  let px = x;
+  let py = y;
+  for (let i = 1; i <= n; i++) {
+    const d = (shown * i) / n;
+    const off = (scene0Hash(seed + i) - 0.5) * 16;
+    px = x + Math.cos(a) * d - Math.sin(a) * off;
+    py = y + Math.sin(a) * d * 0.45 + Math.cos(a) * off * 0.45;
+    ctx.lineTo(px, py);
+  }
+  ctx.strokeStyle = SCENE0_K;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(103, 232, 249, 0.85)';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+}
+
+// Open lead the icebreaker sits in, with floes knocking about
+function drawScene0Lead(ctx, now, quake) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(445, 341);
+  ctx.lineTo(535, 336);
+  ctx.lineTo(675, 339);
+  ctx.lineTo(703, 352);
+  ctx.lineTo(687, 368);
+  ctx.lineTo(575, 374);
+  ctx.lineTo(455, 370);
+  ctx.lineTo(433, 356);
+  ctx.closePath();
+  ctx.fillStyle = '#0e4f6e';
+  ctx.fill();
+  ctx.strokeStyle = '#e8f4fb';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+  ctx.fillStyle = 'rgba(186, 230, 253, 0.45)';
+  for (let i = 0; i < 9; i++) {
+    const wx = 453 + ((i * 37 + now * 0.03) % 230);
+    ctx.fillRect(Math.round(wx), 346 + (i % 3) * 8, 12, 2);
+  }
+  // Floes bumping in the lead
+  const floes = [
+    [467, 358, 22],
+    [640, 344, 18],
+    [676, 360, 14],
+  ];
+  floes.forEach(([fx, fy, w], i) => {
+    const bob = Math.sin(now * 0.006 + i * 2) * 1.5 + quake * Math.sin(now * 0.08 + i) * 3;
+    ctx.fillStyle = SCENE0_K;
+    ctx.fillRect(fx - w / 2 - 1, fy - 4 + bob - 1, w + 2, 9);
+    ctx.fillStyle = '#eaf6fd';
+    ctx.fillRect(fx - w / 2, fy - 4 + bob, w, 5);
+    ctx.fillStyle = '#93c5fd';
+    ctx.fillRect(fx - w / 2, fy + 1 + bob, w, 2);
+  });
+  ctx.restore();
+}
+
+// Ice blocks breaking off the plateau cliff and the right shelf, splashing into the water below
+function drawScene0FallingIce(ctx, now, esc) {
+  const t = now - MOTION_STATE.sceneStartTime;
+  const count = 2 + Math.round(esc * 4);
+  ctx.save();
+  for (let i = 0; i < count; i++) {
+    const period = 2600 - esc * 900 + i * 170;
+    const ph = ((t + i * 977) % period) / period;
+    const left = i % 2 === 0;
+    const x0 = left ? 330 + scene0Hash(i) * 100 : 760 + scene0Hash(i + 9) * 70;
+    const y0 = left ? 300 : 372;
+    const y1 = left ? 460 : 500;
+    if (ph < 0.72) {
+      const fp = ph / 0.72;
+      const y = y0 + (y1 - y0) * fp * fp;
+      const sz = 8 + Math.round(scene0Hash(i + 4) * 8);
+      ctx.save();
+      ctx.translate(x0 + fp * (left ? 10 : -6), y);
+      ctx.rotate(fp * 3 * (left ? 1 : -1));
+      ctx.fillStyle = SCENE0_K;
+      ctx.fillRect(-sz / 2 - 1, -sz / 2 - 1, sz + 2, sz + 2);
+      ctx.fillStyle = '#e0f2fe';
+      ctx.fillRect(-sz / 2, -sz / 2, sz, sz);
+      ctx.fillStyle = '#7dd3fc';
+      ctx.fillRect(-sz / 2, sz / 4, sz, sz / 4);
+      ctx.restore();
+    } else {
+      const sp = (ph - 0.72) / 0.28;
+      ctx.globalAlpha = 1 - sp;
+      ctx.fillStyle = '#f0f9ff';
+      for (let k = 0; k < 5; k++) {
+        const dx = (k - 2) * (6 + sp * 10);
+        const dy = -Math.sin(sp * Math.PI) * (10 + (k % 3) * 6);
+        ctx.fillRect(Math.round(x0 + dx), Math.round(y1 + dy), 4, 4);
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+  ctx.restore();
+}
+
+// The ledge the penguin stands on, cracking under its feet
+function drawScene0HeroLedge(ctx, now, esc, quake) {
+  const { x } = SCENE0_HERO;
+  const feet = SCENE0_HERO.feet + scene0FloeBob(now, quake);
+  ctx.save();
+  // Ripples round the floe
+  ctx.strokeStyle = 'rgba(224, 242, 254, 0.7)';
+  ctx.lineWidth = 2;
+  for (let r = 0; r < 2; r++) {
+    const rp = ((now * 0.0012 + r * 0.5) % 1);
+    ctx.globalAlpha = 1 - rp;
+    ctx.beginPath();
+    ctx.ellipse(x, feet + 16, 96 + rp * 40, 10 + rp * 6, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  // A thick floe: top face, then its blue side, outlined
+  const top = [
+    [x - 104, feet + 2],
+    [x - 70, feet - 12],
+    [x + 58, feet - 14],
+    [x + 106, feet],
+    [x + 76, feet + 14],
+    [x - 80, feet + 16],
+  ];
+  const path = (dy) => {
+    ctx.beginPath();
+    top.forEach(([px, py], i) => (i ? ctx.lineTo(px, py + dy) : ctx.moveTo(px, py + dy)));
+    ctx.closePath();
+  };
+  path(18);
+  ctx.fillStyle = '#5fb3d9';
+  ctx.fill();
+  ctx.fillRect(x - 104, feet + 2, 210, 18);
+  ctx.fillStyle = '#9bd1ea';
+  ctx.fillRect(x - 100, feet + 4, 202, 8);
+  path(0);
+  ctx.fillStyle = '#f1f8fc';
+  ctx.fill();
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = SCENE0_K;
+  ctx.stroke();
+  ctx.strokeRect(x - 104, feet + 2, 0, 18);
+  ctx.beginPath();
+  ctx.moveTo(x - 104, feet + 2);
+  ctx.lineTo(x - 104, feet + 20);
+  ctx.lineTo(x - 80, feet + 34);
+  ctx.lineTo(x + 76, feet + 32);
+  ctx.lineTo(x + 106, feet + 18);
+  ctx.lineTo(x + 106, feet);
+  ctx.stroke();
+  // Shadow under the feet
+  ctx.fillStyle = 'rgba(11, 16, 32, 0.22)';
+  ctx.beginPath();
+  ctx.ellipse(x, feet + 1, 40, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  drawScene0Crack(ctx, x + 6, feet + 2, -0.2, 70, 11, 0.25 + esc * 0.9);
+  drawScene0Crack(ctx, x - 4, feet + 3, Math.PI + 0.25, 64, 23, esc * 1.2 - 0.1);
+  if (quake > 0.3) {
+    // Chips knocked off the ledge edge
+    ctx.fillStyle = '#e0f2fe';
+    for (let k = 0; k < 4; k++) {
+      const cx = x - 70 + k * 46 + Math.sin(now * 0.05 + k) * 3;
+      const cy = feet + 26 + ((now * 0.12 + k * 13) % 26);
+      ctx.fillRect(Math.round(cx), Math.round(cy), 4, 4);
+    }
+  }
+}
+
+// The default 2D penguin, before it gets pixelated: shaking, sweating, ! and ? popping over its head
+function scene0FloeBob(now, quake) {
+  return Math.round(Math.sin(now * 0.004) * 2 + quake * Math.sin(now * 0.09) * 4);
+}
+
+function drawScene0Hero(ctx, now, esc, quake) {
+  const { x, size } = SCENE0_HERO;
+  const feet = SCENE0_HERO.feet + scene0FloeBob(now, quake);
+  ensureHero2DSprite();
+  const sheet = MOTION_STATE.hero2DSheetLoaded ? MOTION_STATE.hero2DSheet : null;
+  const panicBeat = Math.floor(now / (190 - esc * 70)) % 2;
+  const frame = quake > 0.15 || panicBeat === 0 ? 6 : 0; // 6 = shocked with a sweat drop
+  const jitter = Math.round(Math.sin(now * 0.09) * (1.5 + esc * 1.5) + quake * Math.sin(now * 0.21) * 4);
+  const hop = quake > 0.2 ? -Math.round(Math.abs(Math.sin(now * 0.03)) * 8) : 0;
+  const top = feet - size + 6 + hop;
+  ctx.save();
+  if (sheet) {
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(sheet, frame * 256, 0, 256, 256, x - size / 2 + jitter, top, size, size);
+  } else if (MOTION_STATE.hero2DLoaded && MOTION_STATE.hero2DImg) {
+    ctx.drawImage(MOTION_STATE.hero2DImg, x - size / 2 + jitter, top, size, size);
+  }
+  // Sweat drops flying off
+  for (let s = 0; s < 3; s++) {
+    const sp = ((now * 0.0022 + s * 0.33) % 1);
+    const side = s % 2 ? 1 : -1;
+    const sx = x + side * (30 + sp * 26) + jitter;
+    const sy = top + 30 - Math.sin(sp * Math.PI) * 18 + sp * 14;
+    ctx.globalAlpha = 1 - sp;
+    ctx.fillStyle = SCENE0_K;
+    ctx.fillRect(Math.round(sx) - 1, Math.round(sy) - 1, 7, 9);
+    ctx.fillStyle = '#7dd3fc';
+    ctx.fillRect(Math.round(sx), Math.round(sy), 5, 7);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(Math.round(sx) + 1, Math.round(sy) + 1, 2, 2);
+  }
+  ctx.globalAlpha = 1;
+  // ! and ? marks popping in turn
+  const markBeat = Math.floor(now / 420) % 2;
+  drawScene0Mark(ctx, x - 34 + jitter, top + 2 - (markBeat ? 6 : 0), '!', '#fb7185');
+  drawScene0Mark(ctx, x + 36 + jitter, top + 8 - (markBeat ? 0 : 6), '?', '#fde047');
+  ctx.restore();
+}
+
+function drawScene0Mark(ctx, x, y, ch, col) {
+  ctx.save();
+  ctx.font = '900 26px "Pretendard", "Malgun Gothic", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.lineWidth = 6;
+  ctx.strokeStyle = SCENE0_K;
+  ctx.strokeText(ch, x, y);
+  ctx.fillStyle = col;
+  ctx.fillText(ch, x, y);
+  ctx.restore();
+}
+
+// Hazard banner at the top: "남극 붕괴 경보" with stripes and a stage counter that climbs while you wait
+function drawScene0Alarm(ctx, now, esc) {
+  const ko = CURRENT_LANG === 'ko';
+  const on = Math.floor(now / (520 - esc * 260)) % 2 === 0;
+  const text = ko ? '남극 붕괴 경보' : 'ANTARCTIC COLLAPSE ALERT';
+  const level = 1 + Math.min(3, Math.floor(esc * 4));
+  const sub = ko ? `${level}단계` : `LV.${level}`;
+  ctx.save();
+  ctx.font = '900 26px "Pretendard", "Malgun Gothic", sans-serif';
+  const tw = Math.ceil(ctx.measureText(text).width);
+  ctx.font = '900 15px "Pretendard", "Malgun Gothic", sans-serif';
+  const sw = Math.ceil(ctx.measureText(sub).width) + 16;
+  const w = tw + sw + 92;
+  const h = 46;
+  const bx = Math.round(480 - w / 2);
+  const by = 12;
+  ctx.fillStyle = SCENE0_K;
+  ctx.fillRect(bx - 3, by - 3, w + 6, h + 6);
+  // Stripes on both ends
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(bx, by, w, h);
+  ctx.clip();
+  ctx.fillStyle = on ? '#dc2626' : '#991b1b';
+  ctx.fillRect(bx, by, w, h);
+  const shift = Math.floor(now / 60) % 20;
+  for (const ex of [bx, bx + w - 34]) {
+    ctx.fillStyle = '#facc15';
+    ctx.fillRect(ex, by, 34, h);
+    ctx.fillStyle = SCENE0_K;
+    for (let k = -2; k < 5; k++) {
+      ctx.beginPath();
+      const sx = ex + k * 20 + shift;
+      ctx.moveTo(sx, by + h);
+      ctx.lineTo(sx + 10, by + h);
+      ctx.lineTo(sx + 10 + h * 0.6, by);
+      ctx.lineTo(sx + h * 0.6, by);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+  ctx.restore();
+  ctx.textBaseline = 'middle';
+  ctx.textAlign = 'left';
+  ctx.font = '900 26px "Pretendard", "Malgun Gothic", sans-serif';
+  ctx.fillStyle = SCENE0_K;
+  ctx.fillText(text, bx + 46 + 2, by + h / 2 + 3);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(text, bx + 46, by + h / 2 + 1);
+  const px = bx + 46 + tw + 10;
+  ctx.fillStyle = '#facc15';
+  ctx.fillRect(px, by + 9, sw, h - 18);
+  ctx.fillStyle = SCENE0_K;
+  ctx.font = '900 15px "Pretendard", "Malgun Gothic", sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(sub, px + sw / 2, by + h / 2 + 1);
+  ctx.restore();
+}
+
+// Red alarm vignette, brighter with every stage and on each quake
+function drawScene0Vignette(ctx, now, esc, quake) {
+  const pulse = 0.5 + 0.5 * Math.sin(now * (0.006 + esc * 0.006));
+  const a = (0.1 + esc * 0.16) * (0.55 + 0.45 * pulse) + quake * 0.14;
+  const g = ctx.createRadialGradient(480, 270, 200, 480, 270, 600);
+  g.addColorStop(0, 'rgba(220, 38, 38, 0)');
+  g.addColorStop(1, `rgba(220, 38, 38, ${a.toFixed(3)})`);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 960, 540);
+}
+
+// Snow driven sideways, faster as it gets worse
+function drawScene0Blizzard(ctx, now, esc) {
+  ctx.save();
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+  const n = 26 + Math.round(esc * 22);
+  const speed = 0.12 + esc * 0.2;
+  for (let s = 0; s < n; s++) {
+    const sx = 960 - ((s * 71 + now * speed * (1 + (s % 3) * 0.4)) % 1000);
+    const sy = (s * 43 + now * 0.06 * (1 + (s % 2))) % 540;
+    const len = 2 + (s % 3) + esc * 8;
+    ctx.fillRect(Math.round(sx), Math.round(sy), Math.round(len), 2);
+  }
+  ctx.restore();
+}
+
+// Bouncing label + arrow over the chosen vehicle
+function drawScene0Marker(ctx, now, target, label, accent) {
+  const bounce = Math.floor(now / 260) % 2 === 0 ? 0 : -4;
+  ctx.save();
+  ctx.font = '900 19px "Pretendard", "Malgun Gothic", sans-serif';
+  const lw = Math.ceil(ctx.measureText(label).width) + 24;
+  const lx = Math.round(target.x - lw / 2);
+  const ly = Math.round(target.y - 44 + bounce);
+  ctx.fillStyle = SCENE0_K;
+  ctx.fillRect(lx - 2, ly - 2, lw + 4, 32);
+  ctx.fillStyle = accent;
+  ctx.fillRect(lx, ly, lw, 28);
+  ctx.fillStyle = SCENE0_K;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(label, target.x, ly + 15);
+  const ax = Math.round(target.x);
+  const ay = ly + 32;
+  ctx.fillRect(ax - 8, ay, 16, 4);
+  ctx.fillRect(ax - 6, ay + 4, 12, 4);
+  ctx.fillRect(ax - 4, ay + 8, 8, 4);
+  ctx.fillStyle = accent;
+  ctx.fillRect(ax - 6, ay, 12, 2);
+  ctx.fillRect(ax - 4, ay + 4, 8, 2);
+  ctx.fillRect(ax - 2, ay + 8, 4, 2);
+  ctx.restore();
+}
+
+function drawScene0Escape(ctx, now) {
+  const esc = scene0Escalation(now);
+  const quake = scene0Quake(now);
+  const vehicle = MOTION_STATE.vehicle;
+  const ko = CURRENT_LANG === 'ko';
+
+  ctx.save();
+  // Background drifts gently; each quake is a short hard shake on top
+  const mag = 1.2 + quake * (6 + esc * 6);
+  ctx.translate(Math.sin(now * 0.045) * 1.2 + (quake ? (Math.random() - 0.5) * mag : 0), Math.cos(now * 0.04) * 0.9 + (quake ? (Math.random() - 0.5) * mag * 0.7 : 0));
+  drawRefScene1ChoiceBackground(ctx, now);
+
+  // Cracks across the plateau under the plane and the floe under the car: they only ever grow
+  drawScene0Crack(ctx, 250, 302, 0.05, 150, 3, 0.2 + esc);
+  drawScene0Crack(ctx, 400, 306, Math.PI - 0.4, 90, 7, esc * 1.3 - 0.2);
+  drawScene0Crack(ctx, 820, 372, Math.PI + 0.1, 120, 31, 0.15 + esc);
+  drawScene0Crack(ctx, 900, 376, 0.3, 70, 41, esc * 1.2 - 0.3);
+  drawScene0FallingIce(ctx, now, esc);
+  drawScene0Lead(ctx, now, quake);
+
+  // Vehicles: the chosen one is warmed up (prop turning, smoke up, headlights on)
+  const plane = SCENE0_UFO_SPOT;
+  const boat = SCENE0_BOAT_SPOT;
+  const car = SCENE0_CAR_SPOT;
+  const spot = vehicle === 'car' ? car : vehicle === 'boat' ? boat : plane;
+  const accent = SCENE0_ACCENT[vehicle] || SCENE0_ACCENT.ufo;
+  const pulse = 0.35 + 0.3 * Math.sin(now * 0.01);
+  const glowX = spot.x - (vehicle === 'ufo' ? 20 : 0);
+  const g = ctx.createRadialGradient(glowX, spot.y, 6, glowX, spot.y, 130);
+  g.addColorStop(0, accent + Math.round(pulse * 140).toString(16).padStart(2, '0'));
+  g.addColorStop(1, 'rgba(255, 255, 255, 0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(glowX - 160, spot.y - 110, 320, 220);
+
+  ctx.fillStyle = 'rgba(9, 13, 26, 0.28)';
+  ctx.beginPath();
+  ctx.ellipse(plane.x + 20 * plane.scale, plane.y + 66 * plane.scale, 60 * plane.scale, 5, 0, 0, Math.PI * 2);
+  ctx.ellipse(car.x, car.y + 57 * car.scale, 86 * car.scale, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+  const rattle = (k) => (quake ? Math.round(Math.sin(now * 0.12 + k) * 2 * quake) : 0);
+  drawPlaneWithPilot(ctx, plane.x, plane.y + rattle(1), plane.tilt, now, { scale: plane.scale, withPilot: false, propSpin: vehicle === 'ufo' });
+  drawBoatWithPilot(ctx, boat.x, boat.y + Math.round(Math.sin(now * 0.004) * 1.5) + rattle(2), Math.sin(now * 0.003) * 0.02 + quake * 0.03, now, {
+    scale: boat.scale,
+    withPilot: false,
+    smokeOn: vehicle === 'boat',
+  });
+  drawCarWithPilot(ctx, car.x, car.y + rattle(3), car.tilt, now, { scale: car.scale, withPilot: false, lightsOn: vehicle === 'car', wheelAngle: 0 });
+
+  // The penguin, front and centre, on a cracking ledge
+  drawScene0HeroLedge(ctx, now, esc, quake);
+  drawScene0Hero(ctx, now, esc, quake);
+  ctx.restore();
+
+  // Overlays that do not shake with the world
+  drawScene0Blizzard(ctx, now, esc);
+  drawScene0Vignette(ctx, now, esc, quake);
+  drawScene0Alarm(ctx, now, esc);
+
+  const target =
+    vehicle === 'car'
+      ? { x: car.x - 10, y: car.y - 60 * car.scale - 6 }
+      : vehicle === 'boat'
+      ? { x: boat.x - 30, y: boat.y - 116 * boat.scale - 4 }
+      : { x: plane.x - 20, y: plane.y - 46 * plane.scale - 4 };
+  const label = vehicle === 'car' ? (ko ? '자동차' : 'CAR') : vehicle === 'boat' ? (ko ? '쇄빙선' : 'ICEBREAKER') : ko ? '경비행기' : 'PLANE';
+  drawScene0Marker(ctx, now, target, label, accent);
+
+  // The penguin's line gets more desperate stage by stage
+  const lines = ko
+    ? [['으악 남극이 무너진다!!', '뭐 타고 도망가지?!'], ['발밑까지 갈라진다!!', '빨리 하나 골라!!'], ['진짜 끝장이야!!', '아무거나 타!! 지금!!']]
+    : [['Antarctica is falling apart!!', 'What do I ride out?!'], ['It is cracking under me!!', 'Pick one, quick!!'], ['This is the end!!', 'Anything!! NOW!!']];
+  const stage = Math.min(2, Math.floor(esc * 3));
+  drawScene0Shout(ctx, now, lines[stage], stage === 2 ? '#fb7185' : stage === 1 ? '#fde047' : '#38bdf8', quake);
+}
+
+// Big two-line shout right of the penguin's head (the shared speech bubble is too small to read on a phone);
+// it never covers the icebreaker behind the penguin
+function drawScene0Shout(ctx, now, lines, accent, quake) {
+  ctx.save();
+  ctx.font = '900 21px "Pretendard", "Malgun Gothic", sans-serif';
+  const tw = Math.max(...lines.map((l) => Math.ceil(ctx.measureText(l).width)));
+  const bw = tw + 30;
+  const bh = 66;
+  const bob = Math.floor(now / 250) % 2 === 0 ? 0 : -2;
+  const jx = quake ? Math.round((Math.random() - 0.5) * 6 * quake) : 0;
+  const bx = Math.min(960 - bw - 12, SCENE0_HERO.x + 84) + jx;
+  const by = SCENE0_HERO.feet - SCENE0_HERO.size + 6 + bob;
+  ctx.fillStyle = 'rgba(9, 13, 26, 0.42)';
+  ctx.fillRect(bx + 5, by + 5, bw, bh);
+  ctx.fillStyle = SCENE0_K;
+  ctx.fillRect(bx - 3, by - 3, bw + 6, bh + 6);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(bx, by, bw, bh);
+  ctx.fillStyle = accent;
+  ctx.fillRect(bx, by, bw, 5);
+  // Tail down-left towards the penguin's beak
+  ctx.fillStyle = SCENE0_K;
+  ctx.fillRect(bx + 4, by + bh, 18, 6);
+  ctx.fillRect(bx - 2, by + bh + 6, 12, 6);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(bx + 7, by + bh - 2, 12, 5);
+  ctx.fillRect(bx + 1, by + bh + 4, 6, 5);
+  ctx.fillStyle = SCENE0_K;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(lines[0], bx + 15, by + 23);
+  ctx.fillText(lines[1], bx + 15, by + 49);
+  ctx.restore();
+}
+
+// Which vehicle a click on the scene 1 picture picks (null = none)
+function scene0VehicleAt(mx, my) {
+  const c = SCENE0_CAR_SPOT;
+  if (mx >= c.x - 110 * c.scale && mx <= c.x + 110 * c.scale && my >= c.y - 80 * c.scale && my <= c.y + 60 * c.scale) return 'car';
+  const b = SCENE0_BOAT_SPOT;
+  if (mx >= b.x - 155 * b.scale && mx <= b.x + 155 * b.scale && my >= b.y - 120 * b.scale && my <= b.y + 50 * b.scale) return 'boat';
+  const p = SCENE0_UFO_SPOT;
+  if (mx >= p.x - 115 * p.scale && mx <= p.x + 120 * p.scale && my >= p.y - 50 * p.scale && my <= p.y + 70 * p.scale) return 'ufo';
+  return null;
+}

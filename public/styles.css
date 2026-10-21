@@ -426,10 +426,9 @@ button {
 /* Scene 1 start prompt */
 .scene1-escape-overlay {
   position: absolute;
-  left: 50%;
-  bottom: 24px;
-  transform: translateX(-50%);
-  width: min(90%, 600px);
+  left: 16px;
+  bottom: 16px;
+  width: min(45%, 480px);
   z-index: 15;
 }
 
@@ -466,13 +465,13 @@ button {
   width: 100%;
 }
 
-/* Escape vehicle picker (UFO / car) */
+/* Escape vehicle picker (plane / icebreaker / car) */
 .s1-vehicle-pick {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 6px;
   width: 100%;
-  max-width: 380px;
+  max-width: 540px;
 }
 
 .s1-vehicle-btn {
@@ -532,6 +531,11 @@ button {
   background: rgba(251, 146, 60, 0.12);
 }
 
+.s1-vehicle-btn[data-vehicle='boat'].is-active {
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+}
+
 .s1-vehicle-btn[data-vehicle='car'].is-active {
   border-color: #f472b6;
   background: rgba(244, 114, 182, 0.12);
@@ -579,6 +583,10 @@ button {
 
 .rank-game-btn[data-game='car'].is-active {
   box-shadow: inset 0 -2px 0 #f472b6;
+}
+
+.rank-game-btn[data-game='boat'].is-active {
+  box-shadow: inset 0 -2px 0 #38bdf8;
 }
 
 .s1-yes-group {
@@ -2104,7 +2112,13 @@ body.ufo-fullscreen-lock {
     max-width: none;
   }
   .s1-vehicle-btn {
-    padding: 10px 8px;
+    flex-direction: column;
+    gap: 4px;
+    padding: 9px 4px;
+    text-align: center;
+  }
+  .s1-vehicle-btn .vh-text {
+    align-items: center;
   }
   .s1-overlay-controls {
     flex-direction: column;
