@@ -105,6 +105,7 @@ function drawPlaneWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
     isImpactBlink = false,
     propSpin = true,
     pilotLift = 0,
+    layer = 'all', // 'back' = everything behind the pilot, 'front' = everything over it (for the pixel plane)
   } = options;
   ctx.save();
   ctx.translate(cx, cy);
@@ -112,6 +113,7 @@ function drawPlaneWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
   ctx.scale(scale, scale);
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
+  if (layer !== 'front') {
 
   // Ski legs + fat skis, tail skid
   ctx.strokeStyle = '#334155';
@@ -174,7 +176,12 @@ function drawPlaneWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
   ctx.beginPath();
   ctx.roundRect(-36, -30, 12, 32, 4);
   ctx.fill();
-  if (withPilot) {
+  }
+  if (layer === 'back') {
+    ctx.restore();
+    return;
+  }
+  if (withPilot && layer === 'all') {
     drawCarPilot(ctx, false, now, {
       spId,
       isShocked,
@@ -267,16 +274,86 @@ function drawPlaneWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
   ctx.restore();
 }
 
-function fillPlanePixelEllipse(ctx, cx, cy, rx, ry, color) {
-  ctx.fillStyle = color;
-  for (let y = -ry; y < ry; y += 2) {
-    const yy = y + 1;
-    const half = Math.round((rx * Math.sqrt(Math.max(0, 1 - (yy * yy) / (ry * ry)))) / 2) * 2;
-    if (half > 0) ctx.fillRect(cx - half, cy + y, half * 2, 2);
+// 16-bit pixel plane (scenes 4–5): the very same drawing as the in-game plane (drawPlaneWithPilot), rendered at
+// 1/PIXEL_PLANE_CELL size, snapped to the plane's own palette with hard alpha, then blown up without smoothing,
+// so the pixel version can never drift from the plane the player flew. The pixel pilot goes on top.
+const PIXEL_PLANE_CELL = 3; // stage px per art pixel (the town penguins are ~2.6)
+const PIXEL_PLANE_BOX = { x: -120, y: -57, w: 243, h: 126 }; // tail fin top to skis, tail to spinner
+const PIXEL_PLANE_PALETTE = [
+  '#0b1020', '#1e293b', '#1f2937', '#334155', '#64748b', '#94a3b8', '#cbd5e1', '#e2e8f0', '#f8fafc',
+  '#0f766e', '#14b8a6', '#2dd4bf', '#5eead4', '#99f6e4', '#a7f3e8',
+  '#be185d', '#f472b6', '#f9a8d4', '#f97316', '#ef4444', '#facc15', '#fde047', '#22c55e', '#14532d', '#7dd3fc', '#bae6fd',
+].map((hex) => [parseInt(hex.slice(1, 3), 16), parseInt(hex.slice(3, 5), 16), parseInt(hex.slice(5, 7), 16)]);
+const PIXEL_PLANE_BUFFERS = {};
+
+// layer: 'back' (skis, tail, seat) or 'front' (cargo, body, wing, propeller); the pixel pilot goes between them
+function renderPixelPlaneBuffer(now, propSpin, layer) {
+  const C = PIXEL_PLANE_CELL;
+  const B = PIXEL_PLANE_BOX;
+  const w = Math.ceil(B.w / C);
+  const h = Math.ceil(B.h / C);
+  if (!PIXEL_PLANE_BUFFERS[layer]) {
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    PIXEL_PLANE_BUFFERS[layer] = c;
   }
+  const buf = PIXEL_PLANE_BUFFERS[layer];
+  const b = buf.getContext('2d', { willReadFrequently: true });
+  b.setTransform(1, 0, 0, 1, 0, 0);
+  b.clearRect(0, 0, w, h);
+  b.imageSmoothingEnabled = true;
+  b.setTransform(1 / C, 0, 0, 1 / C, -B.x / C, -B.y / C);
+  drawPlaneWithPilot(b, 0, 0, 0, now, { scale: 1, withPilot: false, propSpin, layer });
+  b.setTransform(1, 0, 0, 1, 0, 0);
+  // Hard alpha + nearest palette colour: crisp pixel edges, no muddy in-between shades
+  const img = b.getImageData(0, 0, w, h);
+  const d = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    if (d[i + 3] < 80) {
+      d[i + 3] = 0;
+      continue;
+    }
+    // un-premultiply partly covered edge pixels before matching
+    const a = d[i + 3] / 255;
+    const r = d[i] / a;
+    const g = d[i + 1] / a;
+    const bl = d[i + 2] / a;
+    let best = 0;
+    let bestD = Infinity;
+    for (let k = 0; k < PIXEL_PLANE_PALETTE.length; k++) {
+      const p = PIXEL_PLANE_PALETTE[k];
+      const dist = (p[0] - r) * (p[0] - r) * 0.3 + (p[1] - g) * (p[1] - g) * 0.59 + (p[2] - bl) * (p[2] - bl) * 0.11;
+      if (dist < bestD) {
+        bestD = dist;
+        best = k;
+      }
+    }
+    const p = PIXEL_PLANE_PALETTE[best];
+    d[i] = p[0];
+    d[i + 1] = p[1];
+    d[i + 2] = p[2];
+    d[i + 3] = 255;
+  }
+  // 1-pixel dark outline round the silhouette (the thin 2D strokes vanish at 1/3 size)
+  const solid = new Uint8Array(w * h);
+  for (let i = 0; i < w * h; i++) solid[i] = d[i * 4 + 3] ? 1 : 0;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const i = y * w + x;
+      if (solid[i]) continue;
+      if ((x > 0 && solid[i - 1]) || (x < w - 1 && solid[i + 1]) || (y > 0 && solid[i - w]) || (y < h - 1 && solid[i + w])) {
+        d[i * 4] = 11;
+        d[i * 4 + 1] = 16;
+        d[i * 4 + 2] = 32;
+        d[i * 4 + 3] = 255;
+      }
+    }
+  }
+  b.putImageData(img, 0, 0);
+  return buf;
 }
 
-// 16-bit pixel plane (scenes 3–5)
 function drawPixelPlaneWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
   const {
     scale = 1,
@@ -304,46 +381,15 @@ function drawPixelPlaneWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}
     }
   }
 
-  // Skis, legs, tail skid
-  ctx.fillStyle = '#334155';
-  ctx.fillRect(6, 44, 4, 18);
-  ctx.fillRect(32, 44, 4, 18);
-  ctx.fillRect(-90, 32, 4, 10);
-  ctx.fillStyle = PLANE_K;
-  ctx.fillRect(-16, 58, 72, 10);
-  ctx.fillRect(56, 52, 8, 8);
-  ctx.fillStyle = '#f8fafc';
-  ctx.fillRect(-14, 60, 68, 6);
-  ctx.fillRect(56, 54, 6, 6);
-  ctx.fillStyle = '#f472b6';
-  ctx.fillRect(-10, 62, 60, 2);
-  ctx.fillStyle = '#e2e8f0';
-  ctx.fillRect(-102, 40, 20, 4);
-
-  // Stabiliser + stepped fin
-  ctx.fillStyle = PLANE_K;
-  ctx.fillRect(-114, 8, 38, 13);
-  ctx.fillStyle = '#14b8a6';
-  ctx.fillRect(-112, 10, 34, 9);
-  const fin = [
-    [-100, -46, 12, 10],
-    [-100, -36, 18, 12],
-    [-100, -24, 26, 14],
-    [-100, -10, 36, 14],
-  ];
-  ctx.fillStyle = PLANE_K;
-  fin.forEach(([x, y, w, h]) => ctx.fillRect(x - 2, y - 2, w + 4, h + 4));
-  ctx.fillStyle = '#2dd4bf';
-  fin.forEach(([x, y, w, h]) => ctx.fillRect(x, y, w, h));
-  ctx.fillStyle = '#f97316';
-  ctx.fillRect(-100, -46, 12, 10);
-  ctx.fillRect(-100, -36, 18, 4);
-
-  // Seat, pilot, cargo
-  ctx.fillStyle = PLANE_K;
-  ctx.fillRect(-38, -32, 16, 34);
-  ctx.fillStyle = '#334155';
-  ctx.fillRect(-36, -30, 12, 30);
+  // Same stacking as the 2D plane: tail + seat, the pixel pilot, then cargo + body + wing + propeller
+  const B = PIXEL_PLANE_BOX;
+  const C = PIXEL_PLANE_CELL;
+  const blit = (layer) => {
+    if (typeof document === 'undefined') return;
+    const buf = renderPixelPlaneBuffer(now, propSpin, layer);
+    ctx.drawImage(buf, B.x, B.y, buf.width * C, buf.height * C);
+  };
+  blit('back');
   drawCarPilot(ctx, true, now, {
     spId,
     isShocked,
@@ -352,51 +398,10 @@ function drawPixelPlaneWithPilot(ctx, cx, cy, tiltRad = 0, now = 0, options = {}
     rect: PLANE_PILOT_RECT,
     clip: (c) => c.rect(-70, -140, 140, 142),
   });
-  drawPlaneCargo(ctx, true);
-
-  // Egg body
-  fillPlanePixelEllipse(ctx, 2, 22, 102, 26, PLANE_K);
-  fillPlanePixelEllipse(ctx, 2, 22, 98, 23, '#2dd4bf');
-  ctx.fillStyle = '#99f6e4';
-  ctx.fillRect(-60, 2, 120, 4);
-  ctx.fillStyle = '#f8fafc';
-  ctx.fillRect(-88, 24, 172, 2);
-  ctx.fillStyle = '#f472b6';
-  ctx.fillRect(-90, 26, 176, 8);
-  ctx.fillStyle = '#be185d';
-  ctx.fillRect(-84, 34, 164, 2);
-  ctx.fillStyle = '#0f766e';
-  ctx.fillRect(-70, 38, 140, 4);
-  fillPlanePixelEllipse(ctx, 86, 22, 16, 22, '#cbd5e1');
-  ctx.fillStyle = '#f1f5f9';
-  ctx.fillRect(76, 4, 14, 6);
-  ctx.fillStyle = '#1f2937';
-  ctx.fillRect(-38, -2, 76, 4);
-  drawPixelHeart(ctx, -54, 16, 2, '#f472b6');
-
-  // Windscreen
-  ctx.fillStyle = PLANE_K;
-  ctx.fillRect(36, -22, 12, 22);
-  ctx.fillStyle = '#7dd3fc';
-  ctx.fillRect(38, -20, 8, 18);
-
-  // Stubby wing
-  ctx.fillStyle = PLANE_K;
-  ctx.fillRect(-18, 31, 74, 17);
-  ctx.fillStyle = '#f8fafc';
-  ctx.fillRect(-16, 33, 70, 13);
-  ctx.fillStyle = '#cbd5e1';
-  ctx.fillRect(-16, 43, 70, 3);
-  ctx.fillStyle = '#f97316';
-  ctx.fillRect(-16, 33, 14, 13);
-  ctx.fillStyle = Math.floor(now / 500) % 2 === 0 ? '#22c55e' : '#14532d';
-  ctx.fillRect(46, 37, 4, 4);
-
-  drawPlanePropeller(ctx, now, propSpin, true);
+  blit('front');
   ctx.restore();
 }
 
-// Storm cell (replaces the spiked mine): dark cloud with a lightning flicker; hit radius = ent.r
 function drawStormCloud(ctx, r, now, seed = 0) {
   ctx.save();
   const puffs = [

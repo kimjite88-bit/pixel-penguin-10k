@@ -14,7 +14,7 @@
 //     one too weak to break it bounces off and scrapes it harder.
 // Letting go just short of a floe (within RAM_REACH) rams it without stopping, so a good run never stalls.
 // Tuned with a release-timing bot (scratch/boat_mode/sim_boat.js, 200 runs each): an exact player never sinks;
-// a 67ms-accurate one lasts ~70-85 s, 100ms ~38 s, 150ms ~20 s (close to the car run).
+// a 67ms-accurate one lasts ~46-59 s, 100ms ~33 s, 150ms ~17 s (close to the car run).
 // Units: 960x540 stage, px per 60fps frame. World y grows ahead of the ship; the bow sits at screen y BOW_Y.
 // Nothing at the top level touches the DOM, so the rules can be simulated outside the browser.
 // ============================================================================
@@ -28,14 +28,14 @@ const BOAT_CFG = {
   CHANNEL_L: 150, // the pack ice shelves either side of the lead
   CHANNEL_R: 810,
   // Everything speeds up with time, not with floes broken: cruise speed, the freeze line, the ram gauge and the
-  // ice thickness. First ramp ~70-80 s, then a slower overdrive that keeps going.
+  // ice thickness. First ramp ~50-60 s, then a slower overdrive that keeps going.
   CRUISE: 5.4,
   CRUISE_KNEE: 8.4,
-  MAX_CRUISE: 10.4,
+  MAX_CRUISE: 12.4,
   CRUISE_ACCEL: 0.08, // per frame towards the cruise speed
-  CRUISE_RAMP: 0.0007, // cruise speed gain per frame up to CRUISE_KNEE (~70 s)
-  CRUISE_OVERDRIVE: 0.0002,
-  SECONDS_PER_LEVEL: 8,
+  CRUISE_RAMP: 0.001, // cruise speed gain per frame up to CRUISE_KNEE (~50 s)
+  CRUISE_OVERDRIVE: 0.0004,
+  SECONDS_PER_LEVEL: 6,
   LUNGE_SPEED: 16,
   RAM_REACH: 150, // letting go this close to a floe rams it without stopping
   BACK_OFF: 46, // how far a full charge backs the ship off (drawn; the lunge covers it again)
@@ -54,10 +54,10 @@ const BOAT_CFG = {
   LEAD_START: 320, // freeze line distance behind the stern
   LEAD_MAX: 420,
   FREEZE: 1.8, // freeze line speed at the start
-  FREEZE_RAMP: 0.025, // per second for the first 80 s (1.8 -> 3.8)
-  FREEZE_KNEE_SEC: 80,
-  FREEZE_OVERDRIVE: 0.009, // per second after that
-  MAX_FREEZE: 5.2,
+  FREEZE_RAMP: 0.035, // per second for the first 60 s (1.8 -> 3.9)
+  FREEZE_KNEE_SEC: 60,
+  FREEZE_OVERDRIVE: 0.012, // per second after that
+  MAX_FREEZE: 6.2,
   PERFECT_LEAD: 70,
   PERFECT_BOOST: 3,
   GOOD_BOOST: 1.2,
@@ -1133,14 +1133,17 @@ function drawBoatScene1Departure(ctx, now, p, spId) {
 
   drawBoatWithPilot(ctx, boatX, boatY, roll - 0.04, now, { scale: S, spId });
 
-  drawRetroSpeechBubble(
-    ctx,
-    Math.min(520, boatX + 10),
-    Math.max(64, boatY - 150),
-    CURRENT_LANG === 'ko' ? '뒤에서 기둥이 빨아들인다!! 전속력 출항, 얼음 부수고 도망간다!!' : 'The pillar is sucking everything in!! Full ahead, ram our way out!!',
-    '#38bdf8',
-    now
-  );
+  // The bubble rides with the ship and goes with it: it used to stop at x = 520 and hang there after the ship left
+  if (boatX < 760) {
+    drawRetroSpeechBubble(
+      ctx,
+      boatX + 10,
+      Math.max(64, boatY - 150),
+      CURRENT_LANG === 'ko' ? '뒤에서 기둥이 빨아들인다!! 전속력 출항, 얼음 부수고 도망간다!!' : 'The pillar is sucking everything in!! Full ahead, ram our way out!!',
+      '#38bdf8',
+      now
+    );
+  }
 }
 
 if (typeof module !== 'undefined') {

@@ -3,7 +3,7 @@
 //
 // Control follows CookieRun's Bonus Time flight (community wiki: pressing carries the cookie up, pressing
 // nothing lets it go down) and Jetpack Joyride (hold to climb, release to drop). Like the car run:
-// energy that drains and drops on hits, fuel cans to refill it, a speed ramp that keeps climbing (2.2x by ~4 min), and a course
+// energy that drains and drops on hits, fuel cans to refill it, a speed ramp that keeps climbing (2.5x by ~3.5 min), and a course
 // built from hand-made chunks that are proven passable (scratch/car_mode/verify_sky.js). Storms show a
 // warning at the right edge before they arrive; the first seconds are clear. Stars are laid along the
 // flight line like CookieRun jellies; air-race gates build a combo; a close shave past a storm pays.
@@ -23,13 +23,13 @@ const SKY_CFG = {
   GRAVITY: 0.36,
   REVERSE_ASSIST: 0.3,
   MAX_VY: 5.9,
-  // Speed climbs for the whole run: linearly to SPEED_KNEE in ~80 s at the Chrome dino's rate (0.001/frame),
-  // then slower (OVERDRIVE_ACCELERATION) up to MAX_SPEED at ~4 min
+  // Speed climbs for the whole run: linearly to SPEED_KNEE in ~55 s (1.5x the Chrome dino's 0.001/frame), then
+  // slower (OVERDRIVE_ACCELERATION) up to MAX_SPEED at ~3.5 min; all chunks/pairs re-checked at MAX_SPEED
   SPEED: 6.2,
   SPEED_KNEE: 11,
-  MAX_SPEED: 13.6,
-  ACCELERATION: 0.001,
-  OVERDRIVE_ACCELERATION: 0.00027,
+  MAX_SPEED: 15.5,
+  ACCELERATION: 0.0015,
+  OVERDRIVE_ACCELERATION: 0.0005,
   // Chunks stretch with speed by only this share of the speed-up, so at higher speed the next hazard comes
   // sooner (the Chrome dino does the same: gap = width * speed + a fixed minimum gap)
   CHUNK_STRETCH: 0.6,
