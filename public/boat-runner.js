@@ -1099,13 +1099,18 @@ function drawBoatRunnerFrame(ctx, now, spId) {
   }
 
   drawBoatGauge(ctx, run, now);
-  drawBoatHud(ctx, now, run);
+  withStageUi(ctx, 16, 12, 564, () => drawBoatHud(ctx, now, run));
 
   if (run.rams < 3 && now - run.startAt < 15000) {
     const msg = ko ? '누르고 있으면 힘이 모이고 · 떼면 들이받기 · 초록 칸을 놓치면 선체가 깎여요' : 'Hold to charge · let go to ram · miss the green and the hull takes damage';
     ctx.save();
     ctx.font = '800 14px "Pretendard", "Malgun Gothic", sans-serif';
     const tw = Math.ceil(ctx.measureText(msg).width) + 28;
+    const hk = Math.min(stageUiK(), 940 / tw); // bigger on phones, never wider than the stage
+    const hy = stageUiK() > 1 ? 12 + 38 * Math.min(stageUiK(), 944 / 564) + 6 + 15 * hk : 77; // under the bigger HUD
+    ctx.translate(480, hy); // hy = where the box centre (77) ends up
+    ctx.scale(hk, hk);
+    ctx.translate(-480, -77);
     const bx = 480 - tw / 2;
     const by = 62;
     ctx.fillStyle = 'rgba(9, 13, 26, 0.82)';

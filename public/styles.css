@@ -2294,6 +2294,7 @@ body.ufo-fullscreen-lock {
   }
   .s1-no-btn {
     width: 100%;
+    min-height: 44px; /* Apple HIG minimum tap target */
     padding: 10px;
     border-color: transparent;
     text-decoration: underline;

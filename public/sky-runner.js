@@ -609,12 +609,17 @@ function drawSkyRunnerFrame(ctx, now, spId) {
     ctx.restore();
   }
 
-  drawSkyHud(ctx, now, run);
+  withStageUi(ctx, 16, 12, 564, () => drawSkyHud(ctx, now, run));
   if (now - run.startAt < 6000) {
     const msg = ko ? '누르고 있으면 상승 · 떼면 하강 · 별을 따라 날아요' : 'Hold to climb · release to dive · follow the stars';
     ctx.save();
     ctx.font = '800 14px "Pretendard", "Malgun Gothic", sans-serif';
     const tw = Math.ceil(ctx.measureText(msg).width) + 28;
+    const hk = Math.min(stageUiK(), 940 / tw); // bigger on phones, never wider than the stage
+    const hy = hk > 1 ? 516 - 15 * hk : 485; // bottom stays on the stage
+    ctx.translate(480, hy); // hy = where the box centre (485) ends up
+    ctx.scale(hk, hk);
+    ctx.translate(-480, -485);
     const bx = 480 - tw / 2;
     ctx.fillStyle = 'rgba(9, 13, 26, 0.82)';
     ctx.fillRect(bx, 470, tw, 30);

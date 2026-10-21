@@ -1744,13 +1744,18 @@ function drawCarRunnerFrame(ctx, now, spId) {
     ctx.restore();
   }
 
-  drawCarRunHud(ctx, now, run);
+  withStageUi(ctx, 16, 12, 504, () => drawCarRunHud(ctx, now, run));
 
   if (run.jumps < 4 && now - run.startAt < 10000) {
     const msg = ko ? '누르면 점프 · 공중에서 한 번 더 누르면 2단 점프' : 'Tap to jump · tap again in the air to double jump';
     ctx.save();
     ctx.font = '800 14px "Pretendard", "Malgun Gothic", sans-serif';
     const tw = Math.ceil(ctx.measureText(msg).width) + 28;
+    const hk = Math.min(stageUiK(), 940 / tw); // bigger on phones, never wider than the stage
+    const hy = 127 + 15 * (hk - 1); // top stays at y = 112
+    ctx.translate(480, hy); // hy = where the box centre (127) ends up
+    ctx.scale(hk, hk);
+    ctx.translate(-480, -127);
     const bx = 480 - tw / 2;
     const by = 112;
     ctx.fillStyle = 'rgba(9, 13, 26, 0.82)';

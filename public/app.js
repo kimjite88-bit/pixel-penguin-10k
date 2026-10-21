@@ -547,15 +547,17 @@ const TOWN_NATIVES = 6;
 // instead, keeping the same 1 : 2 gap ratio and the tree in the right fifth (centre x = 790)
 const TOWN_SKIP_TREE_CX = 790;
 
-// Town command box (10,000 도감 / 다시 플레이). On a phone the 960px stage is shown ~360px wide, so the box and
-// its text are drawn 1.5x there; the click and hover areas use the same numbers.
+// Town command box (10,000 도감 / 다시 플레이). On a phone (stageUiK) the box and its text are drawn 1.5x; the
+// click and hover areas use the same numbers.
+// On phones the town banner is 1.6x (bottom at y = 66), so the logo and the menu move down this much
+const TOWN_PHONE_SHIFT = 18;
+
 function townMenuLayout() {
-  const c = document.getElementById('pixel-stage-canvas');
-  const k = c && c.getBoundingClientRect().width < 700 ? 1.5 : 1;
+  const k = stageUiK() > 1 ? 1.5 : 1;
   const w = 332 * k;
   const h = 78 * k;
   const x = 480 - w / 2;
-  const y = 176;
+  const y = 176 + (k > 1 ? TOWN_PHONE_SHIFT : 0);
   return { k, w, h, x, y, rowY: (i) => y + (24 + i * 30) * k, split: y + 39 * k };
 }
 
@@ -2226,6 +2228,33 @@ function drawPixelEmoteBubble(ctx, cx, bottomY, type = 'music', now = 0) {
   ctx.restore();
 }
 
+// Phones show the 960px stage only ~340-470 css px wide (0.36-0.49x), so a 13.5px bubble ends up ~5 px tall,
+// far under the ~11 pt legibility floor in Apple's HIG. Below 760 css px, stage text (bubbles, HUDs, hints,
+// banners) is drawn STAGE_UI_SCALE bigger. Measured once per frame (updateStageUiScale in the render loop).
+const STAGE_UI_SCALE = 1.6;
+function updateStageUiScale(canvas) {
+  const w = canvas ? canvas.getBoundingClientRect().width : 0;
+  MOTION_STATE.uiK = w > 0 && w < 760 ? STAGE_UI_SCALE : 1;
+  MOTION_STATE.bubbleMinY = 0; // a scene may raise it (the town keeps bubbles under its menu)
+}
+function stageUiK() {
+  return MOTION_STATE.uiK || 1;
+}
+// Run fn scaled by the stage UI factor around (ox, oy), capped so a w-wide element stays inside the stage
+function withStageUi(ctx, ox, oy, w, fn) {
+  const k = Math.min(stageUiK(), w ? 944 / w : Infinity);
+  if (k <= 1) {
+    fn();
+    return;
+  }
+  ctx.save();
+  ctx.translate(ox, oy);
+  ctx.scale(k, k);
+  ctx.translate(-ox, -oy);
+  fn();
+  ctx.restore();
+}
+
 // Helper: Authentic 16-Bit Pixel Speech Bubble for Funny Cutscene Dialogue
 function drawRetroSpeechBubble(
   ctx,
@@ -2236,16 +2265,27 @@ function drawRetroSpeechBubble(
   now = 0
 ) {
   const P = 3;
+  const k = stageUiK();
   const bob = Math.floor(now / 250) % 2 === 0 ? 0 : -2;
   ctx.save();
-  ctx.font = '800 13.5px "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
-  const textW = Math.ceil(ctx.measureText(text).width);
-  const bw = Math.max(128, Math.round((textW + 32) / 4) * 4);
-  const bh = 36;
+  const fontPx = 13.5 * k;
+  ctx.font = `800 ${fontPx}px "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif`;
+  // Too wide for the stage (long lines at the phone size): break at the space nearest the middle
+  let lines = [text];
+  if (Math.ceil(ctx.measureText(text).width) + 32 * k > 924) {
+    const mid = text.length / 2;
+    let cut = -1;
+    for (let i = 0; i < text.length; i++) if (text[i] === ' ' && (cut < 0 || Math.abs(i - mid) < Math.abs(cut - mid))) cut = i;
+    if (cut > 0) lines = [text.slice(0, cut), text.slice(cut + 1)];
+  }
+  const textW = Math.max(...lines.map((l) => Math.ceil(ctx.measureText(l).width)));
+  const bw = Math.min(924, Math.max(128, Math.round((textW + 32 * k) / 4) * 4));
+  const lineH = fontPx * 1.35;
+  const bh = Math.round(36 * k + (lines.length - 1) * lineH);
 
   // Clamp bubble horizontally & vertically so it never clips off-canvas or overlaps top HUD bars (y=12..48)
   const bx = Math.max(18, Math.min(960 - bw - 18, Math.round(anchorX - bw / 2)));
-  const by = Math.max(56, Math.round(anchorY - bh - 10 + bob));
+  const by = Math.max(56 + (k - 1) * 30, MOTION_STATE.bubbleMinY || 0, Math.round(anchorY - bh - 10 + bob));
   const tailX = Math.max(bx + 18, Math.min(bx + bw - 18, Math.round(anchorX)));
 
   // 16-bit Pixel Drop Shadow
@@ -2277,12 +2317,18 @@ function drawRetroSpeechBubble(
   ctx.fillStyle = '#0f172a';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(text, bx + bw / 2, by + bh / 2 + 2);
+  lines.forEach((l, i) => ctx.fillText(l, bx + bw / 2, by + bh / 2 + 2 + (i - (lines.length - 1) / 2) * lineH));
   ctx.restore();
 }
 
 // Helper: Sleek Cyber-Arcade HUD Scanner Pill (for Scene 1 Phase B Whole-UFO Pixel Conversion)
 function drawPixelScanHudPill(ctx, cx, y, pct) {
+  // Bigger on phones, grown upwards from the pill's bottom so it stays on the stage
+  const bottom = Math.min(y + 34, 532);
+  withStageUi(ctx, cx, bottom, 254, () => drawPixelScanHudPillBody(ctx, cx, bottom - 34, pct));
+}
+
+function drawPixelScanHudPillBody(ctx, cx, y, pct) {
   const w = 248;
   const h = 34;
   const x = Math.round(cx - w / 2);
@@ -2924,7 +2970,13 @@ function initPixelMotionStudio() {
   }
 
   boardNftBtn?.addEventListener('click', () => handleEscapeYesWithOptionalNft(pilotInput));
-  s1YesBtn?.addEventListener('click', () => handleEscapeYesWithOptionalNft(s1Input));
+  s1YesBtn?.addEventListener('click', () => {
+    // On a phone the game is played in the fullscreen shell (stage + touch pad, no page scroll); the tap is the
+    // user gesture requestFullscreen needs
+    const isPhone = window.matchMedia('(pointer: coarse)').matches && Math.min(window.innerWidth, window.innerHeight) < 600;
+    if (isPhone && !MOTION_STATE.isFullscreen) enterUfoFullscreenGame(false);
+    handleEscapeYesWithOptionalNft(s1Input);
+  });
 
   boardNoneBtn?.addEventListener('click', () => {
     skipEscapeToCherryBlossomTown();
@@ -3043,7 +3095,8 @@ function initPixelMotionStudio() {
 
     if (MOTION_STATE.sceneIdx === 4) {
       // Clicking the top Score/Leaderboard banner in Scene 5 opens the NFT Ranking Tab
-      if (mx >= 160 && mx <= 800 && my >= 8 && my <= 48) {
+      const bk = MOTION_STATE.bannerK || 1;
+      if (Math.abs(mx - 480) <= 320 * bk && my >= 8 && my <= 10 + 38 * bk) {
         openLeaderboardModal();
         return;
       }
@@ -3124,6 +3177,7 @@ function initPixelMotionStudio() {
   // Main 60 FPS 5-Scene Reference Cutscene & Sky Game Loop (1920x1080 HiDPI Buffer, 960x540 Logical Space)
   function renderIntroCutscene() {
     const now = performance.now();
+    updateStageUiScale(canvas);
     const activeSpId = UFO_GAME.pilotSpeciesId || '01';
     ensureSpeciesSprite(activeSpId);
     ensureHero2DSprite();
@@ -3436,6 +3490,11 @@ function initPixelMotionStudio() {
       const banX = 480 - banW / 2;
       const banY = 10;
       ctx.save();
+      // Bigger on phones (stageUiK), scaled from the banner's top centre; the click area follows (MOTION_STATE.bannerK)
+      MOTION_STATE.bannerK = Math.min(stageUiK(), 944 / (banW + 4));
+      ctx.translate(480, banY);
+      ctx.scale(MOTION_STATE.bannerK, MOTION_STATE.bannerK);
+      ctx.translate(-480, -banY);
       ctx.fillStyle = 'rgba(9, 13, 26, 0.90)';
       ctx.fillRect(banX - 2, banY - 2, banW + 4, banH + 4);
       ctx.strokeStyle = UFO_GAME.hasNft ? '#facc15' : '#67e8f9';
@@ -3486,7 +3545,7 @@ function initPixelMotionStudio() {
 
       // 2. Sculpted 16-Bit "PIXEL PENGUIN" Arcade Logo & RPG Command Box in Upper Sky
       const titleBounce = Math.floor(now / 480) % 2 === 0 ? 0 : -3;
-      const logoTopY = 50 + titleBounce;
+      const logoTopY = 50 + titleBounce + (stageUiK() > 1 ? TOWN_PHONE_SHIFT : 0); // clear of the bigger phone banner
 
       drawArcadePixelWord(ctx, 'PIXEL', 480, logoTopY, 4.5);
       drawGoldenArcadeHeart(ctx, 636, logoTopY + 16, 3.2);
@@ -3531,6 +3590,7 @@ function initPixelMotionStudio() {
         ctx.fillText(mText, menuX + 46 * mk, rowY + 1);
       });
 
+      MOTION_STATE.bubbleMinY = menuY + menuH + 14; // the town's bubbles never cover the menu
       const spriteSize = TOWN_PENGUIN_SIZE;
       const spriteY = Math.round(TOWN_FEET_Y - spriteSize * (243 / 256)); // frame feet at row 243
       const row = scene5RowLayout(MOTION_STATE.skippedEscape);

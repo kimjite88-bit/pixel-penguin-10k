@@ -267,6 +267,18 @@ function drawScene0Mark(ctx, x, y, ch, col) {
 
 // Hazard banner at the top: "남극 붕괴 경보" with stripes and a stage counter that climbs while you wait
 function drawScene0Alarm(ctx, now, esc, finalStage = false) {
+  const ak = 1 + (stageUiK() - 1) * 0.4; // 1.24x on phones, from the top centre
+  if (ak > 1) {
+    ctx.save();
+    ctx.translate(480, 9);
+    ctx.scale(ak, ak);
+    ctx.translate(-480, -9);
+  }
+  drawScene0AlarmBody(ctx, now, esc, finalStage);
+  if (ak > 1) ctx.restore();
+}
+
+function drawScene0AlarmBody(ctx, now, esc, finalStage) {
   const ko = CURRENT_LANG === 'ko';
   const on = Math.floor(now / (520 - esc * 260)) % 2 === 0;
   const text = ko ? '남극 붕괴 경보' : 'ANTARCTIC COLLAPSE ALERT';
@@ -468,10 +480,11 @@ function drawScene0Escape(ctx, now) {
 // it never covers the icebreaker behind the penguin
 function drawScene0Shout(ctx, now, lines, accent, quake) {
   ctx.save();
-  ctx.font = '900 21px "Pretendard", "Malgun Gothic", sans-serif';
+  const sk = 1 + (stageUiK() - 1) * 0.5; // already big: 1.3x on phones is enough
+  ctx.font = `900 ${21 * sk}px "Pretendard", "Malgun Gothic", sans-serif`;
   const tw = Math.max(...lines.map((l) => Math.ceil(ctx.measureText(l).width)));
-  const bw = tw + 30;
-  const bh = 66;
+  const bw = tw + 30 * sk;
+  const bh = 66 * sk;
   const bob = Math.floor(now / 250) % 2 === 0 ? 0 : -2;
   const jx = quake ? Math.round((Math.random() - 0.5) * 6 * quake) : 0;
   const bx = Math.min(960 - bw - 12, SCENE0_HERO.x + 84) + jx;
@@ -494,8 +507,8 @@ function drawScene0Shout(ctx, now, lines, accent, quake) {
   ctx.fillStyle = SCENE0_K;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(lines[0], bx + 15, by + 23);
-  ctx.fillText(lines[1], bx + 15, by + 49);
+  ctx.fillText(lines[0], bx + 15 * sk, by + 23 * sk);
+  ctx.fillText(lines[1], bx + 15 * sk, by + 49 * sk);
   ctx.restore();
 }
 
