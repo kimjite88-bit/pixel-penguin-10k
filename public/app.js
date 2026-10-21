@@ -3217,39 +3217,47 @@ function initPixelMotionStudio() {
         ctx.restore();
       }
 
-      // 2. Bottom Portion (Below Laser Scan Line): GIANT 2D UFO + 2D PENGUIN PILOT
+      // 2. Bottom Portion (Below Laser Scan Line): the 2D vehicle + pilot, breaking up into bigger mosaic blocks as the
+      //    scan goes on (1 -> 8 px), so it is visibly turning to pixels before the line reaches it
+      const mosaicSize = scanRatio > 0 ? 1 + Math.floor(scanRatio * 7) : 1;
       if (scanRatio < 1 && isBoat) {
         ctx.save();
         ctx.beginPath();
         ctx.rect(ufoX - 180, scanY, 360, botEdge - scanY + 50);
         ctx.clip();
-        drawBoatWithPilot(ctx, ufoX, ufoY, ufoTilt, now, { scale: SCENE3_BOAT_SCALE, flipX: pose.flip, spId: activeSpId, isShocked: pose.phase !== 'beam' });
+        drawScene3Mosaic(ctx, mosaicSize, (c) =>
+          drawBoatWithPilot(c, ufoX, ufoY, ufoTilt, now, { scale: SCENE3_BOAT_SCALE, flipX: pose.flip, spId: activeSpId, isShocked: pose.phase !== 'beam' })
+        );
         ctx.restore();
       } else if (scanRatio < 1 && isCar) {
         ctx.save();
         ctx.beginPath();
         ctx.rect(ufoX - 180, scanY, 360, botEdge - scanY + 50);
         ctx.clip();
-        drawCarWithPilot(ctx, ufoX, ufoY, ufoTilt, now, {
-          scale: carScale,
-          spId: activeSpId,
-          isShocked: pose.phase === 'drag' || pose.phase === 'lift',
-          beam: false,
-          wheelAngle: pose.phase === 'drive' ? now * 0.05 : now * 0.03,
-          boost: pose.phase === 'drive' ? 1.2 : 0.6,
-        });
+        drawScene3Mosaic(ctx, mosaicSize, (c) =>
+          drawCarWithPilot(c, ufoX, ufoY, ufoTilt, now, {
+            scale: carScale,
+            spId: activeSpId,
+            isShocked: pose.phase === 'drag' || pose.phase === 'lift',
+            beam: false,
+            wheelAngle: pose.phase === 'drive' ? now * 0.05 : now * 0.03,
+            boost: pose.phase === 'drive' ? 1.2 : 0.6,
+          })
+        );
         ctx.restore();
       } else if (scanRatio < 1) {
         ctx.save();
         ctx.beginPath();
         ctx.rect(ufoX - 180, scanY, 360, botEdge - scanY + 50);
         ctx.clip();
-        drawPlaneWithPilot(ctx, ufoX, ufoY, ufoTilt, now, {
-          scale: planeScanScale,
-          spId: activeSpId,
-          isShocked: pose.phase !== 'beam',
-          propSpin: false, // the engine died
-        });
+        drawScene3Mosaic(ctx, mosaicSize, (c) =>
+          drawPlaneWithPilot(c, ufoX, ufoY, ufoTilt, now, {
+            scale: planeScanScale,
+            spId: activeSpId,
+            isShocked: pose.phase !== 'beam',
+            propSpin: false, // the engine died
+          })
+        );
         ctx.restore();
       }
 

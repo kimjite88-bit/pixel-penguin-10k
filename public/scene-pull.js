@@ -22,6 +22,7 @@ const SCENE3_RISE_START = 0.64;
 const SCENE3_WHIRL = { x: 290, y: 446, rx: 210, ry: 54 };
 const SCENE3_BOAT_SCALE = 0.75;
 const SCENE3_K = '#090d1a';
+const SCENE3_ROAD_Y = 478; // the car's snow road, same line as its departure (drawCarSnowRoad)
 
 function scene3Smooth(t) {
   const c = Math.max(0, Math.min(1, t));
@@ -41,7 +42,7 @@ function scene3Pose(vehicle, subP, now) {
   if (a >= 1) return { x: T.x, y: T.y + hover, tilt: Math.sin(now * 0.02) * 0.04, flip: false, caught: 1, phase: 'beam' };
 
   if (vehicle === 'car') {
-    const groundOriginY = 440 - 57 * 1.3; // tyres on the ice at y = 440
+    const groundOriginY = SCENE3_ROAD_Y - 57 * 1.3; // tyres on the same snow road as the departure
     if (a < 0.35) {
       const d = a / 0.35;
       return { x: 560 + d * 200, y: groundOriginY - Math.abs(Math.sin(now * 0.03)) * 3, tilt: 0, flip: false, caught: 0, phase: 'drive' };
@@ -157,7 +158,7 @@ function drawScene3PlaneSmoke(ctx, subP, now) {
 // Snow spraying off the tyres while the car is driven, then dragged sideways
 function drawScene3CarSpray(ctx, pose, now) {
   if (pose.phase === 'beam' || pose.phase === 'lift') return;
-  const groundY = 440;
+  const groundY = SCENE3_ROAD_Y;
   ctx.save();
   // Ground shadow + skid marks behind the drag
   ctx.fillStyle = 'rgba(9, 13, 26, 0.3)';
@@ -276,7 +277,11 @@ function drawScene3Whirlpool(ctx, subP, now, pose) {
 
 function drawScene3Approach(ctx, vehicle, subP, now, pose) {
   if (vehicle === 'boat') drawScene3Whirlpool(ctx, subP, now, pose);
-  else if (vehicle === 'car') drawScene3CarSpray(ctx, pose, now);
+  else if (vehicle === 'car') {
+    // The road it was fleeing along stays under the whole capture; the crack runs up to the car
+    drawCarSnowRoad(ctx, SCENE3_ROAD_Y, 0, Math.max(80, Math.min(pose.x - 140, 760)));
+    drawScene3CarSpray(ctx, pose, now);
+  }
   else drawScene3PlaneSmoke(ctx, subP, now);
   drawScene3Ribbons(ctx, pose.x, pose.y, vehicle === 'boat' ? (pose.phase === 'whirl' ? 0 : pose.caught) : pose.caught);
 }
@@ -505,5 +510,41 @@ function drawScene3Rise(ctx, now, r, vehicle, spId) {
     ctx.fillStyle = `rgba(255, 255, 255, ${Math.min(1, (r - 0.86) / 0.14).toFixed(2)})`;
     ctx.fillRect(0, 0, 960, 540);
   }
+  ctx.restore();
+}
+
+// SNES-style mosaic (SNESLab, register 2106h: each size x size block takes the colour of its top-left pixel, size
+// 1..16): what drawFn paints is shown in blocks of `size` stage px. Used on the not-yet-scanned 2D part of the
+// vehicle so it breaks up into ever bigger blocks before the scan line turns it into clean pixel art.
+let SCENE3_MOSAIC = null;
+function drawScene3Mosaic(ctx, size, drawFn) {
+  if (size <= 1 || typeof document === 'undefined') {
+    drawFn(ctx);
+    return;
+  }
+  if (!SCENE3_MOSAIC) {
+    const full = document.createElement('canvas');
+    full.width = 960;
+    full.height = 540;
+    SCENE3_MOSAIC = { full, small: document.createElement('canvas') };
+  }
+  const { full, small } = SCENE3_MOSAIC;
+  const fctx = full.getContext('2d');
+  fctx.setTransform(1, 0, 0, 1, 0, 0);
+  fctx.clearRect(0, 0, 960, 540);
+  drawFn(fctx);
+  const w = Math.ceil(960 / size);
+  const h = Math.ceil(540 / size);
+  if (small.width !== w || small.height !== h) {
+    small.width = w;
+    small.height = h;
+  }
+  const sctx = small.getContext('2d');
+  sctx.imageSmoothingEnabled = false;
+  sctx.clearRect(0, 0, w, h);
+  sctx.drawImage(full, 0, 0, w * size, h * size, 0, 0, w, h);
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(small, 0, 0, w, h, 0, 0, w * size, h * size);
   ctx.restore();
 }

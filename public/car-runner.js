@@ -1768,6 +1768,39 @@ function drawCarRunnerFrame(ctx, now, spId) {
   if (crashed) triggerCarCrash(now);
 }
 
+// Snow road the car flees along (scene 2) and is dragged back on (scene 4): packed snow, ruts, marker posts
+// moving by `scroll`, and a crack from the pillar side reaching to x = crackEnd
+function drawCarSnowRoad(ctx, groundY, scroll, crackEnd) {
+  ctx.save();
+  ctx.fillStyle = '#e8f1f8';
+  ctx.fillRect(0, groundY - 30, 960, 100);
+  ctx.fillStyle = '#c9dcea';
+  ctx.fillRect(0, groundY - 30, 960, 6);
+  ctx.fillStyle = '#b8cfe0';
+  ctx.fillRect(0, groundY - 6, 960, 4);
+  ctx.fillRect(0, groundY + 18, 960, 4);
+  for (let k = 0; k < 8; k++) {
+    const mx = 960 - ((scroll + k * 160) % 1120) + 80;
+    ctx.fillStyle = CAR_K;
+    ctx.fillRect(Math.round(mx) - 1, groundY - 58, 8, 32);
+    ctx.fillStyle = k % 2 ? '#ef4444' : '#f8fafc';
+    ctx.fillRect(Math.round(mx), groundY - 57, 6, 10);
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(Math.round(mx), groundY - 47, 6, 20);
+  }
+  // The crack chasing the car from the pillar side
+  ctx.strokeStyle = CAR_K;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(0, groundY + 6);
+  for (let x = 0; x <= crackEnd; x += 24) ctx.lineTo(x, groundY + 6 + (((x * 7) % 13) - 6));
+  ctx.stroke();
+  ctx.strokeStyle = '#67e8f9';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
+}
+
 // ============================================================================
 // SCENE 2 — car escape: the pillar behind (left) sucks at the car; it floors it, gets dragged back with the tyres
 // spinning, breaks free and races off to the right. It never leaves the ground: running away, not lifting off.
@@ -1798,36 +1831,7 @@ function drawCarScene1Liftoff(ctx, now, p, spId) {
   const tilt = phase === 'drag' ? -0.07 + Math.sin(now * 0.06) * 0.02 : phase === 'free' ? 0.03 : -0.02;
   const scroll = now * (phase === 'free' ? 0.9 : phase === 'go' ? 0.5 : 0.25);
 
-  ctx.save();
-  // Snow road across the front: packed snow, ruts and marker posts streaming past
-  ctx.fillStyle = '#e8f1f8';
-  ctx.fillRect(0, groundY - 30, 960, 100);
-  ctx.fillStyle = '#c9dcea';
-  ctx.fillRect(0, groundY - 30, 960, 6);
-  ctx.fillStyle = '#b8cfe0';
-  ctx.fillRect(0, groundY - 6, 960, 4);
-  ctx.fillRect(0, groundY + 18, 960, 4);
-  for (let k = 0; k < 8; k++) {
-    const mx = 960 - ((scroll + k * 160) % 1120) + 80;
-    ctx.fillStyle = CAR_K;
-    ctx.fillRect(Math.round(mx) - 1, groundY - 58, 8, 32);
-    ctx.fillStyle = k % 2 ? '#ef4444' : '#f8fafc';
-    ctx.fillRect(Math.round(mx), groundY - 57, 6, 10);
-    ctx.fillStyle = '#f8fafc';
-    ctx.fillRect(Math.round(mx), groundY - 47, 6, 20);
-  }
-  // The crack chasing the car from the pillar side
-  const crackEnd = Math.min(carX - 120 * S, 120 + p * 520);
-  ctx.strokeStyle = CAR_K;
-  ctx.lineWidth = 4;
-  ctx.beginPath();
-  ctx.moveTo(0, groundY + 6);
-  for (let x = 0; x <= crackEnd; x += 24) ctx.lineTo(x, groundY + 6 + (((x * 7) % 13) - 6));
-  ctx.stroke();
-  ctx.strokeStyle = '#67e8f9';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-  ctx.restore();
+  drawCarSnowRoad(ctx, groundY, scroll, Math.min(carX - 120 * S, 120 + p * 520));
 
   // Snow thrown back by the tyres: a big rooster tail while it fights the pull
   ctx.save();
