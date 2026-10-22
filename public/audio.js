@@ -1,6 +1,7 @@
 // ============================================================================
 // SOUND — 8-bit sound for the intro, synthesised with Web Audio: no audio files, nothing to license.
-// The town plays Jingle Bells (Pierpont, 1857, public domain) in our own chip arrangement, no lyrics.
+// The town plays a public-domain carol, picked at random per visit (TOWN_SONGS), in our own chip arrangement, no
+// lyrics.
 // Browsers only allow sound after a tap or key press (Chrome autoplay policy), so nothing plays until the first
 // gesture on the page. Two icon buttons in the top bar, as games usually split them: the note = music (the
 // carol, on by default) and the speaker = sound effects (alarm, engines, game events; off by default, they
@@ -301,8 +302,12 @@ function playIntroSfx(type, ev = {}) {
 }
 
 // ---------------------------------------------------------------------------------------------------------------
-// Jingle Bells chorus, 16 bars of [beat in bar, midi, beats]; bass roots per bar. Played on the town beat
-// (app.js townBeatT0 / TOWN_BEAT_MS) so the landing, the talk turns and the tree lights hit the beat.
+// Town carols: public-domain melodies (no lyrics) in our own chip arrangement, one picked at random each time the
+// town opens, never the same one twice in a row. Bars are [beat in bar, midi, beats]; roots = bass note per bar
+// (null = rest). All play on the town beat (app.js townBeatT0 / TOWN_BEAT_MS) so the landing, the talk turns and the
+// tree lights hit the beat; Silent Night counts that beat as an eighth note (6/8), which makes it a slow lullaby.
+//   Jingle Bells (Pierpont 1857) / Deck the Halls (Welsh Nos Galan) / We Wish You a Merry Christmas (English
+//   traditional; the 1935 Warrell arrangement is not what we play) / Silent Night (Gruber 1818)
 // ---------------------------------------------------------------------------------------------------------------
 const JB_A = [
   [[0, 76, 1], [1, 76, 1], [2, 76, 2]],
@@ -312,40 +317,142 @@ const JB_A = [
   [[0, 77, 1], [1, 77, 1], [2, 77, 1.5], [3.5, 77, 0.5]],
   [[0, 77, 1], [1, 76, 1], [2, 76, 1], [3, 76, 0.5], [3.5, 76, 0.5]],
 ];
-const JB_BARS = [
-  ...JB_A,
-  [[0, 76, 1], [1, 74, 1], [2, 74, 1], [3, 76, 1]],
-  [[0, 74, 2], [2, 79, 2]],
-  ...JB_A,
-  [[0, 79, 1], [1, 79, 1], [2, 77, 1], [3, 74, 1]],
-  [[0, 72, 4]],
+const DECK_A = [
+  [[0, 79, 1.5], [1.5, 77, 0.5], [2, 76, 1], [3, 74, 1]],
+  [[0, 72, 1], [1, 74, 1], [2, 76, 1], [3, 72, 1]],
+  [[0, 74, 0.5], [0.5, 76, 0.5], [1, 77, 0.5], [1.5, 74, 0.5], [2, 76, 1.5], [3.5, 74, 0.5]],
+  [[0, 72, 1], [1, 71, 1], [2, 72, 2]],
 ];
-const JB_ROOTS = [48, 48, 48, 48, 53, 48, 50, 55, 48, 48, 48, 48, 53, 48, 43, 48];
-const JB_PLAYS = 2; // then the town goes quiet (the lights keep the beat)
+const WISH_A = [
+  [[0, 72, 1], [1, 72, 0.5], [1.5, 74, 0.5], [2, 72, 0.5], [2.5, 71, 0.5]],
+  [[0, 69, 1], [1, 69, 1], [2, 69, 1]],
+  [[0, 74, 1], [1, 74, 0.5], [1.5, 76, 0.5], [2, 74, 0.5], [2.5, 72, 0.5]],
+  [[0, 71, 1], [1, 67, 1], [2, 67, 1]],
+  [[0, 76, 1], [1, 76, 0.5], [1.5, 77, 0.5], [2, 76, 0.5], [2.5, 74, 0.5]],
+  [[0, 72, 1], [1, 69, 1], [2, 67, 0.5], [2.5, 67, 0.5]],
+  [[0, 69, 1], [1, 74, 1], [2, 71, 1]],
+];
+const WISH_A_ROOTS = [48, 53, 50, 55, 52, 45, 53];
+const SILENT_LINE = [[[0, 67, 3], [3, 69, 1], [4, 67, 2]], [[0, 64, 6]]];
+const SILENT_ROUND = [[[0, 69, 4], [4, 69, 2]], [[0, 72, 3], [3, 71, 1], [4, 69, 2]]];
+const TOWN_SONGS = [
+  {
+    id: 'jingle',
+    bpb: 4,
+    plays: 2,
+    bars: [...JB_A, [[0, 76, 1], [1, 74, 1], [2, 74, 1], [3, 76, 1]], [[0, 74, 2], [2, 79, 2]], ...JB_A, [[0, 79, 1], [1, 79, 1], [2, 77, 1], [3, 74, 1]], [[0, 72, 4]]],
+    roots: [48, 48, 48, 48, 53, 48, 50, 55, 48, 48, 48, 48, 53, 48, 43, 48],
+  },
+  {
+    id: 'deck',
+    bpb: 4,
+    plays: 2,
+    bars: [
+      ...DECK_A,
+      ...DECK_A,
+      [[0, 74, 1.5], [1.5, 76, 0.5], [2, 77, 1], [3, 74, 1]],
+      [[0, 76, 1.5], [1.5, 77, 0.5], [2, 79, 1], [3, 74, 1]],
+      [[0, 76, 0.5], [0.5, 78, 0.5], [1, 79, 1], [2, 81, 0.5], [2.5, 83, 0.5], [3, 84, 1]],
+      [[0, 83, 1], [1, 81, 1], [2, 79, 2]],
+      DECK_A[0],
+      DECK_A[1],
+      [[0, 81, 0.5], [0.5, 81, 0.5], [1, 81, 0.5], [1.5, 81, 0.5], [2, 79, 1.5], [3.5, 77, 0.5]],
+      [[0, 76, 1], [1, 74, 1], [2, 72, 2]],
+    ],
+    roots: [48, 48, 55, 48, 48, 48, 55, 48, 55, 48, 50, 55, 48, 48, 53, 48],
+  },
+  {
+    id: 'wish',
+    bpb: 3,
+    plays: 2,
+    bars: [[[2, 67, 1]], ...WISH_A, [[0, 72, 2], [2, 67, 1]], ...WISH_A, [[0, 72, 3]]],
+    roots: [null, ...WISH_A_ROOTS, 48, ...WISH_A_ROOTS, 48],
+  },
+  {
+    id: 'silent',
+    bpb: 6,
+    plays: 1,
+    lead: 'triangle',
+    bars: [
+      ...SILENT_LINE,
+      ...SILENT_LINE,
+      [[0, 74, 4], [4, 74, 2]],
+      [[0, 71, 6]],
+      [[0, 72, 4], [4, 72, 2]],
+      [[0, 67, 6]],
+      ...SILENT_ROUND,
+      ...SILENT_LINE,
+      ...SILENT_ROUND,
+      ...SILENT_LINE,
+      [[0, 74, 4], [4, 74, 2]],
+      [[0, 77, 3], [3, 74, 1], [4, 71, 2]],
+      [[0, 72, 6]],
+      [[0, 76, 6]],
+      [[0, 72, 3], [3, 67, 1], [4, 64, 2]],
+      [[0, 67, 3], [3, 65, 1], [4, 62, 2]],
+      [[0, 60, 6]],
+      [],
+    ],
+    roots: [48, 48, 48, 48, 55, 55, 48, 48, 53, 53, 48, 48, 53, 53, 48, 48, 55, 55, 48, 48, 48, 55, 48, null],
+  },
+];
+const PP_CAROL_STORE = 'ppeng-last-carol';
+
+// The carol for this town visit (chosen once per scene start, never the last one heard)
+function townSong() {
+  const key = MOTION_STATE.sceneStartTime;
+  if (PP_SOUND.songKey !== key) {
+    let last = null;
+    try {
+      last = localStorage.getItem(PP_CAROL_STORE);
+    } catch (e) {}
+    const pool = TOWN_SONGS.filter((song) => song.id !== last);
+    PP_SOUND.song = pool[Math.floor(Math.random() * pool.length)];
+    PP_SOUND.songKey = key;
+    try {
+      localStorage.setItem(PP_CAROL_STORE, PP_SOUND.song.id);
+    } catch (e) {}
+  }
+  return PP_SOUND.song;
+}
 
 function scheduleTownMusic(fromMs, toMs, emit) {
+  const song = townSong();
+  const bpb = song.bpb;
   const beatMs = TOWN_BEAT_MS;
   const t0 = townBeatT0();
-  const total = JB_BARS.length * 4;
-  const end = Math.min((toMs - t0) / beatMs, total * JB_PLAYS - 0.5);
+  const total = song.bars.length * bpb;
+  const end = Math.min((toMs - t0) / beatMs, total * song.plays - 0.5);
+  const sec = beatMs / 1000;
+  const slow = bpb === 6;
   for (let b = Math.max(0, Math.ceil(((fromMs - t0) / beatMs) * 2) / 2); b <= end; b += 0.5) {
     const at = t0 + b * beatMs;
     if (at <= fromMs) continue;
     const lb = b % total;
-    const bar = Math.floor(lb / 4);
-    const inBar = lb - bar * 4;
-    const sec = beatMs / 1000;
-    // Lead
-    JB_BARS[bar].forEach(([pos, m, len]) => {
-      if (Math.abs(pos - inBar) < 1e-6) emit(at, (t) => sndTone(t, midiHz(m), len * sec * 0.88, { pulse: true, vol: 0.2, bus: PP_SOUND.music }));
+    const bar = Math.floor(lb / bpb);
+    const inBar = lb - bar * bpb;
+    // Lead: the NES pulse, or a soft triangle for the lullaby
+    song.bars[bar].forEach(([pos, m, len]) => {
+      if (Math.abs(pos - inBar) > 1e-6) return;
+      if (song.lead === 'triangle') emit(at, (t) => sndTone(t, midiHz(m), len * sec * 0.95, { type: 'triangle', vol: 0.3, attack: 0.03, bus: PP_SOUND.music }));
+      else emit(at, (t) => sndTone(t, midiHz(m), len * sec * 0.88, { pulse: true, vol: 0.2, bus: PP_SOUND.music }));
     });
-    // Sleigh bells on every eighth, the off-beats louder
-    emit(at, (t) => sndNoise(t, 0.05, { freq: 7000, vol: inBar % 1 ? 0.07 : 0.04, bus: PP_SOUND.music }));
+    // Sleigh bells: every eighth (off-beats louder); the lullaby only rings them softly twice a bar
+    if (!slow) emit(at, (t) => sndNoise(t, 0.05, { freq: 7000, vol: inBar % 1 ? 0.07 : 0.04, bus: PP_SOUND.music }));
+    else if (inBar === 0 || inBar === 3) emit(at, (t) => sndNoise(t, 0.12, { freq: 8000, vol: 0.03, bus: PP_SOUND.music }));
     if (inBar % 1) continue;
-    // Oom-pah bass: root on 1 and 3, fifth on 2 and 4
-    const root = JB_ROOTS[bar];
-    emit(at, (t) => sndTone(t, midiHz(inBar % 2 ? root + 7 : root), sec * 0.7, { type: 'triangle', vol: 0.32, bus: PP_SOUND.music }));
-    if (inBar % 2 === 0) emit(at, (t) => sndTone(t, 150, 0.1, { to: 50, type: 'triangle', vol: 0.3, bus: PP_SOUND.music }));
+    const root = song.roots[bar];
+    if (root === null || root === undefined) continue;
+    // Bass: oom-pah in 4 (root 1 and 3, fifth 2 and 4), oom-pah-pah in 3, two long notes a bar in 6/8
+    if (bpb === 4) {
+      emit(at, (t) => sndTone(t, midiHz(inBar % 2 ? root + 7 : root), sec * 0.7, { type: 'triangle', vol: 0.32, bus: PP_SOUND.music }));
+      if (inBar % 2 === 0) emit(at, (t) => sndTone(t, 150, 0.1, { to: 50, type: 'triangle', vol: 0.3, bus: PP_SOUND.music }));
+    } else if (bpb === 3) {
+      emit(at, (t) => sndTone(t, midiHz(inBar ? root + 7 : root), sec * 0.6, { type: 'triangle', vol: inBar ? 0.22 : 0.32, bus: PP_SOUND.music }));
+      if (inBar === 0) emit(at, (t) => sndTone(t, 150, 0.1, { to: 50, type: 'triangle', vol: 0.28, bus: PP_SOUND.music }));
+    } else if (inBar === 0 || inBar === 3) {
+      emit(at, (t) => sndTone(t, midiHz(inBar ? root + 7 : root), sec * 2.6, { type: 'triangle', vol: 0.26, attack: 0.04, bus: PP_SOUND.music }));
+    }
   }
 }
 
