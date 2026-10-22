@@ -4,8 +4,9 @@
 // locals stop, say "follow me", and all walk off to the left; the town carol stops, and with a thud (the screen
 // shakes) and a carol of its own (audio.js easterCues) a pixel-block dissolve opens a hidden Christmas
 // village (easter-village.js: pixel art made after the owner's reference, every villager in it busy) where the
-// whole cast walks in, lines up for a group photo with a snowman that turns out to be the dev, and trades B-grade
-// lines, round and round.
+// whole cast walks in next to a snowman that turns out to be the dev. B-grade story (TOWN_EASTER_TALK): the egg
+// gives nothing, the guest wants to go home to bed, but it's Christmas - everyone pairs off, even the dev, and the
+// guest is left alone under its own rain cloud.
 // The town menu stays where it is (same box, same clicks), so 10,000 CODEX / PLAY AGAIN still work; PLAY AGAIN
 // leaves the village for good (the next town starts from scratch).
 // ============================================================================
@@ -22,18 +23,60 @@ const TOWN_EASTER_CAST = [
   { sp: '06', x: 766, feet: 534, size: 86 },
 ];
 const TOWN_EASTER_SNOWMAN = { x: 104, feet: 534 };
-// Who says what (cast index, or 'snow' for the snowman), turn by turn
+// The story, turn by turn (who = cast index, or 'snow' for the snowman). Three acts, built the stand-up way:
+// 1) the reward that isn't - "none", then the dev's "consistent" (the site's own "no perks" line), then the green
+//    one's "told you" (its line in the town: "absolutely nothing over there"); 2) Christmas: the three couples form
+//    one after another, casual, sweet, then the gift (a penguin NFT, again); 3) the guest's last hope, the dev, has a
+//    date too, and it breaks. Afterwards it keeps mumbling "take me too" (what it shouted following them here),
+//    while the carol stays merry. stamp = the "reward: none" tag, pair = that couple forms, give = the gift changes
+//    hands, faceDev = the guest turns to the snowman, snowDate = the snowman's date slides in, otl = the guest
+//    slumps.
 const TOWN_EASTER_TALK = [
-  { who: 1, col: '#ff4d6d', ko: '여기가 제작자가 숨겨둔 이스터에그 마을이래! 30초 버틴 펭귄만 옴 ㅋㅋ', en: "This is the dev's hidden Easter egg village! Only penguins who wait 30 s get in lol" },
-  { who: 0, col: '#38bdf8', ko: '게임도 안 했는데 보상 받는 거 실화냐 ㅋㅋㅋ', en: 'Got a reward for doing literally nothing lol' },
-  { who: 'snow', col: '#e2e8f0', ko: '...사실 나 눈사람 아니고 제작자임. 일 안 하고 이거 그리고 있었음', en: "...I'm not a snowman. I'm the dev. Drew this instead of working" },
-  { who: 3, col: '#fbbf24', ko: '선물 까봤는데 또 펭귄 NFT임 ㅋㅋ 사신다고 뭐 안 드린다며!!', en: 'Opened my gift: another penguin NFT lol. You said zero perks!!' },
-  { who: 4, col: '#4ade80', ko: '다 같이 단체사진 찍자! 하나 둘 셋, 펭~귄!', en: 'Group photo! One, two, three, say PENGUIN!', flash: true },
-  { who: 5, col: '#fb7185', ko: '캡처해서 베리챗에 자랑해. 아는 펭귄만 아는 곳임 ㅋ', en: 'Screenshot this for VeryChat. Only real ones know this place' },
-  { who: 6, col: '#a78bfa', ko: '근데 다시 플레이 누르면 이 마을 사라짐. 진짜임', en: 'Press PLAY AGAIN and this village is gone. For real' },
-  { who: 2, col: '#2dd4bf', ko: '얼음낚시 3시간째 입질 0... 이게 크리스마스지', en: '3 hours of ice fishing, zero bites... that is Christmas' },
+  { who: 0, col: '#38bdf8', ko: '이스터에그 찾았다!! 보상 뭐임? 뭐 줌? 뭐 줌??', en: 'Found the Easter egg!! So what do I get? Huh? Huh??' },
+  { who: 'snow', col: '#e2e8f0', ko: '...나 눈사람 아니고 제작자임. 보상? 그런 거 없음', en: "...I'm not a snowman, I'm the dev. Reward? There isn't one", stamp: true },
+  { who: 1, col: '#ff4d6d', ko: '에이~ 숨겨둔 마을인데 뭐 하나쯤은 있겠지?', en: 'Come on~ a secret village has to have SOMETHING?' },
+  { who: 'snow', col: '#e2e8f0', ko: 'NFT도 혜택 없음, 이스터에그도 없음. 일관성 오짐', en: 'No perks on the NFT, none in the egg. Consistent, right?' },
+  { who: 4, col: '#4ade80', ko: '거봐, 아까 내가 진짜 아무것도 없다 했잖아 ㅋㅋ', en: 'Told you back in town. Absolutely nothing lol' },
+  { who: 0, col: '#38bdf8', ko: '허무하네... 집 가서 잠이나 자야지. 다들 가자~', en: "What a letdown... home to sleep then. Let's go, guys~" },
+  { who: 5, col: '#fb7185', ko: '응? 난 약속 있는데? 오늘 크리스마스잖아 ㅋ', en: "Huh? I've got plans. It's Christmas lol", pair: 0 },
+  { who: 1, col: '#ff4d6d', ko: '나도~ 자기야, 우리 트리 보러 가자 ♥', en: "Me too~ babe, let's go see the tree ♥", pair: 1 },
+  { who: 3, col: '#fbbf24', ko: '이 선물... 사실 너 주려고 산 거야', en: 'This gift... I actually got it for you', pair: 2, give: true },
+  { who: 4, col: '#4ade80', ko: '열어보니 또 펭귄 NFT네... 근데 좋아 ♥', en: 'Another penguin NFT... but I love it ♥' },
+  { who: 0, col: '#38bdf8', ko: '...어? 다들?? 제작자님은 솔로죠? 우리 치킨 ㄱ?', en: "...Wait, all of you?? Dev, you're single, right? Pizza night?", faceDev: true },
+  { who: 'snow', col: '#e2e8f0', ko: '미안. 나 오늘 눈사람이랑 약속 있음', en: 'Sorry. I have a date with a snowwoman tonight', snowDate: true },
+  { who: 0, col: '#38bdf8', ko: '...크리스마스 취소해 주세요', en: '...Please cancel Christmas', otl: true },
+];
+// After the story: the guest mumbles now and then (null = a quiet turn)
+const TOWN_EASTER_END = [
+  { who: 0, col: '#38bdf8', ko: '나도... 데려가......', en: 'Take me too......' },
+  null,
+  { who: 0, col: '#38bdf8', ko: '내년엔... 꼭......', en: 'Next year... for sure......' },
+  null,
+];
+// The couples, as cast indices (left one, right one), in the order they form
+const TOWN_EASTER_PAIRS = [
+  [5, 6],
+  [1, 2],
+  [3, 4],
 ];
 const TOWN_EASTER_TURN_MS = 3400;
+// When (ms after the cut) each story event happens: the stamp, each couple, the gift, the turn, the date, the slump
+function townEasterEvents() {
+  if (!TOWN_EASTER_STATE.events) {
+    const ev = { pairs: [], stamp: Infinity, give: Infinity, faceDev: Infinity, snowDate: Infinity, otl: Infinity };
+    TOWN_EASTER_TALK.forEach((l, i) => {
+      const at = TOWN_EASTER.walkInMs + i * TOWN_EASTER_TURN_MS;
+      if (l.pair !== undefined) ev.pairs[l.pair] = at;
+      if (l.give) ev.give = at + 1400;
+      ['stamp', 'faceDev', 'snowDate', 'otl'].forEach((k) => {
+        if (l[k]) ev[k] = at;
+      });
+    });
+    TOWN_EASTER_STATE.events = ev;
+  }
+  return TOWN_EASTER_STATE.events;
+}
+const TOWN_EASTER_STATE = { events: null };
 // The village has its own carol (audio.js easterCues): a thud on the cut, four beats of lead-in, then Joy to the
 // World at 150 BPM. The tree lights and the hops follow its beat.
 const TOWN_EASTER_BEAT_MS = 400;
@@ -76,8 +119,8 @@ function drawTownEasterLeaveTalk(ctx, now, elapsed, heroX, friendX, spriteY, spr
 }
 
 // One-colour-per-part pixel snowman (2px grid): three balls, coal eyes and buttons, carrot, red scarf, top hat,
-// a stick arm that waves
-function drawTownEasterSnowman(ctx, x, feet, now, talking) {
+// a stick arm that waves. opts.girl = his date (smaller, pink scarf and bow, lashes, blush); opts.flip = facing left
+function drawTownEasterSnowman(ctx, x, feet, now, talking, opts = {}) {
   const disc = (cx, cy, r, c) => {
     if (typeof fillPixelDisc === 'function') fillPixelDisc(ctx, cx, cy, r, c);
     else {
@@ -91,6 +134,8 @@ function drawTownEasterSnowman(ctx, x, feet, now, talking) {
   const bob = talking && Math.floor(now / 200) % 2 ? -2 : 0;
   ctx.save();
   ctx.translate(Math.round(x), Math.round(feet + bob));
+  if (opts.flip) ctx.scale(-1, 1);
+  if (opts.girl) ctx.scale(0.84, 0.84);
   ctx.fillStyle = 'rgba(30, 41, 59, 0.3)';
   ctx.fillRect(-26, -4, 52, 6);
   disc(0, -24, 25, K);
@@ -124,9 +169,17 @@ function drawTownEasterSnowman(ctx, x, feet, now, talking) {
   ctx.fillRect(3, -98, 4, 4);
   ctx.fillStyle = '#f97316';
   ctx.fillRect(0, -91, 12, 4);
-  ctx.fillStyle = '#dc2626';
+  ctx.fillStyle = opts.girl ? '#f472b6' : '#dc2626';
   ctx.fillRect(-14, -80, 28, 6);
   ctx.fillRect(6, -76, 6, 14);
+  if (opts.girl) {
+    ctx.fillStyle = K;
+    ctx.fillRect(-8, -102, 2, 2);
+    ctx.fillRect(7, -102, 2, 2);
+    ctx.fillStyle = '#fda4af';
+    ctx.fillRect(-10, -92, 4, 2);
+    ctx.fillRect(7, -92, 4, 2);
+  }
   ctx.fillStyle = K;
   ctx.fillRect(-2, -66, 4, 4);
   ctx.fillRect(-2, -56, 4, 4);
@@ -136,10 +189,24 @@ function drawTownEasterSnowman(ctx, x, feet, now, talking) {
   ctx.save();
   ctx.translate(0, -104);
   ctx.rotate(tilt);
-  ctx.fillRect(-16, -2, 32, 4);
-  ctx.fillRect(-10, -20, 20, 18);
-  ctx.fillStyle = '#dc2626';
-  ctx.fillRect(-10, -6, 20, 3);
+  if (opts.girl) {
+    // A pink bow instead of the hat
+    ctx.fillStyle = K;
+    ctx.fillRect(-14, -8, 28, 10);
+    ctx.fillStyle = '#f472b6';
+    ctx.fillRect(-12, -6, 10, 6);
+    ctx.fillRect(2, -6, 10, 6);
+    ctx.fillStyle = '#be185d';
+    ctx.fillRect(-2, -6, 4, 6);
+    ctx.fillStyle = '#fbcfe8';
+    ctx.fillRect(-10, -6, 4, 2);
+    ctx.fillRect(4, -6, 4, 2);
+  } else {
+    ctx.fillRect(-16, -2, 32, 4);
+    ctx.fillRect(-10, -20, 20, 18);
+    ctx.fillStyle = '#dc2626';
+    ctx.fillRect(-10, -6, 20, 3);
+  }
   ctx.restore();
   ctx.restore();
 }
@@ -184,37 +251,131 @@ function drawTownEaster(ctx, now, elapsed) {
     band.addColorStop(1, 'rgba(14, 20, 52, 0.38)');
     ctx.fillStyle = band;
     ctx.fillRect(0, 440, 960, 100);
-    // The cast walks in from the right, then lines up for the photo (hopping on the beat)
+    // The story so far: this turn's line (after the script, the guest's mumbles) and what has happened by now
     const talkT = t - TOWN_EASTER.walkInMs;
-    const turn = talkT >= 0 ? Math.floor(talkT / TOWN_EASTER_TURN_MS) % TOWN_EASTER_TALK.length : -1;
-    const line = turn >= 0 ? TOWN_EASTER_TALK[turn] : null;
+    const turn = talkT >= 0 ? Math.floor(talkT / TOWN_EASTER_TURN_MS) : -1;
+    const N = TOWN_EASTER_TALK.length;
+    const line = turn < 0 ? null : turn < N ? TOWN_EASTER_TALK[turn] : TOWN_EASTER_END[(turn - N) % TOWN_EASTER_END.length];
+    const ev = townEasterEvents();
+    const since = (at) => Math.min(1, Math.max(0, (t - at) / 600));
+    const ease = (p) => 1 - (1 - p) * (1 - p);
+    const tb = easterBeat(now);
+    const onBeat = tb >= 0 && tb % 1 < 0.25;
+    const sm = TOWN_EASTER_SNOWMAN;
+    // The snowman; his date slides in from the left and he turns to her
+    const date = since(ev.snowDate);
+    if (date > 0) drawTownEasterSnowman(ctx, -70 + (sm.x - 58 + 70) * ease(date), sm.feet, now, false, { girl: true });
+    drawTownEasterSnowman(ctx, sm.x, sm.feet, now, line && line.who === 'snow', { flip: date > 0.5 });
+    // The cast walks in from the right and lines up; the couples close in, face each other and hop together; the
+    // guest turns to the snowman, then slumps
+    const pairOf = [];
+    TOWN_EASTER_PAIRS.forEach(([a, b], p) => {
+      pairOf[a] = [p, 0];
+      pairOf[b] = [p, 1];
+    });
+    const slump = since(ev.otl);
     const spots = [];
-    drawTownEasterSnowman(ctx, TOWN_EASTER_SNOWMAN.x, TOWN_EASTER_SNOWMAN.feet, now, line && line.who === 'snow');
     TOWN_EASTER_CAST.forEach((c, i) => {
       const q = Math.min(1, Math.max(0, (t - i * 140) / (TOWN_EASTER.walkInMs - 900)));
       const e = 1 - (1 - q) * (1 - q);
-      const x = 1040 + i * 30 + (c.x - 1040 - i * 30) * e;
+      let x = 1040 + i * 30 + (c.x - 1040 - i * 30) * e;
       const walking = q < 1;
-      const tb = easterBeat(now);
-      const hop = !walking && tb >= 0 && (c.dance || (Math.floor(tb) + i) % 3 === 0) && tb % 1 < 0.3 ? (c.dance ? 8 : 4) : 0;
-      const top = c.feet - c.size * (243 / 256) - hop;
+      let flip = walking ? true : i % 2 === 1;
+      let hop = !walking && tb >= 0 && (c.dance || (Math.floor(tb) + i) % 3 === 0) && tb % 1 < 0.3 ? (c.dance ? 8 : 4) : 0;
+      const pp = pairOf[i];
+      const k = pp && !walking ? ease(since(ev.pairs[pp[0]])) : 0;
+      if (k > 0) {
+        const [a, b] = TOWN_EASTER_PAIRS[pp[0]];
+        const mid = (TOWN_EASTER_CAST[a].x + TOWN_EASTER_CAST[b].x) / 2;
+        x += (mid + (pp[1] ? 26 : -26) - x) * k;
+        flip = pp[1] === 1;
+        hop = tb >= 0 && (Math.floor(tb) + pp[0]) % 2 === 0 && tb % 1 < 0.3 ? 5 : 0;
+      }
+      const sl = i === 0 ? slump : 0;
+      if (i === 0 && t >= ev.faceDev) flip = true;
+      if (sl > 0) hop = 0;
+      const squash = 1 - 0.2 * sl;
+      const top = c.feet - c.size * (243 / 256) * squash - hop;
       if (typeof drawPixelGroundShadow === 'function') drawPixelGroundShadow(ctx, x, c.feet - 2, c.size * 0.55, hop);
-      drawAnimatedPixelPenguin(ctx, ensureSpeciesSprite(c.sp), x - c.size / 2, top, c.size, now, {
+      ctx.save();
+      if (sl > 0) {
+        ctx.translate(x, c.feet);
+        ctx.scale(1, squash);
+        ctx.translate(-x, -c.feet);
+        // Drained of colour (where the canvas filter exists)
+        if ('filter' in ctx) ctx.filter = `brightness(${(1 - 0.28 * sl).toFixed(2)}) saturate(${(1 - 0.55 * sl).toFixed(2)})`;
+      }
+      drawAnimatedPixelPenguin(ctx, ensureSpeciesSprite(c.sp), x - c.size / 2, c.feet - c.size * (243 / 256) - hop, c.size, now, {
         seed: 20 + i,
-        isWalking: walking || !!c.dance,
-        flipX: walking ? true : i % 2 === 1,
+        isWalking: (walking || !!c.dance) && sl === 0,
+        flipX: flip,
         santaHat: true,
       });
-      if (c.gift && !walking) drawTownEasterGift(ctx, x + c.size * 0.32, c.feet - c.size * 0.34);
-      spots.push({ x, top });
+      ctx.restore();
+      spots.push({ x, top, size: c.size, feet: c.feet, walking });
     });
-    // "Say PENGUIN!": a camera flash over the group photo
-    if (line && line.flash) {
-      const ft = (talkT % TOWN_EASTER_TURN_MS) - 1600;
-      if (ft >= 0 && ft < 260) {
-        ctx.fillStyle = `rgba(255, 255, 255, ${(0.8 * (1 - ft / 260)).toFixed(3)})`;
-        ctx.fillRect(0, 0, 960, 540);
+    // The gift: by the giver, then over to its sweetheart
+    const giver = spots[3];
+    const taker = spots[4];
+    if (!giver.walking) {
+      const g = ease(since(ev.give));
+      const gx = giver.x + giver.size * 0.32 + (taker.x - taker.size * 0.32 - giver.x - giver.size * 0.32) * g;
+      drawTownEasterGift(ctx, gx, giver.feet - giver.size * 0.34 - Math.sin(g * Math.PI) * 26);
+    }
+    // Hearts over each couple (and the snowmen): one beating on the beat, small ones drifting up
+    const hearts = (hx, hy, t0, seed) => {
+      drawPixelHeart(ctx, hx, hy - (onBeat ? 2 : 0), onBeat ? 4 : 3, '#ff4d6d');
+      for (let n = 0; n < 2; n++) {
+        const f = ((t - t0) / 1700 + n * 0.5 + seed * 0.3) % 1;
+        ctx.globalAlpha = 1 - f;
+        drawPixelHeart(ctx, hx + Math.sin(f * 6 + n * 2 + seed) * 10, hy - 14 - f * 40, 2, '#fda4af');
+        ctx.globalAlpha = 1;
       }
+    };
+    TOWN_EASTER_PAIRS.forEach(([a, b], p) => {
+      if (since(ev.pairs[p]) >= 1) hearts((spots[a].x + spots[b].x) / 2, Math.min(spots[a].top, spots[b].top) - 14, ev.pairs[p], p);
+    });
+    if (date >= 1) hearts(sm.x - 29, sm.feet - 150, ev.snowDate, 3);
+    // The guest's own little rain cloud, gloom lines on its face
+    if (slump > 0) {
+      const G = spots[0];
+      const cx = Math.round(G.x);
+      const cy = Math.round(G.top - 30 + Math.sin(now * 0.002) * 2);
+      ctx.globalAlpha = slump;
+      // Rain first, so the cloud sits on top of it
+      for (let k = 0; k < 6; k++) {
+        const f = (now / 480 + k * 0.41) % 1;
+        const ry = Math.round(cy + 8 + f * 30);
+        ctx.fillStyle = '#93c5fd';
+        ctx.fillRect(cx - 20 + k * 8, ry, 2, 6);
+        ctx.fillStyle = '#e0f2fe';
+        ctx.fillRect(cx - 20 + k * 8, ry + 6, 2, 2);
+      }
+      const disc = (x, y, r, c) => {
+        if (typeof fillPixelDisc === 'function') fillPixelDisc(ctx, x, y, r, c);
+        else {
+          ctx.fillStyle = c;
+          ctx.beginPath();
+          ctx.arc(x, y, r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      };
+      const lobes = [[-14, 2, 12], [0, -4, 15], [14, 1, 12]];
+      lobes.forEach(([dx, dy, r]) => disc(cx + dx, cy + dy, r + 2, '#0b1020'));
+      ctx.fillStyle = '#0b1020';
+      ctx.fillRect(cx - 28, cy, 56, 14);
+      lobes.forEach(([dx, dy, r]) => disc(cx + dx, cy + dy, r, '#4b5568'));
+      ctx.fillStyle = '#4b5568';
+      ctx.fillRect(cx - 26, cy, 52, 12);
+      ctx.fillStyle = '#353d4f';
+      ctx.fillRect(cx - 26, cy + 8, 52, 4);
+      ctx.fillStyle = '#6b7590';
+      ctx.fillRect(cx - 6, cy - 16, 10, 4);
+      ctx.fillRect(cx - 20, cy - 6, 8, 2);
+      // Gloom lines down the face
+      ctx.fillStyle = 'rgba(76, 29, 149, 0.55)';
+      for (let k = 0; k < 4; k++) ctx.fillRect(cx - 15 + k * 9, Math.round(G.top + 26), 3, 14 + (k % 2) * 6);
+      ctx.globalAlpha = 1;
     }
 
     // Secret banner across the top
@@ -245,6 +406,26 @@ function drawTownEaster(ctx, now, elapsed) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(label, 480, 27);
+    // "Reward: none" stamped under it once the dev says so
+    if (t >= ev.stamp) {
+      const st = Math.min(1, (t - ev.stamp) / 160);
+      const tag = ko ? '보상: 없음' : 'REWARD: NONE';
+      ctx.save();
+      ctx.translate(bx + bw - 34, 60);
+      ctx.rotate(-0.1);
+      ctx.scale(1.7 - 0.7 * st, 1.7 - 0.7 * st);
+      ctx.globalAlpha = st;
+      ctx.font = '900 13px "Pretendard", "Malgun Gothic", sans-serif';
+      const tw2 = Math.ceil(ctx.measureText(tag).width) + 18;
+      ctx.fillStyle = 'rgba(9, 13, 26, 0.88)';
+      ctx.fillRect(-tw2 / 2, -12, tw2, 24);
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(-tw2 / 2, -12, tw2, 24);
+      ctx.fillStyle = '#f87171';
+      ctx.fillText(tag, 0, 1);
+      ctx.restore();
+    }
     ctx.restore();
 
     // The town menu, unchanged (same box, same clicks)
