@@ -675,7 +675,8 @@ function openingCues(fromMs, toMs, emit) {
 // The hidden village's own carol (town-easter.js). The town carol stops as the screen breaks up, a deep "thud"
 // lands on the cut (the screen shakes with it), a sparkle and a snare roll lead in for four beats, then Joy to the
 // World plays as a party: four-on-the-floor kick, claps on the backbeat, open hats and sleigh bells, an octave disco
-// bass, off-beat chord stabs, and every second pass a whole step higher with bells on top; a drum break, round again.
+// bass, off-beat chord stabs; the second pass a whole step higher with bells on top, a drum break, and then the
+// village shuffles its carols like the town (villagePlaylistAt).
 // Tune ANTIOCH as printed by Lowell Mason, The Modern Psalmist (Boston 1839), No. 144: public domain (Mason d. 1872;
 // the Handel attribution is disputed and does not matter). Not the 1970 Hoyt Axton song of the same name.
 // Here in C, the lead an octave up; 20 bars of 2/4 at 150 BPM (TOWN_EASTER_BEAT_MS).
@@ -703,7 +704,17 @@ const JOY_BARS = [
   [[0, 72, 2]],
 ];
 // Chord on each beat: bass root and the chord's notes above it
-const JOY_CHORD = { C: [48, [0, 4, 7]], F: [41, [0, 4, 7]], G: [43, [0, 4, 7]], G7: [43, [0, 4, 7, 10]], Am: [45, [0, 3, 7]] };
+const JOY_CHORD = {
+  C: [48, [0, 4, 7]],
+  Dm: [50, [0, 3, 7]],
+  D: [50, [0, 4, 7]],
+  Em: [52, [0, 3, 7]],
+  F: [41, [0, 4, 7]],
+  G: [43, [0, 4, 7]],
+  G7: [43, [0, 4, 7, 10]],
+  Am: [45, [0, 3, 7]],
+  B: [47, [0, 4, 7]],
+};
 const JOY_HARMONY = [
   ['C', 'C'], ['C', 'C'], ['G', 'G'], ['C', 'C'], ['F', 'F'], ['G', 'G'], ['C', 'C'], ['C', 'C'], ['C', 'Am'], ['C', 'C'],
   ['C', 'F'], ['C', 'C'], ['C', 'C'], ['C', 'C'], ['G', 'G'], ['G7', 'G7'], ['C', 'F'], ['C', 'F'], ['C', 'G'], ['C', 'C'],
@@ -711,6 +722,128 @@ const JOY_HARMONY = [
 const JOY_PASS = JOY_BARS.length * 2; // beats in one pass
 const JOY_BREAK = 4; // beats of drum break after every two passes
 const JOY_CYCLE = JOY_PASS * 2 + JOY_BREAK;
+
+// After Joy the village shuffles carols like the town does: the town's four plus two more, all public domain, in
+// the same party dress (chords per beat where given, else the town's bass roots).
+//   Ding Dong Merrily on High: tune Branle de l'Official from Arbeau's Orchesographie (1589), as set by Charles Wood
+//   (Cambridge Carol-Book 1924; Wood d. 1926), Bb -> C. God Rest You Merry, Gentlemen: English traditional, E minor,
+//   lead an octave up. Both read from the scores in their Wikipedia articles (scratch/easter_carol/lily.py).
+const DING_SONG = {
+  id: 'ding',
+  bpb: 4,
+  bars: [
+    [[0, 72, 1], [1, 72, 1], [2, 74, 0.5], [2.5, 72, 0.5], [3, 71, 0.5], [3.5, 69, 0.5]],
+    [[0, 67, 3], [3, 67, 1]],
+    [[0, 69, 1], [1, 72, 1], [2, 72, 1], [3, 71, 1]],
+    [[0, 72, 2], [2, 72, 2]],
+    [[0, 72, 1], [1, 72, 1], [2, 74, 0.5], [2.5, 72, 0.5], [3, 71, 0.5], [3.5, 69, 0.5]],
+    [[0, 67, 3], [3, 67, 1]],
+    [[0, 69, 1], [1, 72, 1], [2, 72, 1], [3, 71, 1]],
+    [[0, 72, 2], [2, 72, 2]],
+    [[0, 79, 1.5], [1.5, 77, 0.5], [2, 76, 0.5], [2.5, 77, 0.5], [3, 79, 0.5], [3.5, 76, 0.5]],
+    [[0, 77, 1.5], [1.5, 76, 0.5], [2, 74, 0.5], [2.5, 76, 0.5], [3, 77, 0.5], [3.5, 74, 0.5]],
+    [[0, 76, 1.5], [1.5, 74, 0.5], [2, 72, 0.5], [2.5, 74, 0.5], [3, 76, 0.5], [3.5, 72, 0.5]],
+    [[0, 74, 1.5], [1.5, 72, 0.5], [2, 71, 0.5], [2.5, 72, 0.5], [3, 74, 0.5], [3.5, 71, 0.5]],
+    [[0, 72, 1.5], [1.5, 71, 0.5], [2, 69, 0.5], [2.5, 71, 0.5], [3, 72, 0.5], [3.5, 69, 0.5]],
+    [[0, 71, 1.5], [1.5, 69, 0.5], [2, 67, 1], [3, 67, 1]],
+    [[0, 69, 1], [1, 72, 1], [2, 72, 1], [3, 71, 1]],
+    [[0, 72, 2], [2, 72, 2]],
+  ],
+  harm: [
+    ['C', 'C', 'F', 'G'],
+    ['G', 'G', 'G', 'G'],
+    ['F', 'Am', 'G', 'G'],
+    ['C', 'C', 'C', 'C'],
+    ['C', 'C', 'F', 'G'],
+    ['G', 'G', 'G', 'G'],
+    ['F', 'Am', 'G', 'G'],
+    ['C', 'C', 'C', 'C'],
+    ['C', 'C', 'C', 'C'],
+    ['Dm', 'Dm', 'G', 'G'],
+    ['C', 'C', 'C', 'C'],
+    ['G', 'G', 'G', 'G'],
+    ['Am', 'Am', 'Am', 'Am'],
+    ['G', 'G', 'C', 'C'],
+    ['F', 'Am', 'G', 'G'],
+    ['C', 'C', 'C', 'C'],
+  ],
+};
+const GOD_SONG = {
+  id: 'god',
+  bpb: 4,
+  bars: [
+    [[3, 76, 1]],
+    [[0, 76, 1], [1, 83, 1], [2, 83, 1], [3, 81, 1]],
+    [[0, 79, 1], [1, 78, 1], [2, 76, 1], [3, 74, 1]],
+    [[0, 76, 1], [1, 78, 1], [2, 79, 1], [3, 81, 1]],
+    [[0, 83, 3], [3, 76, 1]],
+    [[0, 76, 1], [1, 83, 1], [2, 83, 1], [3, 81, 1]],
+    [[0, 79, 1], [1, 78, 1], [2, 76, 1], [3, 74, 1]],
+    [[0, 76, 1], [1, 78, 1], [2, 79, 1], [3, 81, 1]],
+    [[0, 83, 3], [3, 83, 1]],
+    [[0, 84, 1], [1, 81, 1], [2, 83, 1], [3, 84, 1]],
+    [[0, 86, 1], [1, 88, 1], [2, 83, 1], [3, 81, 1]],
+    [[0, 79, 1], [1, 76, 1], [2, 78, 1], [3, 79, 1]],
+    [[0, 81, 2], [2, 79, 1], [3, 81, 1]],
+    [[0, 83, 2], [2, 84, 1], [3, 83, 1]],
+    [[0, 83, 1], [1, 81, 1], [2, 79, 1], [3, 78, 1]],
+    [[0, 76, 2], [2, 79, 0.5], [2.5, 78, 0.5], [3, 76, 1]],
+    [[0, 81, 2], [2, 79, 1], [3, 81, 1]],
+    [[0, 83, 1], [1, 84, 1], [2, 86, 1], [3, 88, 1]],
+    [[0, 83, 1], [1, 81, 1], [2, 79, 1], [3, 78, 1]],
+    [[0, 76, 3]],
+  ],
+  harm: [
+    [null, null, null, 'Em'],
+    ['Em', 'Em', 'Em', 'Am'],
+    ['Em', 'B', 'Em', 'D'],
+    ['C', 'D', 'G', 'D'],
+    ['B', 'B', 'B', 'Em'],
+    ['Em', 'Em', 'Em', 'Am'],
+    ['Em', 'B', 'Em', 'D'],
+    ['C', 'D', 'G', 'D'],
+    ['B', 'B', 'B', 'B'],
+    ['Am', 'Am', 'Em', 'Am'],
+    ['G', 'C', 'Em', 'D'],
+    ['Em', 'Em', 'B', 'Em'],
+    ['D', 'D', 'G', 'D'],
+    ['Em', 'Em', 'C', 'Em'],
+    ['Em', 'D', 'Em', 'B'],
+    ['Em', 'Em', 'Em', 'Em'],
+    ['Am', 'Am', 'G', 'D'],
+    ['Em', 'C', 'G', 'C'],
+    ['Em', 'D', 'Em', 'B'],
+    ['Em', 'Em', 'Em', null],
+  ],
+};
+const VILLAGE_GAP = 4; // beats of rest between two carols
+
+// The village playlist: { song (null = Joy), start, len } in beats from Joy's first note. Joy plays once, then a
+// shuffled bag of the rest, refilled when empty, never the same carol twice running. Rebuilt for every visit.
+function villagePlaylistAt(b) {
+  if (PP_SOUND.villageKey !== MOTION_STATE.sceneStartTime) {
+    PP_SOUND.villageKey = MOTION_STATE.sceneStartTime;
+    PP_SOUND.villageList = [{ song: null, start: 0, len: JOY_CYCLE }];
+    PP_SOUND.villageBag = [];
+  }
+  const list = PP_SOUND.villageList;
+  while (list[list.length - 1].start + list[list.length - 1].len + VILLAGE_GAP <= b && list.length < 80) {
+    const prev = list[list.length - 1];
+    if (!PP_SOUND.villageBag.length) {
+      const bag = [...TOWN_SONGS, DING_SONG, GOD_SONG];
+      for (let i = bag.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [bag[i], bag[j]] = [bag[j], bag[i]];
+      }
+      if (prev.song && bag[bag.length - 1].id === prev.song.id) bag.unshift(bag.pop());
+      PP_SOUND.villageBag = bag;
+    }
+    const song = PP_SOUND.villageBag.pop();
+    list.push({ song, start: prev.start + prev.len + (prev.song ? VILLAGE_GAP : 0), len: song.bars.length * song.bpb });
+  }
+  for (let i = list.length - 1; i >= 0; i--) if (b >= list[i].start) return list[i];
+  return list[0];
+}
 
 function easterCues(fromMs, toMs, emit) {
   const bus = PP_SOUND.music;
@@ -734,61 +867,79 @@ function easterCues(fromMs, toMs, emit) {
   every(fromMs, toMs, cut + 2 * beatMs, t0 - 1, beatMs / 4, (at, k) => {
     emit(at, (t) => sndNoise(t, 0.07, { filter: 'bandpass', freq: 1900, q: 0.9, vol: 0.05 + k * 0.018, bus }));
   });
-  // The song, on sixteenths from the first note
+  // The playlist, on sixteenths from Joy's first note
   for (let q = Math.max(0, Math.ceil(((fromMs - t0) / beatMs) * 4)); ; q++) {
     const b = q / 4;
     const at = t0 + b * beatMs;
     if (at > toMs) break;
     if (at <= fromMs) continue;
-    const cb = b % JOY_CYCLE;
-    const s16 = q % 8; // sixteenth in the 2/4 bar
-    if (cb >= JOY_PASS * 2) {
-      // Drum break: kick, then a snare roll swelling into the downbeat
-      const k = Math.round((cb - JOY_PASS * 2) * 4);
-      if (k === 0) emit(at, (t) => sndTone(t, 160, 0.14, { to: 40, type: 'triangle', vol: 0.4, bus }));
-      if (k >= 4) emit(at, (t) => sndNoise(t, 0.08, { filter: 'bandpass', freq: 1700 + k * 60, q: 0.9, vol: 0.06 + k * 0.012, bus }));
+    const entry = villagePlaylistAt(b);
+    const lb = b - entry.start;
+    if (lb >= entry.len) continue; // the rest between two carols
+    const s16 = Math.round(lb * 4);
+    if (!entry.song) {
+      // Joy to the World: two passes, the second a whole step up with bells, then a drum break
+      if (lb >= JOY_PASS * 2) {
+        const k = Math.round((lb - JOY_PASS * 2) * 4);
+        if (k === 0) emit(at, (t) => sndTone(t, 160, 0.14, { to: 40, type: 'triangle', vol: 0.4, bus }));
+        if (k >= 4) emit(at, (t) => sndNoise(t, 0.08, { filter: 'bandpass', freq: 1700 + k * 60, q: 0.9, vol: 0.06 + k * 0.012, bus }));
+        continue;
+      }
+      const pass = lb < JOY_PASS ? 0 : 1;
+      const pb = lb - pass * JOY_PASS;
+      const bar = Math.floor(pb / 2);
+      const inBar = pb - bar * 2;
+      const chord = JOY_CHORD[JOY_HARMONY[bar][Math.floor(inBar)]];
+      partyBeat(emit, at, sec, JOY_BARS[bar], inBar, s16 % 8, 2, chord, pass * 2, s16 % 8 === 0 && (bar === 0 || bar === 8), pass === 1, q);
       continue;
     }
-    const pass = cb < JOY_PASS ? 0 : 1;
-    const key = pass * 2;
-    const pb = cb - pass * JOY_PASS;
-    const bar = Math.floor(pb / 2);
-    const inBar = pb - bar * 2;
-    // Lead: the pulse, an octave-down square for body
-    JOY_BARS[bar].forEach(([pos, m, len]) => {
-      if (Math.abs(pos - inBar) > 1e-6) return;
-      emit(at, (t) => sndTone(t, midiHz(m + key), len * sec * 0.85, { pulse: true, vol: 0.17, bus }));
-      emit(at, (t) => sndTone(t, midiHz(m + key - 12), len * sec * 0.7, { type: 'square', vol: 0.035, bus }));
+    // The others, shuffled, in the same dress; bells come in for the second half
+    const song = entry.song;
+    const bar = Math.floor(lb / song.bpb);
+    const inBar = lb - bar * song.bpb;
+    const name = song.harm ? song.harm[bar][Math.floor(inBar)] : null;
+    const root = song.roots ? song.roots[bar] : null;
+    const chord = name ? JOY_CHORD[name] : root === null || root === undefined ? null : [root, root % 12 === 9 ? [0, 3, 7] : [0, 4, 7]];
+    const half = bar * 2 >= song.bars.length;
+    const crash = inBar === 0 && (bar === 0 || bar * 2 === song.bars.length);
+    partyBeat(emit, at, sec, song.bars[bar], inBar, s16 % (song.bpb * 4), song.bpb, chord, 0, crash, half, q);
+  }
+}
+
+// One sixteenth of the village's party arrangement: the lead (pulse, an octave-down square for body), a crash where
+// asked, four-on-the-floor kick, claps on the backbeat (2 and 3 in 3/4), open hats and sleigh bells, an octave disco
+// bass, off-beat chord stabs, bells sparkling on top where asked
+function partyBeat(emit, at, sec, notesInBar, inBar, s16, bpb, chord, key, crash, bells, q) {
+  const bus = PP_SOUND.music;
+  notesInBar.forEach(([pos, m, len]) => {
+    if (Math.abs(pos - inBar) > 1e-6) return;
+    emit(at, (t) => sndTone(t, midiHz(m + key), len * sec * 0.85, { pulse: true, vol: 0.17, bus }));
+    emit(at, (t) => sndTone(t, midiHz(m + key - 12), len * sec * 0.7, { type: 'square', vol: 0.035, bus }));
+  });
+  if (crash) emit(at, (t) => sndNoise(t, 0.9, { freq: 5000, vol: 0.11, bus }));
+  if (s16 % 4 === 0) {
+    emit(at, (t) => {
+      sndTone(t, 165, 0.12, { to: 42, type: 'triangle', vol: 0.38, bus });
+      sndNoise(t, 0.035, { filter: 'lowpass', freq: 900, vol: 0.12, bus });
     });
-    // Drums: crash at the top of each half of the tune, kick on every beat, clap on the backbeat, hats and bells
-    if (s16 === 0 && (bar === 0 || bar === 8)) emit(at, (t) => sndNoise(t, 0.9, { freq: 5000, vol: 0.11, bus }));
-    if (s16 % 4 === 0) {
-      emit(at, (t) => {
-        sndTone(t, 165, 0.12, { to: 42, type: 'triangle', vol: 0.38, bus });
-        sndNoise(t, 0.035, { filter: 'lowpass', freq: 900, vol: 0.12, bus });
-      });
-    }
-    if (s16 === 4) {
-      emit(at, (t) => {
-        sndNoise(t, 0.12, { filter: 'bandpass', freq: 1500, q: 0.8, vol: 0.17, bus });
-        sndNoise(t + 0.012, 0.1, { filter: 'bandpass', freq: 2200, q: 0.8, vol: 0.1, bus });
-      });
-    }
-    if (s16 % 4 === 2) emit(at, (t) => sndNoise(t, 0.11, { freq: 7500, vol: 0.06, bus }));
-    else if (s16 % 2 === 0) emit(at, (t) => sndNoise(t, 0.03, { freq: 9500, vol: 0.035, bus }));
-    emit(at, (t) => sndNoise(t, 0.04, { freq: 8500, vol: s16 % 2 ? 0.022 : 0.032, bus }));
-    const [root, notes] = JOY_CHORD[JOY_HARMONY[bar][Math.floor(inBar)]];
-    // Disco bass: octave bounce in eighths
-    if (s16 % 2 === 0) emit(at, (t) => sndTone(t, midiHz(root + key + (s16 % 4 ? 12 : 0)), sec * 0.42, { type: 'triangle', vol: 0.32, bus }));
-    // Off-beat chord stabs
-    if (s16 % 4 === 2) {
-      notes.slice(0, 3).forEach((n) => emit(at, (t) => sndTone(t, midiHz(root + key + 24 + n), 0.09, { type: 'square', vol: 0.026, bus })));
-    }
-    // Second pass: bells sparkling on top in sixteenths
-    if (pass === 1) {
-      const n = notes[(q * 3) % notes.length];
-      emit(at, (t) => sndTone(t, midiHz(root + key + 48 + n), 0.12, { type: 'triangle', vol: 0.045, bus }));
-    }
+  }
+  const clap = bpb === 3 ? s16 === 4 || s16 === 8 : s16 % 8 === 4;
+  if (clap) {
+    emit(at, (t) => {
+      sndNoise(t, 0.12, { filter: 'bandpass', freq: 1500, q: 0.8, vol: 0.17, bus });
+      sndNoise(t + 0.012, 0.1, { filter: 'bandpass', freq: 2200, q: 0.8, vol: 0.1, bus });
+    });
+  }
+  if (s16 % 4 === 2) emit(at, (t) => sndNoise(t, 0.11, { freq: 7500, vol: 0.06, bus }));
+  else if (s16 % 2 === 0) emit(at, (t) => sndNoise(t, 0.03, { freq: 9500, vol: 0.035, bus }));
+  emit(at, (t) => sndNoise(t, 0.04, { freq: 8500, vol: s16 % 2 ? 0.022 : 0.032, bus }));
+  if (!chord) return;
+  const [root, notes] = chord;
+  if (s16 % 2 === 0) emit(at, (t) => sndTone(t, midiHz(root + key + (s16 % 4 ? 12 : 0)), sec * 0.42, { type: 'triangle', vol: 0.32, bus }));
+  if (s16 % 4 === 2) notes.slice(0, 3).forEach((n) => emit(at, (t) => sndTone(t, midiHz(root + key + 24 + n), 0.09, { type: 'square', vol: 0.026, bus })));
+  if (bells) {
+    const n = notes[(q * 3) % notes.length];
+    emit(at, (t) => sndTone(t, midiHz(root + key + 48 + n), 0.12, { type: 'triangle', vol: 0.045, bus }));
   }
 }
 
