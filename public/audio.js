@@ -2,7 +2,8 @@
 // SOUND — 8-bit sound for the intro, synthesised with Web Audio: no audio files, nothing to license.
 // The town plays Jingle Bells (Pierpont, 1857, public domain) in our own chip arrangement, no lyrics.
 // Browsers only allow sound after a tap or key press (Chrome autoplay policy), so nothing plays until the first
-// gesture on the page; the 소리 button in the top bar turns it off and the choice is remembered. The intro reads
+// gesture on the page. By default only the carol plays (the alarm and game SFX annoyed on a first visit); the
+// 소리 button in the top bar cycles 캐럴만 -> 소리 전체 -> 소리 끔 and the choice is remembered. The intro reads
 // the same with the sound off: every cue only doubles something already on screen.
 // Scene cues run on the scene clock (MOTION_STATE.sceneStartTime) and are scheduled a little ahead on the audio
 // clock, so a cue joined late (sound turned on mid-scene) starts from where the scene already is.
@@ -15,6 +16,7 @@ const PP_SOUND = {
   noise: null,
   pulse: null,
   on: true,
+  mode: 'carol', // 'carol' (town music only) | 'all' | 'off'
   key: '',
   cursor: 0,
   lastTick: 0,
@@ -24,9 +26,18 @@ const PP_SOUND = {
 const PP_SOUND_STORE = 'ppeng-sound';
 const PP_SOUND_LOOKAHEAD = 120; // ms scheduled ahead of the scene clock
 
+const PP_SOUND_MODES = ['carol', 'all', 'off'];
 try {
-  PP_SOUND.on = localStorage.getItem(PP_SOUND_STORE) !== 'off';
+  // v5.19.0 stored 'on' for everyone who tapped the toggle; that is the new default (carol only) now
+  const saved = localStorage.getItem(PP_SOUND_STORE);
+  PP_SOUND.mode = saved === 'all' || saved === 'off' ? saved : 'carol';
 } catch (e) {}
+PP_SOUND.on = PP_SOUND.mode !== 'off';
+
+// Alarm, engines, game events and the pillar: only in 소리 전체
+function sfxOn() {
+  return PP_SOUND.mode === 'all';
+}
 
 function soundReady() {
   return PP_SOUND.on && PP_SOUND.ctx && PP_SOUND.ctx.state === 'running';
@@ -71,10 +82,12 @@ function soundUnlock() {
   if (c && c.state !== 'running' && document.visibilityState === 'visible') c.resume().catch(() => {});
 }
 
-function setSoundOn(on) {
+function setSoundMode(mode) {
+  const on = mode !== 'off';
+  PP_SOUND.mode = mode;
   PP_SOUND.on = on;
   try {
-    localStorage.setItem(PP_SOUND_STORE, on ? 'on' : 'off');
+    localStorage.setItem(PP_SOUND_STORE, mode);
   } catch (e) {}
   if (on) {
     soundUnlock();
@@ -88,8 +101,9 @@ function setSoundOn(on) {
 function updateSoundButton() {
   const btn = typeof document !== 'undefined' && document.getElementById('btn-sound-toggle');
   if (!btn) return;
-  const ko = PP_SOUND.on ? '소리 켬' : '소리 끔';
-  const en = PP_SOUND.on ? 'Sound on' : 'Sound off';
+  const m = PP_SOUND.mode;
+  const ko = m === 'all' ? '소리 전체' : m === 'off' ? '소리 끔' : '캐럴만';
+  const en = m === 'all' ? 'All sound' : m === 'off' ? 'Sound off' : 'Carol only';
   btn.dataset.ko = ko;
   btn.dataset.en = en;
   btn.textContent = typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'en' ? en : ko;
@@ -211,7 +225,7 @@ const PP_SFX_MAP = {
 };
 
 function playIntroSfx(type, ev = {}) {
-  if (!soundReady()) return;
+  if (!soundReady() || !sfxOn()) return;
   const name = PP_SFX_MAP[type] || (ev.points ? 'coin' : null);
   if (!name) return;
   // The same voice at most every 40 ms (several pickups in one frame would just get louder)
@@ -305,6 +319,20 @@ function suckCues(fromMs, toMs, emit, dur, scanFrom, scanTo, riseFrom) {
 function sceneCues(fromMs, toMs, emit) {
   const s = MOTION_STATE.sceneIdx;
   const v = MOTION_STATE.vehicle;
+  if (s === 4) {
+    if (!MOTION_STATE.skippedEscape && sfxOn()) {
+      // The vehicle falls (whistle), slams in at 952 ms (the song's first note) and bounces until 1632
+      once(fromMs, toMs, 1, emit, (t) => sndTone(t, 1400, 0.9, { to: 300, type: 'triangle', vol: 0.12 }));
+      once(fromMs, toMs, 952, emit, (t) => {
+        sndNoise(t, 0.5, { filter: 'lowpass', freq: 1600, to: 150, vol: 0.5 });
+        sndTone(t, 120, 0.3, { to: 45, type: 'triangle', vol: 0.35 });
+      });
+      once(fromMs, toMs, 1292, emit, (t) => sndNoise(t, 0.1, { filter: 'lowpass', freq: 700, vol: 0.22 }));
+    }
+    scheduleTownMusic(fromMs, toMs, emit);
+    return;
+  }
+  if (!sfxOn()) return;
   if (s === 0) {
     if (MOTION_STATE.scene0IdleStart) return; // stage 5 runs on its own clock (soundTick)
     // Alarm: two soft beeps every 1.7 s, louder the longer the player waits
@@ -332,17 +360,6 @@ function sceneCues(fromMs, toMs, emit) {
     });
   } else if (s === 3) {
     suckCues(fromMs, toMs, emit, 7000, 0.24, 0.6, 0.64);
-  } else if (s === 4) {
-    if (!MOTION_STATE.skippedEscape) {
-      // The vehicle falls (whistle), slams in at 952 ms (the song's first note) and bounces until 1632
-      once(fromMs, toMs, 1, emit, (t) => sndTone(t, 1400, 0.9, { to: 300, type: 'triangle', vol: 0.12 }));
-      once(fromMs, toMs, 952, emit, (t) => {
-        sndNoise(t, 0.5, { filter: 'lowpass', freq: 1600, to: 150, vol: 0.5 });
-        sndTone(t, 120, 0.3, { to: 45, type: 'triangle', vol: 0.35 });
-      });
-      once(fromMs, toMs, 1292, emit, (t) => sndNoise(t, 0.1, { filter: 'lowpass', freq: 700, vol: 0.22 }));
-    }
-    scheduleTownMusic(fromMs, toMs, emit);
   }
 }
 
@@ -366,11 +383,11 @@ function soundTick() {
   if (to <= from) return;
   const emit = (atMs, play) => play(Math.max(c.currentTime + 0.005, c.currentTime + (start + atMs - nowP) / 1000));
   if (idle) {
-    suckCues(from, to, emit, SCENE0_SUCK_MS, 0.3, 0.6, 0.6);
+    if (sfxOn()) suckCues(from, to, emit, SCENE0_SUCK_MS, 0.3, 0.6, 0.6);
   } else {
     sceneCues(from, to, emit);
     // Quake rumble at the start of each quake burst (escape-scene.js scene0Quake)
-    if (MOTION_STATE.sceneIdx === 0) {
+    if (MOTION_STATE.sceneIdx === 0 && sfxOn()) {
       const q = scene0Quake(nowP + 40) > 0;
       if (q && !PP_SOUND.quakeOn) {
         const esc = scene0Escalation(nowP);
@@ -396,7 +413,7 @@ if (typeof window !== 'undefined') {
     if (btn) {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
-        setSoundOn(!PP_SOUND.on);
+        setSoundMode(PP_SOUND_MODES[(PP_SOUND_MODES.indexOf(PP_SOUND.mode) + 1) % PP_SOUND_MODES.length]);
       });
     }
     updateSoundButton();
