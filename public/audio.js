@@ -307,9 +307,11 @@ function playIntroSfx(type, ev = {}) {
 // Town carols: public-domain melodies (no lyrics) in our own chip arrangement, one picked at random each time the
 // town opens, never the same one twice in a row. Bars are [beat in bar, midi, beats]; roots = bass note per bar
 // (null = rest). All play on the town beat (app.js townBeatT0 / TOWN_BEAT_MS) so the landing, the talk turns and the
-// tree lights hit the beat; Silent Night counts that beat as an eighth note (6/8), which makes it a slow lullaby.
+// tree lights hit the beat. All are dressed up as upbeat chiptune: drums, a bouncing octave bass, 16th-note chord
+// arpeggios under the lead and an octave doubling, so even the old hymn tunes party.
 //   Jingle Bells (Pierpont 1857) / Deck the Halls (Welsh Nos Galan) / We Wish You a Merry Christmas (English
-//   traditional; the 1935 Warrell arrangement is not what we play) / Silent Night (Gruber 1818)
+//   traditional; the 1935 Warrell arrangement is not what we play) / Good King Wenceslas (tune from Piae Cantiones,
+//   1582; words Neale 1853)
 // ---------------------------------------------------------------------------------------------------------------
 const JB_A = [
   [[0, 76, 1], [1, 76, 1], [2, 76, 2]],
@@ -335,8 +337,12 @@ const WISH_A = [
   [[0, 69, 1], [1, 74, 1], [2, 71, 1]],
 ];
 const WISH_A_ROOTS = [48, 53, 50, 55, 52, 45, 53];
-const SILENT_LINE = [[[0, 67, 3], [3, 69, 1], [4, 67, 2]], [[0, 64, 6]]];
-const SILENT_ROUND = [[[0, 69, 4], [4, 69, 2]], [[0, 72, 3], [3, 71, 1], [4, 69, 2]]];
+const KING_A = [
+  [[0, 72, 1], [1, 72, 1], [2, 72, 1], [3, 74, 1]],
+  [[0, 72, 1], [1, 72, 1], [2, 67, 2]],
+  [[0, 69, 1], [1, 67, 1], [2, 69, 1], [3, 71, 1]],
+  [[0, 72, 2], [2, 72, 2]],
+];
 const TOWN_SONGS = [
   {
     id: 'jingle',
@@ -371,31 +377,23 @@ const TOWN_SONGS = [
     roots: [null, ...WISH_A_ROOTS, 48, ...WISH_A_ROOTS, 48],
   },
   {
-    id: 'silent',
-    bpb: 6,
+    id: 'king',
+    bpb: 4,
     plays: 1,
-    lead: 'triangle',
     bars: [
-      ...SILENT_LINE,
-      ...SILENT_LINE,
-      [[0, 74, 4], [4, 74, 2]],
-      [[0, 71, 6]],
-      [[0, 72, 4], [4, 72, 2]],
-      [[0, 67, 6]],
-      ...SILENT_ROUND,
-      ...SILENT_LINE,
-      ...SILENT_ROUND,
-      ...SILENT_LINE,
-      [[0, 74, 4], [4, 74, 2]],
-      [[0, 77, 3], [3, 74, 1], [4, 71, 2]],
-      [[0, 72, 6]],
-      [[0, 76, 6]],
-      [[0, 72, 3], [3, 67, 1], [4, 64, 2]],
-      [[0, 67, 3], [3, 65, 1], [4, 62, 2]],
-      [[0, 60, 6]],
-      [],
+      ...KING_A,
+      ...KING_A,
+      [[0, 79, 1], [1, 77, 1], [2, 76, 1], [3, 74, 1]],
+      [[0, 76, 1], [1, 74, 1], [2, 72, 2]],
+      [[0, 69, 1], [1, 67, 1], [2, 69, 1], [3, 71, 1]],
+      [[0, 72, 2], [2, 72, 2]],
+      [[0, 67, 1], [1, 67, 1], [2, 69, 1], [3, 71, 1]],
+      [[0, 72, 1], [1, 72, 1], [2, 74, 2]],
+      [[0, 79, 1], [1, 77, 1], [2, 76, 1], [3, 74, 1]],
+      [[0, 72, 2], [2, 77, 2]],
+      [[0, 72, 4]],
     ],
-    roots: [48, 48, 48, 48, 55, 55, 48, 48, 53, 53, 48, 48, 53, 53, 48, 48, 55, 55, 48, 48, 48, 55, 48, null],
+    roots: [48, 48, 55, 48, 48, 48, 55, 48, 55, 48, 55, 48, 55, 48, 55, 48, 48],
   },
 ];
 const PP_CAROL_STORE = 'ppeng-last-carol';
@@ -455,30 +453,45 @@ function scheduleTownMusic(fromMs, toMs, emit) {
     const song = entry.song;
     PP_SOUND.song = song;
     const bpb = song.bpb;
-    const slow = bpb === 6;
     const bar = Math.floor((lb % (song.bars.length * bpb)) / bpb);
     const inBar = (lb % (song.bars.length * bpb)) - bar * bpb;
-    // Lead: the NES pulse, or a soft triangle for the lullaby
+    const music = PP_SOUND.music;
+    const half = Math.round(inBar * 2); // eighth-note index in the bar
+    // Lead: the NES pulse, doubled an octave down on a thin square for body
     song.bars[bar].forEach(([pos, m, len]) => {
       if (Math.abs(pos - inBar) > 1e-6) return;
-      if (song.lead === 'triangle') emit(at, (t) => sndTone(t, midiHz(m), len * sec * 0.95, { type: 'triangle', vol: 0.3, attack: 0.03, bus: PP_SOUND.music }));
-      else emit(at, (t) => sndTone(t, midiHz(m), len * sec * 0.88, { pulse: true, vol: 0.2, bus: PP_SOUND.music }));
+      emit(at, (t) => sndTone(t, midiHz(m), len * sec * 0.85, { pulse: true, vol: 0.17, bus: music }));
+      emit(at, (t) => sndTone(t, midiHz(m - 12), len * sec * 0.7, { type: 'square', vol: 0.035, bus: music }));
     });
-    // Sleigh bells: every eighth (off-beats louder); the lullaby only rings them softly twice a bar
-    if (!slow) emit(at, (t) => sndNoise(t, 0.05, { freq: 7000, vol: inBar % 1 ? 0.07 : 0.04, bus: PP_SOUND.music }));
-    else if (inBar === 0 || inBar === 3) emit(at, (t) => sndNoise(t, 0.12, { freq: 8000, vol: 0.03, bus: PP_SOUND.music }));
-    if (inBar % 1) continue;
+    // Drums. 4/4: kick on 1 and 3, snare on 2 and 4; 3/4: kick on 1, snare on 2 and 3. Hats every eighth with
+    // the sleigh bells shaking on the off-beats
+    const kick = bpb === 3 ? half === 0 : half === 0 || half === 4;
+    const snare = bpb === 3 ? half === 2 || half === 4 : half === 2 || half === 6;
+    if (kick) {
+      emit(at, (t) => {
+        sndTone(t, 160, 0.12, { to: 42, type: 'triangle', vol: 0.36, bus: music });
+        sndNoise(t, 0.04, { filter: 'lowpass', freq: 900, vol: 0.12, bus: music });
+      });
+    }
+    if (snare) {
+      emit(at, (t) => {
+        sndNoise(t, 0.13, { filter: 'bandpass', freq: 1900, q: 0.9, vol: 0.17, bus: music });
+        sndTone(t, 240, 0.06, { to: 150, type: 'square', vol: 0.04, bus: music });
+      });
+    }
+    emit(at, (t) => sndNoise(t, 0.03, { freq: 9500, vol: half % 2 ? 0.05 : 0.03, bus: music }));
+    if (half % 2) emit(at, (t) => sndNoise(t, 0.06, { freq: 6500, vol: 0.05, bus: music }));
     const root = song.roots[bar];
     if (root === null || root === undefined) continue;
-    // Bass: oom-pah in 4 (root 1 and 3, fifth 2 and 4), oom-pah-pah in 3, two long notes a bar in 6/8
-    if (bpb === 4) {
-      emit(at, (t) => sndTone(t, midiHz(inBar % 2 ? root + 7 : root), sec * 0.7, { type: 'triangle', vol: 0.32, bus: PP_SOUND.music }));
-      if (inBar % 2 === 0) emit(at, (t) => sndTone(t, 150, 0.1, { to: 50, type: 'triangle', vol: 0.3, bus: PP_SOUND.music }));
-    } else if (bpb === 3) {
-      emit(at, (t) => sndTone(t, midiHz(inBar ? root + 7 : root), sec * 0.6, { type: 'triangle', vol: inBar ? 0.22 : 0.32, bus: PP_SOUND.music }));
-      if (inBar === 0) emit(at, (t) => sndTone(t, 150, 0.1, { to: 50, type: 'triangle', vol: 0.28, bus: PP_SOUND.music }));
-    } else if (inBar === 0 || inBar === 3) {
-      emit(at, (t) => sndTone(t, midiHz(inBar ? root + 7 : root), sec * 2.6, { type: 'triangle', vol: 0.26, attack: 0.04, bus: PP_SOUND.music }));
+    // Bass bouncing in eighths: root, octave, fifth, octave
+    const step = [0, 12, 7, 12][half % 4];
+    emit(at, (t) => sndTone(t, midiHz(root + step), sec * 0.42, { type: 'triangle', vol: 0.3, bus: music }));
+    // Chord arpeggio in sixteenths under it all (major, minor on A)
+    const chord = root % 12 === 9 ? [0, 3, 7] : [0, 4, 7];
+    const base = root + 24;
+    for (let k = 0; k < 2; k++) {
+      const note = base + chord[(half * 2 + k) % 3];
+      emit(at + k * (TOWN_BEAT_MS / 4), (t) => sndTone(t, midiHz(note), 0.07, { pulse: true, vol: 0.035, bus: music }));
     }
   }
 }
