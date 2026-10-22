@@ -2,8 +2,9 @@
 // SOUND — 8-bit sound for the intro, synthesised with Web Audio: no audio files, nothing to license.
 // The town plays Jingle Bells (Pierpont, 1857, public domain) in our own chip arrangement, no lyrics.
 // Browsers only allow sound after a tap or key press (Chrome autoplay policy), so nothing plays until the first
-// gesture on the page. By default only the carol plays (the alarm and game SFX annoyed on a first visit); the
-// 소리 button in the top bar cycles 캐럴만 -> 소리 전체 -> 소리 끔 and the choice is remembered. The intro reads
+// gesture on the page. Two icon buttons in the top bar, as games usually split them: the note = music (the
+// carol, on by default) and the speaker = sound effects (alarm, engines, game events; off by default, they
+// annoyed on a first visit). Both choices are remembered. The intro reads
 // the same with the sound off: every cue only doubles something already on screen.
 // Scene cues run on the scene clock (MOTION_STATE.sceneStartTime) and are scheduled a little ahead on the audio
 // clock, so a cue joined late (sound turned on mid-scene) starts from where the scene already is.
@@ -26,17 +27,23 @@ const PP_SOUND = {
 const PP_SOUND_STORE = 'ppeng-sound';
 const PP_SOUND_LOOKAHEAD = 120; // ms scheduled ahead of the scene clock
 
-const PP_SOUND_MODES = ['carol', 'all', 'off'];
+const PP_MUSIC_STORE = 'ppeng-music';
+const PP_SFX_STORE = 'ppeng-sfx';
+PP_SOUND.musicOn = true;
+PP_SOUND.sfxOn = false;
 try {
-  // v5.19.0 stored 'on' for everyone who tapped the toggle; that is the new default (carol only) now
-  const saved = localStorage.getItem(PP_SOUND_STORE);
-  PP_SOUND.mode = saved === 'all' || saved === 'off' ? saved : 'carol';
+  // v5.19.1-5.20 kept one 3-way setting ('carol' | 'all' | 'off') in ppeng-sound
+  const old = localStorage.getItem(PP_SOUND_STORE);
+  const music = localStorage.getItem(PP_MUSIC_STORE);
+  const sfx = localStorage.getItem(PP_SFX_STORE);
+  PP_SOUND.musicOn = music ? music === 'on' : old !== 'off';
+  PP_SOUND.sfxOn = sfx ? sfx === 'on' : old === 'all';
 } catch (e) {}
-PP_SOUND.on = PP_SOUND.mode !== 'off';
+PP_SOUND.on = PP_SOUND.musicOn || PP_SOUND.sfxOn;
 
-// Alarm, engines, game events and the pillar: only in 소리 전체
+// Alarm, engines, game events and the pillar
 function sfxOn() {
-  return PP_SOUND.mode === 'all';
+  return PP_SOUND.sfxOn;
 }
 
 function soundReady() {
@@ -82,12 +89,14 @@ function soundUnlock() {
   if (c && c.state !== 'running' && document.visibilityState === 'visible') c.resume().catch(() => {});
 }
 
-function setSoundMode(mode) {
-  const on = mode !== 'off';
-  PP_SOUND.mode = mode;
+function setSoundFlags(musicOn, sfx) {
+  PP_SOUND.musicOn = musicOn;
+  PP_SOUND.sfxOn = sfx;
+  const on = musicOn || sfx;
   PP_SOUND.on = on;
   try {
-    localStorage.setItem(PP_SOUND_STORE, mode);
+    localStorage.setItem(PP_MUSIC_STORE, musicOn ? 'on' : 'off');
+    localStorage.setItem(PP_SFX_STORE, sfx ? 'on' : 'off');
   } catch (e) {}
   if (on) {
     soundUnlock();
@@ -98,17 +107,34 @@ function setSoundMode(mode) {
   updateSoundButton();
 }
 
+// 16 x 16 pixel icons (crisp rects, like the rest of the stage art); "off" adds a red slash
+const PP_ICON_SPEAKER = '<rect x="2" y="6" width="3" height="4"/><rect x="5" y="5" width="1" height="6"/><rect x="6" y="4" width="1" height="8"/><rect x="7" y="3" width="1" height="10"/>';
+const PP_ICON_WAVES = '<rect x="9" y="6" width="1" height="4"/><rect x="11" y="4" width="1" height="2"/><rect x="12" y="6" width="1" height="4"/><rect x="11" y="10" width="1" height="2"/><rect x="13" y="3" width="1" height="1"/><rect x="14" y="4" width="1" height="8"/><rect x="13" y="12" width="1" height="1"/>';
+const PP_ICON_X = '<rect x="10" y="5" width="2" height="2"/><rect x="14" y="5" width="2" height="2"/><rect x="12" y="7" width="2" height="2"/><rect x="10" y="9" width="2" height="2"/><rect x="14" y="9" width="2" height="2"/>';
+const PP_ICON_NOTE = '<rect x="9" y="2" width="2" height="9"/><rect x="11" y="2" width="2" height="2"/><rect x="13" y="4" width="2" height="2"/><rect x="13" y="6" width="1" height="2"/><rect x="6" y="9" width="4" height="1"/><rect x="5" y="10" width="5" height="3"/><rect x="6" y="13" width="3" height="1"/>';
+const PP_ICON_SLASH = '<g fill="#fb7185"><rect x="2" y="13" width="2" height="2"/><rect x="4" y="11" width="2" height="2"/><rect x="6" y="9" width="2" height="2"/><rect x="8" y="7" width="2" height="2"/><rect x="10" y="5" width="2" height="2"/><rect x="12" y="3" width="2" height="2"/></g>';
+function ppIcon(body) {
+  return `<svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" shape-rendering="crispEdges" aria-hidden="true" focusable="false">${body}</svg>`;
+}
+
 function updateSoundButton() {
-  const btn = typeof document !== 'undefined' && document.getElementById('btn-sound-toggle');
-  if (!btn) return;
-  const m = PP_SOUND.mode;
-  const ko = m === 'all' ? '소리 전체' : m === 'off' ? '소리 끔' : '캐럴만';
-  const en = m === 'all' ? 'All sound' : m === 'off' ? 'Sound off' : 'Carol only';
-  btn.dataset.ko = ko;
-  btn.dataset.en = en;
-  btn.textContent = typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'en' ? en : ko;
-  btn.setAttribute('aria-pressed', PP_SOUND.on ? 'true' : 'false');
-  btn.classList.toggle('is-off', !PP_SOUND.on);
+  if (typeof document === 'undefined') return;
+  const en = typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'en';
+  const set = (id, on, body, labelKo, labelEn) => {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.innerHTML = ppIcon(body);
+    // Icon-only buttons still need a name for screen readers and a hover hint
+    const label = en ? labelEn : labelKo;
+    btn.setAttribute('aria-label', label);
+    btn.title = label;
+    btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    btn.classList.toggle('is-off', !on);
+  };
+  const m = PP_SOUND.musicOn;
+  const s = PP_SOUND.sfxOn;
+  set('btn-music-toggle', m, PP_ICON_NOTE + (m ? '' : PP_ICON_SLASH), m ? '캐럴 켜짐 (누르면 끄기)' : '캐럴 꺼짐 (누르면 켜기)', m ? 'Music on (tap to mute)' : 'Music off (tap to play)');
+  set('btn-sfx-toggle', s, PP_ICON_SPEAKER + (s ? PP_ICON_WAVES : PP_ICON_X), s ? '효과음 켜짐 (누르면 끄기)' : '효과음 꺼짐 (누르면 켜기)', s ? 'Sound effects on (tap to mute)' : 'Sound effects off (tap to play)');
 }
 
 // ---------------------------------------------------------------------------------------------------------------
@@ -329,7 +355,7 @@ function sceneCues(fromMs, toMs, emit) {
       });
       once(fromMs, toMs, 1292, emit, (t) => sndNoise(t, 0.1, { filter: 'lowpass', freq: 700, vol: 0.22 }));
     }
-    scheduleTownMusic(fromMs, toMs, emit);
+    if (PP_SOUND.musicOn) scheduleTownMusic(fromMs, toMs, emit);
     return;
   }
   if (!sfxOn()) return;
@@ -409,13 +435,16 @@ if (typeof window !== 'undefined') {
   });
   setInterval(soundTick, 30);
   document.addEventListener('DOMContentLoaded', () => {
-    const btn = document.getElementById('btn-sound-toggle');
-    if (btn) {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        setSoundMode(PP_SOUND_MODES[(PP_SOUND_MODES.indexOf(PP_SOUND.mode) + 1) % PP_SOUND_MODES.length]);
-      });
-    }
+    document.getElementById('btn-music-toggle')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setSoundFlags(!PP_SOUND.musicOn, PP_SOUND.sfxOn);
+    });
+    document.getElementById('btn-sfx-toggle')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setSoundFlags(PP_SOUND.musicOn, !PP_SOUND.sfxOn);
+    });
+    // The labels follow the KR / EN switch
+    document.querySelectorAll('.lang-btn').forEach((b) => b.addEventListener('click', () => setTimeout(updateSoundButton, 0)));
     updateSoundButton();
   });
 }

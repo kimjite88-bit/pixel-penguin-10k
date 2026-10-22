@@ -2617,3 +2617,18 @@ body.ufo-fullscreen-lock {
   visibility: hidden;
   pointer-events: none;
 }
+
+/* Music (note) and sound-effect (speaker) toggles, icon only (audio.js) */
+.game-top-btn.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 8px;
+  min-width: 34px;
+}
+.game-top-btn.icon-btn svg {
+  display: block;
+}
+.game-top-btn.icon-btn.is-off {
+  color: #94a3b8;
+}

@@ -2496,8 +2496,32 @@ const ARCADE_BITMAP_FONT_9 = {
   ],
 };
 
-// Draw a Sculpted 16-Bit Arcade Title Word (Exact Integer Grid + 1-Pixel Black Border + 3D Shadow + Top Bevel)
+// The title words are thousands of fillRects; draw each word once into a 2x canvas and blit it after that
+const ARCADE_WORD_CACHE = new Map();
 function drawArcadePixelWord(ctx, word, centerX, topY, pSize = 5) {
+  const totalW = word.length * 7 * pSize + (word.length - 1) * pSize * 2;
+  const pad = pSize * 2 + 2;
+  const w = Math.ceil(totalW + pad * 2);
+  const h = Math.ceil(9 * pSize + pad * 2);
+  const key = `${word}|${pSize}`;
+  let c = ARCADE_WORD_CACHE.get(key);
+  if (!c) {
+    c = document.createElement('canvas');
+    c.width = w * 2;
+    c.height = h * 2;
+    const cc = c.getContext('2d');
+    cc.scale(2, 2);
+    drawArcadePixelWordRaw(cc, word, pad + totalW / 2, pad, pSize);
+    ARCADE_WORD_CACHE.set(key, c);
+  }
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(c, Math.round(centerX - totalW / 2) - pad, Math.round(topY) - pad, w, h);
+  ctx.restore();
+}
+
+// Draw a Sculpted 16-Bit Arcade Title Word (Exact Integer Grid + 1-Pixel Black Border + 3D Shadow + Top Bevel)
+function drawArcadePixelWordRaw(ctx, word, centerX, topY, pSize = 5) {
   const chars = word.split('');
   const cols = 7;
   const rows = 9;
@@ -2743,10 +2767,28 @@ const SANTA_HAT_ROWS = [
   '...ooooooooooo..',
 ];
 const SANTA_HAT_COLORS = { o: '#1c1020', R: '#d62839', r: '#a51d2c', W: '#f5f7ff', w: '#c9d3ea' };
+// Drawn once per size into a 2x canvas (it is ~100 fillRects per penguin per frame otherwise)
+const SANTA_HAT_CACHE = new Map();
 function drawSantaHatOnSheet(ctx, size) {
   const cell = (size / 256) * 8;
   const ox = -size / 2 + 8 * cell;
   const oy = -size / 2;
+  const w = Math.ceil(SANTA_HAT_ROWS[0].length * cell + 1);
+  const h = Math.ceil(SANTA_HAT_ROWS.length * cell + 1);
+  let c = SANTA_HAT_CACHE.get(size);
+  if (!c) {
+    c = document.createElement('canvas');
+    c.width = w * 2;
+    c.height = h * 2;
+    const cc = c.getContext('2d');
+    cc.scale(2, 2);
+    cc.translate(-ox, -oy);
+    drawSantaHatRows(cc, cell, ox, oy);
+    SANTA_HAT_CACHE.set(size, c);
+  }
+  ctx.drawImage(c, ox, oy, w, h);
+}
+function drawSantaHatRows(ctx, cell, ox, oy) {
   SANTA_HAT_ROWS.forEach((row, r) => {
     for (let c = 0; c < row.length; c++) {
       const col = SANTA_HAT_COLORS[row[c]];
@@ -3212,6 +3254,12 @@ function initPixelMotionStudio() {
 
   // Main 60 FPS 5-Scene Reference Cutscene & Sky Game Loop (1920x1080 HiDPI Buffer, 960x540 Logical Space)
   function renderIntroCutscene() {
+    // Scrolled away (codex, ranking...): nothing to draw. Scene timers run on the clock, so the story is where it
+    // should be when the stage comes back; a run in progress (scene 3) keeps stepping
+    if (MOTION_STATE.stageOnScreen === false && MOTION_STATE.sceneIdx !== 2) {
+      requestAnimationFrame(renderIntroCutscene);
+      return;
+    }
     const now = performance.now();
     updateStageUiScale(canvas);
     const activeSpId = UFO_GAME.pilotSpeciesId || '01';
@@ -3908,6 +3956,11 @@ function initPixelMotionStudio() {
     requestAnimationFrame(renderIntroCutscene);
   }
 
+  if ('IntersectionObserver' in window) {
+    new IntersectionObserver((entries) => {
+      MOTION_STATE.stageOnScreen = entries[entries.length - 1].isIntersecting;
+    }).observe(canvas);
+  }
   requestAnimationFrame(renderIntroCutscene);
 }
 
@@ -4549,7 +4602,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Update official website display
-  const canonicalUrl = 'https://ppeng.verycloud.io';
+  const canonicalUrl = 'https://www.ppeng.org';
   const urlDisplay = document.getElementById('official-url-display');
   const globeLink = document.getElementById('official-globe-link');
   if (urlDisplay) urlDisplay.textContent = canonicalUrl;

@@ -18,10 +18,14 @@
 // overshoot on pops); there is one full-screen flash, well under WCAG 2.3.1's three per second.
 // It is drawn live on the stage (no video file), so it is sharp at any size and follows the language toggle.
 // Shown once per browser (localStorage), always skippable (tap, Esc / Enter / Space, the 건너뛰기 tag); ?opening
-// in the URL plays it again. With prefers-reduced-motion it is not played (flash and shaking).
+// in the URL plays it again, and so does the next load after a hard reload (Ctrl+Shift+R / Cmd+Shift+R: the
+// page gets that keydown before the browser reloads; only Ctrl+N / W / T are kept from pages). The 오프닝 button
+// in the top bar turns it off for good (default on); turning it back on plays it again right away. With
+// prefers-reduced-motion it is not played (flash and shaking).
 // ============================================================================
 const OPENING_MS = 19500;
 const OPENING_STORE = 'ppeng-opening-seen';
+const OPENING_PREF = 'ppeng-opening'; // 'off' = never show it
 const OPENING_PILLAR = { x: 770, y: 300 };
 const OPENING_FEET = 338; // the snow plateau in bg_scene1_2d
 const OPENING_K = '#0b1020';
@@ -67,13 +71,14 @@ const OPENING_CAM_FIELD = [
   [18600, 1.0, 480, 270],
 ];
 
-const OPENING = { want: null, start: 0, active: false, conv: [], debris: null, buf: null, tmp: null };
+const OPENING = { want: null, start: 0, active: false, conv: [], debris: null, tmp: null, land: null, still: null };
 
 function openingWanted() {
   if (OPENING.want !== null) return OPENING.want;
   let want = true;
   try {
     if (/[?&]opening\b/.test(window.location.search)) want = true;
+    else if (localStorage.getItem(OPENING_PREF) === 'off') want = false;
     else if (localStorage.getItem(OPENING_STORE) === '1') want = false;
     else if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) want = false;
   } catch (e) {}
@@ -179,14 +184,38 @@ function drawOpeningLand(ctx) {
     ctx.fillRect(0, 0, 960, 540);
     return;
   }
-  const sw = img.naturalWidth / 2;
+  // Put together once, then one blit per frame
+  if (!OPENING.land) {
+    const c = document.createElement('canvas');
+    c.width = 960;
+    c.height = 540;
+    const lc = c.getContext('2d');
+    const sw = img.naturalWidth / 2;
+    lc.drawImage(img, 0, 0, sw, img.naturalHeight, 0, 0, 480, 540);
+    lc.translate(960, 0);
+    lc.scale(-1, 1);
+    lc.drawImage(img, 0, 0, sw, img.naturalHeight, 0, 0, 480, 540);
+    OPENING.land = c;
+  }
   ctx.imageSmoothingEnabled = true;
-  ctx.drawImage(img, 0, 0, sw, img.naturalHeight, 0, 0, 480, 540);
-  ctx.save();
-  ctx.translate(960, 0);
-  ctx.scale(-1, 1);
-  ctx.drawImage(img, 0, 0, sw, img.naturalHeight, 0, 0, 480, 540);
-  ctx.restore();
+  ctx.drawImage(OPENING.land, 0, 0);
+}
+
+// From OPENING_GROUND_STILL on the ground (split land + settled tint) no longer changes, so it and its two block
+// versions inside the wave are drawn once and blitted
+const OPENING_GROUND_STILL = OPENING_IMPACT + 900;
+function openingStillGround(size) {
+  if (!OPENING.still) OPENING.still = {};
+  if (!OPENING.still[size]) {
+    const c = document.createElement('canvas');
+    c.width = 960;
+    c.height = 540;
+    const g = c.getContext('2d');
+    if (size > 1) drawScene3Mosaic(g, size, (m) => drawOpeningGround(m, OPENING_GROUND_STILL));
+    else drawOpeningGround(g, OPENING_GROUND_STILL);
+    OPENING.still[size] = c;
+  }
+  return OPENING.still[size];
 }
 
 function drawOpeningGround(ctx, t) {
@@ -230,13 +259,14 @@ function drawOpeningPixelPenguin(ctx, sp, x, feet, size, now, seed, flip, flash,
     drawAnimatedPixelPenguin(ctx, entry, x - s / 2, top, s, now, { seed, isWalking: true, flipX: flip });
     return;
   }
-  if (!OPENING.tmp) OPENING.tmp = document.createElement('canvas');
-  const c = OPENING.tmp;
-  const n = Math.ceil(s) + 8;
-  if (c.width !== n) {
-    c.width = n;
-    c.height = n;
+  // One fixed-size scratch canvas (resizing it per penguin reallocated it every frame while several flash)
+  if (!OPENING.tmp) {
+    OPENING.tmp = document.createElement('canvas');
+    OPENING.tmp.width = 128;
+    OPENING.tmp.height = 128;
   }
+  const c = OPENING.tmp;
+  const n = Math.min(128, Math.ceil(s) + 8);
   const tc = c.getContext('2d');
   tc.setTransform(1, 0, 0, 1, 0, 0);
   tc.globalCompositeOperation = 'source-over';
@@ -245,7 +275,7 @@ function drawOpeningPixelPenguin(ctx, sp, x, feet, size, now, seed, flip, flash,
   tc.globalCompositeOperation = 'source-atop';
   tc.fillStyle = `rgba(255, 255, 255, ${flash.toFixed(3)})`;
   tc.fillRect(0, 0, n, n);
-  ctx.drawImage(c, Math.round(x - s / 2 - 4), Math.round(top - 4));
+  ctx.drawImage(c, 0, 0, n, n, Math.round(x - s / 2 - 4), Math.round(top - 4), n, n);
 }
 
 function drawOpeningMarkOver(ctx, x, y, ch, col, t0, t) {
@@ -803,32 +833,47 @@ function drawOpeningWaveFront(ctx, now, R) {
 
 // A-D: the village, drawn flat into a buffer, then through the camera
 function drawOpeningVillage(ctx, now, t) {
-  if (!OPENING.buf) {
-    OPENING.buf = document.createElement('canvas');
-    OPENING.buf.width = 960;
-    OPENING.buf.height = 540;
+  // Drawn straight through the camera (no in-between buffer: one full-stage blit less per frame, and sharper)
+  let cam = openingCamAt(OPENING_CAM_VILLAGE, t);
+  if (t >= OPENING_IMPACT) cam = { ...cam, z: cam.z + 0.1 * Math.exp(-(t - OPENING_IMPACT) / 200) }; // punch-in on the hit
+  withOpeningCamera(ctx, cam, openingShake(t), () => drawOpeningVillageWorld(ctx, now, t));
+  // One short flash as it hits (rises in 1 frame, gone in 0.3 s)
+  const fd = t - OPENING_IMPACT;
+  if (fd >= 0 && fd < 300) {
+    ctx.fillStyle = `rgba(255, 255, 255, ${(0.9 * (1 - fd / 300)).toFixed(3)})`;
+    ctx.fillRect(0, 0, 960, 540);
   }
-  const b = OPENING.buf.getContext('2d');
-  b.setTransform(1, 0, 0, 1, 0, 0);
-  b.clearRect(0, 0, 960, 540);
+}
+
+function drawOpeningVillageWorld(b, now, t) {
   const R = openingWaveRadius(t);
+  const still = t >= OPENING_GROUND_STILL && MOTION_STATE.bgScene1Loaded;
   const ground = (c) => drawOpeningGround(c, t);
-  ground(b);
+  if (still) b.drawImage(openingStillGround(1), 0, 0);
+  else ground(b);
   drawOpeningStar(b, now, t);
   if (R > 0) {
-    // Inside the wave: 12 px blocks, with a band of finer 6 px blocks at the front
-    const clip = (r) => {
+    // Inside the wave: 12 px blocks, with a ring of finer 6 px blocks at the front (each drawn only where it shows)
+    const ellipse = (r) => b.ellipse(OPENING_PILLAR.x, OPENING_PILLAR.y, r, r * 0.62, 0, 0, Math.PI * 2);
+    const inner = R > 60 ? R - 46 : 0;
+    b.save();
+    b.beginPath();
+    ellipse(R);
+    if (inner) {
+      b.moveTo(OPENING_PILLAR.x + inner, OPENING_PILLAR.y);
+      ellipse(inner);
+    }
+    b.clip('evenodd');
+    if (still) b.drawImage(openingStillGround(6), 0, 0);
+    else drawScene3Mosaic(b, 6, ground);
+    b.restore();
+    if (inner) {
       b.save();
       b.beginPath();
-      b.ellipse(OPENING_PILLAR.x, OPENING_PILLAR.y, r, r * 0.62, 0, 0, Math.PI * 2);
+      ellipse(inner);
       b.clip();
-    };
-    clip(R);
-    drawScene3Mosaic(b, 6, ground);
-    b.restore();
-    if (R > 60) {
-      clip(R - 46);
-      drawScene3Mosaic(b, 12, ground);
+      if (still) b.drawImage(openingStillGround(12), 0, 0);
+      else drawScene3Mosaic(b, 12, ground);
       b.restore();
     }
   }
@@ -837,16 +882,6 @@ function drawOpeningVillage(ctx, now, t) {
   drawOpeningWaveFront(b, now, R);
   drawOpeningHero(b, now, t);
   drawOpeningSnow(b, now);
-
-  let cam = openingCamAt(OPENING_CAM_VILLAGE, t);
-  if (t >= OPENING_IMPACT) cam = { ...cam, z: cam.z + 0.1 * Math.exp(-(t - OPENING_IMPACT) / 200) }; // punch-in on the hit
-  withOpeningCamera(ctx, cam, openingShake(t), () => ctx.drawImage(OPENING.buf, 0, 0));
-  // One short flash as it hits (rises in 1 frame, gone in 0.3 s)
-  const fd = t - OPENING_IMPACT;
-  if (fd >= 0 && fd < 300) {
-    ctx.fillStyle = `rgba(255, 255, 255, ${(0.9 * (1 - fd / 300)).toFixed(3)})`;
-    ctx.fillRect(0, 0, 960, 540);
-  }
 }
 
 // E: the picker's crevasse field; the vehicles turn up one by one
@@ -1042,7 +1077,62 @@ function skipOpening() {
   return true;
 }
 
+function openingPrefOn() {
+  try {
+    return localStorage.getItem(OPENING_PREF) !== 'off';
+  } catch (e) {
+    return true;
+  }
+}
+
+function setOpeningPref(on) {
+  try {
+    localStorage.setItem(OPENING_PREF, on ? 'on' : 'off');
+    if (on) localStorage.removeItem(OPENING_STORE);
+  } catch (e) {}
+  if (on) {
+    // Play it again now if the picker is showing (otherwise the next time it does)
+    OPENING.want = true;
+    OPENING.active = false;
+  } else {
+    skipOpening();
+    OPENING.want = false;
+  }
+  updateOpeningButton();
+}
+
+function updateOpeningButton() {
+  const btn = typeof document !== 'undefined' && document.getElementById('btn-opening-toggle');
+  if (!btn) return;
+  const on = openingPrefOn();
+  const ko = on ? '오프닝 켬' : '오프닝 끔';
+  const en = on ? 'Intro on' : 'Intro off';
+  btn.dataset.ko = ko;
+  btn.dataset.en = en;
+  btn.textContent = typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'en' ? en : ko;
+  btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  btn.classList.toggle('is-off', !on);
+}
+
 if (typeof window !== 'undefined') {
+  // Hard reload (Ctrl+Shift+R, Cmd+Shift+R, Safari's Cmd+Option+R): forget that it was seen
+  window.addEventListener(
+    'keydown',
+    (e) => {
+      if (e.code !== 'KeyR' || !(e.ctrlKey || e.metaKey) || !(e.shiftKey || (e.metaKey && e.altKey))) return;
+      try {
+        localStorage.removeItem(OPENING_STORE);
+      } catch (err) {}
+    },
+    true
+  );
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btn-opening-toggle')?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      setOpeningPref(!openingPrefOn());
+    });
+    updateOpeningButton();
+  });
   window.addEventListener('keydown', (e) => {
     if (!OPENING.active || !openingActive()) return;
     if (e.code === 'Escape' || e.code === 'Enter' || e.code === 'Space') {

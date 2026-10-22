@@ -313,12 +313,25 @@ function pixelGridMask(key, tracer, box) {
 
 // Fill the mask's cells in runs. inset 1 = only cells whose 4 neighbours are inside too (leaves the car's 2px
 // outline); x0..x1 / y0..y1 limit the band in local units.
+// The runs depend only on the mask and the band, so they are worked out once and kept on the mask.
 function fillPixelMask(ctx, mask, color, opts = {}) {
   const { inset = 0, x0 = -Infinity, x1 = Infinity, y0 = -Infinity, y1 = Infinity } = opts;
+  const key = `${inset}|${x0}|${x1}|${y0}|${y1}`;
+  if (!mask.runs) mask.runs = {};
+  let runs = mask.runs[key];
+  if (!runs) {
+    runs = [];
+    pixelMaskRuns(mask, inset, x0, x1, y0, y1, (x, y, w, h) => runs.push(x, y, w, h));
+    mask.runs[key] = runs;
+  }
+  ctx.fillStyle = color;
+  for (let i = 0; i < runs.length; i += 4) ctx.fillRect(runs[i], runs[i + 1], runs[i + 2], runs[i + 3]);
+}
+
+function pixelMaskRuns(mask, inset, x0, x1, y0, y1, emit) {
   const { m, cols, rows, box } = mask;
   const G = PIXEL_GRID;
   const inside = (r, c) => r >= 0 && c >= 0 && r < rows && c < cols && m[r * cols + c] === 1;
-  ctx.fillStyle = color;
   for (let r = 0; r < rows; r++) {
     const y = box.y + r * G;
     if (y < y0 || y >= y1) continue;
@@ -329,7 +342,7 @@ function fillPixelMask(ctx, mask, color, opts = {}) {
         c < cols && x >= x0 && x < x1 && inside(r, c) && (!inset || (inside(r - 1, c) && inside(r + 1, c) && inside(r, c - 1) && inside(r, c + 1)));
       if (ok && run < 0) run = c;
       if (!ok && run >= 0) {
-        ctx.fillRect(box.x + run * G, y, (c - run) * G, G);
+        emit(box.x + run * G, y, (c - run) * G, G);
         run = -1;
       }
     }
