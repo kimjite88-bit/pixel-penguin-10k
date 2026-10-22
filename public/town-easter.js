@@ -2,16 +2,16 @@
 // TOWN EASTER EGG — "the dev's hidden village". Only for players who skipped the game (안 해요 / left alone at the
 // picker) and then just stayed in the town: once the welcome talk is over and the town has been open 30 s, the
 // locals stop, say "follow me", and all walk off to the left; a pixel-block dissolve opens a hidden Christmas
-// village (easter-village.js: drawn in code after the owner's reference, every penguin in it busy) where the whole
-// cast walks in, lines up for a
-// group photo with a snowman that turns out to be the dev, and trades B-grade lines, round and round.
+// village (easter-village.js: pixel art made after the owner's reference, every villager in it busy) where the
+// whole cast walks in, lines up for a group photo with a snowman that turns out to be the dev, and trades B-grade
+// lines, round and round.
 // The town menu stays where it is (same box, same clicks), so 10,000 CODEX / PLAY AGAIN still work; PLAY AGAIN
 // leaves the village for good (the next town starts from scratch).
 // ============================================================================
 const TOWN_EASTER = { leaveAt: 30000, cutAt: 33400, dissolveMs: 380, walkInMs: 2600 };
 const TOWN_EASTER_CAST = [
   // species, x, feet y, size: the guest first, then the six locals, a group-photo row along the front (larger than
-  // the penguins painted into the picture, on a dark band, so the cast reads as the cast)
+  // the villagers, on the shaded snow bank, so the cast reads as the cast)
   { sp: '01', x: 226, feet: 534, size: 88 },
   { sp: '05', x: 316, feet: 530, size: 84 },
   { sp: '22', x: 406, feet: 534, size: 86 },
@@ -152,6 +152,8 @@ function drawTownEasterGift(ctx, x, y) {
 // The village itself; called at the end of the town frame (the menu is drawn again on top so it keeps working)
 function drawTownEaster(ctx, now, elapsed) {
   if (!townEasterOn()) return;
+  // Start loading the village art as soon as a skipped town opens, so it is there at the cut
+  if (typeof evEnsure === 'function') evEnsure();
   const t = elapsed - TOWN_EASTER.cutAt;
   const ko = CURRENT_LANG === 'ko';
   // Pixel-block dissolve: the town closes up (the walk-off ends under it), the village opens
@@ -160,12 +162,12 @@ function drawTownEaster(ctx, now, elapsed) {
   if (t >= 0) {
     ctx.save();
     drawEasterVillage(ctx, now);
-    // A dark band along the front so the cast stands out from the busy village behind
-    const band = ctx.createLinearGradient(0, 400, 0, 540);
-    band.addColorStop(0, 'rgba(9, 13, 26, 0)');
-    band.addColorStop(1, 'rgba(9, 13, 26, 0.6)');
+    // A light shade along the front so the cast stands out from the busy village behind
+    const band = ctx.createLinearGradient(0, 440, 0, 540);
+    band.addColorStop(0, 'rgba(14, 20, 52, 0)');
+    band.addColorStop(1, 'rgba(14, 20, 52, 0.38)');
     ctx.fillStyle = band;
-    ctx.fillRect(0, 400, 960, 140);
+    ctx.fillRect(0, 440, 960, 100);
     // The cast walks in from the right, then lines up for the photo (hopping on the beat)
     const talkT = t - TOWN_EASTER.walkInMs;
     const turn = talkT >= 0 ? Math.floor(talkT / TOWN_EASTER_TURN_MS) % TOWN_EASTER_TALK.length : -1;
