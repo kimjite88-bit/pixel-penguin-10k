@@ -17,8 +17,8 @@ const TOP_LIMIT = 100;
 const CACHE_TTL_SEC = 30;
 const POST_LIMIT_PER_MIN = 60;
 
-// Diverse 100 NFT editions across #11 ~ #9999 (excluding #0 by default so #0 only appears when explicitly played with "0")
-// Modest baseline high scores (1,150 ~ 3,600 PTS) so real players easily beat #1! UFO board only.
+// The 100 placeholder pilots the UFO board used to be seeded with before the public launch (#11 ~ #9999, 1,150 ~
+// 3,600 PTS). They are no longer added; the list is kept only so their leftover rows can be recognised and removed.
 const UFO_SEED_EDITIONS = [
   4441, 777, 1004, 195, 962, 6521, 499, 8888, 2026, 333,
   12, 15, 19, 24, 28, 31, 36, 42, 48, 20,
@@ -89,15 +89,6 @@ function createFileStore({ dataDir, parseTokenNumber }) {
       for (const game of GAMES) {
         const board = boards[game];
         for (const row of readBundleRows(board.path, parseTokenNumber)) board.map.set(row.edition, row);
-        if (game === 'ufo') {
-          const nowIso = new Date().toISOString();
-          for (const s of seedRows()) {
-            const existing = board.map.get(s.edition);
-            if (!existing || existing.score < s.score) {
-              board.map.set(s.edition, { ...s, updated_at: existing?.updated_at || nowIso });
-            }
-          }
-        }
         save(board);
       }
     },
@@ -248,14 +239,20 @@ function createSqlStore({ dataDir, parseTokenNumber, databaseUrl, redisUrl, pool
           );
           console.log(`[Leaderboard] Imported ${imported.length} ${game} rows from the bundle into Postgres`);
         }
-        const seeds = seedRows();
-        await client.query(
-          `INSERT INTO leaderboard_scores (game, edition, score)
-           SELECT 'ufo', e, s FROM unnest($1::int[], $2::int[]) AS t(e, s)
-           ON CONFLICT (game, edition) DO UPDATE SET score = EXCLUDED.score
-           WHERE leaderboard_scores.score < EXCLUDED.score`,
-          [seeds.map((r) => r.edition), seeds.map((r) => r.score)]
-        );
+        // Public launch: boards start empty. Remove the placeholder pilots once (exact edition + score match, so a
+        // real player on one of those editions with another score stays)
+        await client.query('CREATE TABLE IF NOT EXISTS leaderboard_meta (key text PRIMARY KEY, value text NOT NULL)');
+        const { rows: seedsGone } = await client.query("SELECT 1 FROM leaderboard_meta WHERE key = 'seeds_removed'");
+        if (!seedsGone.length) {
+          const seeds = seedRows();
+          const { rowCount } = await client.query(
+            `DELETE FROM leaderboard_scores l USING unnest($1::int[], $2::int[]) AS t(e, s)
+             WHERE l.game = 'ufo' AND l.edition = t.e AND l.score = t.s`,
+            [seeds.map((r) => r.edition), seeds.map((r) => r.score)]
+          );
+          await client.query("INSERT INTO leaderboard_meta (key, value) VALUES ('seeds_removed', now()::text)");
+          console.log(`[Leaderboard] Removed ${rowCount} placeholder seed rows`);
+        }
         await client.query('COMMIT');
       } catch (e) {
         await client.query('ROLLBACK').catch(() => {});
