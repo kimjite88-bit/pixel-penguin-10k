@@ -333,60 +333,89 @@ const PARADE_ROW_2_ITEMS = [
   { edition: 9999, labelKo: '픽셀 펭귄 #9999', labelEn: 'Pixel Penguin #9999', sub: 'Generative · #9999' },
 ];
 
+// One page: Intro, Codex, Ranking and Notices are sections of it, one under the other (there is not that much of
+// each). A tab, or any section id, scrolls there under the sticky header; while you scroll, the bar marks the
+// section you are in (initScrollSpy).
+const TAB_PAGES = {
+  'tab-intro': 'tab-page-intro',
+  'tab-codex': 'tab-page-codex',
+  'tab-ranking': 'tab-page-ranking',
+  'tab-notices': 'tab-page-notices',
+};
+function tabKeyFor(id) {
+  if (id === 'tab-codex' || id === 'sec-explorer' || id === 'sec-rarity' || id === 'sec-traits' || id === 'sec-provenance') return 'tab-codex';
+  if (id === 'tab-ranking' || id === 'sec-ranking') return 'tab-ranking';
+  if (id === 'tab-notices' || id === 'sec-notices') return 'tab-notices';
+  return 'tab-intro';
+}
+function setActiveTab(tabKey) {
+  document.querySelectorAll('.market-tab').forEach((btn) => {
+    const on = btn.dataset.target === tabKey;
+    btn.classList.toggle('active', on);
+    if (on) btn.setAttribute('aria-current', 'true');
+    else btn.removeAttribute('aria-current');
+  });
+}
+let SCROLL_SPY_PAUSE_UNTIL = 0;
 function scrollToSection(id) {
-  let tabKey = 'tab-intro';
-  if (id === 'tab-codex' || id === 'sec-explorer' || id === 'sec-rarity' || id === 'sec-traits' || id === 'sec-provenance') {
-    tabKey = 'tab-codex';
-  } else if (id === 'tab-ranking' || id === 'sec-ranking') {
-    tabKey = 'tab-ranking';
-  } else if (id === 'tab-notices' || id === 'sec-notices') {
-    tabKey = 'tab-notices';
-  }
-
+  const tabKey = tabKeyFor(id);
   if (tabKey !== 'tab-intro' && typeof exitUfoFullscreenGame === 'function') {
     exitUfoFullscreenGame();
   }
-
-  const pageMap = {
-    'tab-intro': 'tab-page-intro',
-    'tab-codex': 'tab-page-codex',
-    'tab-ranking': 'tab-page-ranking',
-    'tab-notices': 'tab-page-notices',
-  };
-
-  Object.entries(pageMap).forEach(([k, pageId]) => {
-    const pageEl = document.getElementById(pageId);
-    if (pageEl) {
-      pageEl.style.display = k === tabKey ? 'block' : 'none';
-      pageEl.classList.toggle('active', k === tabKey);
-    }
-  });
-
-  document.querySelectorAll('.market-tab').forEach((btn) => {
-    btn.classList.toggle('active', btn.dataset.target === tabKey);
-  });
-
+  setActiveTab(tabKey);
+  // The bar would flick through every section the smooth scroll passes: hold it on the one clicked
+  SCROLL_SPY_PAUSE_UNTIL = performance.now() + 900;
   if (tabKey === 'tab-ranking' && typeof fetchAndRenderRankingPage === 'function') {
     fetchAndRenderRankingPage();
   }
   if (tabKey === 'tab-codex') {
     centerActiveTraitTab();
   }
-
-  if (
-    id === 'tab-intro' ||
-    id === 'tab-codex' ||
-    id === 'tab-ranking' ||
-    id === 'tab-notices' ||
-    id === 'top'
-  ) {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  } else {
-    const el = document.getElementById(id);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+  const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+  if (id === 'top' || id === 'tab-intro') {
+    window.scrollTo({ top: 0, behavior });
+    return;
   }
+  const el = document.getElementById(TAB_PAGES[id] || id);
+  if (el) el.scrollIntoView({ behavior, block: 'start' });
+}
+
+// The section under the header's bottom edge is the active tab; the sticky header's height is kept in --sticky-h
+// so sections scroll in below it (scroll-margin-top)
+function initScrollSpy() {
+  const header = document.querySelector('.site-header');
+  const setStickyH = () => {
+    if (header) document.documentElement.style.setProperty('--sticky-h', `${Math.round(header.getBoundingClientRect().height)}px`);
+  };
+  setStickyH();
+  window.addEventListener('resize', setStickyH);
+  const pages = Object.entries(TAB_PAGES)
+    .map(([key, pageId]) => [key, document.getElementById(pageId)])
+    .filter(([, el]) => el);
+  let ticking = false;
+  const update = () => {
+    ticking = false;
+    if (performance.now() < SCROLL_SPY_PAUSE_UNTIL) return;
+    const line = (header ? header.getBoundingClientRect().bottom : 0) + 24;
+    let current = pages[0] && pages[0][0];
+    pages.forEach(([key, el]) => {
+      if (el.getBoundingClientRect().top <= line) current = key;
+    });
+    // At the very bottom the last section counts even when it is too short to reach the line
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) current = pages[pages.length - 1][0];
+    setActiveTab(current);
+  };
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(update);
+      }
+    },
+    { passive: true }
+  );
+  update();
 }
 
 function escapeHtml(str) {
@@ -1376,6 +1405,53 @@ function getNftDisplayName(item) {
   return item.name_en || item.name || `Pixel Penguin #${item.edition}`;
 }
 
+// Podium medal as pixel art (16 x 22 grid, crisp): a V of ribbon in the metal's own dark tone from the top, a round disc with a dark outline,
+// a shaded rim, a face lit from the top left with a glint, and the rank stamped in the middle. Drawn once per rank.
+const RANK_MEDAL_METAL = {
+  1: { hi: '#fff4b8', face: '#f5c542', mid: '#e0a92a', rim: '#a8741a', ribbon: '#7d5110', ribbonHi: '#c08a24' },
+  2: { hi: '#ffffff', face: '#d9e1ea', mid: '#b8c3cf', rim: '#7c8794', ribbon: '#55606c', ribbonHi: '#96a2ae' },
+  3: { hi: '#ffe0c7', face: '#e3955a', mid: '#c97538', rim: '#874620', ribbon: '#66311a', ribbonHi: '#a85d2c' },
+};
+const RANK_MEDAL_CACHE = {};
+function rankMedalSvg(rank, label) {
+  if (!RANK_MEDAL_CACHE[rank]) {
+    const m = RANK_MEDAL_METAL[rank];
+    const K = '#160f05';
+    const cells = [];
+    const px = (x, y, c) => cells.push(`<rect x="${x}" y="${y}" width="1" height="1" fill="${c}"/>`);
+    // Ribbon: two straps from the top corners meeting behind the disc, a light stripe down each
+    for (let y = 0; y < 8; y++) {
+      for (const [x0, dir] of [[1 + Math.floor(y / 2), 1], [12 - Math.floor(y / 2), -1]]) {
+        for (let k = 0; k < 3; k++) px(x0 + k, y, k === 1 ? m.ribbonHi : m.ribbon);
+        px(dir > 0 ? x0 - 1 : x0 + 3, y, K);
+      }
+    }
+    // Disc: centre (8, 14.5), radius 7.2: outline, rim, face with light from the top left
+    const cx = 8, cy = 14.5;
+    for (let y = 6; y < 22; y++) {
+      for (let x = 0; x < 16; x++) {
+        const d = Math.hypot(x + 0.5 - cx, y + 0.5 - cy);
+        if (d > 7.3) continue;
+        let c;
+        if (d > 6.4) c = K;
+        else if (d > 5.2) c = m.rim;
+        else {
+          const lit = (x + 0.5 - cx) + (y + 0.5 - cy); // < 0 towards the top left
+          c = lit < -3.5 ? m.hi : lit < 2 ? m.face : m.mid;
+        }
+        px(x, y, c);
+      }
+    }
+    // Rim highlight arc and a two-pixel glint
+    px(4, 11, m.hi);
+    px(5, 10, m.hi);
+    px(5, 12, '#ffffff');
+    px(6, 11, '#ffffff');
+    RANK_MEDAL_CACHE[rank] = cells.join('');
+  }
+  return `<svg class="rank-medal" viewBox="0 0 16 22" role="img" aria-label="${label}" shape-rendering="crispEdges">${RANK_MEDAL_CACHE[rank]}<text x="8" y="17.6" text-anchor="middle" font-size="8.5" font-weight="900" fill="#160f05" font-family="Pretendard, 'Malgun Gothic', sans-serif">${rank}</text></svg>`;
+}
+
 function buildLeaderboardRowsHtml(items, showBoardAction = true) {
   if (!items || items.length === 0) {
     return `<div class="empty-state">${
@@ -1386,7 +1462,7 @@ function buildLeaderboardRowsHtml(items, showBoardAction = true) {
     .map((item) => {
       const rankLabel = CURRENT_LANG === 'ko' ? `${item.rank}위` : `#${item.rank}`;
       // Top 3 get a pixel medal (gold / silver / bronze) with the number on it; the rest the plain rank
-      const medal = item.rank <= 3 ? `<span class="rank-medal" aria-label="${rankLabel}">${item.rank}</span>` : rankLabel;
+      const medal = item.rank <= 3 ? rankMedalSvg(item.rank, rankLabel) : rankLabel;
       const topClass = item.rank <= 3 ? `rank-top-${item.rank}` : '';
       const nftName = getNftDisplayName(item);
       // "Pixel Penguin " is shared by every entry; phones hide it so the number stays visible
@@ -4588,6 +4664,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll('.market-tab').forEach((tab) => {
     tab.addEventListener('click', () => scrollToSection(tab.dataset.target));
   });
+  initScrollSpy();
 
   // Ranking Page Search, Refresh & 10-Page Pagination (10 per page × 10 pages = Top 100)
   document.getElementById('btn-refresh-ranking-page')?.addEventListener('click', () => {
