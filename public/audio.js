@@ -630,6 +630,15 @@ function openingCues(fromMs, toMs, emit) {
   });
 }
 
+// The hidden village opening (town-easter.js): a sparkly run up and a bell
+function playEasterChime() {
+  if (!soundReady() || !PP_SOUND.musicOn) return;
+  const t = PP_SOUND.ctx.currentTime + 0.01;
+  sndArp(t, [79, 84, 88, 91, 96], 0.06, { pulse: true, vol: 0.09, len: 0.3, bus: PP_SOUND.music });
+  sndTone(t + 0.34, midiHz(96), 1.2, { type: 'triangle', vol: 0.12, bus: PP_SOUND.music });
+  sndNoise(t + 0.3, 0.6, { freq: 7000, vol: 0.05, bus: PP_SOUND.music });
+}
+
 // A penguin popping into its pixel self (opening-scene.js calls this the moment it changes)
 function playOpeningPop(i = 0) {
   if (!soundReady() || !PP_SOUND.musicOn) return;

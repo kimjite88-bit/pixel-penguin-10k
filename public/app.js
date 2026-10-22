@@ -618,6 +618,15 @@ function townDrop() {
 }
 
 function townMenuLayout() {
+  // In the hidden village (town-easter.js) the box moves to the top left, a little smaller, off the picture's heart
+  if (typeof townEasterCovers === 'function' && townEasterCovers(performance.now() - MOTION_STATE.sceneStartTime)) {
+    const k = stageUiK() > 1 ? 1.15 : 0.8;
+    const w = 332 * k;
+    const h = 78 * k;
+    const x = 14;
+    const y = 54 * (stageUiK() > 1 ? 1.3 : 1);
+    return { k, w, h, x, y, rowY: (i) => y + (24 + i * 30) * k, split: y + 39 * k };
+  }
   const k = stageUiK() > 1 ? 1.5 : 1;
   const w = 332 * k;
   const h = 78 * k;
@@ -625,6 +634,49 @@ function townMenuLayout() {
   const y = k > 1 ? TOWN_PHONE_LOGO.menuY : 176;
   return { k, w, h, x, y, rowY: (i) => y + (24 + i * 30) * k, split: y + 39 * k };
 }
+
+// The town's RPG command box (10,000 CODEX / PLAY AGAIN); returns its layout (clicks use townMenuLayout too)
+function drawTownMenuBox(ctx) {
+  const menu = townMenuLayout();
+  const mk = menu.k;
+  const menuW = menu.w;
+  const menuH = menu.h;
+  const menuX = menu.x;
+  const menuY = menu.y;
+
+  ctx.fillStyle = 'rgba(9, 11, 20, 0.55)';
+  ctx.fillRect(menuX + 4, menuY + 6, menuW + 4, menuH + 4);
+  ctx.fillStyle = '#090b14';
+  ctx.fillRect(menuX - 5, menuY - 5, menuW + 10, menuH + 10);
+  ctx.fillStyle = '#f1f5f9';
+  ctx.fillRect(menuX - 3, menuY - 3, menuW + 6, menuH + 6);
+  ctx.fillStyle = '#334155';
+  ctx.fillRect(menuX - 1, menuY - 1, menuW + 2, menuH + 2);
+  ctx.fillStyle = 'rgba(18, 22, 41, 0.94)';
+  ctx.fillRect(menuX, menuY, menuW, menuH);
+
+  const menuItems =
+    CURRENT_LANG === 'ko'
+      ? ['10,000 도감도 보러가기', '다시 플레이하기']
+      : ['10,000 CODEX', 'PLAY AGAIN'];
+
+  menuItems.forEach((mText, idx) => {
+    const rowY = menu.rowY(idx);
+    const isSelected = (MOTION_STATE.menuHoverIdx % 2) === idx;
+    if (isSelected) {
+      ctx.fillStyle = 'rgba(255, 77, 109, 0.22)';
+      ctx.fillRect(menuX + 10 * mk, rowY - 12 * mk, menuW - 20 * mk, 24 * mk);
+      drawPixelHeart(ctx, menuX + 28 * mk, rowY, 2.3 * mk, '#ff4d6d');
+    }
+    ctx.fillStyle = isSelected ? '#ffffff' : '#94a3b8';
+    ctx.font = `900 ${15 * mk}px "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif`;
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(mText, menuX + 46 * mk, rowY + 1);
+  });
+  return menu;
+}
+
 
 // Row layout (see TOWN_ROW_LEFT): solve 5 g + 2 * 2g = free width, then place the six natives and the guest.
 // Skip mode: the guest takes the vehicle's place, so solve guest + 5 g + 2 * 2g between a left edge and the tree
@@ -3648,7 +3700,10 @@ function initPixelMotionStudio() {
     // SCENE 5 (sceneIdx === 4 — seasonal pixel town, see INTRO_TOWN):
     // ========================================================================
     else {
-      if (townPhone()) {
+      // (town-easter.js: once the hidden village covers the stage the town picture is not drawn under it)
+      if (typeof townEasterCovers === 'function' && townEasterCovers(elapsed)) {
+        // nothing: the village paints the whole stage below
+      } else if (townPhone()) {
         ctx.save();
         ctx.translate(480, 0);
         ctx.scale(TOWN_PHONE_ZOOM, TOWN_PHONE_ZOOM);
@@ -3735,43 +3790,9 @@ function initPixelMotionStudio() {
       drawArcadePixelWord(ctx, 'PENGUIN', 480, logoTopY + 46 * lr, 4.5 * lr);
       drawPixelOutlinedSubtitle(ctx, 'PPENG · 10,000 VERYCHAT PFP', 480, logoTopY + 108 * lr);
 
-      const menu = townMenuLayout();
-      const mk = menu.k;
-      const menuW = menu.w;
+      const menu = drawTownMenuBox(ctx);
       const menuH = menu.h;
-      const menuX = menu.x;
       const menuY = menu.y;
-
-      ctx.fillStyle = 'rgba(9, 11, 20, 0.55)';
-      ctx.fillRect(menuX + 4, menuY + 6, menuW + 4, menuH + 4);
-      ctx.fillStyle = '#090b14';
-      ctx.fillRect(menuX - 5, menuY - 5, menuW + 10, menuH + 10);
-      ctx.fillStyle = '#f1f5f9';
-      ctx.fillRect(menuX - 3, menuY - 3, menuW + 6, menuH + 6);
-      ctx.fillStyle = '#334155';
-      ctx.fillRect(menuX - 1, menuY - 1, menuW + 2, menuH + 2);
-      ctx.fillStyle = 'rgba(18, 22, 41, 0.94)';
-      ctx.fillRect(menuX, menuY, menuW, menuH);
-
-      const menuItems =
-        CURRENT_LANG === 'ko'
-          ? ['10,000 도감도 보러가기', '다시 플레이하기']
-          : ['10,000 CODEX', 'PLAY AGAIN'];
-
-      menuItems.forEach((mText, idx) => {
-        const rowY = menu.rowY(idx);
-        const isSelected = (MOTION_STATE.menuHoverIdx % 2) === idx;
-        if (isSelected) {
-          ctx.fillStyle = 'rgba(255, 77, 109, 0.22)';
-          ctx.fillRect(menuX + 10 * mk, rowY - 12 * mk, menuW - 20 * mk, 24 * mk);
-          drawPixelHeart(ctx, menuX + 28 * mk, rowY, 2.3 * mk, '#ff4d6d');
-        }
-        ctx.fillStyle = isSelected ? '#ffffff' : '#94a3b8';
-        ctx.font = `900 ${15 * mk}px "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif`;
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(mText, menuX + 46 * mk, rowY + 1);
-      });
 
       MOTION_STATE.bubbleMinY = menuY + menuH + 14; // the town's bubbles never cover the menu
       const spriteSize = TOWN_PENGUIN_SIZE;
@@ -3782,13 +3803,15 @@ function initPixelMotionStudio() {
 
       if (MOTION_STATE.skippedEscape) {
         const defaultEntry = ensureSpeciesSprite('01');
-        const heroX = Math.round(row.heroX + Math.sin(now * 0.0022) * 4); // right next to the welcoming friends
+        // (town-easter.js: after 30 s it walks off to the left with the locals)
+        const leaveDx = townEasterLeaveDx(elapsed, 0);
+        const heroX = Math.round(row.heroX + Math.sin(now * 0.0022) * 4 - leaveDx); // right next to the welcoming friends
         const heroY = spriteY;
         drawPixelGroundShadow(ctx, heroX + spriteSize / 2, heroY + spriteSize - 4, 40, 0);
         drawAnimatedPixelPenguin(ctx, defaultEntry, heroX, heroY, spriteSize, now, {
           seed: 0,
           isWalking: true,
-          flipX: false,
+          flipX: leaveDx > 0,
           santaHat: INTRO_TOWN.id === 'xmas',
         });
       } else {
@@ -3884,7 +3907,7 @@ function initPixelMotionStudio() {
       colorfulFriends.forEach((fr, idx) => {
         const spEntry = ensureSpeciesSprite(fr.sp);
         const strollX = walkInP >= 1 ? Math.sin(now * fr.speed + idx * 1.4) * fr.amp : 0;
-        const fx = Math.round(fr.baseX + (1 - walkInP) * 64 + strollX);
+        const fx = Math.round(fr.baseX + (1 - walkInP) * 64 + strollX - (MOTION_STATE.skippedEscape ? townEasterLeaveDx(elapsed, idx + 1) : 0));
         // Once they have walked in, every other local hops 4 px on each beat (the next ones on the next beat)
         const tb = townBeat(now);
         const bop = walkInP >= 1 && tb >= 0 && (Math.floor(tb) + idx) % 2 === 0 && tb % 1 < 0.28 ? 4 : 0;
@@ -3904,7 +3927,9 @@ function initPixelMotionStudio() {
       // B-Grade Retro Pixel Speech Bubbles in Scene 5 (Crash-landing + Pixel Penguins Welcoming!)
       const speaker1 = renderedFriends[0] || { fx: row.friendsX[0], fy: spriteY };
       const speaker2 = renderedFriends[1] || { fx: row.friendsX[1], fy: spriteY };
-      if (MOTION_STATE.skippedEscape) {
+      if (MOTION_STATE.skippedEscape && townEasterLeaving(elapsed)) {
+        drawTownEasterLeaveTalk(ctx, now, elapsed, row.heroX - townEasterLeaveDx(elapsed, 0), speaker1.fx, spriteY, spriteSize);
+      } else if (MOTION_STATE.skippedEscape) {
         const skipPhase = Math.floor(elapsed / TOWN_TALK.turnMs) % (MOTION_STATE.idleSucked ? 3 : 2);
         if (MOTION_STATE.idleSucked) {
           // Arrived because nobody pressed anything: the locals want to know what you were doing
@@ -4021,7 +4046,13 @@ function initPixelMotionStudio() {
         }
       }
 
+      // Hidden village (town-easter.js) over the town once they have all walked off; it has its own banner, so the
+      // corner tag (which would sit on the snowman) is left out there
+      if (MOTION_STATE.skippedEscape) drawTownEaster(ctx, now, elapsed);
+      const villageUp = MOTION_STATE.skippedEscape && townEasterCovers(elapsed);
+
       // Bottom-Left Retro Arcade Corner Tag
+      if (!villageUp) {
       const tagX = 16;
       const tagY = 504;
       const tagW = 192;
@@ -4037,6 +4068,7 @@ function initPixelMotionStudio() {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText('PPENG · @happy Ahndoge', tagX + tagW / 2, tagY + tagH / 2 + 1);
+      }
     }
 
     // 16-Bit Pixel Mosaic Wipe Transition at the start of each scene
