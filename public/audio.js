@@ -107,13 +107,52 @@ function setSoundFlags(musicOn, sfx) {
   updateSoundButton();
 }
 
-// 16 x 16 pixel icons (crisp rects, like the rest of the stage art); "off" adds a red slash
-const PP_ICON_SPEAKER = '<rect x="2" y="6" width="3" height="4"/><rect x="5" y="5" width="1" height="6"/><rect x="6" y="4" width="1" height="8"/><rect x="7" y="3" width="1" height="10"/>';
-const PP_ICON_WAVES = '<rect x="9" y="6" width="1" height="4"/><rect x="11" y="4" width="1" height="2"/><rect x="12" y="6" width="1" height="4"/><rect x="11" y="10" width="1" height="2"/><rect x="13" y="3" width="1" height="1"/><rect x="14" y="4" width="1" height="8"/><rect x="13" y="12" width="1" height="1"/>';
-const PP_ICON_X = '<rect x="10" y="5" width="2" height="2"/><rect x="14" y="5" width="2" height="2"/><rect x="12" y="7" width="2" height="2"/><rect x="10" y="9" width="2" height="2"/><rect x="14" y="9" width="2" height="2"/>';
-const PP_ICON_NOTE = '<rect x="9" y="2" width="2" height="9"/><rect x="11" y="2" width="2" height="2"/><rect x="13" y="4" width="2" height="2"/><rect x="13" y="6" width="1" height="2"/><rect x="6" y="9" width="4" height="1"/><rect x="5" y="10" width="5" height="3"/><rect x="6" y="13" width="3" height="1"/>';
-const PP_ICON_SLASH = '<g fill="#fb7185"><rect x="2" y="13" width="2" height="2"/><rect x="4" y="11" width="2" height="2"/><rect x="6" y="9" width="2" height="2"/><rect x="8" y="7" width="2" height="2"/><rect x="10" y="5" width="2" height="2"/><rect x="12" y="3" width="2" height="2"/></g>';
-function ppIcon(body) {
+// Top-bar icons: one-colour 16 x 16 pixel glyphs in the button's own text colour (white, grey when off), no
+// emoji-style colour. A glyph is filled cells minus cut-outs; "off" is a slash with a one-cell gap cut round it,
+// the usual way a mono icon shows a slash over itself.
+const PP_GLYPHS = {
+  speaker: { fill: [[2, 6, 3, 4], [5, 5, 1, 6], [6, 4, 1, 8], [7, 3, 1, 10]] },
+  waves: { fill: [[9, 6, 1, 4], [11, 4, 1, 2], [12, 6, 1, 4], [11, 10, 1, 2], [13, 3, 1, 1], [14, 4, 1, 8], [13, 12, 1, 1]] },
+  cross: { fill: [[10, 5, 2, 2], [14, 5, 2, 2], [12, 7, 2, 2], [10, 9, 2, 2], [14, 9, 2, 2]] },
+  note: { fill: [[9, 2, 2, 9], [11, 2, 2, 2], [13, 4, 2, 2], [13, 6, 1, 2], [6, 9, 4, 1], [5, 10, 5, 3], [6, 13, 3, 1]] },
+  // Film slate: striped clapper (stripes cut out), hinge, board with a play mark cut out
+  slate: {
+    fill: [[2, 2, 12, 3], [2, 5, 2, 1], [2, 6, 12, 9]],
+    cut: [[4, 2, 2, 1], [8, 2, 2, 1], [12, 2, 2, 1], [3, 3, 2, 1], [7, 3, 2, 1], [11, 3, 2, 1], [2, 4, 2, 1], [6, 4, 2, 1], [10, 4, 2, 1],
+      [6, 8, 1, 5], [7, 9, 1, 3], [8, 10, 1, 1]],
+  },
+};
+function ppGlyph(names, slashed = false) {
+  const g = new Uint8Array(256);
+  const paint = (rects, v) => rects.forEach(([x, y, w, h]) => {
+    for (let j = y; j < y + h; j++) for (let i = x; i < x + w; i++) if (i >= 0 && j >= 0 && i < 16 && j < 16) g[j * 16 + i] = v;
+  });
+  names.forEach((n) => paint(PP_GLYPHS[n].fill, 1));
+  names.forEach((n) => paint(PP_GLYPHS[n].cut || [], 0));
+  if (slashed) {
+    // Top-left to bottom-right, as in the usual "off" icons (x = y from (2, 2) to (14, 14)): clear a gap round
+    // it, then draw it two cells thick
+    for (let j = 0; j < 16; j++) {
+      for (let i = 0; i < 16; i++) {
+        const d = Math.abs(i - j) / Math.SQRT2;
+        if (i < 1 || i > 14) continue;
+        if (d < 1.45) g[j * 16 + i] = 0;
+        if (d < 0.8 && i >= 2 && i <= 13) g[j * 16 + i] = 1;
+      }
+    }
+  }
+  let body = '';
+  for (let j = 0; j < 16; j++) {
+    for (let i = 0; i < 16; ) {
+      if (!g[j * 16 + i]) {
+        i++;
+        continue;
+      }
+      const start = i;
+      while (i < 16 && g[j * 16 + i]) i++;
+      body += `<rect x="${start}" y="${j}" width="${i - start}" height="1"/>`;
+    }
+  }
   return `<svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" shape-rendering="crispEdges" aria-hidden="true" focusable="false">${body}</svg>`;
 }
 
@@ -123,7 +162,7 @@ function updateSoundButton() {
   const set = (id, on, body, labelKo, labelEn) => {
     const btn = document.getElementById(id);
     if (!btn) return;
-    btn.innerHTML = ppIcon(body);
+    btn.innerHTML = body;
     // Icon-only buttons still need a name for screen readers and a hover hint
     const label = en ? labelEn : labelKo;
     btn.setAttribute('aria-label', label);
@@ -133,8 +172,8 @@ function updateSoundButton() {
   };
   const m = PP_SOUND.musicOn;
   const s = PP_SOUND.sfxOn;
-  set('btn-music-toggle', m, PP_ICON_NOTE + (m ? '' : PP_ICON_SLASH), m ? '캐럴 켜짐 (누르면 끄기)' : '캐럴 꺼짐 (누르면 켜기)', m ? 'Music on (tap to mute)' : 'Music off (tap to play)');
-  set('btn-sfx-toggle', s, PP_ICON_SPEAKER + (s ? PP_ICON_WAVES : PP_ICON_X), s ? '효과음 켜짐 (누르면 끄기)' : '효과음 꺼짐 (누르면 켜기)', s ? 'Sound effects on (tap to mute)' : 'Sound effects off (tap to play)');
+  set('btn-music-toggle', m, ppGlyph(['note'], !m), m ? '캐럴 켜짐 (누르면 끄기)' : '캐럴 꺼짐 (누르면 켜기)', m ? 'Music on (tap to mute)' : 'Music off (tap to play)');
+  set('btn-sfx-toggle', s, ppGlyph(s ? ['speaker', 'waves'] : ['speaker', 'cross']), s ? '효과음 켜짐 (누르면 끄기)' : '효과음 꺼짐 (누르면 켜기)', s ? 'Sound effects on (tap to mute)' : 'Sound effects off (tap to play)');
 }
 
 // ---------------------------------------------------------------------------------------------------------------
