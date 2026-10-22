@@ -863,8 +863,8 @@ function updateUfoBoardingDockUI() {
     } else {
       s1SubEl.textContent =
         CURRENT_LANG === 'ko'
-          ? '번호를 넣으면 그 번호로 최고점이 남습니다. 비워두면 기록 없이 플레이.'
-          : 'Enter your NFT number to keep a high score. Leave it blank to play unrecorded.';
+          ? '번호를 넣으면 최고점 기록 · 비우면 기록 없음'
+          : 'Your NFT # saves your high score · blank = unrecorded';
       s1SubEl.style.color = '';
     }
   }
@@ -4571,11 +4571,6 @@ function closeTokenModal() {
 
 // Initialize App
 document.addEventListener('DOMContentLoaded', async () => {
-  const skipTownBtn = document.getElementById('btn-scene1-no');
-  if (skipTownBtn) {
-    skipTownBtn.dataset.ko = `안 해요, ${INTRO_TOWN.ko}로`;
-    skipTownBtn.dataset.en = `No, skip to ${INTRO_TOWN.en}`;
-  }
   startMintCountdown();
   initAmbientPixelCanvas();
   initPfpStudio();
