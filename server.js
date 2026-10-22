@@ -540,6 +540,9 @@ app.get('/api/health', (req, res) => {
     store: leaderboards.kind,
     workers: WORKERS,
     worker_id: cluster.isWorker ? cluster.worker.id : 0,
+    // The address the score-post rate limit sees for this request (should be the visitor's own)
+    client_ip: clientIpInfo(req).ip,
+    client_ip_source: clientIpInfo(req).source,
     container_cpus: containerCpuCount(),
     container_memory_mb: Math.round(containerMemoryBytes() / 1048576),
     rss_mb: Math.round(process.memoryUsage().rss / 1048576),
@@ -547,9 +550,19 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Cloudflare sends the visitor's address; X-Forwarded-For's first hop can be set by the client
+// Requests arrive Cloudflare -> VeryCloud Traefik -> app, so the socket address (and req.ip behind more than one proxy)
+// is a proxy shared by every visitor. Cloudflare's CF-Connecting-IP is the visitor; without it, the first
+// X-Forwarded-For entry; the socket address only as a last resort.
+function clientIpInfo(req) {
+  const cf = String(req.get('cf-connecting-ip') || '').trim();
+  if (cf) return { ip: cf, source: 'cf-connecting-ip' };
+  const xff = String(req.get('x-forwarded-for') || '').split(',')[0].trim();
+  if (xff) return { ip: xff, source: 'x-forwarded-for' };
+  return { ip: req.socket.remoteAddress || '', source: 'socket' };
+}
+
 function clientIp(req) {
-  return req.get('cf-connecting-ip') || req.ip;
+  return clientIpInfo(req).ip;
 }
 
 app.get('/api/leaderboard', async (req, res) => {
