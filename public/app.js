@@ -4,7 +4,16 @@
  */
 
 let APP_CONFIG = null;
-let CURRENT_LANG = 'ko';
+// English by default (most visitors from launch on are from abroad); a KR / EN pick is remembered
+const LANG_STORE = 'ppeng-lang';
+let CURRENT_LANG = (() => {
+  try {
+    const saved = localStorage.getItem(LANG_STORE);
+    return saved === 'ko' || saved === 'en' ? saved : 'en';
+  } catch (e) {
+    return 'en';
+  }
+})();
 let CURRENT_PAGE = 1;
 let TOTAL_PAGES = 1;
 let CURRENT_PFP_TOKEN = 4441;
@@ -4001,11 +4010,11 @@ function handleParadeClick(edition) {
   openTokenModal(Number(edition));
 }
 
-// Live Countdown to Friday Mint (2026-10-23)
+// Live Countdown to the Mint (Mon 2026-10-26, moved from Fri 10-23)
 function startMintCountdown() {
   const badge = document.getElementById('mint-countdown');
   if (!badge) return;
-  const targetDate = new Date('2026-10-23T12:00:00+09:00').getTime();
+  const targetDate = new Date('2026-10-26T12:00:00+09:00').getTime();
 
   function tick() {
     const now = Date.now();
@@ -4025,9 +4034,17 @@ function startMintCountdown() {
 }
 
 // Language Switcher
+const PAGE_TITLE = {
+  ko: 'PIXEL PENGUIN (PPENG) — 베리챗 픽셀 펭귄 10,000마리',
+  en: 'PIXEL PENGUIN (PPENG) — 10,000 pixel penguins for VeryChat',
+};
 function applyLanguage(lang) {
   CURRENT_LANG = lang;
   document.documentElement.lang = lang;
+  document.title = PAGE_TITLE[lang] || PAGE_TITLE.en;
+  try {
+    localStorage.setItem(LANG_STORE, lang);
+  } catch (e) {}
   document.querySelectorAll('.lang-btn[data-lang]').forEach((b) => {
     b.classList.toggle('active', b.dataset.lang === lang);
   });
@@ -4049,6 +4066,8 @@ function applyLanguage(lang) {
     fetchExplorerTokens();
   }
   setIntroScene(MOTION_STATE.sceneIdx, false);
+  if (typeof updateSoundButton === 'function') updateSoundButton();
+  if (typeof updateOpeningButton === 'function') updateOpeningButton();
 }
 
 // PFP Simulator
@@ -4166,7 +4185,7 @@ function renderSpecialsGrid(specials) {
       return `
     <button type="button" class="nft-card genesis-card" onclick="openTokenModal(${sp.edition})">
       <div class="nft-thumb-wrap">
-        <img src="${sp.fast_gif_url}" alt="${escapeHtml(sp.title)}" class="pixelated" loading="lazy" />
+        <img src="${sp.fast_gif_url}" alt="${escapeHtml(`Pixel Penguin #${sp.edition} — ${subText}`)}" class="pixelated" loading="lazy" />
         <div class="card-top-badges">
           <span class="tier-pill tier-${sp.tier}">${sp.tier}</span>
           <span class="rank-pill">Rank #${sp.rarity_rank}</span>
@@ -4300,7 +4319,7 @@ async function fetchExplorerTokens() {
         return `
         <button type="button" class="nft-card ${cardTierClass}" onclick="openTokenModal(${item.edition})">
           <div class="nft-thumb-wrap">
-            <img src="${item.image_url}" alt="${escapeHtml(item.name)}" class="pixelated" loading="lazy" />
+            <img src="${item.image_url}" alt="${escapeHtml(CURRENT_LANG === 'ko' ? item.name : item.name_en || item.name)}" class="pixelated" loading="lazy" />
             <div class="card-top-badges">
               <span class="tier-pill tier-${item.tier}">${item.tier}</span>
               <span class="rank-pill">Rank #${item.rarity_rank}</span>
@@ -4546,7 +4565,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const skipTownBtn = document.getElementById('btn-scene1-no');
   if (skipTownBtn) {
     skipTownBtn.dataset.ko = `안 해요, ${INTRO_TOWN.ko}로`;
-    if (CURRENT_LANG === 'ko') skipTownBtn.textContent = skipTownBtn.dataset.ko;
+    skipTownBtn.dataset.en = `No, skip to ${INTRO_TOWN.en}`;
   }
   startMintCountdown();
   initAmbientPixelCanvas();
@@ -4558,6 +4577,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll('.lang-btn[data-lang]').forEach((btn) => {
     btn.addEventListener('click', () => applyLanguage(btn.dataset.lang));
   });
+  // The page is written in Korean: switch it to the visitor's language (English unless they picked KR before)
+  applyLanguage(CURRENT_LANG);
 
   // Navigation Tabs
   document.querySelectorAll('.market-tab').forEach((tab) => {

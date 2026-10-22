@@ -319,7 +319,7 @@ app.get('/api/config', (req, res) => {
     project: {
       ...collection.project,
       official_website: CANONICAL_ORIGIN,
-      contract_address: process.env.CONTRACT_ADDRESS || 'TBA (2026. 10. 23 민팅 시 온체인 컨트랙트 자동 연동)',
+      contract_address: process.env.CONTRACT_ADDRESS || 'TBA (2026. 10. 26 민팅 시 온체인 컨트랙트 자동 연동)',
     },
     provenance: collection.provenance,
     specials: collection.specials,
