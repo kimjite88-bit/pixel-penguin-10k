@@ -4103,11 +4103,11 @@ function handleParadeClick(edition) {
   openTokenModal(Number(edition));
 }
 
-// Live Countdown to the Mint (Mon 2026-10-26)
+// Live Countdown to the Mint (Mon 2026-10-26 10:00 UTC = 19:00 KST)
 function startMintCountdown() {
   const badge = document.getElementById('mint-countdown');
   if (!badge) return;
-  const targetDate = new Date('2026-10-26T12:00:00+09:00').getTime();
+  const targetDate = new Date('2026-10-26T10:00:00Z').getTime();
 
   function tick() {
     const now = Date.now();
