@@ -1384,7 +1384,9 @@ function buildLeaderboardRowsHtml(items, showBoardAction = true) {
   }
   return items
     .map((item) => {
-      const medal = CURRENT_LANG === 'ko' ? `${item.rank}위` : `#${item.rank}`;
+      const rankLabel = CURRENT_LANG === 'ko' ? `${item.rank}위` : `#${item.rank}`;
+      // Top 3 get a pixel medal (gold / silver / bronze) with the number on it; the rest the plain rank
+      const medal = item.rank <= 3 ? `<span class="rank-medal" aria-label="${rankLabel}">${item.rank}</span>` : rankLabel;
       const topClass = item.rank <= 3 ? `rank-top-${item.rank}` : '';
       const nftName = getNftDisplayName(item);
       // "Pixel Penguin " is shared by every entry; phones hide it so the number stays visible

@@ -1813,28 +1813,105 @@ body.ufo-fullscreen-lock {
   background: var(--surface-3);
 }
 
-.rank-row-card.rank-top-1 {
-  border-color: rgba(250, 204, 21, 0.45);
-}
-
-.rank-row-card.rank-top-2 {
-  border-color: rgba(226, 232, 240, 0.32);
-}
-
-.rank-row-card.rank-top-3 {
-  border-color: rgba(251, 146, 60, 0.38);
-}
-
 .rank-badge-num {
+  position: relative;
   font-size: 14px;
   font-weight: 700;
   text-align: center;
+  color: var(--text-3);
   font-variant-numeric: tabular-nums;
 }
 
-.rank-top-1 .rank-badge-num { color: #fde047; }
-.rank-top-2 .rank-badge-num { color: #e2e8f0; }
-.rank-top-3 .rank-badge-num { color: #fdba74; }
+/* Podium rows: gold / silver / bronze. Each row tints from its metal on the left (accent edge, faint wash),
+   the avatar gets a ring of it and the score takes its colour; the rank becomes a pixel medal on a ribbon. */
+.rank-row-card.rank-top-1 { --metal: #f5c542; --metal-hi: #fff3b0; --metal-lo: #a2701a; --metal-wash: rgba(245, 197, 66, 0.16); }
+.rank-row-card.rank-top-2 { --metal: #cfd8e3; --metal-hi: #ffffff; --metal-lo: #77838f; --metal-wash: rgba(207, 216, 227, 0.12); }
+.rank-row-card.rank-top-3 { --metal: #e08a4f; --metal-hi: #ffd6b8; --metal-lo: #87461f; --metal-wash: rgba(224, 138, 79, 0.14); }
+
+.rank-row-card.rank-top-1,
+.rank-row-card.rank-top-2,
+.rank-row-card.rank-top-3 {
+  border-color: color-mix(in srgb, var(--metal) 55%, transparent);
+  background: linear-gradient(90deg, var(--metal-wash), transparent 55%), var(--surface-2);
+  box-shadow: inset 3px 0 0 var(--metal);
+}
+
+.rank-row-card.rank-top-1 {
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.rank-top-1 .rank-avatar-thumb,
+.rank-top-2 .rank-avatar-thumb,
+.rank-top-3 .rank-avatar-thumb {
+  outline: 2px solid var(--metal);
+  outline-offset: 2px;
+}
+
+.rank-top-1 .rank-score-val,
+.rank-top-2 .rank-score-val,
+.rank-top-3 .rank-score-val {
+  color: var(--metal);
+}
+
+.rank-top-1 .rank-score-val {
+  font-size: 17px;
+}
+
+/* The medal: a pixel-cut disc (stepped octagon) with a lit top-left and shaded bottom-right, number engraved */
+.rank-medal {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  margin-top: 8px;
+  background: linear-gradient(145deg, var(--metal-hi) 0%, var(--metal) 45%, var(--metal-lo) 100%);
+  clip-path: polygon(30% 0, 70% 0, 70% 6%, 88% 6%, 88% 18%, 100% 18%, 100% 82%, 88% 82%, 88% 94%, 70% 94%, 70% 100%, 30% 100%, 30% 94%, 12% 94%, 12% 82%, 0 82%, 0 18%, 12% 18%, 12% 6%, 30% 6%);
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--metal-lo) 70%, transparent);
+  color: #1b1307;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 1px 0 color-mix(in srgb, var(--metal-hi) 70%, transparent);
+}
+
+/* Ribbon above the medal: two short pixel tails in the metal's shade */
+.rank-top-1 .rank-badge-num::before,
+.rank-top-2 .rank-badge-num::before,
+.rank-top-3 .rank-badge-num::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: -2px;
+  width: 18px;
+  height: 12px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, var(--metal-lo) 0 40%, transparent 40% 60%, var(--metal-lo) 60% 100%);
+  opacity: 0.9;
+}
+
+/* #1 only: a slow light sweep across the gold row */
+.rank-row-card.rank-top-1 {
+  position: relative;
+  overflow: hidden;
+}
+.rank-row-card.rank-top-1::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 40%, rgba(255, 243, 176, 0.1) 50%, transparent 60%);
+  transform: translateX(-100%);
+  animation: rank-gold-sweep 4.5s ease-in-out infinite;
+  pointer-events: none;
+}
+@keyframes rank-gold-sweep {
+  0%, 55% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rank-row-card.rank-top-1::after { animation: none; display: none; }
+}
 
 .rank-avatar-thumb {
   width: 44px;
@@ -1884,7 +1961,7 @@ body.ufo-fullscreen-lock {
 .rank-score-val {
   font-size: 15px;
   font-weight: 700;
-  color: #fde047;
+  color: #e2e8f0; /* only the podium rows get a metal colour */
   text-align: right;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
@@ -2526,6 +2603,11 @@ body.ufo-fullscreen-lock {
   .rank-avatar-thumb {
     width: 40px;
     height: 40px;
+  }
+  .rank-medal {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
   }
   .rank-nft-title {
     font-size: 13.5px;
