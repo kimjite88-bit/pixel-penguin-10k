@@ -114,7 +114,10 @@ function scene3Pose(vehicle, subP, now) {
   };
 }
 
-function drawScene3Ribbons(ctx, x, y, alpha) {
+// Pull lines from the pillar to whatever it is dragging in. beam = the pillar's middle on the current picture
+// (scene 4's mirrored background by default; the escape scene passes its own, on the right), startDx = where on
+// the beam they leave from
+function drawScene3Ribbons(ctx, x, y, alpha, beam = SCENE3_BEAM, startDx = -20) {
   if (alpha <= 0) return;
   ctx.save();
   ctx.globalAlpha = Math.min(1, alpha);
@@ -123,8 +126,8 @@ function drawScene3Ribbons(ctx, x, y, alpha) {
     ctx.strokeStyle = s % 2 === 0 ? 'rgba(103, 232, 249, 0.8)' : 'rgba(244, 114, 182, 0.62)';
     ctx.lineWidth = 2.6;
     ctx.beginPath();
-    ctx.moveTo(SCENE3_BEAM.x - 20, SCENE3_BEAM.y - 30 + yOff * 0.4);
-    ctx.quadraticCurveTo((x + SCENE3_BEAM.x) / 2, Math.min(y, SCENE3_BEAM.y) - 40 + yOff, x, y + yOff * 0.6);
+    ctx.moveTo(beam.x + startDx, beam.y - 30 + yOff * 0.4);
+    ctx.quadraticCurveTo((x + beam.x) / 2, Math.min(y, beam.y) - 40 + yOff, x, y + yOff * 0.6);
     ctx.stroke();
   }
   ctx.restore();

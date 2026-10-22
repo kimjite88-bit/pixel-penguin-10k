@@ -525,7 +525,7 @@ function drawScene0Shout(ctx, now, lines, accent, quake) {
 const SCENE0_IDLE_MS = 30000;
 const SCENE0_IDLE_QUIET_MS = 10000;
 const SCENE0_SUCK_MS = 7000;
-const SCENE0_PILLAR = { x: 700, y: 250 };
+const SCENE0_PILLAR = { x: 742, y: 250 }; // the beam's middle in bg_ref_vortex (it spans x ~680-805)
 
 // Any input on the page counts as "not idle"; time with the stage off screen does too
 function noteScene0Input() {
@@ -596,7 +596,8 @@ function drawScene0IdleSuck(ctx, now, r) {
   const y = home.y + (P.y - home.y) * d - Math.sin(d * Math.PI) * 60 + Math.sin(now * 0.02) * 3 * (1 - d);
   const rot = d < 1 ? Math.sin(now * 0.012) * 0.5 + d * Math.PI * 2 : Math.sin(now * 0.004) * 0.12;
   const size = 140 - d * 36;
-  drawScene3Ribbons(ctx, x, y, Math.min(1, r / 0.12));
+  // From the pillar on the right (not scene 4's default, which sits on the plane here)
+  drawScene3Ribbons(ctx, x, y, Math.min(1, r / 0.12), SCENE0_PILLAR, -28);
   if (r < 0.3) {
     drawScene0FlyingHero(ctx, x, y, size, rot, now);
   } else {
