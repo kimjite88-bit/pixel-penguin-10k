@@ -538,6 +538,7 @@ app.get('/api/health', (req, res) => {
   res.json({
     ok: true,
     store: leaderboards.kind,
+    ...(leaderboards.status ? leaderboards.status() : {}),
     workers: WORKERS,
     worker_id: cluster.isWorker ? cluster.worker.id : 0,
     // The address the score-post rate limit sees for this request (should be the visitor's own)

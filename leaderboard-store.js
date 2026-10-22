@@ -142,6 +142,7 @@ function createSqlStore({ dataDir, parseTokenNumber, databaseUrl, redisUrl, pool
   pool.on('error', (e) => console.warn('[Postgres] idle client error:', e.message));
 
   let redis = null;
+  let redisLastError = null;
   if (redisUrl) {
     const { createClient } = require('redis');
     redis = createClient({
@@ -150,6 +151,7 @@ function createSqlStore({ dataDir, parseTokenNumber, databaseUrl, redisUrl, pool
     });
     let lastErr = 0;
     redis.on('error', (e) => {
+      redisLastError = e.message;
       if (Date.now() - lastErr > 30000) console.warn('[Redis] error:', e.message);
       lastErr = Date.now();
     });
@@ -177,12 +179,15 @@ function createSqlStore({ dataDir, parseTokenNumber, databaseUrl, redisUrl, pool
     try {
       await redis.set(cacheKey(game), JSON.stringify(top), { EX: CACHE_TTL_SEC });
     } catch (e) {
-      // cache only
+      redisLastError = e.message; // cache only
     }
   }
 
   return {
     kind: redis ? 'postgres+redis' : 'postgres',
+    status() {
+      return { redis: redis ? (redis.isReady ? 'ready' : 'not ready') : 'off', redis_last_error: redisLastError };
+    },
     // Runs once (cluster primary, or the single process) before any worker serves traffic
     async init() {
       let lastErr;
