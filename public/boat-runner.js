@@ -334,152 +334,440 @@ function boatScreenY(run, wy, backOff = 0) {
 
 function drawBoatSea(ctx, now, run) {
   const g = ctx.createLinearGradient(0, 0, 0, 540);
-  g.addColorStop(0, '#0e4f6e');
-  g.addColorStop(1, '#0a3550');
+  g.addColorStop(0, '#0f5b80');
+  g.addColorStop(0.55, '#0c4566');
+  g.addColorStop(1, '#09324c');
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, 960, 540);
-  // Wave dashes scroll with the world
-  ctx.fillStyle = 'rgba(186, 230, 253, 0.22)';
-  for (let i = 0; i < 46; i++) {
-    const wx = 150 + boatHash(i) * 660;
-    const wy = ((i * 97 + run.y) % 620) - 40;
-    const len = 10 + boatHash(i + 50) * 22;
-    const sway = Math.sin(now * 0.002 + i) * 4;
-    ctx.fillRect(Math.round(wx + sway), Math.round(wy), Math.round(len), 3);
+  // Wave crests: short light arcs that scroll with the world and sway
+  // (two batched paths, one per shade, instead of a stroke per crest)
+  ctx.save();
+  ctx.lineWidth = 2;
+  for (let pass = 0; pass < 2; pass++) {
+    ctx.beginPath();
+    for (let i = 0; i < 40; i++) {
+      if ((i % 3 === 0) !== (pass === 1)) continue;
+      const wx = 150 + boatHash(i) * 660 + Math.sin(now * 0.0015 + i) * 5;
+      const wy = ((i * 97 + run.y) % 620) - 40;
+      const w = 12 + boatHash(i + 50) * 22;
+      const a0 = Math.PI * 1.08;
+      ctx.moveTo(wx + Math.cos(a0) * w, wy + Math.sin(a0) * w * 0.28);
+      ctx.ellipse(wx, wy, w, w * 0.28, 0, a0, Math.PI * 1.92);
+    }
+    ctx.strokeStyle = pass ? 'rgba(224, 242, 254, 0.32)' : 'rgba(186, 230, 253, 0.2)';
+    ctx.stroke();
+  }
+  ctx.restore();
+  // Sun glints twinkling on the water
+  for (let i = 0; i < 16; i++) {
+    if (Math.floor(now / 260 + i * 3.7) % 4) continue;
+    const sx = 170 + boatHash(i + 300) * 620;
+    const sy = ((i * 151 + run.y * 0.98) % 600) - 30;
+    ctx.fillStyle = '#e0f2fe';
+    ctx.fillRect(Math.round(sx), Math.round(sy), 3, 3);
+    ctx.fillRect(Math.round(sx) - 2, Math.round(sy) + 1, 7, 1);
+  }
+  // Brash ice: small chunks drifting in the lead (below the floes, scrolling with the world)
+  for (let i = 0; i < 12; i++) {
+    const bx = 175 + boatHash(i + 900) * 610 + Math.sin(now * 0.001 + i * 2) * 6;
+    const by = ((i * 173 + run.y) % 660) - 60;
+    const s = 6 + Math.round(boatHash(i + 950) * 8);
+    ctx.fillStyle = 'rgba(4, 20, 34, 0.3)';
+    ctx.fillRect(Math.round(bx - s / 2) + 2, Math.round(by) + 3, s, Math.round(s * 0.7));
+    ctx.fillStyle = '#a5d8f0';
+    ctx.fillRect(Math.round(bx - s / 2), Math.round(by) + 2, s, Math.round(s * 0.7));
+    ctx.fillStyle = '#eef8fd';
+    ctx.fillRect(Math.round(bx - s / 2), Math.round(by), s, Math.round(s * 0.5));
   }
 }
 
-// Pack ice shelves on both sides of the lead, scrolling with the ship
+// Pack ice shelves on both sides of the lead, scrolling with the ship: snow on top, a blue shade along the water
+// edge, foam lapping at it
 function drawBoatShelves(ctx, run) {
   const L = BOAT_CFG.CHANNEL_L;
   const R = BOAT_CFG.CHANNEL_R;
   const seg = 60;
   const base = Math.floor(run.y / seg);
+  const now = performance.now();
   for (const side of [0, 1]) {
-    ctx.beginPath();
-    ctx.moveTo(side ? 960 : 0, -20);
+    const pts = [];
     for (let k = -2; k < 13; k++) {
       const wy = (base + 11 - k) * seg;
       const sy = boatScreenY(run, wy);
       const jag = (boatHash((base + 11 - k) * 2 + side * 7) - 0.5) * 30;
-      ctx.lineTo(side ? R + jag : L + jag, sy);
+      pts.push([side ? R + jag : L + jag, sy]);
     }
+    const shelf = () => {
+      ctx.beginPath();
+      ctx.moveTo(side ? 960 : 0, -20);
+      pts.forEach(([x, y]) => ctx.lineTo(x, y));
+      ctx.lineTo(side ? 960 : 0, 560);
+      ctx.closePath();
+    };
+    // Shadow on the water under the shelf edge
+    ctx.save();
+    ctx.translate(side ? -6 : 6, 6);
+    shelf();
+    ctx.fillStyle = 'rgba(4, 20, 34, 0.35)';
+    ctx.fill();
+    ctx.restore();
+    // Blue shade along the water edge: the shelf in shade colour, then its snow top stepped back from the edge
+    // (two fills; a clipped wide stroke cost about as much as the rest of the scene on a phone)
+    shelf();
+    ctx.fillStyle = '#9fcfe8';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(side ? 960 : 0, -20);
+    pts.forEach(([x, y]) => ctx.lineTo(x + (side ? 16 : -16), y));
     ctx.lineTo(side ? 960 : 0, 560);
     ctx.closePath();
-    ctx.fillStyle = '#e8f4fb';
+    ctx.fillStyle = '#eef7fc';
     ctx.fill();
-    ctx.strokeStyle = '#7fb7d4';
-    ctx.lineWidth = 4;
+    // Snow drifts on the shelf top
+    ctx.fillStyle = '#ffffff';
+    for (let k = -1; k < 12; k += 2) {
+      const n = base + 11 - k;
+      const sy = boatScreenY(run, n * seg);
+      const sx = side ? 870 + boatHash(n + 11) * 60 : 24 + boatHash(n + 5) * 60;
+      ctx.fillRect(Math.round(sx), Math.round(sy + 18), 44, 5);
+      ctx.fillRect(Math.round(sx) + 6, Math.round(sy + 14), 30, 4);
+    }
+    // Edge line and foam lapping just off it
+    ctx.beginPath();
+    pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+    ctx.strokeStyle = '#5f9fc0';
+    ctx.lineWidth = 3;
     ctx.stroke();
+    // Foam: short white dashes along the edge, drifting
+    ctx.fillStyle = 'rgba(240, 249, 255, 0.75)';
+    for (let i = 1; i < pts.length; i++) {
+      const [x0, y0] = pts[i - 1];
+      const [x1, y1] = pts[i];
+      const q = (now * 0.0006 + i * 0.37) % 1;
+      ctx.fillRect(Math.round(x0 + (x1 - x0) * q + (side ? -9 : 5)), Math.round(y0 + (y1 - y0) * q), 4, 12);
+    }
   }
-  // Pressure ridges on the shelves
-  ctx.fillStyle = '#c7e2f0';
+  // Pressure ridges on the shelves: little raised blocks with a lit top and a shaded side
   for (let k = -1; k < 12; k++) {
     const n = base + 11 - k;
-    const sy = boatScreenY(run, n * seg) + 20;
-    ctx.fillRect(Math.round(30 + boatHash(n) * 80), Math.round(sy), 34, 6);
-    ctx.fillRect(Math.round(840 + boatHash(n + 3) * 80), Math.round(sy + 18), 30, 6);
+    const sy = boatScreenY(run, n * seg) + 36;
+    const lx = Math.round(26 + boatHash(n) * 70);
+    const rx = Math.round(846 + boatHash(n + 3) * 70);
+    for (const [x, y] of [[lx, sy], [rx, sy + 18]]) {
+      ctx.fillStyle = '#b7d8ea';
+      ctx.fillRect(x, Math.round(y) + 4, 30, 6);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(x + 2, Math.round(y), 26, 5);
+    }
   }
 }
 
 function boatIceColors(T) {
-  if (T >= 70) return { top: '#ffffff', side: '#93c5fd', line: '#3b82f6' }; // multi-year
-  if (T >= 45) return { top: '#eaf6fd', side: '#a5d8f0', line: '#60a5fa' };
-  return { top: '#c9ecf8', side: '#8fd3ea', line: '#38bdf8' }; // young ice
+  if (T >= 70) return { top: '#f8fcff', top2: '#dcefff', side: '#7fb2e5', dark: '#4f7fb8', line: '#3b82f6' }; // multi-year
+  if (T >= 45) return { top: '#eef8fd', top2: '#d3ecf8', side: '#94cdea', dark: '#5f9fc4', line: '#60a5fa' };
+  return { top: '#d4f0fa', top2: '#bfe6f5', side: '#86cde6', dark: '#4f9fbf', line: '#38bdf8' }; // young ice
 }
 
-function drawBoatPenguinOnIce(ctx, x, y, now, hop) {
-  // Tiny stranded penguin (top-down 3/4): black back, white belly, orange feet, flapping when the ship is near
-  const bob = Math.floor((now + hop) / 220) % 2 === 0 ? 0 : -2;
-  const px = Math.round(x);
-  const py = Math.round(y + bob);
-  ctx.fillStyle = 'rgba(11, 16, 32, 0.25)';
-  ctx.fillRect(px - 7, py + 9, 16, 4);
-  ctx.fillStyle = BOAT_K;
-  ctx.fillRect(px - 6, py - 12, 14, 20);
-  ctx.fillRect(px - 9, py - 6, 3, 9);
-  ctx.fillRect(px + 8, py - 6, 3, 9);
-  ctx.fillStyle = '#f8fafc';
-  ctx.fillRect(px - 3, py - 6, 8, 13);
-  ctx.fillRect(px - 3, py - 10, 2, 2);
-  ctx.fillRect(px + 3, py - 10, 2, 2);
-  ctx.fillStyle = '#fb923c';
-  ctx.fillRect(px, py - 8, 2, 2);
-  ctx.fillRect(px - 4, py + 8, 4, 2);
-  ctx.fillRect(px + 2, py + 8, 4, 2);
+// Rescued-to-be penguins use the same 2D penguins as the opening and the town (species sheets), on their floe
+const BOAT_FLOE_SPECIES = ['05', '22', '04', '09', '10', '06', '15', '02'];
+function boatPenguinSpecies(seed, i) {
+  return BOAT_FLOE_SPECIES[Math.floor(boatHash(seed * 0.37 + i * 17.3) * BOAT_FLOE_SPECIES.length)];
+}
+
+// A stranded penguin standing on the ice, feet at (x, feet). alert = the ship is close: it jumps up and down
+// waving for it instead of just standing there blinking
+function drawBoatPenguinOnIce(ctx, x, feet, now, hop, sp = '05', size = 46, alert = false) {
+  const sheet = typeof getHero2DSheetForSpecies === 'function' ? getHero2DSheetForSpecies(sp) : null;
+  const phase = (now + hop) / (alert ? 260 : 900);
+  const q = phase % 1;
+  const lift = alert ? Math.sin(q * Math.PI) * 10 : 0;
+  const sy = alert ? (q < 0.12 || q > 0.88 ? 0.86 : 1.06) : 1 + Math.sin(phase * Math.PI * 2) * 0.015;
+  const flip = alert ? Math.floor(phase) % 2 === 0 : Math.floor(phase / 3) % 2 === 0;
+  const frame = alert ? 6 : Math.floor(phase * 2) % 7 === 0 ? 1 : 0;
+  // Shadow on the ice, smaller while it is in the air
+  ctx.fillStyle = 'rgba(30, 64, 104, 0.28)';
+  ctx.beginPath();
+  ctx.ellipse(x, feet - 1, size * 0.3 * (1 - lift / 40), 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+  if (!sheet) return;
+  const sprite = boatPenguinSprite(sheet, sp, frame, size);
+  ctx.save();
+  ctx.translate(Math.round(x), Math.round(feet - lift));
+  ctx.scale(flip ? -(2 - sy) : 2 - sy, sy);
+  ctx.imageSmoothingEnabled = true;
+  if (sprite) ctx.drawImage(sprite, -size / 2, -size + 2, size, size);
+  else ctx.drawImage(sheet, frame * 256, 0, 256, 256, -size / 2, -size + 2, size, size);
+  ctx.restore();
+}
+
+// Penguin frames shrunk once per size (2x for the HiDPI stage): scaling a 256px frame every draw was the floes'
+// biggest cost on phones
+const BOAT_SPRITE_CACHE = new Map();
+function boatPenguinSprite(sheet, sp, frame, size) {
+  const ready = sheet.naturalWidth ? sheet.complete : sheet.width > 0;
+  if (!ready || typeof document === 'undefined') return null;
+  const px = Math.max(8, Math.round(size / 4) * 4);
+  const key = `${sp}|${frame}|${px}`;
+  let c = BOAT_SPRITE_CACHE.get(key);
+  if (!c) {
+    if (BOAT_SPRITE_CACHE.size > 400) BOAT_SPRITE_CACHE.clear();
+    c = document.createElement('canvas');
+    c.width = px * 2;
+    c.height = px * 2;
+    const cc = c.getContext('2d');
+    cc.imageSmoothingEnabled = true;
+    cc.imageSmoothingQuality = 'high';
+    cc.drawImage(sheet, frame * 256, 0, 256, 256, 0, 0, px * 2, px * 2);
+    BOAT_SPRITE_CACHE.set(key, c);
+  }
+  return c;
 }
 
 function drawBoatCrate(ctx, x, y) {
   const px = Math.round(x);
   const py = Math.round(y);
+  ctx.fillStyle = 'rgba(30, 64, 104, 0.3)';
+  ctx.fillRect(px - 12, py + 9, 28, 6);
   ctx.fillStyle = BOAT_K;
-  ctx.fillRect(px - 13, py - 11, 26, 22);
+  ctx.fillRect(px - 14, py - 13, 28, 24);
+  ctx.fillStyle = '#d97706';
+  ctx.fillRect(px - 12, py - 11, 24, 20);
   ctx.fillStyle = '#f59e0b';
-  ctx.fillRect(px - 11, py - 9, 22, 18);
+  ctx.fillRect(px - 12, py - 11, 24, 12);
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(px - 2, py - 7, 4, 14);
-  ctx.fillRect(px - 7, py - 2, 14, 4);
+  ctx.fillRect(px - 2, py - 8, 4, 14);
+  ctx.fillRect(px - 7, py - 3, 14, 4);
+}
+
+// One ice slab, top-down with a little depth: shadow on the water, the near face (taller for thicker ice), the top
+// with a lit far rim; edges are ragged. splitL / splitR = that side is a fresh break (jagged, no rim).
+function boatSlabPoints(x0, x1, yFar, yNear, seed, splitL, splitR) {
+  const far = [];
+  const near = [];
+  const step = 36;
+  for (let x = x0; x <= x1 + 0.1; x += step) {
+    const xx = Math.min(x, x1);
+    far.push([xx, yFar + (boatHash(seed + xx * 0.13) - 0.5) * 6]);
+    near.push([xx, yNear + (boatHash(seed + 51 + xx * 0.17) - 0.5) * 6]);
+  }
+  if (far[far.length - 1][0] < x1) {
+    far.push([x1, yFar]);
+    near.push([x1, yNear]);
+  }
+  const side = (x, split, s) => {
+    const out = [];
+    if (!split) return out;
+    for (let k = 1; k < 4; k++) out.push([x + (boatHash(seed + s + k * 7) - 0.5) * 16, yFar + ((yNear - yFar) * k) / 4]);
+    return out;
+  };
+  return { far, near, right: side(x1, splitR, 3), left: side(x0, splitL, 9).reverse() };
+}
+
+function drawBoatSlab(ctx, x0, x1, yFar, yNear, face, c, seed, splitL = false, splitR = false) {
+  const P = boatSlabPoints(x0, x1, yFar, yNear, seed, splitL, splitR);
+  const outline = (dy = 0) => {
+    ctx.beginPath();
+    P.far.forEach(([x, y], i) => (i ? ctx.lineTo(x, y + dy) : ctx.moveTo(x, y + dy)));
+    P.right.forEach(([x, y]) => ctx.lineTo(x, y + dy));
+    for (let i = P.near.length - 1; i >= 0; i--) ctx.lineTo(P.near[i][0], P.near[i][1] + dy);
+    P.left.forEach(([x, y]) => ctx.lineTo(x, y + dy));
+    ctx.closePath();
+  };
+  // Shadow on the water
+  ctx.save();
+  ctx.translate(5, face + 5);
+  outline();
+  ctx.fillStyle = 'rgba(4, 20, 34, 0.38)';
+  ctx.fill();
+  ctx.restore();
+  // Near face: the strip between the near edge and the same edge `face` px lower
+  ctx.beginPath();
+  P.near.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+  for (let i = P.near.length - 1; i >= 0; i--) ctx.lineTo(P.near[i][0], P.near[i][1] + face);
+  ctx.closePath();
+  ctx.fillStyle = c.side;
+  ctx.fill();
+  ctx.beginPath();
+  P.near.forEach(([x, y], i) => (i ? ctx.lineTo(x, y + face - 3) : ctx.moveTo(x, y + face - 3)));
+  for (let i = P.near.length - 1; i >= 0; i--) ctx.lineTo(P.near[i][0], P.near[i][1] + face);
+  ctx.closePath();
+  ctx.fillStyle = c.dark;
+  ctx.fill();
+  // Top, lighter towards the far edge (where the light comes from)
+  outline();
+  const g = ctx.createLinearGradient(0, yFar, 0, yNear);
+  g.addColorStop(0, c.top);
+  g.addColorStop(1, c.top2);
+  ctx.fillStyle = g;
+  ctx.fill();
+  ctx.strokeStyle = BOAT_K;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  // Lit far rim
+  ctx.beginPath();
+  P.far.forEach(([x, y], i) => (i ? ctx.lineTo(x, y + 2) : ctx.moveTo(x, y + 2)));
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  // Bottom edge of the face
+  ctx.beginPath();
+  P.near.forEach(([x, y], i) => (i ? ctx.lineTo(x, y + face) : ctx.moveTo(x, y + face)));
+  ctx.strokeStyle = BOAT_K;
+  ctx.lineWidth = 2;
+  ctx.stroke();
+}
+
+// The floe's unchanging look: slab, melt patches, hairline cracks, snow drifts, pressure ridges (thickness cue)
+function drawBoatFloeArt(ctx, band, L, R, yFar, yNear, face, c) {
+  drawBoatSlab(ctx, L, R, yFar, yNear, face, c, band.seed);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(L, yFar, R - L, band.h);
+  ctx.clip();
+  // Snow drifts on the floe
+  for (let s = 0; s < 5; s++) {
+    const sx = L + 40 + boatHash(band.seed + s * 11) * (R - L - 80);
+    const sy = yFar + 6 + boatHash(band.seed + s * 5) * (band.h - 12);
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.beginPath();
+    ctx.ellipse(sx, sy, 22 + boatHash(band.seed + s) * 20, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+    // Faint melt patches and hairline cracks so the top is not a flat colour
+    for (let s = 0; s < 3; s++) {
+      ctx.fillStyle = 'rgba(125, 183, 220, 0.16)';
+      ctx.beginPath();
+      ctx.ellipse(L + 80 + boatHash(band.seed + s * 23) * (R - L - 160), yFar + band.h * (0.3 + boatHash(band.seed + s * 29) * 0.4), 50 + boatHash(band.seed + s) * 40, band.h * 0.22, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.strokeStyle = 'rgba(95, 159, 196, 0.45)';
+    ctx.lineWidth = 1.5;
+    for (let s = 0; s < 4; s++) {
+      let cx = L + 60 + boatHash(band.seed + s * 41) * (R - L - 120);
+      let cy = yFar + 4 + boatHash(band.seed + s * 43) * (band.h - 8);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      for (let k = 0; k < 4; k++) {
+        cx += 10 + boatHash(band.seed + s * 7 + k) * 16;
+        cy += (boatHash(band.seed + s * 3 + k * 5) - 0.5) * 10;
+        ctx.lineTo(cx, cy);
+      }
+      ctx.stroke();
+    }
+    // Pressure ridges show how thick it is: 1 for young ice, up to 4 for multi-year. Each is a line of rubble
+    // blocks pushed up out of the floe (white top, blue shade under)
+    const ridges = band.T0 >= 70 ? 4 : band.T0 >= 45 ? 2 : 1;
+    for (let r = 0; r < ridges; r++) {
+      const ry = yFar + ((r + 1) * band.h) / (ridges + 1);
+      for (let s = 0; s < 9; s++) {
+        const sx = L + 20 + s * 76 + boatHash(band.seed + s + r * 13) * 30;
+        const len = 26 + boatHash(band.seed + s * 3 + r) * 20;
+        for (let x = sx, k = 0; x < sx + len; k++) {
+          const h0 = boatHash(band.seed + s * 17 + r * 5 + k * 3);
+          const w = Math.round(7 + h0 * 6);
+          const h = Math.round(5 + boatHash(band.seed + k * 11 + s) * 4);
+          const y = Math.round(ry - h / 2 + (h0 - 0.5) * 3);
+          ctx.fillStyle = c.line;
+          ctx.fillRect(Math.round(x) + 1, y + 2, w, h);
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(Math.round(x), y, w, h - 1);
+          x += w - 1;
+        }
+      }
+    }
+  ctx.restore();
 }
 
 function drawBoatBand(ctx, run, band, now) {
   const L = BOAT_CFG.CHANNEL_L - 20;
   const R = BOAT_CFG.CHANNEL_R + 20;
+  const X = BOAT_CFG.BOAT_X;
   const yNear = boatScreenY(run, band.y0);
   const yFar = yNear - band.h;
   if (yNear < -40 || yFar > 580) return;
   const c = boatIceColors(band.T0);
+  // Thicker ice shows a taller face (and more ridges): the strength reads at a glance
+  const face = 6 + Math.round(Math.min(90, band.T0) * 0.1);
   if (!band.broken) {
-    ctx.fillStyle = c.side;
-    ctx.fillRect(L, yFar + 6, R - L, band.h);
-    ctx.fillStyle = c.top;
-    ctx.fillRect(L, yFar, R - L, band.h);
-    ctx.fillStyle = BOAT_K;
-    ctx.fillRect(L, yNear + 4, R - L, 2);
-    // Ridge lines show how thick it is: 1 for young ice, up to 4 for multi-year
-    ctx.fillStyle = c.line;
-    const ridges = band.T0 >= 70 ? 4 : band.T0 >= 45 ? 2 : 1;
-    for (let r = 0; r < ridges; r++) {
-      const ry = Math.round(yFar + ((r + 1) * band.h) / (ridges + 1));
-      for (let s = 0; s < 9; s++) {
-        const sx = L + 20 + s * 76 + Math.round(boatHash(band.seed + s + r * 13) * 30);
-        ctx.fillRect(sx, ry, 26 + Math.round(boatHash(band.seed + s * 3 + r) * 20), 3);
-      }
+    // The floe itself never changes until it breaks: drawn once into its own 2x canvas, then blitted
+    if (!band.art && typeof document !== 'undefined') {
+      const pad = 12;
+      const w = R - L + pad * 2;
+      const hh = band.h + face + pad * 2;
+      const cv = document.createElement('canvas');
+      cv.width = w * 2;
+      cv.height = hh * 2;
+      const cc = cv.getContext('2d');
+      cc.scale(2, 2);
+      cc.translate(pad - L, pad + band.h);
+      drawBoatFloeArt(cc, band, L, R, -band.h, 0, face, c);
+      band.art = { cv, x: L - pad, dy: -band.h - pad, w, h: hh };
     }
-    // Cracks from weak rams, around the bow
+    if (band.art) ctx.drawImage(band.art.cv, band.art.x, yNear + band.art.dy, band.art.w, band.art.h);
+    else drawBoatFloeArt(ctx, band, L, R, yFar, yNear, face, c);
+    // Cracks from weak rams, spreading from the bow: dark split with a light edge
     if (band.cracks) {
-      ctx.strokeStyle = BOAT_K;
-      ctx.lineWidth = 2;
       for (let k = 0; k < band.cracks * 3; k++) {
         const a = -Math.PI / 2 + (boatHash(band.seed + k * 7) - 0.5) * 2.4;
         const len = 14 + boatHash(band.seed + k) * (band.h * 0.9);
+        const pts = [
+          [X, yNear],
+          [X + Math.cos(a) * len * 0.5 + (boatHash(k + band.seed) - 0.5) * 8, yNear + Math.sin(a) * len * 0.5 + 3],
+          [X + Math.cos(a) * len, yNear + Math.sin(a) * len],
+        ];
         ctx.beginPath();
-        ctx.moveTo(BOAT_CFG.BOAT_X, yNear);
-        ctx.lineTo(BOAT_CFG.BOAT_X + Math.cos(a) * len * 0.5, yNear + Math.sin(a) * len * 0.5 + 3);
-        ctx.lineTo(BOAT_CFG.BOAT_X + Math.cos(a) * len, yNear + Math.sin(a) * len);
+        pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.strokeStyle = BOAT_K;
+        ctx.lineWidth = 2;
         ctx.stroke();
       }
     }
-    band.penguins.forEach((pg) => drawBoatPenguinOnIce(ctx, pg.x, yNear - pg.dy, now, pg.hop));
-    if (band.crate) drawBoatCrate(ctx, BOAT_CFG.BOAT_X, yNear - band.h / 2);
+    // Penguins: wave and jump once the ship is close
+    const alert = yNear > BOAT_CFG.BOW_Y - 230;
+    band.penguins.forEach((pg, i) =>
+      drawBoatPenguinOnIce(ctx, pg.x, yNear - pg.dy, now, pg.hop, boatPenguinSpecies(band.seed, i), 58, alert)
+    );
+    if (alert && band.penguins.length && typeof drawScene0Mark === 'function') {
+      const pg = band.penguins[0];
+      const beat = Math.floor(now / 300) % 2;
+      drawScene0Mark(ctx, pg.x + 22, yNear - pg.dy - 70 - (beat ? 4 : 0), '!', '#fde047');
+    }
+    if (band.crate) drawBoatCrate(ctx, X, yNear - band.h / 2);
   } else {
-    // Broken: the floe split along the channel, with shards drifting apart
+    band.art = null;
+    // Broken: the floe split along the channel, the halves drifting apart, shards tumbling, foam in the gap
     const t = Math.min(1, (now - band.brokenAt) / 700);
     const open = 70 + t * 20;
-    ctx.fillStyle = c.side;
-    ctx.fillRect(L, yFar + 6, BOAT_CFG.BOAT_X - open - L, band.h);
-    ctx.fillRect(BOAT_CFG.BOAT_X + open, yFar + 6, R - BOAT_CFG.BOAT_X - open, band.h);
-    ctx.fillStyle = c.top;
-    ctx.fillRect(L, yFar, BOAT_CFG.BOAT_X - open - L, band.h);
-    ctx.fillRect(BOAT_CFG.BOAT_X + open, yFar, R - BOAT_CFG.BOAT_X - open, band.h);
+    drawBoatSlab(ctx, L, X - open, yFar, yNear, face, c, band.seed, false, true);
+    drawBoatSlab(ctx, X + open, R, yFar, yNear, face, c, band.seed + 77, true, false);
+    ctx.save();
+    ctx.globalAlpha = 1 - t * 0.6;
+    ctx.strokeStyle = '#f0f9ff';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.ellipse(X, yNear - band.h / 2, open * 0.8, band.h * 0.7, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
     for (let s = 0; s < 7; s++) {
       const side = s % 2 ? 1 : -1;
-      const sx = BOAT_CFG.BOAT_X + side * (open - 14 - boatHash(band.seed + s) * 30);
+      const sx = X + side * (open - 14 - boatHash(band.seed + s) * 30);
       const sy = yFar + boatHash(band.seed + s * 5) * band.h;
       const sz = 8 + Math.round(boatHash(band.seed + s * 9) * 10);
+      ctx.save();
+      ctx.translate(Math.round(sx), Math.round(sy));
+      ctx.rotate(side * t * (0.6 + boatHash(band.seed + s) * 0.8));
+      ctx.fillStyle = 'rgba(4, 20, 34, 0.35)';
+      ctx.fillRect(-sz / 2 + 3, -sz / 2 + 4, sz, sz);
       ctx.fillStyle = BOAT_K;
-      ctx.fillRect(Math.round(sx - sz / 2) - 1, Math.round(sy) - 1, sz + 2, sz + 2);
+      ctx.fillRect(-sz / 2 - 1, -sz / 2 - 1, sz + 2, sz + 2);
+      ctx.fillStyle = c.side;
+      ctx.fillRect(-sz / 2, -sz / 2, sz, sz);
       ctx.fillStyle = c.top;
-      ctx.fillRect(Math.round(sx - sz / 2), Math.round(sy), sz, sz);
+      ctx.fillRect(-sz / 2, -sz / 2, sz, sz - 3);
+      ctx.restore();
     }
   }
 }
@@ -559,9 +847,10 @@ function drawBoatTopDown(ctx, cx, bowY, now, opts = {}) {
   ctx.fillRect(16, L - 72, 22, 18);
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(16, L - 66, 22, 4);
-  // Rescued penguins line up on the aft deck (up to 5 shown)
-  for (let i = 0; i < Math.min(5, rescuedAboard); i++) {
-    drawBoatPenguinOnIce(ctx, -34 + i * 17, L - 18, now, i * 137);
+  // Rescued penguins crowd the aft deck (up to 6 shown, the same 2D penguins as on the floes), bobbing
+  for (let i = 0; i < Math.min(6, rescuedAboard); i++) {
+    const bob = Math.floor((now + i * 137) / 240) % 2 ? 0 : -2;
+    drawBoatPenguinOnIce(ctx, -40 + (i % 3) * 40 + (i >= 3 ? 20 : 0), L - 4 - (i >= 3 ? 14 : 0) + bob, now, i * 137, BOAT_FLOE_SPECIES[i % BOAT_FLOE_SPECIES.length], 30, false);
   }
   ctx.restore();
 
@@ -768,44 +1057,63 @@ function drawBoatFreeze(ctx, run, now) {
   const danger = run.lead < 120;
   ctx.save();
   if (danger) ctx.translate(Math.round((Math.random() - 0.5) * 3), 0);
-  // Brash ice and mist ahead of the pack
+  // Cold mist rolling ahead of the pack
+  const mist = ctx.createLinearGradient(0, edge - 60, 0, edge + 20);
+  mist.addColorStop(0, 'rgba(224, 242, 254, 0)');
+  mist.addColorStop(1, 'rgba(224, 242, 254, 0.65)');
+  ctx.fillStyle = mist;
+  ctx.fillRect(0, edge - 60, 960, 80);
   ctx.fillStyle = 'rgba(224, 242, 254, 0.55)';
-  ctx.fillRect(0, edge - 10, 960, 560 - edge + 10);
-  // Bergs: blocky white tops with blue faces, bobbing and jostling
-  for (let k = 0; k < 13; k++) {
-    const bx = -30 + k * 78 + (boatHash(k * 3) - 0.5) * 30;
-    const bw = 70 + boatHash(k) * 46;
-    const bh = 34 + boatHash(k + 7) * 40;
-    const by = edge - bh * 0.55 + Math.sin(now * 0.003 + k * 1.3) * 3 + boatHash(k + 2) * 14;
-    ctx.fillStyle = BOAT_K;
-    ctx.beginPath();
-    ctx.moveTo(bx - 2, by + bh);
-    ctx.lineTo(bx + bw * 0.18 - 2, by - 2);
-    ctx.lineTo(bx + bw * 0.55, by - bh * 0.35 - 2);
-    ctx.lineTo(bx + bw * 0.85 + 2, by + bh * 0.05);
-    ctx.lineTo(bx + bw + 2, by + bh);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = '#93c5fd';
-    ctx.beginPath();
-    ctx.moveTo(bx, by + bh);
-    ctx.lineTo(bx + bw * 0.18, by);
-    ctx.lineTo(bx + bw * 0.55, by - bh * 0.35);
-    ctx.lineTo(bx + bw * 0.85, by + bh * 0.05);
-    ctx.lineTo(bx + bw, by + bh);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = '#f8fafc';
-    ctx.beginPath();
-    ctx.moveTo(bx + bw * 0.18, by);
-    ctx.lineTo(bx + bw * 0.55, by - bh * 0.35);
-    ctx.lineTo(bx + bw * 0.85, by + bh * 0.05);
-    ctx.lineTo(bx + bw * 0.5, by + bh * 0.25);
-    ctx.closePath();
-    ctx.fill();
+  ctx.fillRect(0, edge + 20, 960, 560 - edge);
+  // Bergs, back row then front row: lit left face, shaded right face, snow cap, foam where they meet the water,
+  // bobbing and jostling
+  for (let row = 0; row < 2; row++) {
+    for (let k = 0; k < 13; k++) {
+      const n = k + row * 31;
+      const bx = -40 + k * 78 + (boatHash(n * 3) - 0.5) * 30 + row * 36;
+      const bw = (70 + boatHash(n) * 46) * (row ? 1.1 : 0.9);
+      const bh = (34 + boatHash(n + 7) * 40) * (row ? 1 : 0.8);
+      const by = edge - bh * 0.55 + Math.sin(now * 0.003 + n * 1.3) * 3 + boatHash(n + 2) * 14 + row * 18;
+      const peak = [bx + bw * (0.4 + boatHash(n + 4) * 0.25), by - bh * 0.35];
+      const L0 = [bx, by + bh];
+      const L1 = [bx + bw * 0.16, by + bh * 0.1];
+      const R1 = [bx + bw * 0.86, by + bh * 0.02];
+      const R0 = [bx + bw, by + bh];
+      const mid = [peak[0] + bw * 0.04, by + bh];
+      const poly = (pts, fill) => {
+        ctx.beginPath();
+        pts.forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+        ctx.closePath();
+        ctx.fillStyle = fill;
+        ctx.fill();
+      };
+      // Shadow on the water, outline
+      poly([[L0[0] + 6, L0[1] + 6], [R0[0] + 6, R0[1] + 6], [R0[0] - 10, R0[1] + 14], [L0[0] + 10, L0[1] + 14]], 'rgba(4, 20, 34, 0.3)');
+      ctx.beginPath();
+      [L0, L1, peak, R1, R0].forEach(([x, y], i) => (i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)));
+      ctx.closePath();
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = BOAT_K;
+      ctx.stroke();
+      poly([L0, L1, peak, mid], row ? '#e6f4fc' : '#d6ebf7');
+      poly([mid, peak, R1, R0], row ? '#8fbfe6' : '#7eaed8');
+      // Snow cap and a crack line down the lit face
+      poly([L1, peak, R1, [peak[0] + bw * 0.12, peak[1] + bh * 0.3], [peak[0] - bw * 0.1, peak[1] + bh * 0.34]], '#ffffff');
+      ctx.strokeStyle = '#a9cde6';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(peak[0] - bw * 0.12, peak[1] + bh * 0.5);
+      ctx.lineTo(peak[0] - bw * 0.18, peak[1] + bh * 0.8);
+      ctx.lineTo(peak[0] - bw * 0.14, by + bh);
+      ctx.stroke();
+      // Foam at the waterline
+      ctx.fillStyle = 'rgba(240, 249, 255, 0.9)';
+      const fw = Math.sin(now * 0.006 + n) * 3;
+      ctx.fillRect(Math.round(L0[0] - 4 + fw), Math.round(L0[1] - 3), Math.round(bw + 8), 5);
+    }
   }
   ctx.fillStyle = 'rgba(240, 249, 255, 0.9)';
-  ctx.fillRect(0, edge + 30, 960, 560 - edge);
+  ctx.fillRect(0, edge + 46, 960, 560 - edge);
   ctx.restore();
 }
 
@@ -911,6 +1219,7 @@ const BOAT_GAME = {
   lastTickAt: 0,
   particles: [],
   popups: [],
+  jumpers: [], // rescued penguins leaping from their floe onto the deck
   shakeUntil: 0,
   hitFlashUntil: 0,
   lastFinalScore: 0,
@@ -925,6 +1234,7 @@ function resetBoatGame(now = performance.now()) {
   BOAT_GAME.lastTickAt = now;
   BOAT_GAME.particles = [];
   BOAT_GAME.popups = [];
+  BOAT_GAME.jumpers = [];
   BOAT_GAME.shakeUntil = 0;
   BOAT_GAME.hitFlashUntil = 0;
   BOAT_GAME.scoreSubmitted = false;
@@ -1017,6 +1327,11 @@ function drawBoatRunnerFrame(ctx, now, spId) {
       const label = ev.perfect ? (ko ? `PERFECT x${Math.min(5, ev.combo)}` : `PERFECT x${Math.min(5, ev.combo)}`) : ko ? '쾅!' : 'CRUNCH!';
       BOAT_GAME.popups.push({ x: X, y: bowY - 40, vy: -1.5, text: `${label} +${ev.points}`, col: ev.perfect ? '#4ade80' : '#fde047', alpha: 1 });
       if (ev.saved) {
+        // Each one leaps from where it stood onto the aft deck
+        const yNear = boatScreenY(run, ev.band.y0);
+        ev.band.penguins.forEach((pg, i) =>
+          BOAT_GAME.jumpers.push({ sp: boatPenguinSpecies(ev.band.seed, i), x: pg.x, y: yNear - pg.dy, t0: now + i * 90, slot: (run.rescued - ev.saved + i) % 6 })
+        );
         BOAT_GAME.popups.push({ x: X + 130, y: bowY - 10, vy: -1.2, text: ko ? `펭귄 ${ev.saved}마리 구조!` : `${ev.saved} saved!`, col: '#fde68a', alpha: 1 });
       }
       if (ev.crate) BOAT_GAME.popups.push({ x: X - 130, y: bowY - 10, vy: -1.2, text: ko ? `선체 수리 +${BOAT_CFG.REPAIR}` : `Repair +${BOAT_CFG.REPAIR}`, col: '#fbbf24', alpha: 1 });
@@ -1060,6 +1375,25 @@ function drawBoatRunnerFrame(ctx, now, spId) {
     rescuedAboard: run.rescued,
   });
   drawBoatFreeze(ctx, run, now);
+  // Rescued penguins in the air: an arc from the floe to the deck, stretched on the way up, tucked on the way down
+  for (let i = BOAT_GAME.jumpers.length - 1; i >= 0; i--) {
+    const j = BOAT_GAME.jumpers[i];
+    const q = (now - j.t0) / 560;
+    if (q >= 1) {
+      BOAT_GAME.jumpers.splice(i, 1);
+      continue;
+    }
+    if (q < 0) {
+      drawBoatPenguinOnIce(ctx, j.x, j.y, now, 0, j.sp, 58, true);
+      continue;
+    }
+    const tx = X - 40 + (j.slot % 3) * 40 + (j.slot >= 3 ? 20 : 0);
+    const ty = bowY + BOAT_CFG.BOAT_LEN - 4 - (j.slot >= 3 ? 14 : 0);
+    const e = q * q * (3 - 2 * q);
+    const x = j.x + (tx - j.x) * e;
+    const y = j.y + (ty - j.y) * e - Math.sin(q * Math.PI) * 70;
+    drawBoatPenguinOnIce(ctx, x, y, now, 0, j.sp, 58 - 28 * e, false);
+  }
 
   for (let i = BOAT_GAME.particles.length - 1; i >= 0; i--) {
     const pt = BOAT_GAME.particles[i];
