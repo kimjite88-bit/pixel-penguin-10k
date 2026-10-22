@@ -1615,6 +1615,7 @@ function drawCarRunnerFrame(ctx, now, spId) {
   const events = carStep(run, dt, now, Math.random);
   let crashed = false;
   events.forEach((ev) => {
+    playIntroSfx(ev.type, ev);
     if (ev.type === 'jump') {
       spawnCarBurst(CAR_CFG.CAR_X - 56 * S, carOriginY() + 54 * S, ['#f8fafc', '#cbd5e1'], 6, 2.6, 6);
     } else if (ev.type === 'double') {

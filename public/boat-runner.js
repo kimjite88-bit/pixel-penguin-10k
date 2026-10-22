@@ -1009,6 +1009,7 @@ function drawBoatRunnerFrame(ctx, now, spId) {
   const events = boatStep(run, dt, now, Math.random);
   let crashed = false;
   events.forEach((ev) => {
+    playIntroSfx(ev.type, ev);
     if (ev.type === 'break') {
       const cols = ['#ffffff', '#bae6fd', '#7dd3fc'];
       spawnBoatBurst(X, bowY - 6, cols, ev.perfect ? 22 : 14, ev.perfect ? 6 : 4.5, 7);

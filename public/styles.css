@@ -2605,3 +2605,9 @@ body.ufo-fullscreen-lock {
     scroll-behavior: auto;
   }
 }
+
+/* Sound toggle (audio.js): dimmed while off */
+.game-top-btn.sound-btn.is-off {
+  color: var(--text-dim, #94a3b8);
+  text-decoration: line-through;
+}

@@ -553,7 +553,18 @@ const TOWN_SKIP_TREE_CX = 790;
 // until 1632 (s5P 0.14 / 0.24 of 6800); the pilot speaks only once that has settled, after a short beat (the
 // action -> reaction order of the animation principles), and keeps the line up long enough to read: ~38 Korean
 // characters at ~12 per second (the rate given for Korean subtitles) is ~3.2 s. Then the locals take turns.
-const TOWN_TALK = { pilotFrom: 1800, friendsFrom: 5000, turnMs: 3400 };
+// The town runs on a beat (audio.js plays Jingle Bells on it): 141 BPM, so one talk turn (3400 ms) is two bars.
+// After a crash landing the song's first note is the impact (952 ms) and the locals start on beat 10 of it; in
+// skip mode the song starts with the scene and the 3400 ms turns already fall on bars.
+const TOWN_BEAT_MS = 425;
+function townBeatT0() {
+  return MOTION_STATE.skippedEscape ? 0 : 952;
+}
+// Beats since the song's first note (negative before it)
+function townBeat(now) {
+  return (now - MOTION_STATE.sceneStartTime - townBeatT0()) / TOWN_BEAT_MS;
+}
+const TOWN_TALK = { pilotFrom: 1800, friendsFrom: 952 + 10 * TOWN_BEAT_MS, turnMs: 8 * TOWN_BEAT_MS };
 
 // Phone town layout. Stage text is 1.6x there, so the top stack (banner 10-66, logo, 1.5x menu) used to push the
 // speech bubbles down onto the landed pilot's head (~y 305). On phones the logo is drawn at 0.65x so the menu sits
@@ -1957,8 +1968,11 @@ function drawPixelXmasTree(ctx, centerX, baseY, now) {
   // Ground shadow
   ctx.fillStyle = 'rgba(9, 13, 26, 0.28)';
   ctx.fillRect(left + 7 * P, baseY - P, 25 * P, P * 2);
+  // On the town beat (townBeat) the star flashes on every beat and the lights step with it
+  const beat = MOTION_STATE.sceneIdx === 4 ? townBeat(now) : now / 420;
+  const beatN = Math.floor(beat);
   // Star glow behind everything
-  const pulse = 0.5 + 0.5 * Math.sin(now * 0.004);
+  const pulse = beat >= 0 ? Math.pow(1 - (beat - beatN), 2) : 0.5 + 0.5 * Math.sin(now * 0.004);
   const [sx, sy] = at(19.5, 4.5);
   const glow = ctx.createRadialGradient(sx, sy, 2, sx, sy, 46 + pulse * 10);
   glow.addColorStop(0, `rgba(253, 224, 71, ${(0.45 + pulse * 0.25).toFixed(2)})`);
@@ -1969,8 +1983,8 @@ function drawPixelXmasTree(ctx, centerX, baseY, now) {
   ctx.drawImage(XMAS_TREE_CACHE, left, top, XMAS_TREE_W * P, XMAS_TREE_H * P);
   // Twinkling lights: a bright pixel with a 50% halo, each on its own beat
   XMAS_TREE_LIGHTS.forEach(([gx, gy], i) => {
-    const on = Math.floor(now / 420 + i * 0.37) % 3 !== 0;
-    const col = XMAS_TREE_LIGHT_COLS[(i + Math.floor(now / 1260)) % XMAS_TREE_LIGHT_COLS.length];
+    const on = (((beatN + i) % 3) + 3) % 3 !== 0;
+    const col = XMAS_TREE_LIGHT_COLS[(((i + Math.floor(beatN / 4)) % XMAS_TREE_LIGHT_COLS.length) + XMAS_TREE_LIGHT_COLS.length) % XMAS_TREE_LIGHT_COLS.length];
     const [lx, ly] = at(gx, gy);
     if (on) {
       ctx.globalAlpha = 0.5;
@@ -3732,9 +3746,12 @@ function initPixelMotionStudio() {
         const spEntry = ensureSpeciesSprite(fr.sp);
         const strollX = walkInP >= 1 ? Math.sin(now * fr.speed + idx * 1.4) * fr.amp : 0;
         const fx = Math.round(fr.baseX + (1 - walkInP) * 64 + strollX);
-        const fy = fr.y;
+        // Once they have walked in, every other local hops 4 px on each beat (the next ones on the next beat)
+        const tb = townBeat(now);
+        const bop = walkInP >= 1 && tb >= 0 && (Math.floor(tb) + idx) % 2 === 0 && tb % 1 < 0.28 ? 4 : 0;
+        const fy = fr.y - bop;
 
-        drawPixelGroundShadow(ctx, fx + spriteSize / 2, fy + spriteSize - 4, 38, 0);
+        drawPixelGroundShadow(ctx, fx + spriteSize / 2, fr.y + spriteSize - 4, 38, bop);
         drawAnimatedPixelPenguin(ctx, spEntry, fx, fy, spriteSize, now, {
           seed: fr.seed,
           isWalking: true,
@@ -3742,14 +3759,14 @@ function initPixelMotionStudio() {
           santaHat: INTRO_TOWN.id === 'xmas',
         });
 
-        renderedFriends.push({ fx, fy });
+        renderedFriends.push({ fx, fy: fr.y });
       });
 
       // B-Grade Retro Pixel Speech Bubbles in Scene 5 (Crash-landing + Pixel Penguins Welcoming!)
       const speaker1 = renderedFriends[0] || { fx: row.friendsX[0], fy: spriteY };
       const speaker2 = renderedFriends[1] || { fx: row.friendsX[1], fy: spriteY };
       if (MOTION_STATE.skippedEscape) {
-        const skipPhase = Math.floor(elapsed / 3400) % (MOTION_STATE.idleSucked ? 3 : 2);
+        const skipPhase = Math.floor(elapsed / TOWN_TALK.turnMs) % (MOTION_STATE.idleSucked ? 3 : 2);
         if (MOTION_STATE.idleSucked) {
           // Arrived because nobody pressed anything: the locals want to know what you were doing
           const ko = CURRENT_LANG === 'ko';

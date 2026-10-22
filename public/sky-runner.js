@@ -492,6 +492,7 @@ function drawSkyRunnerFrame(ctx, now, spId) {
   const events = skyStep(run, dt, now, Math.random);
   let crashed = false;
   events.forEach((ev) => {
+    playIntroSfx(ev.type, ev);
     if (ev.type === 'star') {
       spawnSkyBurst(ev.x, ev.y, ['#fde047', '#fef08a', '#ffffff'], 4, 2, 4);
     } else if (ev.type === 'gate') {
