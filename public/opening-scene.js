@@ -9,8 +9,8 @@
 //                 yell, zigzag, crash into the hero, stranded on the far ledge)
 //   C  7.0-10.3 s a pixel wave spreads out of the pillar: big blocks inside, finer blocks at the front, and each
 //                 penguin it reaches pops into its pixel self with a white flash
-//   D 10.3-13.3 s the blue penguin crouches, bolts and dives into a belly-slide (the fast way penguins travel),
-//                 the camera follows, the wave right behind
+//   D 10.3-13.3 s the blue penguin crouches and hops away on both feet (as penguins do over rough ground), the
+//                 camera follows, the wave right behind
 //   E 13.3-19.5 s pixel-block dissolve to the picker's crevasse field; the camera visits the plane, the icebreaker
 //                 and the car as the penguin finds them one by one, then pulls back to the picker's exact framing,
 //                 so it hands over without a cut
@@ -165,8 +165,8 @@ function openingShake(t) {
 function openingWaveRadius(t) {
   if (t < 7000) return 0;
   // Up to the hero's heels (it stands 370 px left of the pillar), then right behind it as it runs
-  if (t < 10300) return 60 + openingSmooth((t - 7000) / 3300) * 280;
-  return 340 + (t - 10300) * 0.3;
+  if (t < 10300) return 60 + openingSmooth((t - 7000) / 3300) * 250;
+  return 310 + (t - 10300) * 0.22;
 }
 
 function openingInWave(x, y, R) {
@@ -426,8 +426,8 @@ function openingCalmPose(i, f, t, now) {
 }
 
 // After the hit (from ~6 s): each penguin panics its own way. Penguins waddle slowly on land (about 2-3 km/h at
-// most), so for all the flailing they hardly get anywhere and the wave catches them; only sliding on the belly
-// is fast, which is how the hero gets away.
+// most), so for all the flailing they hardly get anywhere and the wave catches them; the hero keeps its head
+// and hops away (drawOpeningHero).
 function openingPanicPose(i, f, t, now, base) {
   const ko = CURRENT_LANG === 'ko';
   const d = t - 6000;
@@ -645,7 +645,7 @@ function drawOpeningSnow(ctx, now) {
 }
 
 // The blue hero: watches the fun, looks up, jumps at the hit, trembles and looks round, gets knocked by a
-// fleeing local, then crouches, runs and dives into a belly-slide that gets it out ahead of the wave
+// fleeing local, then crouches and hops away on both feet, just ahead of the wave
 function drawOpeningHero(ctx, now, t) {
   const ko = CURRENT_LANG === 'ko';
   const feet = OPENING_FEET + 8;
@@ -690,29 +690,42 @@ function drawOpeningHero(ctx, now, t) {
     drawOpeningYell(ctx, X, feet - size - 8, ko ? '튀어!!' : 'RUN!!', 10000, 10700, t);
     return;
   }
-  if (t < 10700) {
-    const q = (t - 10300) / 400;
-    const x = X - q * 70;
-    drawOpeningDust(ctx, x, feet, now, -1, 9);
-    drawOpeningPenguin2D(ctx, '01', x, feet - openingRunLift(now, 0, 55), size, openingRunFrame(now, 0, 55), true);
-    drawOpeningYell(ctx, X, feet - size - 8, ko ? '튀어!!' : 'RUN!!', 10000, 10700, t);
-    return;
+  // Hops away on both feet, the way penguins hop over rough ground, flippers out for balance: squash, spring,
+  // stretch in the air, squash on landing, a puff of snow each time it lands. 96 px every 300 ms keeps it just
+  // ahead of the wave (0.22 px/ms); on the third hop it looks back over its shoulder.
+  const HOP_MS = 300;
+  const HOP_DX = 96;
+  const d = t - 10300;
+  const k = Math.floor(d / HOP_MS);
+  const p = (d % HOP_MS) / HOP_MS;
+  const x = X - (k + openingSmooth(p)) * HOP_DX;
+  let lift = 0;
+  let sy = 1;
+  if (p < 0.12) sy = 0.8 + (p / 0.12) * 0.2; // pushing off
+  else if (p > 0.88) sy = 1 - ((p - 0.88) / 0.12) * 0.2; // landing
+  else {
+    const a = (p - 0.12) / 0.76;
+    lift = Math.sin(a * Math.PI) * 34;
+    sy = a < 0.5 ? 1.12 - a * 0.24 : 1; // stretched on the way up
   }
-  // Dive and toboggan off to the left, faster and faster, snow spraying behind
-  const q = Math.min(1, (t - 10700) / 1800);
-  const x = X - 70 - Math.pow(q, 1.3) * 640;
-  const dive = Math.min(1, (t - 10700) / 150);
-  ctx.save();
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-  for (let k = 0; k < 6; k++) {
-    const ly = feet - 8 - k * 9;
-    const len = 30 + openingHash(k + Math.floor(now / 60)) * 50;
-    ctx.fillRect(Math.round(x + 46 + k * 5), ly, Math.round(len), 3);
+  const lookBack = k === 2 && p > 0.2 && p < 0.85;
+  const rot = (k % 2 ? 1 : -1) * 0.1 * Math.sin(p * Math.PI);
+  // Snow puff where it last landed
+  if (p < 0.5) {
+    const lx = X - k * HOP_DX;
+    const age = p / 0.5;
+    ctx.globalAlpha = 1 - age;
+    ctx.fillStyle = '#f1f5f9';
+    for (let s = -1; s <= 1; s += 2) {
+      const sz = Math.round(6 + age * 8);
+      ctx.fillRect(Math.round(lx + s * (14 + age * 22) - sz / 2), Math.round(feet - sz - age * 4), sz, sz);
+    }
+    ctx.globalAlpha = 1;
   }
-  ctx.restore();
-  drawOpeningDust(ctx, x + 30, feet, now, -1, 4);
-  drawOpeningDust(ctx, x + 44, feet - 6, now, -1, 7);
-  drawOpeningPenguin2D(ctx, '01', x, feet - Math.sin(dive * Math.PI) * 14, size, 0, true, 1, 1, -dive * (Math.PI / 2));
+  drawOpeningPenguin2D(ctx, '01', x, feet - lift, size, lift > 0 ? 6 : 0, !lookBack, 2 - sy, sy, rot);
+  drawOpeningSweat(ctx, x, feet - lift - size * 0.95, now, 9);
+  if (lookBack) drawScene0Mark(ctx, x + 34, feet - lift - size - 4, '!', '#fb7185');
+  drawOpeningYell(ctx, X, feet - size - 8, ko ? '튀어!!' : 'RUN!!', 10000, 10700, t);
 }
 
 // B: a pixel star appears high up, grows, then falls with a trail
