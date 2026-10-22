@@ -19,7 +19,7 @@
 // It is drawn live on the stage (no video file), so it is sharp at any size and follows the language toggle.
 // Shown once per browser (localStorage), always skippable (tap, Esc / Enter / Space, the 건너뛰기 tag); ?opening
 // in the URL plays it again, and so does the next load after a hard reload (Ctrl+Shift+R / Cmd+Shift+R: the
-// page gets that keydown before the browser reloads; only Ctrl+N / W / T are kept from pages). The 오프닝 button
+// page gets that keydown before the browser reloads; only Ctrl+N / W / T are kept from pages). The film-slate button
 // in the top bar turns it off for good (default on); turning it back on plays it again right away. With
 // prefers-reduced-motion it is not played (flash and shaking).
 // ============================================================================
@@ -1101,15 +1101,48 @@ function setOpeningPref(on) {
   updateOpeningButton();
 }
 
+// 16 x 16 pixel clapperboard with a play mark: the film slate is the everyday picture for "the movie", so it
+// reads without a word; the button still carries its name (aria-label + title) like the sound icons
+function openingIcon(on) {
+  const K = '#0b1020';
+  const top = on ? '#facc15' : 'currentColor';
+  const play = on ? '#fb7185' : K;
+  const stripes = [
+    [4, 2], [8, 2], [12, 2],
+    [3, 3], [7, 3], [11, 3],
+    [2, 4], [6, 4], [10, 4],
+  ]
+    .map(([x, y]) => `<rect x="${x}" y="${y}" width="2" height="1" fill="${K}"/>`)
+    .join('');
+  const slash = on
+    ? ''
+    : '<g fill="#fb7185"><rect x="2" y="13" width="2" height="2"/><rect x="4" y="11" width="2" height="2"/><rect x="6" y="9" width="2" height="2"/><rect x="8" y="7" width="2" height="2"/><rect x="10" y="5" width="2" height="2"/><rect x="12" y="3" width="2" height="2"/></g>';
+  return (
+    '<svg viewBox="0 0 16 16" width="18" height="18" fill="currentColor" shape-rendering="crispEdges" aria-hidden="true" focusable="false">' +
+    `<rect x="2" y="2" width="12" height="3" fill="${top}"/>${stripes}` +
+    '<rect x="2" y="5" width="2" height="1"/>' +
+    '<rect x="2" y="6" width="12" height="9"/>' +
+    `<g fill="${play}"><rect x="6" y="7" width="1" height="7"/><rect x="7" y="8" width="1" height="5"/><rect x="8" y="9" width="1" height="3"/><rect x="9" y="10" width="1" height="1"/></g>` +
+    slash +
+    '</svg>'
+  );
+}
+
 function updateOpeningButton() {
   const btn = typeof document !== 'undefined' && document.getElementById('btn-opening-toggle');
   if (!btn) return;
   const on = openingPrefOn();
-  const ko = on ? '오프닝 켬' : '오프닝 끔';
-  const en = on ? 'Intro on' : 'Intro off';
-  btn.dataset.ko = ko;
-  btn.dataset.en = en;
-  btn.textContent = typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'en' ? en : ko;
+  const en = typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'en';
+  const label = en
+    ? on
+      ? 'Intro video on (tap to turn off)'
+      : 'Intro video off (tap to watch it)'
+    : on
+    ? '오프닝 영상 켜짐 (누르면 끄기)'
+    : '오프닝 영상 꺼짐 (누르면 바로 보기)';
+  btn.innerHTML = openingIcon(on);
+  btn.setAttribute('aria-label', label);
+  btn.title = label;
   btn.setAttribute('aria-pressed', on ? 'true' : 'false');
   btn.classList.toggle('is-off', !on);
 }
@@ -1131,6 +1164,7 @@ if (typeof window !== 'undefined') {
       e.stopPropagation();
       setOpeningPref(!openingPrefOn());
     });
+    document.querySelectorAll('.lang-btn').forEach((b) => b.addEventListener('click', () => setTimeout(updateOpeningButton, 0)));
     updateOpeningButton();
   });
   window.addEventListener('keydown', (e) => {
