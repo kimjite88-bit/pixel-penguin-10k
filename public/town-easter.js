@@ -2,7 +2,8 @@
 // TOWN EASTER EGG — "the dev's hidden village". Only for players who skipped the game (안 해요 / left alone at the
 // picker) and then just stayed in the town: once the welcome talk is over and the town has been open 30 s, the
 // locals stop, say "follow me", and all walk off to the left; a pixel-block dissolve opens a hidden Christmas
-// village (bg_easter_village.jpg, the owner's reference picture) where the whole cast walks in, lines up for a
+// village (easter-village.js: drawn in code after the owner's reference, every penguin in it busy) where the whole
+// cast walks in, lines up for a
 // group photo with a snowman that turns out to be the dev, and trades B-grade lines, round and round.
 // The town menu stays where it is (same box, same clicks), so 10,000 CODEX / PLAY AGAIN still work; PLAY AGAIN
 // leaves the village for good (the next town starts from scratch).
@@ -11,21 +12,15 @@ const TOWN_EASTER = { leaveAt: 30000, cutAt: 33400, dissolveMs: 380, walkInMs: 2
 const TOWN_EASTER_CAST = [
   // species, x, feet y, size: the guest first, then the six locals, a group-photo row along the front (larger than
   // the penguins painted into the picture, on a dark band, so the cast reads as the cast)
-  { sp: '01', x: 248, feet: 534, size: 92 },
-  { sp: '05', x: 348, feet: 530, size: 88 },
-  { sp: '22', x: 448, feet: 534, size: 90 },
-  { sp: '04', x: 548, feet: 530, size: 88, gift: true },
-  { sp: '09', x: 648, feet: 534, size: 90, dance: true },
-  { sp: '10', x: 748, feet: 530, size: 88 },
-  { sp: '06', x: 848, feet: 534, size: 90 },
+  { sp: '01', x: 226, feet: 534, size: 88 },
+  { sp: '05', x: 316, feet: 530, size: 84 },
+  { sp: '22', x: 406, feet: 534, size: 86 },
+  { sp: '04', x: 496, feet: 530, size: 84, gift: true },
+  { sp: '09', x: 586, feet: 534, size: 86, dance: true },
+  { sp: '10', x: 676, feet: 530, size: 84 },
+  { sp: '06', x: 766, feet: 534, size: 86 },
 ];
-const TOWN_EASTER_SNOWMAN = { x: 132, feet: 534 };
-// Lantern glows and chimney puffs placed on the picture (stage coordinates)
-const TOWN_EASTER_LIGHTS = [
-  [170, 358], [392, 412], [518, 496], [464, 210], [570, 228], [744, 290], [808, 310], [885, 328], [903, 243], [944, 158], [150, 258], [82, 250],
-];
-const TOWN_EASTER_CHIMNEYS = [[65, 72], [240, 140]];
-const TOWN_EASTER_STAR = [340, 132];
+const TOWN_EASTER_SNOWMAN = { x: 104, feet: 534 };
 // Who says what (cast index, or 'snow' for the snowman), turn by turn
 const TOWN_EASTER_TALK = [
   { who: 1, col: '#ff4d6d', ko: '여기가 제작자가 숨겨둔 이스터에그 마을이래! 30초 버틴 펭귄만 옴 ㅋㅋ', en: "This is the dev's hidden Easter egg village! Only penguins who wait 30 s get in lol" },
@@ -39,21 +34,9 @@ const TOWN_EASTER_TALK = [
 ];
 const TOWN_EASTER_TURN_MS = 3400;
 
-const TOWN_EASTER_STATE = { img: null, loaded: false, chimedFor: 0 };
+const TOWN_EASTER_STATE = { chimedFor: 0 };
 
-function townEasterImage() {
-  if (!TOWN_EASTER_STATE.img) {
-    const img = new Image();
-    img.onload = () => {
-      TOWN_EASTER_STATE.loaded = true;
-    };
-    img.src = '/assets/motion_sprites/bg_easter_village.jpg?v=1';
-    TOWN_EASTER_STATE.img = img;
-  }
-  return TOWN_EASTER_STATE.loaded ? TOWN_EASTER_STATE.img : null;
-}
-
-// Only in a skipped town; the picture is fetched 10 s ahead so the cut never waits for it
+// Only in a skipped town
 function townEasterOn() {
   return MOTION_STATE.sceneIdx === 4 && MOTION_STATE.skippedEscape;
 }
@@ -63,7 +46,6 @@ function townEasterElapsed(now) {
 // How far (px) a town penguin has walked off to the left; i = its order in the row, left to right
 function townEasterLeaveDx(elapsed, i) {
   if (!townEasterOn()) return 0;
-  if (elapsed > TOWN_EASTER.leaveAt - 10000) townEasterImage();
   const d = elapsed - TOWN_EASTER.leaveAt - i * 110;
   return d > 0 ? Math.min(1200, d * 0.36 + d * d * 0.00004) : 0;
 }
@@ -72,7 +54,7 @@ function townEasterLeaving(elapsed) {
 }
 // The village covers the whole stage (the town under it need not draw its background)
 function townEasterCovers(elapsed) {
-  return townEasterOn() && elapsed >= TOWN_EASTER.cutAt && TOWN_EASTER_STATE.loaded;
+  return townEasterOn() && elapsed >= TOWN_EASTER.cutAt;
 }
 
 // Bubbles while they leave: the guest is confused, a local waves it along
@@ -175,52 +157,10 @@ function drawTownEaster(ctx, now, elapsed) {
   // Pixel-block dissolve: the town closes up (the walk-off ends under it), the village opens
   const half = TOWN_EASTER.dissolveMs;
   if (t < -half) return;
-  const img = townEasterImage();
-  if (t >= 0 && img) {
+  if (t >= 0) {
     ctx.save();
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(img, 0, 0, 960, 540);
-    // Lantern glows breathing, each on its own beat
-    ctx.globalCompositeOperation = 'lighter';
-    TOWN_EASTER_LIGHTS.forEach(([lx, ly], i) => {
-      const a = 0.18 + 0.14 * Math.sin(now * 0.003 + i * 1.7);
-      const g = ctx.createRadialGradient(lx, ly, 1, lx, ly, 26);
-      g.addColorStop(0, `rgba(253, 224, 140, ${a.toFixed(3)})`);
-      g.addColorStop(1, 'rgba(253, 224, 140, 0)');
-      ctx.fillStyle = g;
-      ctx.fillRect(lx - 26, ly - 26, 52, 52);
-    });
-    // The tree star twinkles on the town beat
-    const beat = typeof townBeat === 'function' ? townBeat(now) : now / 425;
-    const sp = beat >= 0 ? Math.pow(1 - (beat % 1), 2) : 0.5;
-    const [sx, sy] = TOWN_EASTER_STAR;
-    const sg = ctx.createRadialGradient(sx, sy, 1, sx, sy, 34);
-    sg.addColorStop(0, `rgba(255, 244, 184, ${(0.25 + sp * 0.4).toFixed(3)})`);
-    sg.addColorStop(1, 'rgba(255, 244, 184, 0)');
-    ctx.fillStyle = sg;
-    ctx.fillRect(sx - 34, sy - 34, 68, 68);
-    ctx.globalCompositeOperation = 'source-over';
-    // Chimney smoke
-    TOWN_EASTER_CHIMNEYS.forEach(([cx, cy], i) => {
-      for (let k = 0; k < 4; k++) {
-        const q = ((now / 2600 + k / 4 + i * 0.3) % 1);
-        ctx.globalAlpha = (1 - q) * 0.45;
-        ctx.fillStyle = '#e2e8f0';
-        const s = Math.round(6 + q * 12);
-        ctx.fillRect(Math.round(cx + Math.sin(q * 6 + i) * 6 - s / 2), Math.round(cy - q * 46 - s / 2), s, s);
-      }
-    });
-    ctx.globalAlpha = 1;
-    // Snow
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-    for (let k = 0; k < 46; k++) {
-      const far = k % 2;
-      const x = (k * 97 + now * (far ? 0.012 : 0.028) + Math.sin(now * 0.001 + k) * 10) % 980 - 10;
-      const y = (k * 53 + now * (far ? 0.022 : 0.05)) % 560 - 10;
-      ctx.fillRect(Math.round(x), Math.round(y), far ? 2 : 3, far ? 2 : 3);
-    }
-
-    // A dark band along the front so the cast stands out from the painted crowd
+    drawEasterVillage(ctx, now);
+    // A dark band along the front so the cast stands out from the busy village behind
     const band = ctx.createLinearGradient(0, 400, 0, 540);
     band.addColorStop(0, 'rgba(9, 13, 26, 0)');
     band.addColorStop(1, 'rgba(9, 13, 26, 0.6)');

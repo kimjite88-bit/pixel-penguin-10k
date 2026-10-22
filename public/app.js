@@ -3930,54 +3930,35 @@ function initPixelMotionStudio() {
       if (MOTION_STATE.skippedEscape && townEasterLeaving(elapsed)) {
         drawTownEasterLeaveTalk(ctx, now, elapsed, row.heroX - townEasterLeaveDx(elapsed, 0), speaker1.fx, spriteY, spriteSize);
       } else if (MOTION_STATE.skippedEscape) {
-        const skipPhase = Math.floor(elapsed / TOWN_TALK.turnMs) % (MOTION_STATE.idleSucked ? 3 : 2);
-        if (MOTION_STATE.idleSucked) {
-          // Arrived because nobody pressed anything: the locals want to know what you were doing
-          const ko = CURRENT_LANG === 'ko';
-          const talk = [
-            {
-              who: speaker1,
-              col: '#ff4d6d',
-              text: ko ? '야 안 누르고 뭐했냐?! 남극 무너지는 거 30초 동안 멍때리고 구경했냐 ㅋㅋㅋ' : 'Yo, why did you not press anything?! Watched Antarctica fall apart for 30 s? lol',
-            },
-            {
-              who: { fx: row.heroX, fy: spriteY },
-              col: '#38bdf8',
-              text: ko ? '아니 그게... 셋 중에 뭐 탈지 고르다가... 정신 차려보니 빨려왔어...' : 'Well... I was still picking a ride... and then I got sucked up...',
-            },
-            {
-              who: speaker2,
-              col: '#fbbf24',
-              text: ko ? `결정장애 펭귄 레전드 ㅋㅋㅋ 탈 것도 없이 맨몸 입성 축하한다!! ${INTRO_TOWN.ko} 환영~` : `Legendary indecisive penguin lol. Welcome to ${INTRO_TOWN.en}, no ride needed!!`,
-            },
-          ][skipPhase];
-          drawPixelHeart(ctx, talk.who.fx + spriteSize / 2, spriteY - 8 - ((now * 0.03) % 18), 2.6, talk.col);
-          drawRetroSpeechBubble(ctx, talk.who.fx + spriteSize / 2, talk.who.fy - 6, talk.text, talk.col, now);
-        } else if (skipPhase === 0) {
-          drawPixelHeart(ctx, row.heroX + spriteSize / 2, spriteY - 8 - ((now * 0.03) % 18), 2.6, '#38bdf8');
-          drawRetroSpeechBubble(
-            ctx,
-            row.heroX + spriteSize / 2,
-            spriteY - 6,
-            CURRENT_LANG === 'ko'
-              ? `남극 탈출이고 나발이고 귀찮아서 바로 ${INTRO_TOWN.ko}로 째버렸지롱~`
-              : `Skipped the whole escape game and walked straight to ${INTRO_TOWN.en}~`,
-            '#38bdf8',
-            now
-          );
-        } else {
-          drawPixelHeart(ctx, speaker1.fx + spriteSize / 2, spriteY - 8 - ((now * 0.03) % 18), 2.6, '#ff4d6d');
-          drawRetroSpeechBubble(
-            ctx,
-            speaker1.fx + spriteSize / 2 + 12,
-            speaker1.fy - 4,
-            CURRENT_LANG === 'ko'
-              ? `ㅋㅋㅋ ${rideKo}도 안 타고 날로 먹었네?! 어쨌든 ${INTRO_TOWN.ko} 환영한다!!`
-              : `Haha you skipped the ${rideEn} ride?! Welcome to ${INTRO_TOWN.en} anyway!!`,
-            '#ff4d6d',
-            now
-          );
-        }
+        // Skipped town: they chat turn by turn right up to the Easter egg (town-easter.js, at 30 s), the last lines
+        // hinting at it; arrived by idling, the "what were you doing" lines come first
+        const ko = CURRENT_LANG === 'ko';
+        const hero = { fx: row.heroX, fy: spriteY };
+        const fr = (i) => renderedFriends[i] || { fx: row.friendsX[i], fy: spriteY };
+        const L = (who, col, k, e) => ({ who, col, text: ko ? k : e });
+        const chatter = [
+          L(fr(1), '#fbbf24', '근데 너 진짜 게임 1초도 안 했어? 제작자 지금 울고 있음 ㅋㅋ', 'Wait, you skipped the whole game? The dev is crying right now lol'),
+          L(hero, '#38bdf8', '게임은 다음에... 일단 트리 구경부터 ㅎㅎ', 'Game later... tree first hehe'),
+          L(fr(2), '#2dd4bf', '도감에 펭귄 1만 마리 있는 거 앎? 너 닮은 애 무조건 있음', 'There are 10,000 of us in the Codex. One of them looks like you, guaranteed'),
+          L(fr(3), '#fb923c', '산타 모자 공짜 아님 ㅋ 프사로 박으면 그때부터 공짜임', "Santa hats aren't free lol. Free once you make one your PFP"),
+          L(hero, '#38bdf8', '근데 아까부터 니네 왜 자꾸 왼쪽 쳐다봄?', 'Why do you all keep looking to the left?'),
+          L(fr(4), '#4ade80', '...아무것도 아님. 진짜 아무것도 없음. 쳐다보지 마', '...Nothing. Absolutely nothing over there. Do not look'),
+          L(fr(5), '#a78bfa', '(속닥속닥) 30초 버티면 제작자가 숨겨둔 게 열린대...', "(whisper) If you hang around 30 s, the dev's secret opens..."),
+        ];
+        const opening = MOTION_STATE.idleSucked
+          ? [
+              L(fr(0), '#ff4d6d', '야 안 누르고 뭐했냐?! 남극 무너지는 거 30초 동안 멍때리고 구경했냐 ㅋㅋㅋ', 'Yo, why did you not press anything?! Watched Antarctica fall apart for 30 s? lol'),
+              L(hero, '#38bdf8', '아니 그게... 셋 중에 뭐 탈지 고르다가... 정신 차려보니 빨려왔어...', 'Well... I was still picking a ride... and then I got sucked up...'),
+              L(fr(1), '#fbbf24', `결정장애 펭귄 레전드 ㅋㅋㅋ 탈 것도 없이 맨몸 입성 축하한다!! ${INTRO_TOWN.ko} 환영~`, `Legendary indecisive penguin lol. Welcome to ${INTRO_TOWN.en}, no ride needed!!`),
+            ]
+          : [
+              L(hero, '#38bdf8', `남극 탈출이고 나발이고 귀찮아서 바로 ${INTRO_TOWN.ko}로 째버렸지롱~`, `Skipped the whole escape game and walked straight to ${INTRO_TOWN.en}~`),
+              L(fr(0), '#ff4d6d', `ㅋㅋㅋ 탈 것도 안 타고 날로 먹었네?! 어쨌든 ${INTRO_TOWN.ko} 환영한다!!`, `Haha you skipped the ride?! Welcome to ${INTRO_TOWN.en} anyway!!`),
+            ];
+        const talk = [...opening, ...chatter.slice(MOTION_STATE.idleSucked ? 1 : 0)];
+        const line = talk[Math.min(talk.length - 1, Math.floor(elapsed / TOWN_TALK.turnMs))];
+        drawPixelHeart(ctx, line.who.fx + spriteSize / 2, spriteY - 8 - ((now * 0.03) % 18), 2.6, line.col);
+        drawRetroSpeechBubble(ctx, line.who.fx + spriteSize / 2, line.who.fy - 6, line.text, line.col, now);
       } else if (elapsed < TOWN_TALK.pilotFrom) {
         // Falling, slamming in and bouncing: no talking yet (anticipation -> action -> reaction)
       } else if (elapsed < TOWN_TALK.friendsFrom) {
