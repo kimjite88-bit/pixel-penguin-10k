@@ -10,10 +10,50 @@
  * - FQL Cryptographic Provenance & SHA-256 Verification API
  */
 
+const cluster = require('cluster');
+const crypto = require('crypto');
+const os = require('os');
 const express = require('express');
 const compression = require('compression');
 const fs = require('fs');
 const path = require('path');
+const { createLeaderboardStore, normalizeGame } = require('./leaderboard-store');
+
+// Read the container's CPU quota (cgroup v2, then v1); os.availableParallelism() reports host cores
+function containerCpuCount() {
+  try {
+    const [quota, period] = fs.readFileSync('/sys/fs/cgroup/cpu.max', 'utf8').trim().split(/\s+/);
+    if (quota !== 'max') return Math.max(1, Math.floor(Number(quota) / Number(period)));
+  } catch (e) {}
+  try {
+    const quota = Number(fs.readFileSync('/sys/fs/cgroup/cpu/cpu.cfs_quota_us', 'utf8'));
+    const period = Number(fs.readFileSync('/sys/fs/cgroup/cpu/cpu.cfs_period_us', 'utf8'));
+    if (quota > 0 && period > 0) return Math.max(1, Math.floor(quota / period));
+  } catch (e) {}
+  return os.availableParallelism ? os.availableParallelism() : os.cpus().length;
+}
+
+function containerMemoryBytes() {
+  for (const f of ['/sys/fs/cgroup/memory.max', '/sys/fs/cgroup/memory/memory.limit_in_bytes']) {
+    try {
+      const v = Number(fs.readFileSync(f, 'utf8').trim());
+      if (v > 0 && v < os.totalmem()) return v;
+    } catch (e) {}
+  }
+  return os.totalmem();
+}
+
+// Each worker holds the 10K pack in memory (~100 MB RSS). Several workers only make sense with a shared
+// leaderboard store, so file mode (no DATABASE_URL) stays single-process.
+function workerCount() {
+  if (process.env.WEB_CONCURRENCY) return Math.max(1, parseInt(process.env.WEB_CONCURRENCY, 10) || 1);
+  if (!process.env.DATABASE_URL) return 1;
+  const byMemory = Math.floor((containerMemoryBytes() - 128 * 1024 * 1024) / (160 * 1024 * 1024));
+  return Math.max(1, Math.min(containerCpuCount(), byMemory, 8));
+}
+
+const WORKERS = workerCount();
+const IS_PRIMARY = cluster.isPrimary && WORKERS > 1;
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
@@ -25,6 +65,27 @@ app.use(express.json({ limit: '256kb' }));
 const ROOT_DIR = __dirname;
 const PUBLIC_DIR = path.join(ROOT_DIR, 'public');
 const DATA_DIR = path.join(ROOT_DIR, 'bundle');
+
+const leaderboards = createLeaderboardStore({ dataDir: DATA_DIR, parseTokenNumber });
+
+// Cluster primary: prepare the shared leaderboard once, then fork the HTTP workers (restarting any that die)
+if (IS_PRIMARY) {
+  leaderboards
+    .init()
+    .then(() => {
+      console.log(`[Cluster] leaderboard store: ${leaderboards.kind}; starting ${WORKERS} workers`);
+      for (let i = 0; i < WORKERS; i++) cluster.fork();
+      cluster.on('exit', (worker, code, signal) => {
+        console.warn(`[Cluster] worker ${worker.process.pid} exited (${signal || code}), restarting`);
+        setTimeout(() => cluster.fork(), 1000);
+      });
+    })
+    .catch((e) => {
+      console.error('[Leaderboard] init failed:', e);
+      process.exit(1);
+    });
+  return;
+}
 
 // Load 10K collection index and binary 48x48 PNG pack into memory
 const COLLECTION_JSON_PATH = path.join(DATA_DIR, 'collection_10k.json');
@@ -209,6 +270,30 @@ app.get('/img/:tokenFile', (req, res) => {
   res.setHeader('Cache-Control', 'public, max-age=86400, must-revalidate');
   return res.end(slice);
 });
+
+// The collection never changes while the process runs, so a repeated collection API query is answered from
+// memory and browsers may keep it for 5 minutes. Capped so random search strings cannot grow it without bound.
+const API_CACHE_MAX = 500;
+const apiCache = new Map();
+function cachedJson(req, res, next) {
+  const key = `${req.get('host')}${req.originalUrl}`;
+  const hit = apiCache.get(key);
+  if (hit) {
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    return res.type('json').send(hit);
+  }
+  const sendJson = res.json.bind(res);
+  res.json = (body) => {
+    if (res.statusCode !== 200) return sendJson(body);
+    const text = JSON.stringify(body);
+    if (apiCache.size >= API_CACHE_MAX) apiCache.clear();
+    apiCache.set(key, text);
+    res.setHeader('Cache-Control', 'public, max-age=300');
+    return res.type('json').send(text);
+  };
+  next();
+}
+app.use(['/api/config', '/api/tokens', '/api/token', '/api/metadata'], cachedJson);
 
 // API: Initial Config, Specials, Provenance, and Trait Summary
 app.get('/api/config', (req, res) => {
@@ -411,102 +496,11 @@ app.get('/api/metadata/:id', (req, res) => {
 //      (Purely for fun/entertainment; completely independent of NFT rarity rank!)
 //      IMPORTANT: Blank input never defaults to #0. Only explicit "0"~"9999" records!
 // ============================================================================
-const LEADERBOARD_JSON_PATH = path.join(DATA_DIR, 'ufo_leaderboard.json');
-let ufoLeaderboardMap = new Map();
+// Storage (Postgres + Redis in production, bundle JSON files locally) lives in leaderboard-store.js
 
-// CAR ESCAPE has its own board (same rules: explicit number only, best score per number). It starts empty:
-// no seeded baseline scores.
-const CAR_LEADERBOARD_JSON_PATH = path.join(DATA_DIR, 'car_leaderboard.json');
-const carLeaderboardMap = new Map();
-// ICEBREAKER (boat) board, same rules, also starts empty
-const BOAT_LEADERBOARD_JSON_PATH = path.join(DATA_DIR, 'boat_leaderboard.json');
-const boatLeaderboardMap = new Map();
-const LEADERBOARDS = {
-  ufo: { map: ufoLeaderboardMap, path: LEADERBOARD_JSON_PATH, seed: true },
-  car: { map: carLeaderboardMap, path: CAR_LEADERBOARD_JSON_PATH, seed: false },
-  boat: { map: boatLeaderboardMap, path: BOAT_LEADERBOARD_JSON_PATH, seed: false },
-};
-
-// Missing or unknown game = the original UFO board, so old clients keep working
-function getLeaderboard(game) {
-  return LEADERBOARDS[game === 'car' || game === 'boat' ? game : 'ufo'];
-}
-
-function seedDefaultLeaderboard() {
-  // Diverse 100 NFT editions across #11 ~ #9999 (excluding #0 by default so #0 only appears when explicitly played with "0")
-  // Modest baseline high scores (1,150 ~ 3,600 PTS) so real players easily beat #1!
-  const featuredEditions = [
-    4441, 777, 1004, 195, 962, 6521, 499, 8888, 2026, 333,
-    12, 15, 19, 24, 28, 31, 36, 42, 48, 20,
-    33, 55, 77, 88, 100, 111, 123, 144, 168, 200,
-    222, 250, 288, 300, 315, 365, 404, 444, 500, 512,
-    555, 600, 666, 700, 720, 750, 800, 828, 888, 900,
-    999, 1024, 1111, 1234, 1337, 1500, 1777, 1888, 2000, 2100,
-    2222, 2468, 2500, 2777, 3000, 3141, 3333, 3500, 3777, 4000,
-    4200, 4321, 4500, 4777, 4888, 5000, 5150, 5555, 5888, 6000,
-    6174, 6292, 6666, 6888, 7000, 7272, 7500, 7777, 8000, 8080,
-    8282, 8500, 8765, 9000, 9090, 9250, 9500, 9777, 9888, 9999,
-  ];
-
-  const nowIso = new Date().toISOString();
-  for (let i = 0; i < featuredEditions.length; i++) {
-    const ed = featuredEditions[i];
-    const seedScore = 3600 - i * 24 + ((i * 11) % 19);
-    const existing = ufoLeaderboardMap.get(ed);
-    if (!existing || existing.score < seedScore) {
-      ufoLeaderboardMap.set(ed, {
-        edition: ed,
-        score: seedScore,
-        updated_at: existing?.updated_at || nowIso,
-      });
-    }
-  }
-}
-
-function loadLeaderboardData(board = LEADERBOARDS.ufo) {
-  const boardMap = board.map;
-  try {
-    if (fs.existsSync(board.path)) {
-      const raw = JSON.parse(fs.readFileSync(board.path, 'utf8'));
-      if (Array.isArray(raw) && raw.length > 0) {
-        boardMap.clear();
-        for (const row of raw) {
-          if (row.edition === null || row.edition === undefined || String(row.edition).trim() === '') continue;
-          const ed = parseTokenNumber(row.edition);
-          if (ed !== null && Number(row.score) > 0) {
-            const prev = boardMap.get(ed);
-            const bestScore = Math.max(prev?.score || 0, Math.floor(Number(row.score)));
-            boardMap.set(ed, {
-              edition: ed,
-              score: bestScore,
-              updated_at: row.updated_at || new Date().toISOString(),
-            });
-          }
-        }
-      }
-    }
-  } catch (e) {
-    console.warn('[Leaderboard] Using default seed:', e.message);
-  }
-  if (board.seed) seedDefaultLeaderboard();
-  saveLeaderboardData(board);
-}
-
-function saveLeaderboardData(board = LEADERBOARDS.ufo) {
-  try {
-    const arr = Array.from(board.map.values()).sort((a, b) => b.score - a.score);
-    fs.writeFileSync(board.path, JSON.stringify(arr.slice(0, 200), null, 2), 'utf8');
-  } catch (e) {
-    // Ignore read-only fs errors in container if any; memory map remains authoritative
-  }
-}
-
-function getFormattedLeaderboard(limit = 100, board = LEADERBOARDS.ufo) {
+function formatLeaderboardRows(rows) {
   if (!collection) loadCollectionData();
-  const sorted = Array.from(board.map.values()).sort(
-    (a, b) => b.score - a.score || a.edition - b.edition
-  );
-  return sorted.slice(0, limit).map((row, idx) => {
+  return rows.map((row, idx) => {
     const summary = collection ? expandTokenSummary(row.edition) : null;
     const idCode = `P${String(row.edition).padStart(4, '0')}`;
     return {
@@ -524,20 +518,28 @@ function getFormattedLeaderboard(limit = 100, board = LEADERBOARDS.ufo) {
   });
 }
 
-loadLeaderboardData(LEADERBOARDS.ufo);
-loadLeaderboardData(LEADERBOARDS.car);
-loadLeaderboardData(LEADERBOARDS.boat);
+// Cloudflare sends the visitor's address; X-Forwarded-For's first hop can be set by the client
+function clientIp(req) {
+  return req.get('cf-connecting-ip') || req.ip;
+}
 
-app.get('/api/leaderboard', (req, res) => {
+app.get('/api/leaderboard', async (req, res) => {
   const limit = Math.min(100, Math.max(5, parseInt(req.query.limit, 10) || 100));
-  const board = getLeaderboard(req.query.game);
-  res.json({
-    total_pilots: board.map.size,
-    items: getFormattedLeaderboard(limit, board),
-  });
+  try {
+    const top = await leaderboards.getTop(normalizeGame(req.query.game));
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('X-Leaderboard-Store', `${leaderboards.kind}; ${top.cache}`);
+    res.json({
+      total_pilots: top.total,
+      items: formatLeaderboardRows(top.rows.slice(0, limit)),
+    });
+  } catch (e) {
+    console.error('[Leaderboard] read failed:', e.message);
+    res.status(503).json({ error: 'Leaderboard temporarily unavailable' });
+  }
 });
 
-app.post('/api/leaderboard', (req, res) => {
+app.post('/api/leaderboard', async (req, res) => {
   // CRITICAL: Never default to 0 (`?? 0`) when tokenId is blank/missing!
   // Score is recorded ONLY when the user explicitly entered a number ("0" ~ "9999").
   const rawTokenId = req.body?.tokenId ?? req.body?.edition;
@@ -550,44 +552,75 @@ app.post('/api/leaderboard', (req, res) => {
     return res.status(400).json({ error: 'Invalid tokenId or score' });
   }
 
-  // HIGH SCORE ONLY: Never add/accumulate scores; only update if new score > previous best score!
-  const board = getLeaderboard(req.body?.game);
-  const prev = board.map.get(ed);
-  const isNewBest = !prev || rawScore > prev.score;
-  if (isNewBest) {
-    board.map.set(ed, {
+  try {
+    if (!(await leaderboards.allowPost(clientIp(req)))) {
+      return res.status(429).json({ error: 'Too many score submissions, try again in a minute' });
+    }
+    // HIGH SCORE ONLY: Never add/accumulate scores; only update if new score > previous best score!
+    const result = await leaderboards.submit(normalizeGame(req.body?.game), ed, rawScore);
+    res.setHeader('Cache-Control', 'no-store');
+    res.json({
+      ok: true,
       edition: ed,
-      score: rawScore,
-      updated_at: new Date().toISOString(),
+      id: `P${String(ed).padStart(4, '0')}`,
+      is_new_best: result.isNewBest,
+      best_score: result.best,
+      rank: result.rank,
+      total_pilots: result.total,
+      items: formatLeaderboardRows(result.top.rows),
     });
-    saveLeaderboardData(board);
+  } catch (e) {
+    console.error('[Leaderboard] write failed:', e.message);
+    res.status(503).json({ error: 'Leaderboard temporarily unavailable' });
   }
-
-  const allSorted = Array.from(board.map.values()).sort(
-    (a, b) => b.score - a.score || a.edition - b.edition
-  );
-  const myRank = allSorted.findIndex((r) => r.edition === ed) + 1;
-
-  res.json({
-    ok: true,
-    edition: ed,
-    id: `P${String(ed).padStart(4, '0')}`,
-    is_new_best: isNewBest,
-    best_score: board.map.get(ed).score,
-    rank: myRank,
-    total_pilots: board.map.size,
-    items: getFormattedLeaderboard(100, board),
-  });
 });
+
+// index.html references local scripts and styles as "/app.js?v=…". At startup each ?v= becomes the file's
+// content hash, so a changed file always gets a new URL and every hashed URL can be cached for a year
+// (by browsers and by Cloudflare). The page itself is revalidated on each visit (ETag -> 304).
+const assetHashes = new Map();
+function assetHash(urlPath) {
+  if (!assetHashes.has(urlPath)) {
+    const file = path.join(PUBLIC_DIR, urlPath);
+    let hash = null;
+    try {
+      hash = crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex').slice(0, 12);
+    } catch (e) {}
+    assetHashes.set(urlPath, hash);
+  }
+  return assetHashes.get(urlPath);
+}
+
+const INDEX_HTML = fs
+  .readFileSync(path.join(PUBLIC_DIR, 'index.html'), 'utf8')
+  .replace(/((?:src|href)=")(\/[\w./-]+\.(?:js|css))\?v=[^"]*"/g, (m, attr, urlPath) => {
+    const hash = assetHash(urlPath);
+    return hash ? `${attr}${urlPath}?v=${hash}"` : m;
+  });
+const INDEX_ETAG = `"${crypto.createHash('sha256').update(INDEX_HTML).digest('hex').slice(0, 16)}"`;
+
+function sendIndex(req, res) {
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('ETag', INDEX_ETAG);
+  if (req.get('if-none-match') === INDEX_ETAG) return res.status(304).end();
+  res.type('html').send(INDEX_HTML);
+}
+app.get(['/', '/index.html'], sendIndex);
 
 app.use(
   express.static(PUBLIC_DIR, {
     etag: true,
+    index: false,
     setHeaders: (res, filePath) => {
       if (/\.(html|js|css|json)$/i.test(filePath)) {
-        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
-        res.setHeader('Pragma', 'no-cache');
-        res.setHeader('Expires', '0');
+        const urlPath = '/' + path.relative(PUBLIC_DIR, filePath).split(path.sep).join('/');
+        const hash = /\.(js|css)$/i.test(filePath) ? assetHash(urlPath) : null;
+        if (hash && res.req.query.v === hash) {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        } else {
+          // Unhashed URL: always revalidate (cheap 304), never serve a stale script
+          res.setHeader('Cache-Control', 'no-cache');
+        }
       } else {
         res.setHeader('Cache-Control', 'public, max-age=86400');
       }
@@ -603,12 +636,25 @@ app.get('*', (req, res) => {
   if (path.extname(req.path)) {
     return res.status(404).send('Not found');
   }
-  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-  res.sendFile(path.join(PUBLIC_DIR, 'index.html'));
+  sendIndex(req, res);
 });
 
-app.listen(PORT, () => {
-  console.log(`[PIXEL PENGUIN 10K] Official Server listening on http://localhost:${PORT}`);
-});
+function listen() {
+  app.listen(PORT, () => {
+    const who = cluster.isWorker ? `worker ${process.pid}` : `single process (${leaderboards.kind})`;
+    console.log(`[PIXEL PENGUIN 10K] Official Server listening on http://localhost:${PORT} — ${who}`);
+  });
+}
+
+// Cluster workers start after the primary has prepared the store; a single process prepares it itself
+if (cluster.isWorker) {
+  listen();
+} else {
+  leaderboards
+    .init()
+    .then(listen)
+    .catch((e) => {
+      console.error('[Leaderboard] init failed:', e);
+      process.exit(1);
+    });
+}
