@@ -518,6 +518,21 @@ function formatLeaderboardRows(rows) {
   });
 }
 
+// Container size and process layout, to size the plan from real numbers
+app.get('/api/health', (req, res) => {
+  res.setHeader('Cache-Control', 'no-store');
+  res.json({
+    ok: true,
+    store: leaderboards.kind,
+    workers: WORKERS,
+    worker_id: cluster.isWorker ? cluster.worker.id : 0,
+    container_cpus: containerCpuCount(),
+    container_memory_mb: Math.round(containerMemoryBytes() / 1048576),
+    rss_mb: Math.round(process.memoryUsage().rss / 1048576),
+    uptime_sec: Math.round(process.uptime()),
+  });
+});
+
 // Cloudflare sends the visitor's address; X-Forwarded-For's first hop can be set by the client
 function clientIp(req) {
   return req.get('cf-connecting-ip') || req.ip;
