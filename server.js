@@ -57,8 +57,21 @@ const IS_PRIMARY = cluster.isPrimary && WORKERS > 1;
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
+// Public address of the site: www goes through Cloudflare, the apex reaches this server directly
+const CANONICAL_ORIGIN = (process.env.PUBLIC_URL || 'https://www.ppeng.org').replace(/\/+$/, '');
 
 app.set('trust proxy', true);
+
+// ppeng.org (apex) bypasses Cloudflare and would spend the server's own bandwidth on every file; send it to www.
+// Only the exact apex host: www, ppeng.verycloud.io and the platform health check are served normally.
+app.use((req, res, next) => {
+  const host = String(req.get('host') || '').toLowerCase().replace(/:\d+$/, '');
+  if (host === 'ppeng.org') {
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    return res.redirect(301, `https://www.ppeng.org${req.originalUrl}`);
+  }
+  next();
+});
 app.use(compression());
 app.use(express.json({ limit: '256kb' }));
 
@@ -267,7 +280,9 @@ app.get('/img/:tokenFile', (req, res) => {
   const [offset, length] = collection.offsets[num];
   const slice = packBuffer.subarray(offset, offset + length);
   res.setHeader('Content-Type', 'image/png');
-  res.setHeader('Cache-Control', 'public, max-age=86400, must-revalidate');
+  // ?v=v322_<image hash> URLs from the token APIs change whenever the image does, so they never go stale
+  const hashed = /^v322_[0-9a-f]{8}$/.test(String(req.query.v || ''));
+  res.setHeader('Cache-Control', hashed ? 'public, max-age=31536000, immutable' : 'public, max-age=86400');
   return res.end(slice);
 });
 
@@ -300,11 +315,10 @@ app.get('/api/config', (req, res) => {
   if (!collection && !loadCollectionData()) {
     return res.status(503).json({ error: 'Collection data loading' });
   }
-  const host = `${req.protocol}://${req.get('host')}`;
   res.json({
     project: {
       ...collection.project,
-      official_website: process.env.PUBLIC_URL || host,
+      official_website: CANONICAL_ORIGIN,
       contract_address: process.env.CONTRACT_ADDRESS || 'TBA (2026. 10. 23 민팅 시 온체인 컨트랙트 자동 연동)',
     },
     provenance: collection.provenance,
@@ -461,7 +475,7 @@ app.get('/api/metadata/:id', (req, res) => {
     return res.status(404).json({ error: 'Token not found' });
   }
   const full = expandTokenFull(num);
-  const host = process.env.PUBLIC_URL || `${req.protocol}://${req.get('host')}`;
+  const host = CANONICAL_ORIGIN;
   const attributes = full.trait_breakdown.map((b) => ({
     trait_type: b.trait_type,
     value: b.value,
