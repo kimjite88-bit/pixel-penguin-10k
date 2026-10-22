@@ -391,6 +391,8 @@ function drawScene0Marker(ctx, now, target, label, accent) {
 }
 
 function drawScene0Escape(ctx, now) {
+  // First visit: the opening story plays first (opening-scene.js)
+  if (drawOpening(ctx, now)) return;
   // Stage 5: left alone too long, the pillar takes the penguin (drawScene0IdleSuck)
   const idle = scene0IdleProgress(now);
   if (idle >= 0.6) {

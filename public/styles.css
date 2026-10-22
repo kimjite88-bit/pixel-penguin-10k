@@ -2611,3 +2611,9 @@ body.ufo-fullscreen-lock {
   color: var(--text-dim, #94a3b8);
   text-decoration: line-through;
 }
+
+/* Opening story (opening-scene.js): the start card keeps its place but is hidden until it ends */
+.retro-intro-theater.is-opening .scene1-escape-overlay {
+  visibility: hidden;
+  pointer-events: none;
+}

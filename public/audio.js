@@ -334,7 +334,7 @@ function sceneCues(fromMs, toMs, emit) {
   }
   if (!sfxOn()) return;
   if (s === 0) {
-    if (MOTION_STATE.scene0IdleStart) return; // stage 5 runs on its own clock (soundTick)
+    if (MOTION_STATE.scene0IdleStart || OPENING.active) return; // stage 5 runs on its own clock (soundTick)
     // Alarm: two soft beeps every 1.7 s, louder the longer the player waits
     every(fromMs, toMs, 600, Infinity, 1700, (at) => {
       const esc = Math.min(1, at / 24000);
@@ -387,7 +387,7 @@ function soundTick() {
   } else {
     sceneCues(from, to, emit);
     // Quake rumble at the start of each quake burst (escape-scene.js scene0Quake)
-    if (MOTION_STATE.sceneIdx === 0 && sfxOn()) {
+    if (MOTION_STATE.sceneIdx === 0 && sfxOn() && !OPENING.active) {
       const q = scene0Quake(nowP + 40) > 0;
       if (q && !PP_SOUND.quakeOn) {
         const esc = scene0Escalation(nowP);

@@ -3107,6 +3107,8 @@ function initPixelMotionStudio() {
     const { mx, my } = getLogicalCoords(e.clientX, e.clientY);
 
     if (MOTION_STATE.sceneIdx === 0) {
+      // A tap during the opening skips it (opening-scene.js)
+      if (skipOpening()) return;
       // Tapping the plane, the icebreaker or the car picks it
       const picked = scene0VehicleAt(mx, my);
       if (picked) setEscapeVehicle(picked);
