@@ -1,7 +1,7 @@
 // ============================================================================
 // SOUND — 8-bit sound for the intro, synthesised with Web Audio: no audio files, nothing to license.
 // The town plays a public-domain carol, picked at random per visit (TOWN_SONGS), in our own chip arrangement, no
-// lyrics.
+// lyrics; its hidden village (the Easter egg) switches to its own, Joy to the World (easterCues).
 // Browsers only allow sound after a tap or key press (Chrome autoplay policy), so nothing plays until the first
 // gesture on the page. Two icon buttons in the top bar, as games usually split them: the note = music (the
 // carol, on by default) and the speaker = sound effects (alarm, engines, game events; off by default, they
@@ -541,7 +541,13 @@ function sceneCues(fromMs, toMs, emit) {
       });
       once(fromMs, toMs, 1292, emit, (t) => sndNoise(t, 0.1, { filter: 'lowpass', freq: 700, vol: 0.22 }));
     }
-    if (PP_SOUND.musicOn) scheduleTownMusic(fromMs, toMs, emit);
+    if (PP_SOUND.musicOn) {
+      // In the Easter egg the town carol stops as the screen breaks up and the village has its own
+      const easter = typeof townEasterOn === 'function' && townEasterOn();
+      const stop = easter ? TOWN_EASTER.cutAt - TOWN_EASTER.dissolveMs : Infinity;
+      if (fromMs < stop) scheduleTownMusic(fromMs, Math.min(toMs, stop), emit);
+      if (easter && toMs >= TOWN_EASTER.cutAt) easterCues(fromMs, toMs, emit);
+    }
     return;
   }
   if (!sfxOn()) return;
@@ -643,13 +649,125 @@ function openingCues(fromMs, toMs, emit) {
   });
 }
 
-// The hidden village opening (town-easter.js): a sparkly run up and a bell
-function playEasterChime() {
-  if (!soundReady() || !PP_SOUND.musicOn) return;
-  const t = PP_SOUND.ctx.currentTime + 0.01;
-  sndArp(t, [79, 84, 88, 91, 96], 0.06, { pulse: true, vol: 0.09, len: 0.3, bus: PP_SOUND.music });
-  sndTone(t + 0.34, midiHz(96), 1.2, { type: 'triangle', vol: 0.12, bus: PP_SOUND.music });
-  sndNoise(t + 0.3, 0.6, { freq: 7000, vol: 0.05, bus: PP_SOUND.music });
+// ---------------------------------------------------------------------------------------------------------------
+// The hidden village's own carol (town-easter.js). The town carol stops as the screen breaks up, a deep "thud"
+// lands on the cut (the screen shakes with it), a sparkle and a snare roll lead in for four beats, then Joy to the
+// World plays as a party: four-on-the-floor kick, claps on the backbeat, open hats and sleigh bells, an octave disco
+// bass, off-beat chord stabs, and every second pass a whole step higher with bells on top; a drum break, round again.
+// Tune ANTIOCH as printed by Lowell Mason, The Modern Psalmist (Boston 1839), No. 144: public domain (Mason d. 1872;
+// the Handel attribution is disputed and does not matter). Not the 1970 Hoyt Axton song of the same name.
+// Here in C, the lead an octave up; 20 bars of 2/4 at 150 BPM (TOWN_EASTER_BEAT_MS).
+// ---------------------------------------------------------------------------------------------------------------
+const JOY_BARS = [
+  [[0, 84, 1], [1, 83, 0.75], [1.75, 81, 0.25]],
+  [[0, 79, 1.5], [1.5, 77, 0.5]],
+  [[0, 76, 1], [1, 74, 1]],
+  [[0, 72, 1.5], [1.5, 79, 0.5]],
+  [[0, 81, 1.5], [1.5, 81, 0.5]],
+  [[0, 83, 1.5], [1.5, 83, 0.5]],
+  [[0, 84, 3.5]],
+  [[1.5, 84, 0.5]],
+  [[0, 84, 0.5], [0.5, 83, 0.5], [1, 81, 0.5], [1.5, 79, 0.5]],
+  [[0, 79, 0.75], [0.75, 77, 0.25], [1, 76, 0.5], [1.5, 84, 0.5]],
+  [[0, 84, 0.5], [0.5, 83, 0.5], [1, 81, 0.5], [1.5, 79, 0.5]],
+  [[0, 79, 0.75], [0.75, 77, 0.25], [1, 76, 0.5], [1.5, 76, 0.5]],
+  [[0, 76, 0.5], [0.5, 76, 0.5], [1, 76, 0.5], [1.5, 76, 0.25], [1.75, 77, 0.25]],
+  [[0, 79, 1.5], [1.5, 77, 0.25], [1.75, 76, 0.25]],
+  [[0, 74, 0.5], [0.5, 74, 0.5], [1, 74, 0.5], [1.5, 74, 0.25], [1.75, 76, 0.25]],
+  [[0, 77, 1.5], [1.5, 76, 0.25], [1.75, 74, 0.25]],
+  [[0, 76, 0.5], [0.5, 84, 1], [1.5, 81, 0.5]],
+  [[0, 79, 0.75], [0.75, 77, 0.25], [1, 76, 0.5], [1.5, 77, 0.5]],
+  [[0, 76, 1], [1, 74, 1]],
+  [[0, 72, 2]],
+];
+// Chord on each beat: bass root and the chord's notes above it
+const JOY_CHORD = { C: [48, [0, 4, 7]], F: [41, [0, 4, 7]], G: [43, [0, 4, 7]], G7: [43, [0, 4, 7, 10]], Am: [45, [0, 3, 7]] };
+const JOY_HARMONY = [
+  ['C', 'C'], ['C', 'C'], ['G', 'G'], ['C', 'C'], ['F', 'F'], ['G', 'G'], ['C', 'C'], ['C', 'C'], ['C', 'Am'], ['C', 'C'],
+  ['C', 'F'], ['C', 'C'], ['C', 'C'], ['C', 'C'], ['G', 'G'], ['G7', 'G7'], ['C', 'F'], ['C', 'F'], ['C', 'G'], ['C', 'C'],
+];
+const JOY_PASS = JOY_BARS.length * 2; // beats in one pass
+const JOY_BREAK = 4; // beats of drum break after every two passes
+const JOY_CYCLE = JOY_PASS * 2 + JOY_BREAK;
+
+function easterCues(fromMs, toMs, emit) {
+  const bus = PP_SOUND.music;
+  const beatMs = TOWN_EASTER_BEAT_MS;
+  const cut = TOWN_EASTER.cutAt;
+  const t0 = cut + TOWN_EASTER_LEADIN * beatMs;
+  const sec = beatMs / 1000;
+  // Thud
+  once(fromMs, toMs, cut, emit, (t) => {
+    sndTone(t, 130, 0.8, { to: 36, type: 'triangle', vol: 0.62, bus });
+    sndTone(t, 260, 0.18, { to: 65, type: 'square', vol: 0.13, bus });
+    sndNoise(t, 0.6, { filter: 'lowpass', freq: 1400, to: 80, vol: 0.45, bus });
+    sndNoise(t, 0.04, { filter: 'bandpass', freq: 2600, vol: 0.14, bus });
+  });
+  // Lead-in: a sparkle up as the village shows, a noise riser and a snare roll into the first note
+  once(fromMs, toMs, cut + beatMs, emit, (t) => {
+    sndArp(t, [72, 76, 79, 84, 88, 91, 96], 0.045, { pulse: true, vol: 0.08, len: 0.25, bus });
+    sndNoise(t + 0.3, 0.7, { freq: 7000, vol: 0.05, bus });
+  });
+  once(fromMs, toMs, cut + 2 * beatMs, emit, (t) => sndNoise(t, 2 * sec, { filter: 'bandpass', freq: 500, to: 6000, q: 1.2, vol: 0.1, attack: 2 * sec * 0.9, bus }));
+  every(fromMs, toMs, cut + 2 * beatMs, t0 - 1, beatMs / 4, (at, k) => {
+    emit(at, (t) => sndNoise(t, 0.07, { filter: 'bandpass', freq: 1900, q: 0.9, vol: 0.05 + k * 0.018, bus }));
+  });
+  // The song, on sixteenths from the first note
+  for (let q = Math.max(0, Math.ceil(((fromMs - t0) / beatMs) * 4)); ; q++) {
+    const b = q / 4;
+    const at = t0 + b * beatMs;
+    if (at > toMs) break;
+    if (at <= fromMs) continue;
+    const cb = b % JOY_CYCLE;
+    const s16 = q % 8; // sixteenth in the 2/4 bar
+    if (cb >= JOY_PASS * 2) {
+      // Drum break: kick, then a snare roll swelling into the downbeat
+      const k = Math.round((cb - JOY_PASS * 2) * 4);
+      if (k === 0) emit(at, (t) => sndTone(t, 160, 0.14, { to: 40, type: 'triangle', vol: 0.4, bus }));
+      if (k >= 4) emit(at, (t) => sndNoise(t, 0.08, { filter: 'bandpass', freq: 1700 + k * 60, q: 0.9, vol: 0.06 + k * 0.012, bus }));
+      continue;
+    }
+    const pass = cb < JOY_PASS ? 0 : 1;
+    const key = pass * 2;
+    const pb = cb - pass * JOY_PASS;
+    const bar = Math.floor(pb / 2);
+    const inBar = pb - bar * 2;
+    // Lead: the pulse, an octave-down square for body
+    JOY_BARS[bar].forEach(([pos, m, len]) => {
+      if (Math.abs(pos - inBar) > 1e-6) return;
+      emit(at, (t) => sndTone(t, midiHz(m + key), len * sec * 0.85, { pulse: true, vol: 0.17, bus }));
+      emit(at, (t) => sndTone(t, midiHz(m + key - 12), len * sec * 0.7, { type: 'square', vol: 0.035, bus }));
+    });
+    // Drums: crash at the top of each half of the tune, kick on every beat, clap on the backbeat, hats and bells
+    if (s16 === 0 && (bar === 0 || bar === 8)) emit(at, (t) => sndNoise(t, 0.9, { freq: 5000, vol: 0.11, bus }));
+    if (s16 % 4 === 0) {
+      emit(at, (t) => {
+        sndTone(t, 165, 0.12, { to: 42, type: 'triangle', vol: 0.38, bus });
+        sndNoise(t, 0.035, { filter: 'lowpass', freq: 900, vol: 0.12, bus });
+      });
+    }
+    if (s16 === 4) {
+      emit(at, (t) => {
+        sndNoise(t, 0.12, { filter: 'bandpass', freq: 1500, q: 0.8, vol: 0.17, bus });
+        sndNoise(t + 0.012, 0.1, { filter: 'bandpass', freq: 2200, q: 0.8, vol: 0.1, bus });
+      });
+    }
+    if (s16 % 4 === 2) emit(at, (t) => sndNoise(t, 0.11, { freq: 7500, vol: 0.06, bus }));
+    else if (s16 % 2 === 0) emit(at, (t) => sndNoise(t, 0.03, { freq: 9500, vol: 0.035, bus }));
+    emit(at, (t) => sndNoise(t, 0.04, { freq: 8500, vol: s16 % 2 ? 0.022 : 0.032, bus }));
+    const [root, notes] = JOY_CHORD[JOY_HARMONY[bar][Math.floor(inBar)]];
+    // Disco bass: octave bounce in eighths
+    if (s16 % 2 === 0) emit(at, (t) => sndTone(t, midiHz(root + key + (s16 % 4 ? 12 : 0)), sec * 0.42, { type: 'triangle', vol: 0.32, bus }));
+    // Off-beat chord stabs
+    if (s16 % 4 === 2) {
+      notes.slice(0, 3).forEach((n) => emit(at, (t) => sndTone(t, midiHz(root + key + 24 + n), 0.09, { type: 'square', vol: 0.026, bus })));
+    }
+    // Second pass: bells sparkling on top in sixteenths
+    if (pass === 1) {
+      const n = notes[(q * 3) % notes.length];
+      emit(at, (t) => sndTone(t, midiHz(root + key + 48 + n), 0.12, { type: 'triangle', vol: 0.045, bus }));
+    }
+  }
 }
 
 // A penguin popping into its pixel self (opening-scene.js calls this the moment it changes)

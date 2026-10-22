@@ -114,7 +114,7 @@ function evFish(g, x, y, flip) {
 }
 
 function drawEasterCrowd(g, now) {
-  const beat = typeof townBeat === 'function' ? townBeat(now) : now / 425;
+  const beat = typeof easterBeat === 'function' ? easterBeat(now) : now / 400;
   // Far: a stroller on the top terrace, one at the small igloo, one climbing the cliff stairs
   const us = evPingPong(now, 14000, 352, 430);
   evVillager(g, '18', evWalk(now, 1), us.x, 101, us.dir < 0, true);
@@ -218,7 +218,7 @@ function drawEasterVillage(ctx, now) {
     g.fillStyle = '#0f1743';
     g.fillRect(0, 0, EV_W, EV_H);
   }
-  const beat = typeof townBeat === 'function' ? townBeat(now) : now / 425;
+  const beat = typeof easterBeat === 'function' ? easterBeat(now) : now / 400;
   const step = Math.floor(beat);
   // Stars: some flare into a little cross now and then
   (A.stars || []).forEach(([x, y, b], i) => {

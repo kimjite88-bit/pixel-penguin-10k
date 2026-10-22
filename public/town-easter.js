@@ -1,7 +1,8 @@
 // ============================================================================
 // TOWN EASTER EGG — "the dev's hidden village". Only for players who skipped the game (안 해요 / left alone at the
 // picker) and then just stayed in the town: once the welcome talk is over and the town has been open 30 s, the
-// locals stop, say "follow me", and all walk off to the left; a pixel-block dissolve opens a hidden Christmas
+// locals stop, say "follow me", and all walk off to the left; the town carol stops, and with a thud (the screen
+// shakes) and a carol of its own (audio.js easterCues) a pixel-block dissolve opens a hidden Christmas
 // village (easter-village.js: pixel art made after the owner's reference, every villager in it busy) where the
 // whole cast walks in, lines up for a group photo with a snowman that turns out to be the dev, and trades B-grade
 // lines, round and round.
@@ -33,8 +34,14 @@ const TOWN_EASTER_TALK = [
   { who: 2, col: '#2dd4bf', ko: '얼음낚시 3시간째 입질 0... 이게 크리스마스지', en: '3 hours of ice fishing, zero bites... that is Christmas' },
 ];
 const TOWN_EASTER_TURN_MS = 3400;
-
-const TOWN_EASTER_STATE = { chimedFor: 0 };
+// The village has its own carol (audio.js easterCues): a thud on the cut, four beats of lead-in, then Joy to the
+// World at 150 BPM. The tree lights and the hops follow its beat.
+const TOWN_EASTER_BEAT_MS = 400;
+const TOWN_EASTER_LEADIN = 4;
+// Beats since the carol's first note (negative during the lead-in)
+function easterBeat(now) {
+  return (now - MOTION_STATE.sceneStartTime - TOWN_EASTER.cutAt) / TOWN_EASTER_BEAT_MS - TOWN_EASTER_LEADIN;
+}
 
 // Only in a skipped town
 function townEasterOn() {
@@ -159,6 +166,15 @@ function drawTownEaster(ctx, now, elapsed) {
   // Pixel-block dissolve: the town closes up (the walk-off ends under it), the village opens
   const half = TOWN_EASTER.dissolveMs;
   if (t < -half) return;
+  // The thud on the cut shakes the screen for a moment
+  const shake = t >= 0 && t < 450;
+  if (shake) {
+    ctx.save();
+    ctx.fillStyle = '#0b1020';
+    ctx.fillRect(0, 0, 960, 540);
+    const k = Math.exp(-t / 110);
+    ctx.translate(Math.round(3 * k * Math.sin(t / 19)), Math.round(9 * k * Math.cos(t / 27)));
+  }
   if (t >= 0) {
     ctx.save();
     drawEasterVillage(ctx, now);
@@ -179,8 +195,8 @@ function drawTownEaster(ctx, now, elapsed) {
       const e = 1 - (1 - q) * (1 - q);
       const x = 1040 + i * 30 + (c.x - 1040 - i * 30) * e;
       const walking = q < 1;
-      const tb = typeof townBeat === 'function' ? townBeat(now) : 0;
-      const hop = !walking && (c.dance || (Math.floor(tb) + i) % 3 === 0) && tb % 1 < 0.3 ? (c.dance ? 8 : 4) : 0;
+      const tb = easterBeat(now);
+      const hop = !walking && tb >= 0 && (c.dance || (Math.floor(tb) + i) % 3 === 0) && tb % 1 < 0.3 ? (c.dance ? 8 : 4) : 0;
       const top = c.feet - c.size * (243 / 256) - hop;
       if (typeof drawPixelGroundShadow === 'function') drawPixelGroundShadow(ctx, x, c.feet - 2, c.size * 0.55, hop);
       drawAnimatedPixelPenguin(ctx, ensureSpeciesSprite(c.sp), x - c.size / 2, top, c.size, now, {
@@ -242,11 +258,6 @@ function drawTownEaster(ctx, now, elapsed) {
       drawRetroSpeechBubble(ctx, Math.max(110, Math.min(850, who.x)), who.top - 4, ko ? line.ko : line.en, line.col, now);
     }
     ctx.restore();
-    // A little chime when it opens (music switch)
-    if (TOWN_EASTER_STATE.chimedFor !== MOTION_STATE.sceneStartTime) {
-      TOWN_EASTER_STATE.chimedFor = MOTION_STATE.sceneStartTime;
-      if (typeof playEasterChime === 'function') playEasterChime();
-    }
   }
   // Dissolve on top: blocks fill in left to right (the way they walked) before the cut, clear after it
   if (t < half) {
@@ -262,4 +273,5 @@ function drawTownEaster(ctx, now, elapsed) {
       }
     }
   }
+  if (shake) ctx.restore();
 }
