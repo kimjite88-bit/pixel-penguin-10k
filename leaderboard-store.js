@@ -219,6 +219,22 @@ function createSqlStore({ dataDir, parseTokenNumber, databaseUrl, redisUrl, pool
         await client.query(
           'CREATE INDEX IF NOT EXISTS leaderboard_scores_rank ON leaderboard_scores (game, score DESC, edition)'
         );
+        // One-time board reset: set LEADERBOARD_RESET_ID to a new value (e.g. launch-20261022) and redeploy. The
+        // boards are emptied once per id (remembered in leaderboard_meta), so later restarts keep new scores.
+        // Empty the bundle JSON files too, or the import below fills the boards straight back up.
+        const resetId = String(process.env.LEADERBOARD_RESET_ID || '').trim();
+        if (resetId) {
+          await client.query('CREATE TABLE IF NOT EXISTS leaderboard_meta (key text PRIMARY KEY, value text NOT NULL)');
+          const { rows: done } = await client.query("SELECT value FROM leaderboard_meta WHERE key = 'reset_id'");
+          if (!done.length || done[0].value !== resetId) {
+            const { rowCount } = await client.query('DELETE FROM leaderboard_scores');
+            await client.query(
+              "INSERT INTO leaderboard_meta (key, value) VALUES ('reset_id', $1) ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value",
+              [resetId]
+            );
+            console.log(`[Leaderboard] Reset ${resetId}: removed ${rowCount} rows`);
+          }
+        }
         for (const game of GAMES) {
           const { rows } = await client.query('SELECT count(*)::int AS n FROM leaderboard_scores WHERE game = $1', [game]);
           if (rows[0].n > 0) continue;
