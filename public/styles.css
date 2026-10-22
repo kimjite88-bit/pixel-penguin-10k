@@ -1975,6 +1975,28 @@ body.ufo-fullscreen-lock {
   line-height: 1.7;
 }
 
+.notice-official-link {
+  display: block;
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  background: var(--accent-soft);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+
+.notice-official-link:hover {
+  text-decoration: underline;
+}
+
+.notice-warn {
+  color: #ff8aa0;
+}
+
 .spec-rows-stack {
   display: flex;
   flex-direction: column;
