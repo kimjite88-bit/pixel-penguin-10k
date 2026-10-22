@@ -17,7 +17,8 @@
 // Motion follows the animation basics (anticipation -> action -> reaction, ease in / out, squash and stretch,
 // overshoot on pops); there is one full-screen flash, well under WCAG 2.3.1's three per second.
 // It is drawn live on the stage (no video file), so it is sharp at any size and follows the language toggle.
-// Shown once per browser (localStorage), always skippable (tap, Esc / Enter / Space, the 건너뛰기 tag); ?opening
+// Shown once per browser (localStorage), always skippable (the 건너뛰기 / SKIP tag, Esc / Enter / Space, or a tap; the
+// first tap is spent on switching the score on when the browser still has it muted, see openingTap); ?opening
 // in the URL plays it again, and so does the next load after a hard reload (Ctrl+Shift+R / Cmd+Shift+R: the
 // page gets that keydown before the browser reloads; only Ctrl+N / W / T are kept from pages). The film-slate icon button
 // in the top bar turns it off for good (default on); turning it back on plays it again right away. With
@@ -553,7 +554,10 @@ function drawOpeningFolk(ctx, now, t) {
     } else p = openingPanicPose(i, f, t, now, calmEnd.x);
     const x = Math.max(16, Math.min(f.panic === 'stranded' ? 950 : 572, p.x));
     if (openingInWave(x, feet - 30, R)) {
-      if (!OPENING.conv[i]) OPENING.conv[i] = { t, x };
+      if (!OPENING.conv[i]) {
+        OPENING.conv[i] = { t, x };
+        if (typeof playOpeningPop === 'function') playOpeningPop(i);
+      }
       const c = OPENING.conv[i];
       const since = t - c.t;
       const flash = since < 260 ? 1 - since / 260 : 0;
@@ -1049,6 +1053,28 @@ function drawOpeningCaption(ctx, now, t) {
   ctx.textBaseline = 'middle';
   ctx.fillText(label, 938, 10 + (fs + 14) / 2);
   ctx.restore();
+  OPENING.skipRect = { x: 948 - w - 12, y: 0, w: w + 24, h: fs + 34 }; // a little larger than drawn, for fingers
+  // Browsers keep it silent until the first tap: say so (top left) while the score is waiting for it
+  if (openingNeedsSoundTap()) {
+    const hint = ko ? '탭하면 소리가 나와요' : 'TAP FOR SOUND';
+    ctx.save();
+    ctx.globalAlpha = slide * (0.65 + 0.35 * Math.sin(now * 0.006));
+    ctx.font = `800 ${fs}px "Pretendard", "Malgun Gothic", sans-serif`;
+    const hy = 10 + (fs + 14) / 2;
+    // One-colour pixel speaker with two waves, like the top-bar icons
+    const u = Math.max(2, Math.round(fs / 7));
+    const sx = 16;
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(sx, hy - u, u * 2, u * 2);
+    ctx.fillRect(sx + u * 2, hy - u * 2, u, u * 4);
+    ctx.fillRect(sx + u * 3, hy - u * 3, u, u * 6);
+    ctx.fillRect(sx + u * 5, hy - u, u, u * 2);
+    ctx.fillRect(sx + u * 7, hy - u * 2, u, u * 4);
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(hint, sx + u * 10, hy);
+    ctx.restore();
+  }
   // Progress line along the bottom bar
   ctx.fillStyle = '#38bdf8';
   ctx.fillRect(0, 538, Math.round((t / OPENING_MS) * 960), 2);
@@ -1082,6 +1108,25 @@ function drawOpening(ctx, now) {
   if (t >= OPENING_CUT - 380 && t < OPENING_CUT) drawOpeningDissolve(ctx, t);
   drawOpeningCaption(ctx, now, t);
   return true;
+}
+
+// The score wants a tap first (autoplay rules): sound is switched on but not running yet
+function openingNeedsSoundTap() {
+  return typeof PP_SOUND !== 'undefined' && PP_SOUND.on && PP_SOUND.musicOn && !(PP_SOUND.ctx && PP_SOUND.ctx.state === 'running');
+}
+
+// A tap on the stage during the opening. The tag top right always skips; anywhere else, a tap that turned the
+// sound on (the browser needs one) is spent on that and the story goes on, any later tap skips as before.
+function openingTap(mx, my) {
+  if (!OPENING.active) return false;
+  const r = OPENING.skipRect;
+  const onSkip = r && mx >= r.x && mx <= r.x + r.w && my >= r.y && my <= r.y + r.h;
+  const unmutedNow = typeof PP_SOUND !== 'undefined' && performance.now() - (PP_SOUND.silentGestureAt || -1e9) < 1000;
+  if (!onSkip && unmutedNow && PP_SOUND.on && PP_SOUND.musicOn) {
+    PP_SOUND.silentGestureAt = -1e9;
+    return true;
+  }
+  return skipOpening();
 }
 
 function skipOpening() {

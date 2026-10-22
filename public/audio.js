@@ -84,6 +84,8 @@ function soundInit() {
 
 // Any gesture on the page may start (or resume) the sound
 function soundUnlock() {
+  // When a gesture finds the sound still silent (a touch fires pointerdown then touchend: remember the first)
+  if (!(PP_SOUND.ctx && PP_SOUND.ctx.state === 'running')) PP_SOUND.silentGestureAt = performance.now();
   if (!PP_SOUND.on) return;
   soundInit();
   const c = PP_SOUND.ctx;
@@ -339,14 +341,14 @@ const TOWN_SONGS = [
   {
     id: 'jingle',
     bpb: 4,
-    plays: 2,
+    plays: 1,
     bars: [...JB_A, [[0, 76, 1], [1, 74, 1], [2, 74, 1], [3, 76, 1]], [[0, 74, 2], [2, 79, 2]], ...JB_A, [[0, 79, 1], [1, 79, 1], [2, 77, 1], [3, 74, 1]], [[0, 72, 4]]],
     roots: [48, 48, 48, 48, 53, 48, 50, 55, 48, 48, 48, 48, 53, 48, 43, 48],
   },
   {
     id: 'deck',
     bpb: 4,
-    plays: 2,
+    plays: 1,
     bars: [
       ...DECK_A,
       ...DECK_A,
@@ -364,7 +366,7 @@ const TOWN_SONGS = [
   {
     id: 'wish',
     bpb: 3,
-    plays: 2,
+    plays: 1,
     bars: [[[2, 67, 1]], ...WISH_A, [[0, 72, 2], [2, 67, 1]], ...WISH_A, [[0, 72, 3]]],
     roots: [null, ...WISH_A_ROOTS, 48, ...WISH_A_ROOTS, 48],
   },
@@ -398,39 +400,64 @@ const TOWN_SONGS = [
 ];
 const PP_CAROL_STORE = 'ppeng-last-carol';
 
-// The carol for this town visit (chosen once per scene start, never the last one heard)
-function townSong() {
+// The town's playlist: when one carol ends, a bar's rest, then another one (never the same twice running), for as
+// long as the town is open. Rebuilt for every visit; the last carol heard is remembered across visits.
+const CAROL_GAP_BEATS = 4;
+function pickCarol(notId) {
+  const pool = TOWN_SONGS.filter((song) => song.id !== notId);
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+// The playlist entry playing at beat b (from the town's first note): { song, start, len } in beats
+function townPlaylistAt(b) {
   const key = MOTION_STATE.sceneStartTime;
   if (PP_SOUND.songKey !== key) {
     let last = null;
     try {
       last = localStorage.getItem(PP_CAROL_STORE);
     } catch (e) {}
-    const pool = TOWN_SONGS.filter((song) => song.id !== last);
-    PP_SOUND.song = pool[Math.floor(Math.random() * pool.length)];
     PP_SOUND.songKey = key;
-    try {
-      localStorage.setItem(PP_CAROL_STORE, PP_SOUND.song.id);
-    } catch (e) {}
+    PP_SOUND.playlist = [];
+    PP_SOUND.nextCarol = pickCarol(last);
   }
-  return PP_SOUND.song;
+  const list = PP_SOUND.playlist;
+  while (!list.length || list[list.length - 1].start + list[list.length - 1].len + CAROL_GAP_BEATS <= b) {
+    const prev = list[list.length - 1];
+    const song = prev ? pickCarol(prev.song.id) : PP_SOUND.nextCarol;
+    const start = prev ? prev.start + prev.len + CAROL_GAP_BEATS : 0;
+    list.push({ song, start, len: song.bars.length * song.bpb * song.plays });
+    try {
+      localStorage.setItem(PP_CAROL_STORE, song.id);
+    } catch (e) {}
+    if (list.length > 40) break;
+  }
+  for (let i = list.length - 1; i >= 0; i--) if (b >= list[i].start) return list[i];
+  return list[0];
+}
+// The carol playing right now (for the checks and the UI)
+function townSong() {
+  const t = typeof townBeat === 'function' ? Math.max(0, townBeat(performance.now())) : 0;
+  const e = townPlaylistAt(t);
+  PP_SOUND.song = e.song;
+  return e.song;
 }
 
 function scheduleTownMusic(fromMs, toMs, emit) {
-  const song = townSong();
-  const bpb = song.bpb;
   const beatMs = TOWN_BEAT_MS;
   const t0 = townBeatT0();
-  const total = song.bars.length * bpb;
-  const end = Math.min((toMs - t0) / beatMs, total * song.plays - 0.5);
+  const end = (toMs - t0) / beatMs;
   const sec = beatMs / 1000;
-  const slow = bpb === 6;
   for (let b = Math.max(0, Math.ceil(((fromMs - t0) / beatMs) * 2) / 2); b <= end; b += 0.5) {
     const at = t0 + b * beatMs;
     if (at <= fromMs) continue;
-    const lb = b % total;
-    const bar = Math.floor(lb / bpb);
-    const inBar = lb - bar * bpb;
+    const entry = townPlaylistAt(b);
+    const lb = b - entry.start;
+    if (lb >= entry.len) continue; // the rest between two carols
+    const song = entry.song;
+    PP_SOUND.song = song;
+    const bpb = song.bpb;
+    const slow = bpb === 6;
+    const bar = Math.floor((lb % (song.bars.length * bpb)) / bpb);
+    const inBar = (lb % (song.bars.length * bpb)) - bar * bpb;
     // Lead: the NES pulse, or a soft triangle for the lullaby
     song.bars[bar].forEach(([pos, m, len]) => {
       if (Math.abs(pos - inBar) > 1e-6) return;
@@ -535,13 +562,91 @@ function sceneCues(fromMs, toMs, emit) {
   }
 }
 
+// ---------------------------------------------------------------------------------------------------------------
+// Opening soundtrack (opening-scene.js), on the opening's clock (OPENING.start). It is the film's score, so it sits
+// on the music switch with the carols: a music box over the peaceful land, silence and a drone as the sky darkens,
+// a star twinkle, a falling whistle and the hit, glitchy blips while the wave spreads, a chase bass and a boing per
+// hop while the hero runs, a whoosh into the crevasse field, a chime for each vehicle found and a little fanfare.
+// (The penguins' pops as they turn into pixels come from opening-scene.js, as they happen.)
+// ---------------------------------------------------------------------------------------------------------------
+function openingCues(fromMs, toMs, emit) {
+  const bus = PP_SOUND.music;
+  // One tone / noise at m ms into the opening, played once (only when m falls in this tick's window)
+  const T = (m, f, len, o = {}) => once(fromMs, toMs, m, emit, (t) => sndTone(t, f, len, { bus, ...o }));
+  const N = (m, len, o = {}) => once(fromMs, toMs, m, emit, (t) => sndNoise(t, len, { bus, ...o }));
+  // A: music box, a slow C - Am - F - G loop in eighths, with a soft bass
+  const box = [72, 76, 79, 84, 79, 76, 69, 72, 76, 81, 76, 72, 65, 69, 72, 77, 72, 69, 67, 71, 74, 79, 74, 71];
+  every(fromMs, toMs, 150, 3700, 150, (at, k) => T(at, midiHz(box[k % box.length] + 12), 0.5, { type: 'triangle', vol: 0.09 }));
+  every(fromMs, toMs, 150, 3700, 900, (at, k) => T(at, midiHz([48, 45, 41, 43][k % 4]), 0.8, { type: 'triangle', vol: 0.16 }));
+  // Snowball fight and the belly-slide
+  if (typeof OPENING_SNOWBALLS !== 'undefined') {
+    OPENING_SNOWBALLS.forEach(([at]) => {
+      once(fromMs, toMs, at, emit, (t) => sndNoise(t, 0.12, { filter: 'bandpass', freq: 900, to: 2400, q: 1.4, vol: 0.06, bus }));
+      once(fromMs, toMs, at + 450, emit, (t) => {
+        sndNoise(t, 0.1, { filter: 'lowpass', freq: 1200, vol: 0.12, bus });
+        sndTone(t + 0.02, 1500, 0.09, { to: 2200, type: 'square', vol: 0.04, bus });
+      });
+    });
+  }
+  N(500, 1.3, { filter: 'bandpass', freq: 2500, to: 900, q: 0.8, vol: 0.05, attack: 0.08 });
+  // B: the sky darkens (low drone swelling), a star twinkles, falls (whistle) and hits
+  once(fromMs, toMs, 3800, emit, (t) => {
+    sndTone(t, midiHz(33), 1.8, { type: 'sawtooth', vol: 0.07, attack: 0.9, bus });
+    sndTone(t, midiHz(40), 1.8, { type: 'triangle', vol: 0.1, attack: 0.9, bus });
+  });
+  every(fromMs, toMs, 3950, 4650, 180, (at, k) => T(at, midiHz([96, 100, 103, 108][k % 4]), 0.12, { pulse: true, vol: 0.05 }));
+  T(4700, 2600, 0.9, { to: 180, type: 'triangle', vol: 0.12 });
+  once(fromMs, toMs, OPENING_IMPACT, emit, (t) => {
+    sndNoise(t, 1.1, { filter: 'lowpass', freq: 1800, to: 90, vol: 0.55, bus });
+    sndTone(t, 110, 0.7, { to: 35, type: 'triangle', vol: 0.45, bus });
+    sndTone(t, 220, 0.25, { to: 60, type: 'square', vol: 0.12, bus });
+  });
+  N(OPENING_IMPACT + 200, 1.4, { filter: 'lowpass', freq: 200, vol: 0.2, attack: 0.05 });
+  // Panic: a nervous minor stab pattern under the screaming
+  every(fromMs, toMs, 6000, 7000, 250, (at, k) => T(at, midiHz([57, 60, 57, 63][k % 4]), 0.12, { pulse: true, vol: 0.06 }));
+  // C: the pixel wave - a rising digital hum and scattered glitch blips
+  once(fromMs, toMs, 7000, emit, (t) => sndTone(t, 90, 3.3, { to: 220, type: 'sawtooth', vol: 0.05, attack: 0.6, bus }));
+  const glitch = [81, 84, 88, 91, 93, 96];
+  every(fromMs, toMs, 7000, 10300, 110, (at, k) => {
+    if (k % 3 === 2) return;
+    T(at, midiHz(glitch[(k * 5) % glitch.length]), 0.05, { vol: 0.035 });
+  });
+  // D: the hero's "RUN!!", a chase bass in eighths and a boing on every hop (rising as it gets away)
+  T(10000, 330, 0.18, { to: 660, pulse: true, vol: 0.08 });
+  every(fromMs, toMs, 10300, 13000, 150, (at, k) => T(at, midiHz([40, 40, 43, 40, 45, 40, 43, 47][k % 8]), 0.12, { pulse: true, vol: 0.1 }));
+  every(fromMs, toMs, 10300, 12900, 300, (at, k) => T(at + 40, 260 + k * 18, 0.22, { to: 620 + k * 30, type: 'square', vol: 0.06 }));
+  // E: whoosh into the field, a chime for each vehicle (higher each time), then a little fanfare
+  N(OPENING_CUT - 350, 0.7, { filter: 'bandpass', freq: 400, to: 4000, q: 1, vol: 0.12, attack: 0.2 });
+  if (typeof OPENING_FOUND !== 'undefined') {
+    OPENING_FOUND.forEach((f, i) => {
+      once(fromMs, toMs, f.at, emit, (t) => sndArp(t, [72 + i * 2, 76 + i * 2, 79 + i * 2, 84 + i * 2], 0.07, { pulse: true, vol: 0.1, len: 0.35, bus }));
+      once(fromMs, toMs, f.at, emit, (t) => sndNoise(t, 0.25, { freq: 6000, vol: 0.05, bus }));
+    });
+  }
+  once(fromMs, toMs, 18300, emit, (t) => {
+    sndArp(t, [67, 72, 76, 79], 0.1, { pulse: true, vol: 0.11, len: 0.3, bus });
+    sndTone(t + 0.42, midiHz(84), 0.9, { pulse: true, vol: 0.12, bus });
+    sndTone(t + 0.42, midiHz(48), 0.9, { type: 'triangle', vol: 0.2, bus });
+  });
+}
+
+// A penguin popping into its pixel self (opening-scene.js calls this the moment it changes)
+function playOpeningPop(i = 0) {
+  if (!soundReady() || !PP_SOUND.musicOn) return;
+  const t = PP_SOUND.ctx.currentTime + 0.005;
+  sndTone(t, midiHz(76 + (i % 4) * 3), 0.08, { pulse: true, vol: 0.08, bus: PP_SOUND.music });
+  sndTone(t + 0.06, midiHz(88 + (i % 4) * 3), 0.12, { pulse: true, vol: 0.07, bus: PP_SOUND.music });
+}
+
 function soundTick() {
   if (!soundReady() || typeof MOTION_STATE === 'undefined') return;
   const c = PP_SOUND.ctx;
   const nowP = performance.now();
-  const idle = MOTION_STATE.sceneIdx === 0 && MOTION_STATE.scene0IdleStart;
-  const start = idle ? MOTION_STATE.scene0IdleStart : MOTION_STATE.sceneStartTime;
-  const key = `${MOTION_STATE.sceneIdx}:${start}:${idle ? 1 : 0}`;
+  const opening = MOTION_STATE.sceneIdx === 0 && typeof OPENING !== 'undefined' && OPENING.active;
+  if (opening && (!OPENING.start || !PP_SOUND.musicOn)) return;
+  const idle = !opening && MOTION_STATE.sceneIdx === 0 && MOTION_STATE.scene0IdleStart;
+  const start = opening ? OPENING.start : idle ? MOTION_STATE.scene0IdleStart : MOTION_STATE.sceneStartTime;
+  const key = `${MOTION_STATE.sceneIdx}:${start}:${opening ? 'op' : idle ? 1 : 0}`;
   const elapsed = nowP - start;
   // A new scene, or back after a pause (hidden tab, sound off): start from now instead of catching up
   if (key !== PP_SOUND.key || nowP - PP_SOUND.lastTick > 500) {
@@ -554,7 +659,9 @@ function soundTick() {
   const to = elapsed + PP_SOUND_LOOKAHEAD;
   if (to <= from) return;
   const emit = (atMs, play) => play(Math.max(c.currentTime + 0.005, c.currentTime + (start + atMs - nowP) / 1000));
-  if (idle) {
+  if (opening) {
+    openingCues(from, to, emit);
+  } else if (idle) {
     if (sfxOn()) suckCues(from, to, emit, SCENE0_SUCK_MS, 0.3, 0.6, 0.6);
   } else {
     sceneCues(from, to, emit);
