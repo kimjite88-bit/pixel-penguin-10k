@@ -60,15 +60,46 @@ const PORT = Number(process.env.PORT || 3000);
 // Public address of the site: www goes through Cloudflare, the apex reaches this server directly
 const CANONICAL_ORIGIN = (process.env.PUBLIC_URL || 'https://www.ppeng.org').replace(/\/+$/, '');
 
+app.disable('x-powered-by');
 app.set('trust proxy', true);
+
+// Security headers (Clickjacking, XSS, MIME-sniffing, HSTS, and strict CSP)
+const CSP_HEADER = [
+  "default-src 'self'",
+  "script-src 'self' 'unsafe-inline'",
+  "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net",
+  "font-src 'self' https://cdn.jsdelivr.net data:",
+  "img-src 'self' data: blob:",
+  "media-src 'self' data: blob:",
+  "connect-src 'self'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  "frame-ancestors 'none'",
+].join('; ');
+
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  res.setHeader(
+    'Permissions-Policy',
+    'camera=(), microphone=(), geolocation=(), payment=(), usb=(), serial=(), hid=()'
+  );
+  res.setHeader('Cross-Origin-Opener-Policy', 'same-origin');
+  res.setHeader('Content-Security-Policy', CSP_HEADER);
+  next();
+});
 
 // ppeng.org (apex) bypasses Cloudflare and would spend the server's own bandwidth on every file; send it to www.
 // Only the exact apex host: www, ppeng.verycloud.io and the platform health check are served normally.
 app.use((req, res, next) => {
   const host = String(req.get('host') || '').toLowerCase().replace(/:\d+$/, '');
   if (host === 'ppeng.org') {
+    const safePath = '/' + String(req.originalUrl || '/').replace(/^[\/\\]+/, '');
     res.setHeader('Cache-Control', 'public, max-age=86400');
-    return res.redirect(301, `https://www.ppeng.org${req.originalUrl}`);
+    return res.redirect(301, `https://www.ppeng.org${safePath}`);
   }
   next();
 });
@@ -532,23 +563,26 @@ function formatLeaderboardRows(rows) {
   });
 }
 
-// Container size and process layout, to size the plan from real numbers
+// Health check endpoint (minimal public surface; detailed diagnostics require HEALTH_TOKEN if configured)
 app.get('/api/health', (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
-  res.json({
-    ok: true,
-    store: leaderboards.kind,
-    ...(leaderboards.status ? leaderboards.status() : {}),
-    workers: WORKERS,
-    worker_id: cluster.isWorker ? cluster.worker.id : 0,
-    // The address the score-post rate limit sees for this request (should be the visitor's own)
-    client_ip: clientIpInfo(req).ip,
-    client_ip_source: clientIpInfo(req).source,
-    container_cpus: containerCpuCount(),
-    container_memory_mb: Math.round(containerMemoryBytes() / 1048576),
-    rss_mb: Math.round(process.memoryUsage().rss / 1048576),
-    uptime_sec: Math.round(process.uptime()),
-  });
+  const healthToken = process.env.HEALTH_TOKEN;
+  if (healthToken && req.get('x-health-token') === healthToken) {
+    return res.json({
+      ok: true,
+      store: leaderboards.kind,
+      ...(leaderboards.status ? leaderboards.status() : {}),
+      workers: WORKERS,
+      worker_id: cluster.isWorker ? cluster.worker.id : 0,
+      client_ip: clientIpInfo(req).ip,
+      client_ip_source: clientIpInfo(req).source,
+      container_cpus: containerCpuCount(),
+      container_memory_mb: Math.round(containerMemoryBytes() / 1048576),
+      rss_mb: Math.round(process.memoryUsage().rss / 1048576),
+      uptime_sec: Math.round(process.uptime()),
+    });
+  }
+  res.json({ ok: true });
 });
 
 // Requests arrive Cloudflare -> VeryCloud Traefik -> app, so the socket address (and req.ip behind more than one proxy)
@@ -583,6 +617,17 @@ app.get('/api/leaderboard', async (req, res) => {
 });
 
 app.post('/api/leaderboard', async (req, res) => {
+  // Enforce same-origin browser request headers to deter cross-site CSRF and raw bot scripts
+  const secFetchSite = String(req.get('sec-fetch-site') || '').toLowerCase();
+  if (secFetchSite && secFetchSite !== 'same-origin') {
+    return res.status(403).json({ error: 'Forbidden cross-site request' });
+  }
+  const origin = String(req.get('origin') || '').toLowerCase().replace(/\/+$/, '');
+  const reqHost = String(req.get('host') || '').toLowerCase();
+  if (!origin || (origin !== `https://${reqHost}` && origin !== `http://${reqHost}`)) {
+    return res.status(403).json({ error: 'Origin verification failed' });
+  }
+
   // CRITICAL: Never default to 0 (`?? 0`) when tokenId is blank/missing!
   // Score is recorded ONLY when the user explicitly entered a number ("0" ~ "9999").
   const rawTokenId = req.body?.tokenId ?? req.body?.edition;
@@ -591,7 +636,15 @@ app.post('/api/leaderboard', async (req, res) => {
   }
   const ed = parseTokenNumber(rawTokenId);
   const rawScore = Math.floor(Number(req.body?.score || 0));
-  if (ed === null || rawScore <= 0 || rawScore > 999999) {
+  const rawKills = Number(req.body?.kills ?? 0);
+  if (
+    ed === null ||
+    rawScore <= 0 ||
+    rawScore > 999999 ||
+    !Number.isFinite(rawKills) ||
+    rawKills < 0 ||
+    rawKills > 100000
+  ) {
     return res.status(400).json({ error: 'Invalid tokenId or score' });
   }
 

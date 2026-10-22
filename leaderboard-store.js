@@ -15,7 +15,19 @@ const path = require('path');
 const GAMES = ['ufo', 'car', 'boat'];
 const TOP_LIMIT = 100;
 const CACHE_TTL_SEC = 30;
-const POST_LIMIT_PER_MIN = 60;
+const POST_LIMIT_PER_MIN = 12;
+
+// In-memory rate-limit fallback per process when Redis is disabled or temporarily unreachable
+const localPostBuckets = new Map();
+function allowPostLocal(ip) {
+  if (!ip) return true;
+  const minuteBucket = Math.floor(Date.now() / 60000);
+  const key = `${ip}:${minuteBucket}`;
+  if (localPostBuckets.size > 5000) localPostBuckets.clear();
+  const count = (localPostBuckets.get(key) || 0) + 1;
+  localPostBuckets.set(key, count);
+  return count <= POST_LIMIT_PER_MIN;
+}
 
 // The 100 placeholder pilots the UFO board used to be seeded with before the public launch (#11 ~ #9999, 1,150 ~
 // 3,600 PTS). They are no longer added; the list is kept only so their leftover rows can be recognised and removed.
@@ -113,8 +125,8 @@ function createFileStore({ dataDir, parseTokenNumber }) {
         top: { total: board.map.size, rows: sorted.slice(0, TOP_LIMIT) },
       };
     },
-    async allowPost() {
-      return true;
+    async allowPost(ip) {
+      return allowPostLocal(ip);
     },
   };
 }
@@ -305,16 +317,17 @@ function createSqlStore({ dataDir, parseTokenNumber, databaseUrl, redisUrl, pool
       }
       return { isNewBest, best: rows[0].best, rank: rows[0].rank, total: top.total, top };
     },
-    // Fixed one-minute window per IP, shared by all workers. No Redis = no limit (same as before).
+    // Fixed one-minute window per IP, shared by all workers (falls back to in-memory limiter if Redis is unavailable)
     async allowPost(ip) {
-      if (!redisReady() || !ip) return true;
+      if (!ip) return true;
+      if (!redisReady()) return allowPostLocal(ip);
       try {
         const key = `ppeng:rl:post:${ip}:${Math.floor(Date.now() / 60000)}`;
         const n = await redis.incr(key);
         if (n === 1) await redis.expire(key, 70);
         return n <= POST_LIMIT_PER_MIN;
       } catch (e) {
-        return true;
+        return allowPostLocal(ip);
       }
     },
   };
