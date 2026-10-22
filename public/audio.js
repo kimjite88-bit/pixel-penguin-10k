@@ -528,6 +528,17 @@ function suckCues(fromMs, toMs, emit, dur, scanFrom, scanTo, riseFrom) {
   once(fromMs, toMs, dur - 120, emit, (t) => sndArp(t, [84, 88, 91, 96], 0.03, { vol: 0.12, pulse: true, len: 0.4 }));
 }
 
+// The picker's alarm tick for a given time left: 1.5 s at the full 30 s (the slow end of what is still heard as a
+// beat, London, Hearing in Time: about 100 ms - 1.5/2 s between beats), 0.16 s at zero (still countable: tapping
+// along fails below ~120 ms, Repp 2003). In between it shrinks geometrically - the same ratio per second - since a
+// change of tempo is heard as a ratio (Drake & Botte 1993), so the speed-up is felt as even all the way down.
+const ALARM_TICK_SLOW = 1500;
+const ALARM_TICK_FAST = 160;
+function alarmTickMs(msLeft) {
+  const r = Math.min(1, Math.max(0, msLeft / 30000));
+  return ALARM_TICK_FAST * Math.pow(ALARM_TICK_SLOW / ALARM_TICK_FAST, r);
+}
+
 function sceneCues(fromMs, toMs, emit) {
   const s = MOTION_STATE.sceneIdx;
   const v = MOTION_STATE.vehicle;
@@ -553,14 +564,25 @@ function sceneCues(fromMs, toMs, emit) {
   if (!sfxOn()) return;
   if (s === 0) {
     if (MOTION_STATE.scene0IdleStart || OPENING.active) return; // stage 5 runs on its own clock (soundTick)
-    // Alarm: two soft beeps every 1.7 s, louder the longer the player waits
-    every(fromMs, toMs, 600, Infinity, 1700, (at) => {
-      const esc = Math.min(1, at / 24000);
-      emit(at, (t) => {
-        sndTone(t, 880, 0.16, { vol: 0.05 + esc * 0.07 });
-        sndTone(t + 0.2, 660, 0.18, { vol: 0.05 + esc * 0.07 });
-      });
-    });
+    // Alarm: one beep per tick, high and low in turn (beep-boop), the tick shrinking with the countdown
+    let n = 0;
+    if (PP_SOUND.alarmKey !== MOTION_STATE.sceneStartTime) {
+      PP_SOUND.alarmKey = MOTION_STATE.sceneStartTime;
+      PP_SOUND.alarmNext = 600;
+      PP_SOUND.alarmN = 0;
+    }
+    while (PP_SOUND.alarmNext <= toMs && n++ < 400) {
+      const at = PP_SOUND.alarmNext;
+      const left = typeof scene0MsLeft === 'function' ? scene0MsLeft(MOTION_STATE.sceneStartTime + at) : 30000 - at;
+      const tick = alarmTickMs(left);
+      const k = PP_SOUND.alarmN++;
+      if (at > fromMs) {
+        const esc = 1 - Math.min(1, left / 30000);
+        const f = midiHz((k % 2 ? 76 : 81) + Math.round(esc * 5));
+        emit(at, (t) => sndTone(t, f, Math.min(0.14, (tick / 1000) * 0.5), { vol: 0.05 + esc * 0.08 }));
+      }
+      PP_SOUND.alarmNext = at + tick;
+    }
   } else if (s === 1) {
     // Departure (2.6 s): the engine revs up and the vehicle gets away
     once(fromMs, toMs, 1, emit, (t) => {

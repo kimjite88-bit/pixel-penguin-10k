@@ -567,11 +567,14 @@ function scene0StageVisible() {
 // Whole seconds left before the pillar takes the penguin: 30 from the start, never less than 10 after any input
 // (the same rule scene0IdleProgress fires on), 0 once it has started
 function scene0SecondsLeft(now) {
+  return Math.ceil(scene0MsLeft(now) / 1000);
+}
+// The same in ms (audio.js times the alarm by it)
+function scene0MsLeft(now) {
   if (MOTION_STATE.scene0IdleStart) return 0;
   const sinceStart = now - MOTION_STATE.sceneStartTime;
   const sinceInput = now - Math.max(MOTION_STATE.sceneStartTime, MOTION_STATE.scene0LastInput || 0);
-  const ms = Math.max(SCENE0_IDLE_MS - sinceStart, SCENE0_IDLE_QUIET_MS - sinceInput, 0);
-  return Math.ceil(ms / 1000);
+  return Math.max(SCENE0_IDLE_MS - sinceStart, SCENE0_IDLE_QUIET_MS - sinceInput, 0);
 }
 
 // 0..1 through the suck sequence, or -1 while it has not started
