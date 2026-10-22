@@ -4010,7 +4010,7 @@ function handleParadeClick(edition) {
   openTokenModal(Number(edition));
 }
 
-// Live Countdown to the Mint (Mon 2026-10-26, moved from Fri 10-23)
+// Live Countdown to the Mint (Mon 2026-10-26)
 function startMintCountdown() {
   const badge = document.getElementById('mint-countdown');
   if (!badge) return;
