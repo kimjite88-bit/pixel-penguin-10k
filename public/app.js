@@ -4115,6 +4115,30 @@ async function loadPfpPreview(tokenNum, syncUfoDock = false) {
   }
 }
 
+// 14 different penguins picked at random from #0-#9,999 (crypto when available), the current preview kept marked
+function renderPfpPresetStrip() {
+  const strip = document.getElementById('pfp-preset-strip');
+  if (!strip) return;
+  const picks = new Set();
+  const rnd = () => {
+    if (window.crypto && window.crypto.getRandomValues) return window.crypto.getRandomValues(new Uint32Array(1))[0] % 10000;
+    return Math.floor(Math.random() * 10000);
+  };
+  while (picks.size < 14) picks.add(rnd());
+  strip.innerHTML = [...picks]
+    .map((num) => {
+      const id = `P${String(num).padStart(4, '0')}`;
+      const src = num <= 10 ? `/assets/specials/${num}_fast.gif?v=v322` : `/img/${id}.png?v=v322`;
+      return `<button type="button" class="pfp-thumb-btn ${num === CURRENT_PFP_TOKEN ? 'active' : ''}" data-num="${num}" title="#${num}">
+          <img src="${src}" alt="#${num}" class="pixelated" loading="lazy" />
+        </button>`;
+    })
+    .join('');
+  strip.querySelectorAll('.pfp-thumb-btn').forEach((btn) => {
+    btn.addEventListener('click', () => loadPfpPreview(Number(btn.dataset.num)));
+  });
+}
+
 function initPfpStudio() {
   // Shape buttons
   document.querySelectorAll('.shape-btn').forEach((btn) => {
@@ -4126,28 +4150,9 @@ function initPfpStudio() {
     });
   });
 
-  // Preset strip: Featured generative penguins (7x2 = 14 Grid)
-  const presets = CURATED_BEAUTY_14.map((c) => c.edition);
-  const strip = document.getElementById('pfp-preset-strip');
-  if (strip) {
-    strip.innerHTML = presets
-      .map((num, idx) => {
-        const id = `P${String(num).padStart(4, '0')}`;
-        const src = num <= 10 ? `/assets/specials/${num}_fast.gif?v=v322` : `/img/${id}.png?v=v322`;
-        return `<button type="button" class="pfp-thumb-btn ${idx === 0 ? 'active' : ''}" data-num="${num}" title="#${num}">
-          <img src="${src}" alt="#${num}" class="pixelated" loading="lazy" />
-        </button>`;
-      })
-      .join('');
-
-    strip.querySelectorAll('.pfp-thumb-btn').forEach((btn) => {
-      btn.addEventListener('click', () => {
-        const n = Number(btn.dataset.num);
-        loadPfpPreview(n);
-      });
-    });
-  }
-
+  // Preset strip (7x2 = 14): a fresh random draw from all 10,000 on every visit, and again on 다른 펭귄 / Shuffle
+  renderPfpPresetStrip();
+  document.getElementById('pfp-shuffle-btn')?.addEventListener('click', renderPfpPresetStrip);
   const jumpInput = document.getElementById('pfp-jump-input');
   const jumpBtn = document.getElementById('pfp-jump-btn');
   const detailBtn = document.getElementById('pfp-detail-btn');

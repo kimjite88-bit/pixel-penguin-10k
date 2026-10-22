@@ -282,13 +282,15 @@ function drawScene0AlarmBody(ctx, now, esc, finalStage) {
   const ko = CURRENT_LANG === 'ko';
   const on = Math.floor(now / (520 - esc * 260)) % 2 === 0;
   const text = ko ? '남극 붕괴 경보' : 'ANTARCTIC COLLAPSE ALERT';
-  const level = finalStage ? 5 : 1 + Math.min(3, Math.floor(esc * 4));
-  const sub = ko ? `${level}단계` : `LV.${level}`;
+  // Seconds until the pillar takes the penguin (stage 5) instead of an abstract LV: a deadline you can read
+  const left = finalStage ? 0 : scene0SecondsLeft(now);
+  const sub = ko ? `${left}초` : `${left}s`;
+  const urgent = left <= 10;
   ctx.save();
   ctx.font = '900 26px "Pretendard", "Malgun Gothic", sans-serif';
   const tw = Math.ceil(ctx.measureText(text).width);
-  ctx.font = '900 15px "Pretendard", "Malgun Gothic", sans-serif';
-  const sw = Math.ceil(ctx.measureText(sub).width) + 16;
+  ctx.font = '900 22px "Pretendard", "Malgun Gothic", sans-serif';
+  const sw = Math.max(ctx.measureText(ko ? '30초' : '30s').width, ctx.measureText(sub).width) + 18;
   const w = tw + sw + 92;
   const h = 46;
   const bx = Math.round(480 - w / 2);
@@ -327,12 +329,15 @@ function drawScene0AlarmBody(ctx, now, esc, finalStage) {
   ctx.fillStyle = '#ffffff';
   ctx.fillText(text, bx + 46, by + h / 2 + 1);
   const px = bx + 46 + tw + 10;
-  ctx.fillStyle = '#facc15';
-  ctx.fillRect(px, by + 9, sw, h - 18);
+  // The last 10 s the box flashes white and the number pops on each second
+  const tick = 1 - ((now / 1000) % 1);
+  const flash = urgent && Math.floor(now / 250) % 2 === 0;
+  ctx.fillStyle = flash ? '#ffffff' : '#facc15';
+  ctx.fillRect(px, by + 6, sw, h - 12);
   ctx.fillStyle = SCENE0_K;
-  ctx.font = '900 15px "Pretendard", "Malgun Gothic", sans-serif';
+  ctx.font = `900 ${urgent ? 22 + Math.round(tick * 4) : 22}px "Pretendard", "Malgun Gothic", sans-serif`;
   ctx.textAlign = 'center';
-  ctx.fillText(sub, px + sw / 2, by + h / 2 + 1);
+  ctx.fillText(sub, px + sw / 2, by + h / 2 + 2);
   ctx.restore();
 }
 
@@ -557,6 +562,16 @@ function scene0StageVisible() {
   if (!c) return false;
   const r = c.getBoundingClientRect();
   return r.bottom > r.height * 0.5 && r.top < window.innerHeight - r.height * 0.5;
+}
+
+// Whole seconds left before the pillar takes the penguin: 30 from the start, never less than 10 after any input
+// (the same rule scene0IdleProgress fires on), 0 once it has started
+function scene0SecondsLeft(now) {
+  if (MOTION_STATE.scene0IdleStart) return 0;
+  const sinceStart = now - MOTION_STATE.sceneStartTime;
+  const sinceInput = now - Math.max(MOTION_STATE.sceneStartTime, MOTION_STATE.scene0LastInput || 0);
+  const ms = Math.max(SCENE0_IDLE_MS - sinceStart, SCENE0_IDLE_QUIET_MS - sinceInput, 0);
+  return Math.ceil(ms / 1000);
 }
 
 // 0..1 through the suck sequence, or -1 while it has not started
