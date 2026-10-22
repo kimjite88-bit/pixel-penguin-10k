@@ -1,13 +1,16 @@
 // ============================================================================
 // OPENING — a ~19.5 s motion-graphics story played once, before the escape picker (scene 1, escape-scene.js):
-//   A  0.0-3.8 s  a peaceful penguin land: colourful 2D penguins waddle about between two igloos; slow push-in
+//   A  0.0-3.8 s  a peaceful penguin land, snowing: one toboggans on its belly, two have a snowball fight, one
+//                 hops, one dances, the blue hero laughs along; slow push-in
 //   B  3.8-7.0 s  anticipation, action, reaction: the sky darkens and everyone looks up (?), a pixel star grows
 //                 and falls, slams into the ground (one short flash, shockwave, flying ice, camera punch) and the
 //                 land splits round the pillar (the bg_scene1_2d picture, which has the pillar in it); the
-//                 penguins jump in shock and run
+//                 penguins jump in shock and panic each their own way (trip and slide, run in circles, flap and
+//                 yell, zigzag, crash into the hero, stranded on the far ledge)
 //   C  7.0-10.3 s a pixel wave spreads out of the pillar: big blocks inside, finer blocks at the front, and each
 //                 penguin it reaches pops into its pixel self with a white flash
-//   D 10.3-13.3 s the blue penguin crouches and bolts, the camera follows, the wave right behind
+//   D 10.3-13.3 s the blue penguin crouches, bolts and dives into a belly-slide (the fast way penguins travel),
+//                 the camera follows, the wave right behind
 //   E 13.3-19.5 s pixel-block dissolve to the picker's crevasse field; the camera visits the plane, the icebreaker
 //                 and the car as the penguin finds them one by one, then pulls back to the picker's exact framing,
 //                 so it hands over without a cut
@@ -24,17 +27,18 @@ const OPENING_FEET = 338; // the snow plateau in bg_scene1_2d
 const OPENING_K = '#0b1020';
 const OPENING_IMPACT = 5600;
 const OPENING_CUT = 13350; // village -> crevasse field, under the dissolve
-// Village penguins: species, x, size, walk range, phase. All stand where bg_scene1_2d still has ground once the
-// land splits (left plateau up to x ~580, the small ledge right of the chasm from ~900)
+// Village penguins: species, x, size, what they do while it is calm and how they panic (openingCalmPose /
+// openingPanicPose). All stand where bg_scene1_2d still has ground once the land splits (left plateau up to
+// x ~580, the small ledge right of the chasm from ~900).
 const OPENING_FOLK = [
-  { sp: '05', x: 90, size: 66, range: 34, ph: 0.2 },
-  { sp: '22', x: 205, size: 60, range: 26, ph: 1.4 },
-  { sp: '06', x: 298, size: 56, range: 14, ph: 5.2 },
-  { sp: '04', x: 495, size: 64, range: 20, ph: 2.1 },
-  { sp: '09', x: 556, size: 58, range: 10, ph: 3.3 },
-  { sp: '10', x: 932, size: 58, range: 6, ph: 4.0 },
+  { sp: '05', x: 50, size: 74, calm: 'slide', panic: 'trip' },
+  { sp: '22', x: 230, size: 68, calm: 'throw', facing: 1, panic: 'circle' },
+  { sp: '06', x: 330, size: 64, calm: 'throw', facing: -1, panic: 'flail' },
+  { sp: '04', x: 520, size: 72, calm: 'hop', panic: 'zigzag' },
+  { sp: '09', x: 566, size: 66, calm: 'waddle', ph: 3.3, panic: 'bonk' },
+  { sp: '10', x: 932, size: 64, calm: 'dance', panic: 'stranded' },
 ];
-const OPENING_HERO_X = 400;
+const OPENING_HERO_X = 430;
 const OPENING_FOUND = [
   { at: 15050, kind: 'ufo', ko: '경비행기다!', en: 'A plane!' },
   { at: 16150, kind: 'boat', ko: '쇄빙선도 있어!', en: 'An icebreaker!' },
@@ -201,15 +205,19 @@ function drawOpeningGround(ctx, t) {
   }
 }
 
-// 2D penguin from the species' 2D sheet; sx / sy squash and stretch about the feet
-function drawOpeningPenguin2D(ctx, sp, x, feet, size, frame, flip, sx = 1, sy = 1) {
+// 2D penguin from the species' 2D sheet. sx / sy squash and stretch, rot tips it over (pi/2 = lying on its belly
+// head to the right, as when tobogganing); the feet stay on `feet` however it is squashed or tipped
+function drawOpeningPenguin2D(ctx, sp, x, feet, size, frame, flip, sx = 1, sy = 1, rot = 0) {
   const sheet = getHero2DSheetForSpecies(sp);
   if (!sheet) return;
+  const lying = Math.abs(Math.sin(rot));
+  const py = feet - size * (0.45 - 0.15 * lying) * (lying > 0.5 ? 1 : sy);
   ctx.save();
-  ctx.translate(Math.round(x), Math.round(feet + 4));
+  ctx.translate(Math.round(x), Math.round(py));
+  ctx.rotate(rot);
   ctx.scale(flip ? -sx : sx, sy);
   ctx.imageSmoothingEnabled = true;
-  ctx.drawImage(sheet, frame * 256, 0, 256, 256, -size / 2, -size, size, size);
+  ctx.drawImage(sheet, frame * 256, 0, 256, 256, -size / 2, -size * 0.55, size, size);
   ctx.restore();
 }
 
@@ -250,118 +258,431 @@ function drawOpeningMarkOver(ctx, x, y, ch, col, t0, t) {
   ctx.restore();
 }
 
-// Village folk: wander, look up, jump in shock, run from the pillar, get changed by the wave
+// Small shout bubble over a penguin
+function drawOpeningYell(ctx, x, y, text, t0, t1, t) {
+  if (t < t0 || t >= t1) return;
+  const pop = openingBack((t - t0) / 200);
+  ctx.save();
+  ctx.translate(Math.round(x), Math.round(y));
+  ctx.scale(pop, pop);
+  ctx.font = '900 15px "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
+  const w = Math.ceil(ctx.measureText(text).width) + 16;
+  ctx.fillStyle = OPENING_K;
+  ctx.fillRect(-w / 2 - 2, -30, w + 4, 26);
+  ctx.fillRect(-4, -6, 8, 8);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(-w / 2, -28, w, 22);
+  ctx.fillRect(-2, -6, 4, 6);
+  ctx.fillStyle = OPENING_K;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, 0, -16);
+  ctx.restore();
+}
+
+// Sweat drops flying off a panicking head
+function drawOpeningSweat(ctx, x, top, now, seed) {
+  for (let s = 0; s < 2; s++) {
+    const sp = (now * 0.003 + s * 0.5 + seed * 0.21) % 1;
+    const side = (s + seed) % 2 ? 1 : -1;
+    const sx = Math.round(x + side * (16 + sp * 20));
+    const sy = Math.round(top + 14 - Math.sin(sp * Math.PI) * 14 + sp * 10);
+    ctx.globalAlpha = 1 - sp;
+    ctx.fillStyle = OPENING_K;
+    ctx.fillRect(sx - 1, sy - 1, 6, 8);
+    ctx.fillStyle = '#7dd3fc';
+    ctx.fillRect(sx, sy, 4, 6);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Dust kicked up behind a runner (dir = the way it runs)
+function drawOpeningDust(ctx, x, feet, now, dir, seed) {
+  for (let k = 0; k < 3; k++) {
+    const age = ((now / 140 + k / 3 + seed * 0.13) % 1);
+    const px = x - dir * (14 + age * 34);
+    const s = Math.round(5 + age * 9);
+    ctx.globalAlpha = (1 - age) * 0.9;
+    ctx.fillStyle = '#f1f5f9';
+    ctx.fillRect(Math.round(px - s / 2), Math.round(feet - s - age * 6), s, s);
+  }
+  ctx.globalAlpha = 1;
+}
+
+// Dizzy stars turning over a bonked head
+function drawOpeningDizzy(ctx, x, y, now) {
+  for (let k = 0; k < 3; k++) {
+    const a = now * 0.008 + (k * Math.PI * 2) / 3;
+    const sx = Math.round(x + Math.cos(a) * 18);
+    const sy = Math.round(y + Math.sin(a) * 6);
+    ctx.fillStyle = OPENING_K;
+    ctx.fillRect(sx - 4, sy - 1, 8, 2);
+    ctx.fillRect(sx - 1, sy - 4, 2, 8);
+    ctx.fillStyle = '#fde047';
+    ctx.fillRect(sx - 3, sy, 6, 1);
+    ctx.fillRect(sx, sy - 3, 1, 6);
+  }
+}
+
+// Running pose helpers
+function openingRunFrame(now, i, ms = 70) {
+  return 2 + (Math.floor(now / ms + i) % 2);
+}
+function openingRunLift(now, i, ms = 70) {
+  return Math.floor(now / ms + i) % 2 ? 5 : 0;
+}
+
+// A (calm): what each penguin is doing before anything happens. Returns a pose.
+function openingCalmPose(i, f, t, now) {
+  const p = { x: f.x, lift: 0, rot: 0, frame: Math.floor(now / 1700 + i) % 5 === 0 ? 1 : 0, flip: false, sx: 1, sy: 1 };
+  if (f.calm === 'slide') {
+    // Waddle, belly-flop and toboggan to the right, get up, waddle back
+    if (t < 500) {
+      p.x = f.x + (t / 500) * 16;
+      p.frame = openingRunFrame(now, i, 160);
+    } else if (t < 1900) {
+      const q = (t - 500) / 1400;
+      p.x = f.x + 16 + (1 - (1 - q) * (1 - q)) * 120;
+      p.rot = Math.min(1, q * 6) * (Math.PI / 2);
+      p.frame = 0;
+      p.spray = q < 0.85;
+    } else if (t < 2300) {
+      const q = (t - 1900) / 400;
+      p.x = f.x + 136;
+      p.rot = (1 - openingSmooth(q)) * (Math.PI / 2);
+      p.lift = Math.sin(q * Math.PI) * 10;
+    } else {
+      p.x = f.x + 136 - ((t - 2300) / 1500) * 60;
+      p.flip = true;
+      p.frame = openingRunFrame(now, i, 180);
+    }
+  } else if (f.calm === 'throw') {
+    // Snowball fight: wind up, throw; flinch when hit (OPENING_SNOWBALLS)
+    p.flip = f.facing < 0;
+    OPENING_SNOWBALLS.forEach(([at, from, to]) => {
+      if (from === i && t > at - 220 && t < at + 120) {
+        const q = (t - at + 220) / 340;
+        p.rot = (q < 0.65 ? -0.25 : 0.2) * (f.facing > 0 ? 1 : -1);
+        p.sy = q < 0.65 ? 0.92 : 1.06;
+        p.sx = 2 - p.sy;
+      }
+      const hit = at + 450;
+      if (to === i && t > hit && t < hit + 260) {
+        const q = (t - hit) / 260;
+        p.sy = 1 - Math.sin(q * Math.PI) * 0.18;
+        p.sx = 2 - p.sy;
+        p.frame = 6;
+      }
+    });
+  } else if (f.calm === 'hop') {
+    const q = (t % 600) / 600;
+    p.lift = Math.sin(q * Math.PI) * 16;
+    p.sy = q < 0.1 || q > 0.9 ? 0.86 : 1.06;
+    p.sx = 2 - p.sy;
+    p.note = true;
+  } else if (f.calm === 'waddle') {
+    p.x = f.x + Math.sin(now * 0.0016 + f.ph) * 8;
+    p.frame = openingRunFrame(now, i, 200);
+    p.flip = Math.cos(now * 0.0016 + f.ph) < 0;
+  } else if (f.calm === 'dance') {
+    const beat = Math.floor(t / 380);
+    const q = (t % 380) / 380;
+    p.flip = beat % 2 === 0;
+    p.lift = Math.sin(q * Math.PI) * 9;
+    p.rot = (beat % 2 ? 1 : -1) * 0.12;
+    p.heart = true;
+  }
+  return p;
+}
+
+// After the hit (from ~6 s): each penguin panics its own way. Penguins waddle slowly on land (about 2-3 km/h at
+// most), so for all the flailing they hardly get anywhere and the wave catches them; only sliding on the belly
+// is fast, which is how the hero gets away.
+function openingPanicPose(i, f, t, now, base) {
+  const ko = CURRENT_LANG === 'ko';
+  const d = t - 6000;
+  const p = { x: base, lift: 0, rot: 0, frame: 6, flip: false, sx: 1, sy: 1, sweat: true };
+  // Legs going flat out, bouncing high and leaning into the run
+  const run = (dir, ms = 65) => {
+    p.frame = openingRunFrame(now, i, ms);
+    p.lift = openingRunLift(now, i, ms) * 1.6;
+    p.flip = dir < 0;
+    p.rot = dir * 0.22;
+    p.dust = dir;
+  };
+  if (f.panic === 'trip') {
+    // Runs, trips flat on its face and slides, lies there, gets up and runs the wrong way, notices, turns
+    if (d < 500) {
+      p.x = base - d * 0.08;
+      run(-1);
+    } else if (d < 1100) {
+      const q = (d - 500) / 600;
+      p.x = base - 40 - (1 - (1 - q) * (1 - q)) * 26;
+      p.rot = -Math.min(1, q * 5) * (Math.PI / 2);
+      p.flip = true;
+      p.frame = 6;
+      p.sweat = false;
+      p.spray = q < 0.8;
+    } else if (d < 1900) {
+      p.x = base - 66;
+      p.rot = -Math.PI / 2;
+      p.flip = true;
+      p.sx = 1 + Math.sin(now * 0.04) * 0.04;
+      p.sweat = false;
+      p.yell = [ko ? '아야야...' : 'Ouch...', 7100, 7900];
+    } else if (d < 3400) {
+      p.x = base - 66 + (d - 1900) * 0.06;
+      run(1);
+    } else {
+      p.x = base - 66 + 90 - (d - 3400) * 0.03;
+      run(-1, 80);
+      p.yell = [ko ? '앗 이쪽 아니야!!' : 'Wrong way!!', 9400, 10300];
+    }
+  } else if (f.panic === 'circle') {
+    // Runs round in circles, getting nowhere
+    const c = base - d * 0.025;
+    const a = d * 0.009;
+    p.x = c + Math.cos(a) * 50;
+    run(-Math.sin(a) < 0 ? -1 : 1, 60);
+    p.sy = 1 + Math.sin(a) * 0.04;
+  } else if (f.panic === 'flail') {
+    // Hops on the spot flapping, yelling for its mum, then waddles off
+    if (d < 1600) {
+      const q = (d % 260) / 260;
+      p.lift = Math.sin(q * Math.PI) * 18;
+      p.rot = Math.sin(now * 0.03) * 0.3;
+      p.flip = Math.floor(now / 130) % 2 === 0;
+      p.yell = [ko ? '엄마아아!!' : 'MOMMY!!', 6200, 7600];
+    } else {
+      p.x = base - (d - 1600) * 0.05;
+      run(-1, 75);
+      p.rot = Math.sin(now * 0.02) * 0.12;
+    }
+  } else if (f.panic === 'zigzag') {
+    // Zigzags off, looking back over its shoulder
+    const w = d * 0.006;
+    p.x = base - d * 0.06 + Math.sin(w) * 34;
+    run(Math.cos(w) * 34 * 0.006 - 0.06 < 0 ? -1 : 1, 60);
+  } else if (f.panic === 'bonk') {
+    // Sprints straight into the hero, bounces off onto its back, sees stars, gets up and runs the wrong way
+    const hit = (base - (OPENING_HERO_X + 42)) / 0.12;
+    if (d < hit) {
+      p.x = base - d * 0.12;
+      run(-1, 55);
+    } else if (d < hit + 320) {
+      const q = (d - hit) / 320;
+      p.x = OPENING_HERO_X + 42 + q * 56;
+      p.lift = Math.sin(q * Math.PI) * 26;
+      p.rot = q * (Math.PI / 2);
+      p.flip = true;
+      p.sweat = false;
+    } else if (d < hit + 1500) {
+      p.x = OPENING_HERO_X + 98;
+      p.rot = Math.PI / 2;
+      p.flip = true;
+      p.frame = 1;
+      p.sweat = false;
+      p.dizzy = true;
+    } else {
+      p.x = OPENING_HERO_X + 98 + (d - hit - 1500) * 0.06;
+      run(1, 60);
+      p.yell = [ko ? '어디로 가야 돼?!' : 'Which way?!', 6000 + hit + 1500, 6000 + hit + 2600];
+    }
+  } else if (f.panic === 'stranded') {
+    // Cut off on the far ledge: jumps up and down waving, nearly topples into the chasm
+    const q = (d % 300) / 300;
+    p.lift = Math.sin(q * Math.PI) * 20;
+    p.flip = Math.floor(now / 150) % 2 === 0;
+    p.rot = d > 1400 && d < 1800 ? -Math.sin(((d - 1400) / 400) * Math.PI) * 0.5 : Math.sin(now * 0.03) * 0.15;
+    p.yell = [ko ? '살려줘~!' : 'Help me~!', 6100, 8100];
+  }
+  return p;
+}
+
+// Village folk: calm activities, look up, jump in shock, panic, get changed by the wave
 function drawOpeningFolk(ctx, now, t) {
   const R = openingWaveRadius(t);
   OPENING_FOLK.forEach((f, i) => {
-    const away = f.x < OPENING_PILLAR.x ? -1 : 1;
-    let x = f.x;
-    if (t < 3800) x += Math.sin(now * 0.0011 + f.ph) * f.range;
-    else if (t > OPENING_IMPACT + 300) x += away * Math.min(70, (t - OPENING_IMPACT - 300) * 0.05);
-    x = Math.min(i === OPENING_FOLK.length - 1 ? 950 : 560, x);
     const feet = OPENING_FEET;
+    // Pose: calm, frozen in place while looking up, a jump at the hit, then panic
+    const calmEnd = openingCalmPose(i, f, 3799, now);
+    let p;
+    if (t < 3800) p = openingCalmPose(i, f, t, now);
+    else if (t < 6000) {
+      p = { ...calmEnd, lift: 0, rot: 0, sx: 1, sy: 1, spray: false, note: false, heart: false, flip: calmEnd.flip };
+      p.frame = t > 4700 ? 6 : 0;
+      const jt = t - OPENING_IMPACT - i * 40;
+      if (jt >= 0 && jt < 380) {
+        // Jump in shock: squash, stretch in the air, squash on landing
+        const q = jt / 380;
+        p.lift = Math.sin(q * Math.PI) * 30;
+        p.sy = q < 0.12 || q > 0.88 ? 0.82 : 1.12;
+        p.sx = 2 - p.sy;
+        p.frame = 6;
+      }
+    } else p = openingPanicPose(i, f, t, now, calmEnd.x);
+    const x = Math.max(16, Math.min(f.panic === 'stranded' ? 950 : 572, p.x));
     if (openingInWave(x, feet - 30, R)) {
-      if (!OPENING.conv[i]) OPENING.conv[i] = t;
-      const since = t - OPENING.conv[i];
+      if (!OPENING.conv[i]) OPENING.conv[i] = { t, x };
+      const c = OPENING.conv[i];
+      const since = t - c.t;
       const flash = since < 260 ? 1 - since / 260 : 0;
       const scale = since < 320 ? 0.7 + 0.3 * openingBack(since / 320) : 1;
       const hop = Math.floor(now / 260 + i) % 2 ? 0 : 4;
-      drawOpeningPixelPenguin(ctx, f.sp, x, feet - hop, f.size * 1.05, now, 3 + i, away < 0, flash, scale);
+      drawOpeningPixelPenguin(ctx, f.sp, c.x, feet - hop, f.size * 1.05, now, 3 + i, i % 2 === 0, flash, scale);
       if (since < 500) {
-        // Shards flying off as it changes
         for (let k = 0; k < 8; k++) {
           const a = (k / 8) * Math.PI * 2 + i;
           const r = 14 + (since / 500) * 46;
           ctx.globalAlpha = 1 - since / 500;
           ctx.fillStyle = k % 2 ? '#67e8f9' : '#f472b6';
-          ctx.fillRect(Math.round(x + Math.cos(a) * r) - 3, Math.round(feet - f.size / 2 + Math.sin(a) * r) - 3, 6, 6);
+          ctx.fillRect(Math.round(c.x + Math.cos(a) * r) - 3, Math.round(feet - f.size / 2 + Math.sin(a) * r) - 3, 6, 6);
         }
         ctx.globalAlpha = 1;
+      } else if (since < 1600) {
+        // ...and looks itself over, baffled
+        drawScene0Mark(ctx, c.x + 18, feet - f.size - 8 - hop, '?', '#fde047');
       }
       return;
     }
-    let frame = 0;
-    let flip = false;
-    let sx = 1;
-    let sy = 1;
-    let lift = 0;
-    if (t < 3800) {
-      const c = Math.cos(now * 0.0011 + f.ph);
-      frame = Math.abs(c) > 0.2 ? 2 + (Math.floor(now / 220 + i) % 2) : Math.floor(now / 1700 + i) % 4 === 0 ? 1 : 0;
-      flip = c < 0;
-    } else if (t < OPENING_IMPACT) {
-      frame = t > 4700 ? 6 : 0; // looks up, then sees it coming
-      flip = away < 0;
-    } else {
-      const jt = t - OPENING_IMPACT - i * 40;
-      if (jt >= 0 && jt < 380) {
-        // Jump: squash before, stretch in the air, squash on landing
-        const p = jt / 380;
-        lift = Math.sin(p * Math.PI) * 30;
-        sy = p < 0.12 || p > 0.88 ? 0.82 : 1.12;
-        sx = 2 - sy;
-        frame = 6;
-      } else if (jt >= 380) {
-        frame = 2 + (Math.floor(now / 90 + i) % 2); // running away
-        flip = away < 0;
-        lift = Math.floor(now / 90 + i) % 2 ? 3 : 0;
-      } else frame = 6;
+    if (p.dust) drawOpeningDust(ctx, x, feet, now, p.dust, i);
+    if (p.spray) drawOpeningDust(ctx, x - (p.rot > 0 ? 20 : -20), feet, now, p.rot > 0 ? 1 : -1, i + 3);
+    drawOpeningPenguin2D(ctx, f.sp, x, feet - p.lift, f.size, p.frame, p.flip, p.sx, p.sy, p.rot);
+    const top = feet - p.lift - f.size * (Math.abs(Math.sin(p.rot)) > 0.5 ? 0.5 : 0.95);
+    if (p.sweat) drawOpeningSweat(ctx, x, top, now, i);
+    if (p.dizzy) drawOpeningDizzy(ctx, x, top - 4, now);
+    if (p.note) {
+      const q = (now % 1200) / 1200;
+      ctx.globalAlpha = 1 - q;
+      ctx.fillStyle = '#7c3aed';
+      ctx.font = '900 18px "Pretendard", sans-serif';
+      ctx.fillText('♪', x + 18 + q * 10, top - q * 26);
+      ctx.globalAlpha = 1;
     }
-    drawOpeningPenguin2D(ctx, f.sp, x, feet - lift, f.size, frame, flip, sx, sy);
+    if (p.heart) drawPixelHeart(ctx, x + 16, top - ((now * 0.03) % 22), 2.2, '#ff4d6d');
     if (t >= 3800 && t < OPENING_IMPACT) drawOpeningMarkOver(ctx, x + 2, feet - f.size - 10, t > 4700 ? '!' : '?', t > 4700 ? '#fb7185' : '#fde047', 3850 + i * 70, t);
+    if (p.yell) drawOpeningYell(ctx, x, top - 6, p.yell[0], p.yell[1], p.yell[2], t);
+  });
+  drawOpeningSnowballs(ctx, t);
+}
+
+// A: snowballs between the two throwers [time thrown, from, to]
+const OPENING_SNOWBALLS = [
+  [700, 1, 2],
+  [1550, 2, 1],
+  [2400, 1, 2],
+  [3250, 2, 1],
+];
+function drawOpeningSnowballs(ctx, t) {
+  OPENING_SNOWBALLS.forEach(([at, from, to]) => {
+    const a = OPENING_FOLK[from];
+    const b = OPENING_FOLK[to];
+    const q = (t - at) / 450;
+    const y0 = OPENING_FEET - a.size * 0.6;
+    if (q >= 0 && q < 1) {
+      const x = a.x + (b.x - a.x) * q;
+      const y = y0 - Math.sin(q * Math.PI) * 44;
+      ctx.fillStyle = OPENING_K;
+      ctx.fillRect(Math.round(x) - 8, Math.round(y) - 8, 16, 16);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(Math.round(x) - 6, Math.round(y) - 6, 12, 12);
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillRect(Math.round(x) - 6, Math.round(y) + 2, 12, 4);
+    } else if (q >= 1 && q < 1.6) {
+      // Puff of snow on the hit
+      const r = (q - 1) / 0.6;
+      ctx.globalAlpha = 1 - r;
+      ctx.fillStyle = '#ffffff';
+      for (let k = 0; k < 6; k++) {
+        const ang = (k / 6) * Math.PI * 2;
+        ctx.fillRect(Math.round(b.x + Math.cos(ang) * (8 + r * 20)) - 3, Math.round(y0 + Math.sin(ang) * (6 + r * 14)) - 3, 6, 6);
+      }
+      ctx.globalAlpha = 1;
+    }
   });
 }
 
-// The blue hero: idle, looks up, shocked, then crouches and bolts to the left
+// Snow falling over the village (two speeds for depth)
+function drawOpeningSnow(ctx, now) {
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+  for (let k = 0; k < 42; k++) {
+    const far = k % 2;
+    const x = (k * 97 + now * (far ? 0.012 : 0.03) + Math.sin(now * 0.001 + k) * 12) % 980;
+    const y = (k * 53 + now * (far ? 0.025 : 0.06)) % 560;
+    const s = far ? 2 : 4;
+    ctx.fillRect(Math.round(x) - 10, Math.round(y) - 10, s, s);
+  }
+}
+
+// The blue hero: watches the fun, looks up, jumps at the hit, trembles and looks round, gets knocked by a
+// fleeing local, then crouches, runs and dives into a belly-slide that gets it out ahead of the wave
 function drawOpeningHero(ctx, now, t) {
+  const ko = CURRENT_LANG === 'ko';
   const feet = OPENING_FEET + 8;
-  const size = 92;
-  let x = OPENING_HERO_X;
+  const size = 100;
+  const X = OPENING_HERO_X;
   if (t < 3800) {
-    drawOpeningPenguin2D(ctx, '01', x, feet, size, Math.floor(now / 1800) % 5 === 0 ? 1 : 0, false);
+    // Watching the snowball fight, laughing along
+    const laugh = OPENING_SNOWBALLS.some(([at]) => t > at + 450 && t < at + 900);
+    const bob = laugh && Math.floor(now / 110) % 2 ? 3 : 0;
+    drawOpeningPenguin2D(ctx, '01', X, feet - bob, size, laugh ? 1 : Math.floor(now / 1800) % 5 === 0 ? 1 : 0, true);
     return;
   }
   if (t < 10000) {
     const jt = t - OPENING_IMPACT;
     let sy = 1;
     let lift = 0;
+    let xo = 0;
+    let flip = true;
     if (jt >= 0 && jt < 420) {
-      const p = jt / 420;
-      lift = Math.sin(p * Math.PI) * 36;
-      sy = p < 0.12 || p > 0.88 ? 0.8 : 1.14;
+      const q = jt / 420;
+      lift = Math.sin(q * Math.PI) * 36;
+      sy = q < 0.12 || q > 0.88 ? 0.8 : 1.14;
+    } else if (jt >= 420) {
+      flip = Math.floor(t / 520) % 2 === 0; // looking this way and that
+      xo = Math.round(Math.sin(now * 0.07) * 2); // trembling
+      const bonk = t - (6000 + (OPENING_FOLK[4].x - (X + 42)) / 0.12);
+      if (bonk >= 0 && bonk < 300) {
+        const q = bonk / 300;
+        xo -= Math.sin(q * Math.PI) * 14;
+        sy = 1 - Math.sin(q * Math.PI) * 0.15;
+      }
     }
-    drawOpeningPenguin2D(ctx, '01', x, feet - lift, size, t > 4700 ? 6 : 0, false, 2 - sy, sy);
-    drawOpeningMarkOver(ctx, x - 30, feet - size - 6 - lift, t > 4700 ? '!' : '?', t > 4700 ? '#fb7185' : '#fde047', 3800, t);
+    drawOpeningPenguin2D(ctx, '01', X + xo, feet - lift, size, t > 4700 ? 6 : 0, flip, 2 - sy, sy);
+    if (t > 4700) drawOpeningSweat(ctx, X + xo, feet - lift - size * 0.95, now, 9);
+    drawOpeningMarkOver(ctx, X - 30, feet - size - 6 - lift, t > 4700 ? '!' : '?', t > 4700 ? '#fb7185' : '#fde047', 3800, t);
     return;
   }
   if (t < 10300) {
     // Anticipation: crouch, ready to run
-    const p = (t - 10000) / 300;
-    drawOpeningPenguin2D(ctx, '01', x + p * 8, feet, size, 6, false, 1 + p * 0.14, 1 - p * 0.16);
-    drawOpeningMarkOver(ctx, x - 30, feet - size, '!', '#fb7185', 10000, t);
+    const q = (t - 10000) / 300;
+    drawOpeningPenguin2D(ctx, '01', X + q * 8, feet, size, 6, false, 1 + q * 0.14, 1 - q * 0.16);
+    drawOpeningYell(ctx, X, feet - size - 8, ko ? '튀어!!' : 'RUN!!', 10000, 10700, t);
     return;
   }
-  const r = Math.min(1, (t - 10300) / 2000);
-  x = OPENING_HERO_X - r * 600;
-  const step = Math.floor(now / 70) % 2;
-  // Speed lines and dust puffs behind it
-  ctx.save();
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-  for (let k = 0; k < 5; k++) {
-    const ly = feet - 20 - k * 15;
-    const len = 30 + openingHash(k + Math.floor(now / 70)) * 40;
-    ctx.fillRect(Math.round(x + 40 + k * 6), ly, Math.round(len), 3);
+  if (t < 10700) {
+    const q = (t - 10300) / 400;
+    const x = X - q * 70;
+    drawOpeningDust(ctx, x, feet, now, -1, 9);
+    drawOpeningPenguin2D(ctx, '01', x, feet - openingRunLift(now, 0, 55), size, openingRunFrame(now, 0, 55), true);
+    drawOpeningYell(ctx, X, feet - size - 8, ko ? '튀어!!' : 'RUN!!', 10000, 10700, t);
+    return;
   }
-  for (let k = 0; k < 5; k++) {
-    const age = ((now / 120 + k) % 5) / 5;
-    const px = x + 30 + age * 60;
-    ctx.globalAlpha = 1 - age;
-    ctx.fillStyle = '#e2e8f0';
-    const s = Math.round(6 + age * 10);
-    ctx.fillRect(Math.round(px), Math.round(feet - s / 2), s, s);
+  // Dive and toboggan off to the left, faster and faster, snow spraying behind
+  const q = Math.min(1, (t - 10700) / 1800);
+  const x = X - 70 - Math.pow(q, 1.3) * 640;
+  const dive = Math.min(1, (t - 10700) / 150);
+  ctx.save();
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+  for (let k = 0; k < 6; k++) {
+    const ly = feet - 8 - k * 9;
+    const len = 30 + openingHash(k + Math.floor(now / 60)) * 50;
+    ctx.fillRect(Math.round(x + 46 + k * 5), ly, Math.round(len), 3);
   }
   ctx.restore();
-  drawOpeningPenguin2D(ctx, '01', x, feet - (step ? 6 : 0), size, 2 + step, false, step ? 0.94 : 1.06, step ? 1.06 : 0.94);
+  drawOpeningDust(ctx, x + 30, feet, now, -1, 4);
+  drawOpeningDust(ctx, x + 44, feet - 6, now, -1, 7);
+  drawOpeningPenguin2D(ctx, '01', x, feet - Math.sin(dive * Math.PI) * 14, size, 0, true, 1, 1, -dive * (Math.PI / 2));
 }
 
 // B: a pixel star appears high up, grows, then falls with a trail
@@ -515,6 +836,7 @@ function drawOpeningVillage(ctx, now, t) {
   drawOpeningFolk(b, now, t);
   drawOpeningWaveFront(b, now, R);
   drawOpeningHero(b, now, t);
+  drawOpeningSnow(b, now);
 
   let cam = openingCamAt(OPENING_CAM_VILLAGE, t);
   if (t >= OPENING_IMPACT) cam = { ...cam, z: cam.z + 0.1 * Math.exp(-(t - OPENING_IMPACT) / 200) }; // punch-in on the hit
