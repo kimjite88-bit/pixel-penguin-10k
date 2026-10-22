@@ -1694,6 +1694,8 @@ function updateIntroProgressBars(activeSceneIdx, progressRatio) {
 
 function setIntroScene(sceneIdx, resetTimer = true) {
   MOTION_STATE.sceneIdx = ((sceneIdx % 5) + 5) % 5;
+  // Leaving the picker while the opening plays (the phone start card stays usable) counts as having seen it
+  if (MOTION_STATE.sceneIdx !== 0 && typeof OPENING !== 'undefined' && OPENING.active) finishOpening();
   const theaterEl = document.getElementById('retro-intro-theater');
   if (theaterEl) {
     theaterEl.dataset.scene = String(MOTION_STATE.sceneIdx);

@@ -482,14 +482,28 @@ function drawScene0Escape(ctx, now) {
 // it never covers the icebreaker behind the penguin
 function drawScene0Shout(ctx, now, lines, accent, quake) {
   ctx.save();
-  const sk = 1 + (stageUiK() - 1) * 0.5; // already big: 1.3x on phones is enough
+  const phone = stageUiK() > 1;
+  let sk = 1 + (stageUiK() - 1) * 0.5; // already big: 1.3x on phones is enough
   ctx.font = `900 ${21 * sk}px "Pretendard", "Malgun Gothic", sans-serif`;
-  const tw = Math.max(...lines.map((l) => Math.ceil(ctx.measureText(l).width)));
+  let tw = Math.max(...lines.map((l) => Math.ceil(ctx.measureText(l).width)));
+  // Desktop keeps it on the right (its start card covers the bottom left): a long line is set a little smaller
+  const roomRight = 960 - 12 - (SCENE0_HERO.x + 84);
+  if (!phone && tw + 30 * sk > roomRight) {
+    sk *= Math.max(0.8, (roomRight - 30) / tw);
+    ctx.font = `900 ${21 * sk}px "Pretendard", "Malgun Gothic", sans-serif`;
+    tw = Math.max(...lines.map((l) => Math.ceil(ctx.measureText(l).width)));
+  }
   const bw = tw + 30 * sk;
   const bh = 66 * sk;
   const bob = Math.floor(now / 250) % 2 === 0 ? 0 : -2;
   const jx = quake ? Math.round((Math.random() - 0.5) * 6 * quake) : 0;
-  const bx = Math.min(960 - bw - 12, SCENE0_HERO.x + 84) + jx;
+  // Beside the head, never over it. Phones: right of the face if it fits, otherwise left of it over the empty
+  // crevasse ice (the 1.3x text, English most of all, does not fit on the right; the start card is below the
+  // stage there, so the left side is free). Pushing it left to fit used to put it on the penguin's face.
+  const headL = SCENE0_HERO.x - 70;
+  const headR = SCENE0_HERO.x + 84;
+  const onRight = !phone || headR + bw <= 960 - 12;
+  const bx = (onRight ? headR : Math.max(12, headL - bw)) + jx;
   const by = SCENE0_HERO.feet - SCENE0_HERO.size + 6 + bob;
   ctx.fillStyle = 'rgba(9, 13, 26, 0.42)';
   ctx.fillRect(bx + 5, by + 5, bw, bh);
@@ -499,13 +513,15 @@ function drawScene0Shout(ctx, now, lines, accent, quake) {
   ctx.fillRect(bx, by, bw, bh);
   ctx.fillStyle = accent;
   ctx.fillRect(bx, by, bw, 5);
-  // Tail down-left towards the penguin's beak
+  // Tail down towards the penguin's beak (left corner when on its right, right corner when on its left)
+  const tx = onRight ? bx : bx + bw;
+  const d = onRight ? 1 : -1;
   ctx.fillStyle = SCENE0_K;
-  ctx.fillRect(bx + 4, by + bh, 18, 6);
-  ctx.fillRect(bx - 2, by + bh + 6, 12, 6);
+  ctx.fillRect(tx + d * 4 - (onRight ? 0 : 18), by + bh, 18, 6);
+  ctx.fillRect(tx - d * 2 - (onRight ? 0 : 12), by + bh + 6, 12, 6);
   ctx.fillStyle = '#ffffff';
-  ctx.fillRect(bx + 7, by + bh - 2, 12, 5);
-  ctx.fillRect(bx + 1, by + bh + 4, 6, 5);
+  ctx.fillRect(tx + d * 7 - (onRight ? 0 : 12), by + bh - 2, 12, 5);
+  ctx.fillRect(tx + d * 1 - (onRight ? 0 : 6), by + bh + 4, 6, 5);
   ctx.fillStyle = SCENE0_K;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
