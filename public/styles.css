@@ -45,14 +45,14 @@
   font-weight: 400;
   font-display: swap;
   src: url(https://cdn.jsdelivr.net/npm/@fontsource/noto-naskh-arabic@5.2.10/files/noto-naskh-arabic-arabic-400-normal.woff2) format('woff2');
-  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
 }
 @font-face {
   font-family: 'PP Naskh';
   font-weight: 700;
   font-display: swap;
   src: url(https://cdn.jsdelivr.net/npm/@fontsource/noto-naskh-arabic@5.2.10/files/noto-naskh-arabic-arabic-700-normal.woff2) format('woff2');
-  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
 }
 @font-face {
   font-family: 'PP Bengali';
@@ -302,6 +302,8 @@ button {
   opacity: 0;
   cursor: pointer;
   font-size: 16px; /* below 16px iOS zooms the page when the picker opens */
+  /* System font only: with the site font, the options' اردو / বাংলা made every visitor fetch both web fonts */
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   border: none;
 }
 
