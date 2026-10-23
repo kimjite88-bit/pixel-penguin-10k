@@ -256,11 +256,22 @@ button {
   color: #fff;
 }
 
+/* Three labels by room left of the eyebrow text; each keeps "official" (the notices warn about look-alike
+   channels): the site's full term from 600px, "Join official channel" (139px) from 360px, "Official" below */
+.channel-join-btn .ch-long,
 .channel-join-btn .ch-short {
   display: none;
 }
 
-/* Under 360px the long label would run into the eyebrow text */
+@media (max-width: 599px) {
+  .channel-join-btn .ch-full {
+    display: none;
+  }
+  .channel-join-btn .ch-long {
+    display: inline;
+  }
+}
+
 @media (max-width: 359px) {
   .channel-join-btn .ch-long {
     display: none;
