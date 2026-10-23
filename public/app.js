@@ -1221,7 +1221,10 @@ function updateRestartButton() {
   const btn = document.getElementById('btn-restart-run');
   if (!btn || typeof ppGlyph !== 'function') return;
   const label = CURRENT_LANG === 'ko' ? '처음부터 다시 (같은 번호로)' : i18n('Restart this run (same NFT)');
+  const text = document.createElement('span');
+  text.textContent = CURRENT_LANG === 'ko' ? '다시 시작' : i18n('Restart');
   btn.innerHTML = ppGlyph(['restart']);
+  btn.append(text);
   btn.setAttribute('aria-label', label);
   btn.title = `${label} · R`;
 }

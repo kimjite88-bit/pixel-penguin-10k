@@ -3087,14 +3087,31 @@ body.ufo-fullscreen-lock {
   color: #94a3b8;
 }
 
-/* Restart shares one slot with the intro-video toggle: the toggle means nothing mid-run, the restart nothing
-   outside it, so the bar never gets wider (on a 375px phone the pilot badge is already down to 46px) */
+/* Restart, only during a run and the pull after it (scenes 2-3): top-left, in the pilot badge's place (the stage HUD
+   already shows NFT P#### / GUEST), far from the steering pad that fills the bottom of a phone, so a thumb on the
+   pad never restarts by accident. Labelled, not a bare icon among the sound toggles. The intro-video toggle means
+   nothing mid-run, so it steps aside and the bar keeps its width. */
 #btn-restart-run {
   display: none;
+  position: relative;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 6px 9px;
+  border-color: var(--accent);
+  flex-shrink: 0;
+}
+#btn-restart-run svg {
+  display: block;
+}
+/* Taller hit area than the drawn pill (the bar stays 30px high) */
+#btn-restart-run::after {
+  content: '';
+  position: absolute;
+  inset: -7px -4px;
 }
 .retro-intro-theater:is([data-scene='2'], [data-scene='3']) #btn-restart-run {
   display: inline-flex;
 }
-.retro-intro-theater:is([data-scene='2'], [data-scene='3']) #btn-opening-toggle {
+.retro-intro-theater:is([data-scene='2'], [data-scene='3']) :is(#btn-opening-toggle, .pilot-skin-badge) {
   display: none;
 }
