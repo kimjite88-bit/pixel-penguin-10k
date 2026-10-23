@@ -336,9 +336,9 @@ const PARADE_ROW_2_ITEMS = [
   { edition: 9999, labelKo: '픽셀 펭귄 #9999', labelEn: 'Pixel Penguin #9999', sub: 'Generative · #9999' },
 ];
 
-// One page: Intro, Codex, Ranking and Notices are sections of it, one under the other (there is not that much of
-// each). A tab, or any section id, scrolls there under the sticky header; while you scroll, the bar marks the
-// section you are in (initScrollSpy).
+// Menu pages (v5.23.1 had merged them into one long page; split again in v5.31.0 because it grew too heavy):
+// only the open tab's page is shown, and the codex grid and the board are fetched the first time their page
+// opens. A section id (sec-rarity, sec-explorer...) opens its page, then scrolls to the section.
 const TAB_PAGES = {
   'tab-intro': 'tab-page-intro',
   'tab-codex': 'tab-page-codex',
@@ -359,66 +359,47 @@ function setActiveTab(tabKey) {
     else btn.removeAttribute('aria-current');
   });
 }
-let SCROLL_SPY_PAUSE_UNTIL = 0;
+let CODEX_LOADED = false; // set by fetchExplorerTokens: the grid is fetched once its page has been opened
+function showTabPage(tabKey) {
+  Object.entries(TAB_PAGES).forEach(([key, pageId]) => {
+    const el = document.getElementById(pageId);
+    if (!el) return;
+    el.style.display = key === tabKey ? 'block' : 'none';
+    el.classList.toggle('active', key === tabKey);
+  });
+  setActiveTab(tabKey);
+}
 function scrollToSection(id) {
   const tabKey = tabKeyFor(id);
   if (tabKey !== 'tab-intro' && typeof exitUfoFullscreenGame === 'function') {
     exitUfoFullscreenGame();
   }
-  setActiveTab(tabKey);
-  // The bar would flick through every section the smooth scroll passes: hold it on the one clicked
-  SCROLL_SPY_PAUSE_UNTIL = performance.now() + 900;
+  showTabPage(tabKey);
   if (tabKey === 'tab-ranking' && typeof fetchAndRenderRankingPage === 'function') {
     fetchAndRenderRankingPage();
   }
   if (tabKey === 'tab-codex') {
+    if (!CODEX_LOADED) fetchExplorerTokens();
     centerActiveTraitTab();
   }
-  const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
-  if (id === 'top' || id === 'tab-intro') {
-    window.scrollTo({ top: 0, behavior });
+  // A new page starts at its top (instantly: a smooth scroll over swapped content just looks broken)
+  if (id === 'top' || TAB_PAGES[id]) {
+    window.scrollTo({ top: 0, behavior: 'auto' });
     return;
   }
-  const el = document.getElementById(TAB_PAGES[id] || id);
+  const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+  const el = document.getElementById(id);
   if (el) el.scrollIntoView({ behavior, block: 'start' });
 }
 
-// The section under the header's bottom edge is the active tab; the sticky header's height is kept in --sticky-h
-// so sections scroll in below it (scroll-margin-top)
-function initScrollSpy() {
+// The sticky header's height is kept in --sticky-h so a section scrolled to lands below it (scroll-margin-top)
+function initStickyHeaderHeight() {
   const header = document.querySelector('.site-header');
   const setStickyH = () => {
     if (header) document.documentElement.style.setProperty('--sticky-h', `${Math.round(header.getBoundingClientRect().height)}px`);
   };
   setStickyH();
   window.addEventListener('resize', setStickyH);
-  const pages = Object.entries(TAB_PAGES)
-    .map(([key, pageId]) => [key, document.getElementById(pageId)])
-    .filter(([, el]) => el);
-  let ticking = false;
-  const update = () => {
-    ticking = false;
-    if (performance.now() < SCROLL_SPY_PAUSE_UNTIL) return;
-    const line = (header ? header.getBoundingClientRect().bottom : 0) + 24;
-    let current = pages[0] && pages[0][0];
-    pages.forEach(([key, el]) => {
-      if (el.getBoundingClientRect().top <= line) current = key;
-    });
-    // At the very bottom the last section counts even when it is too short to reach the line
-    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4) current = pages[pages.length - 1][0];
-    setActiveTab(current);
-  };
-  window.addEventListener(
-    'scroll',
-    () => {
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(update);
-      }
-    },
-    { passive: true }
-  );
-  update();
 }
 
 function escapeHtml(str) {
@@ -2033,21 +2014,17 @@ async function nativeRankShare() {
   }
 }
 
-// A shared link opens on its board, on the page holding the number, with that row lit. The codex grid above
-// loads on its own and is ~4,700 px tall on a phone: if it filled in after the jump, browsers without scroll
-// anchoring (iOS Safari) pushed the row off screen. So wait for it (max 5 s), then hold the row in place while
-// the page settles, until the visitor scrolls or touches, or 6 s pass.
-async function openSharedRank(explorerLoad) {
-  setActiveTab('tab-ranking');
-  const settleCap = new Promise((resolve) => setTimeout(resolve, 5000));
-  await Promise.all([fetchAndRenderRankingPage(), Promise.race([explorerLoad, settleCap])]);
+// A shared link opens the ranking page on its board, on the page holding the number, with that row lit. The
+// row is then held in place while the page settles (fonts, avatars; iOS Safari has no scroll anchoring) until
+// the visitor scrolls or touches, or 6 s pass.
+async function openSharedRank() {
+  showTabPage('tab-ranking');
+  window.scrollTo({ top: 0, behavior: 'auto' });
+  await fetchAndRenderRankingPage();
   const row = SHARED_RANK.n === null ? null : RANKING_PAGE_CACHE.find((it) => it.edition === SHARED_RANK.n);
   if (row) goToRankingPage(Math.ceil(row.rank / RANKING_PAGE_SIZE));
-  // Looked up each time: a re-render (language switch, refresh) replaces the row element. The tab bar is set
-  // here too: the spy is paused during the jump, so it kept whatever a load-time scroll had marked.
+  // Looked up each time: a re-render (language switch, refresh) replaces the row element
   const land = () => {
-    SCROLL_SPY_PAUSE_UNTIL = performance.now() + 900;
-    setActiveTab('tab-ranking');
     const target = (row && document.querySelector('.rank-row-card.is-shared')) || document.getElementById('tab-page-ranking');
     target?.scrollIntoView({ block: row ? 'center' : 'start' });
   };
@@ -4493,7 +4470,7 @@ function applyLanguage(lang) {
   renderRankingPageList();
   if (APP_CONFIG) {
     renderTraitDirectory();
-    fetchExplorerTokens();
+    if (CODEX_LOADED) fetchExplorerTokens();
   }
   setIntroScene(MOTION_STATE.sceneIdx, false);
   if (typeof updateSoundButton === 'function') updateSoundButton();
@@ -4697,6 +4674,7 @@ async function fetchExplorerTokens() {
   const grid = document.getElementById('explorer-grid');
   const countEl = document.getElementById('exp-result-count');
   if (!grid) return;
+  CODEX_LOADED = true;
 
   const params = new URLSearchParams();
   const q = document.getElementById('exp-search')?.value.trim() || '';
@@ -5014,7 +4992,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.querySelectorAll('.market-tab').forEach((tab) => {
     tab.addEventListener('click', () => scrollToSection(tab.dataset.target));
   });
-  initScrollSpy();
+  initStickyHeaderHeight();
 
   // Ranking Page Search, Refresh & 10-Page Pagination (10 per page × 10 pages = Top 100)
   document.getElementById('btn-refresh-ranking-page')?.addEventListener('click', () => {
@@ -5160,9 +5138,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     buildExplorerTraitDropdowns();
     renderTraitDirectory();
     loadPfpPreview(4441);
-    const explorerLoad = fetchExplorerTokens();
-    if (SHARED_RANK) openSharedRank(explorerLoad);
-    else fetchAndRenderRankingPage();
+    // The codex grid and the board load when their page is first opened (scrollToSection)
+    if (SHARED_RANK) openSharedRank();
   } catch (err) {
     console.error('Failed to initialize config:', err);
   }

@@ -285,12 +285,10 @@ button {
   border-top: 1px solid var(--line);
 }
 
-/* One page (scrollToSection): each section lands just below the sticky header, with room between them */
-.tab-page {
+/* Menu pages (scrollToSection shows one at a time): a section scrolled to lands just below the sticky header */
+.tab-page,
+.section-block {
   scroll-margin-top: calc(var(--sticky-h, 110px) + 8px);
-}
-.tab-page + .tab-page {
-  margin-top: 36px;
 }
 
 .market-tabs-inner {
