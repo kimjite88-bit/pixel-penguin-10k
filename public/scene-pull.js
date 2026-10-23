@@ -292,16 +292,16 @@ function drawScene3Approach(ctx, vehicle, subP, now, pose) {
 // What the pilot yells before the scan starts
 function scene3ApproachLine(vehicle, pose, ko) {
   if (vehicle === 'car') {
-    if (pose.phase === 'drive') return ko ? '좋아 이대로 쭉 밟으면 탈출이다!!' : 'Nice, just keep it floored and we are out!!';
-    if (pose.phase === 'drag') return ko ? '어?! 차가 옆으로 끌려간다!! 브레이크 안 먹혀!!' : 'Huh?! The car is being dragged!! The brakes do nothing!!';
-    return ko ? '바퀴가 땅에서 떨어졌다?!! 끌려 올라간다아!!' : 'The wheels left the ground?!! It is pulling us up!!';
+    if (pose.phase === 'drive') return ko ? '좋아 이대로 쭉 밟으면 탈출이다!!' : i18n('Nice, just keep it floored and we are out!!');
+    if (pose.phase === 'drag') return ko ? '어?! 차가 옆으로 끌려간다!! 브레이크 안 먹혀!!' : i18n('Huh?! The car is being dragged!! The brakes do nothing!!');
+    return ko ? '바퀴가 땅에서 떨어졌다?!! 끌려 올라간다아!!' : i18n('The wheels left the ground?!! It is pulling us up!!');
   }
   if (vehicle === 'boat') {
-    if (pose.phase === 'whirl') return ko ? '으악 바다에 소용돌이가!! 배가 빙글빙글 빨려 들어간다!!' : 'A whirlpool!! The ship is spinning down into it!!';
-    return ko ? '물기둥이 배를 들어 올린다?!! 저 기둥으로 간다아!!' : 'A waterspout is lifting the ship?!! Into the pillar!!';
+    if (pose.phase === 'whirl') return ko ? '으악 바다에 소용돌이가!! 배가 빙글빙글 빨려 들어간다!!' : i18n('A whirlpool!! The ship is spinning down into it!!');
+    return ko ? '물기둥이 배를 들어 올린다?!! 저 기둥으로 간다아!!' : i18n('A waterspout is lifting the ship?!! Into the pillar!!');
   }
-  if (pose.phase === 'fall') return ko ? '엔진 꺼졌다!! 추락한다 추락한다아악!!' : 'Engine is dead!! Going down, going down!!';
-  return ko ? '어?! 떨어지다가 기둥이 비행기를 낚아챘다?!!' : 'Huh?! The pillar snatched the plane out of the fall?!!';
+  if (pose.phase === 'fall') return ko ? '엔진 꺼졌다!! 추락한다 추락한다아악!!' : i18n('Engine is dead!! Going down, going down!!');
+  return ko ? '어?! 떨어지다가 기둥이 비행기를 낚아챘다?!!' : i18n('Huh?! The pillar snatched the plane out of the fall?!!');
 }
 
 // The vortex background mirrored: the pillar stands on the left, so whatever flees right runs away from it
@@ -505,10 +505,10 @@ function drawScene3Rise(ctx, now, r, vehicle, spId) {
       r < 0.68
         ? ko
           ? '위로 위로 위로... 이 기둥 끝이 있긴 한 거야?!'
-          : 'Up, up, up... does this pillar ever end?!'
+          : i18n('Up, up, up... does this pillar ever end?!')
         : ko
         ? '어어 갑자기 빨라진다?! 저 위에 뭐가 보여어어!!'
-        : 'Whoa, it is speeding up?! Something up there!!';
+        : i18n('Whoa, it is speeding up?! Something up there!!');
     drawRetroSpeechBubble(ctx, Math.min(620, vx + 40), Math.max(70, vy - 120), line, '#a78bfa', now);
   }
   // White flash into the town

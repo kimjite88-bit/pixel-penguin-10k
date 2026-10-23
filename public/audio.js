@@ -161,13 +161,13 @@ function ppGlyph(names, slashed = false) {
 
 function updateSoundButton() {
   if (typeof document === 'undefined') return;
-  const en = typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'en';
+  const ko = typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'ko';
   const set = (id, on, body, labelKo, labelEn) => {
     const btn = document.getElementById(id);
     if (!btn) return;
     btn.innerHTML = body;
     // Icon-only buttons still need a name for screen readers and a hover hint
-    const label = en ? labelEn : labelKo;
+    const label = ko ? labelKo : i18n(labelEn);
     btn.setAttribute('aria-label', label);
     btn.title = label;
     btn.setAttribute('aria-pressed', on ? 'true' : 'false');
@@ -1009,8 +1009,7 @@ if (typeof window !== 'undefined') {
       e.stopPropagation();
       setSoundFlags(PP_SOUND.musicOn, !PP_SOUND.sfxOn);
     });
-    // The labels follow the KR / EN switch
-    document.querySelectorAll('.lang-btn').forEach((b) => b.addEventListener('click', () => setTimeout(updateSoundButton, 0)));
+    // The labels follow the language picker (applyLanguage calls updateSoundButton)
     updateSoundButton();
   });
 }

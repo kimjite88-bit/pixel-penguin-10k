@@ -112,9 +112,9 @@ function drawTownEasterLeaveTalk(ctx, now, elapsed, heroX, friendX, spriteY, spr
   const ko = CURRENT_LANG === 'ko';
   const d = elapsed - TOWN_EASTER.leaveAt;
   if (d < 1500) {
-    drawRetroSpeechBubble(ctx, friendX + spriteSize / 2, spriteY - 6, ko ? '쉿! 제작자가 숨겨둔 데 있어. 따라와~' : "Psst! The dev hid something. Follow me~", '#ff4d6d', now);
+    drawRetroSpeechBubble(ctx, friendX + spriteSize / 2, spriteY - 6, ko ? '쉿! 제작자가 숨겨둔 데 있어. 따라와~' : i18n("Psst! The dev hid something. Follow me~"), '#ff4d6d', now);
   } else {
-    drawRetroSpeechBubble(ctx, Math.max(120, heroX + spriteSize / 2), spriteY - 6, ko ? '어? 다들 어디 가?? 나도 데려가!!' : 'Wait, where is everyone going?? Take me too!!', '#38bdf8', now);
+    drawRetroSpeechBubble(ctx, Math.max(120, heroX + spriteSize / 2), spriteY - 6, ko ? '어? 다들 어디 가?? 나도 데려가!!' : i18n('Wait, where is everyone going?? Take me too!!'), '#38bdf8', now);
   }
 }
 
@@ -379,7 +379,7 @@ function drawTownEaster(ctx, now, elapsed) {
     }
 
     // Secret banner across the top
-    const label = ko ? '제작자가 숨겨둔 이스터에그 발견!' : "SECRET FOUND · the dev's hidden Easter egg";
+    const label = ko ? '제작자가 숨겨둔 이스터에그 발견!' : i18n("SECRET FOUND · the dev's hidden Easter egg");
     ctx.save();
     const bk = Math.min(typeof stageUiK === 'function' ? stageUiK() : 1, 1.4);
     ctx.translate(480, 8);
@@ -409,7 +409,7 @@ function drawTownEaster(ctx, now, elapsed) {
     // "Reward: none" stamped under it once the dev says so
     if (t >= ev.stamp) {
       const st = Math.min(1, (t - ev.stamp) / 160);
-      const tag = ko ? '보상: 없음' : 'REWARD: NONE';
+      const tag = ko ? '보상: 없음' : i18n('REWARD: NONE');
       ctx.save();
       ctx.translate(bx + bw - 34, 60);
       ctx.rotate(-0.1);
@@ -436,7 +436,7 @@ function drawTownEaster(ctx, now, elapsed) {
     // Whoever's turn it is talks
     if (line) {
       const who = line.who === 'snow' ? { x: TOWN_EASTER_SNOWMAN.x, top: TOWN_EASTER_SNOWMAN.feet - 128 } : spots[line.who];
-      drawRetroSpeechBubble(ctx, Math.max(110, Math.min(850, who.x)), who.top - 4, ko ? line.ko : line.en, line.col, now);
+      drawRetroSpeechBubble(ctx, Math.max(110, Math.min(850, who.x)), who.top - 4, ko ? line.ko : i18n(line.en), line.col, now);
     }
     ctx.restore();
   }

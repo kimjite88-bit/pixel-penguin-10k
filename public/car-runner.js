@@ -1466,7 +1466,7 @@ function drawCarRunHud(ctx, now, run) {
   } else {
     ctx.fillStyle = '#5eead4';
     ctx.font = '900 11.5px "Pretendard", "Malgun Gothic", sans-serif';
-    ctx.fillText(CURRENT_LANG === 'ko' ? 'GUEST (기본)' : 'GUEST', hx + 12, hy + hh / 2 + 1);
+    ctx.fillText(CURRENT_LANG === 'ko' ? 'GUEST (기본)' : i18n('GUEST'), hx + 12, hy + hh / 2 + 1);
   }
   ctx.fillStyle = '#ffffff';
   ctx.font = '900 12.5px "Pretendard", "Malgun Gothic", sans-serif';
@@ -1653,7 +1653,7 @@ function drawCarRunnerFrame(ctx, now, spId) {
         x: CAR_CFG.CAR_X + 40,
         y: carOriginY() - 110,
         vy: -1.2,
-        text: ko ? `크레바스 탈출! ENERGY -${CAR_CFG.PIT_RESCUE_ENERGY}` : `Pulled out! ENERGY -${CAR_CFG.PIT_RESCUE_ENERGY}`,
+        text: ko ? `크레바스 탈출! ENERGY -${CAR_CFG.PIT_RESCUE_ENERGY}` : i18n('Pulled out! ENERGY -{0}', CAR_CFG.PIT_RESCUE_ENERGY),
         col: '#fde047',
         alpha: 1,
       });
@@ -1748,7 +1748,7 @@ function drawCarRunnerFrame(ctx, now, spId) {
   withStageUi(ctx, 16, 12, 504, () => drawCarRunHud(ctx, now, run));
 
   if (run.jumps < 4 && now - run.startAt < 10000) {
-    const msg = ko ? '누르면 점프 · 공중에서 한 번 더 누르면 2단 점프' : 'Tap to jump · tap again in the air to double jump';
+    const msg = ko ? '누르면 점프 · 공중에서 한 번 더 누르면 2단 점프' : i18n('Tap to jump · tap again in the air to double jump');
     ctx.save();
     ctx.font = '800 14px "Pretendard", "Malgun Gothic", sans-serif';
     const tw = Math.ceil(ctx.measureText(msg).width) + 28;
@@ -1882,10 +1882,10 @@ function drawCarScene1Liftoff(ctx, now, p, spId) {
 
   const line =
     phase === 'go'
-      ? ko ? '기둥이 다 빨아들인다!! 풀악셀 밟는다!!' : 'The pillar is sucking everything in!! Floor it!!'
+      ? ko ? '기둥이 다 빨아들인다!! 풀악셀 밟는다!!' : i18n('The pillar is sucking everything in!! Floor it!!')
       : phase === 'drag'
-      ? ko ? '끌려간다 끌려가!! 바퀴야 버텨어어!!' : 'It is dragging us back!! Hold on, tyres!!'
-      : ko ? '빠져나왔다!! 최대한 멀리 도망간다!!' : 'We broke free!! As far away as we can!!';
+      ? ko ? '끌려간다 끌려가!! 바퀴야 버텨어어!!' : i18n('It is dragging us back!! Hold on, tyres!!')
+      : ko ? '빠져나왔다!! 최대한 멀리 도망간다!!' : i18n('We broke free!! As far away as we can!!');
   // Rides with the car and leaves with it (it used to stop at x = 560 after the car was gone)
   if (carX < 760) drawRetroSpeechBubble(ctx, carX + 10, carY - 130, line, phase === 'drag' ? '#fb7185' : '#f472b6', now);
 }

@@ -27,8 +27,9 @@
   --tier-common: #94a3b8;
   --radius: 14px;
   --radius-sm: 9px;
-  --font: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, 'Apple SD Gothic Neo', 'Malgun Gothic',
-    'Noto Sans KR', 'Segoe UI', sans-serif;
+  /* PP Naskh / PP Bengali (below) only cover Arabic-script and Bengali letters, so KR / EN / Pidgin never fetch them */
+  --font: 'Pretendard Variable', Pretendard, 'PP Naskh', 'PP Bengali', -apple-system, BlinkMacSystemFont,
+    'Apple SD Gothic Neo', 'Malgun Gothic', 'Noto Sans KR', 'Segoe UI', sans-serif;
 
   /* legacy names still read by inline styles in app.js */
   --accent-cyan: var(--cyan);
@@ -37,10 +38,56 @@
   --border-subtle: var(--line);
 }
 
+/* Urdu and Bengali, pinned so every phone shows the same letters (system Urdu fonts differ; Nastaliq needs ~1.8
+   line-height and clips in tight buttons, so Urdu is set in Naskh). unicode-range: downloaded only when used. */
+@font-face {
+  font-family: 'PP Naskh';
+  font-weight: 400;
+  font-display: swap;
+  src: url(https://cdn.jsdelivr.net/npm/@fontsource/noto-naskh-arabic@5.2.10/files/noto-naskh-arabic-arabic-400-normal.woff2) format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+@font-face {
+  font-family: 'PP Naskh';
+  font-weight: 700;
+  font-display: swap;
+  src: url(https://cdn.jsdelivr.net/npm/@fontsource/noto-naskh-arabic@5.2.10/files/noto-naskh-arabic-arabic-700-normal.woff2) format('woff2');
+  unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC;
+}
+@font-face {
+  font-family: 'PP Bengali';
+  font-weight: 400;
+  font-display: swap;
+  src: url(https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-bengali@5.2.10/files/noto-sans-bengali-bengali-400-normal.woff2) format('woff2');
+  unicode-range: U+0951-0952, U+0964-0965, U+0980-09FE, U+1CD0, U+1CD2, U+1CD5-1CD6, U+1CD8, U+1CE1, U+1CEA, U+1CED, U+1CF2, U+1CF5-1CF7, U+200C-200D, U+25CC, U+A8F1;
+}
+@font-face {
+  font-family: 'PP Bengali';
+  font-weight: 700;
+  font-display: swap;
+  src: url(https://cdn.jsdelivr.net/npm/@fontsource/noto-sans-bengali@5.2.10/files/noto-sans-bengali-bengali-700-normal.woff2) format('woff2');
+  unicode-range: U+0951-0952, U+0964-0965, U+0980-09FE, U+1CD0, U+1CD2, U+1CD5-1CD6, U+1CD8, U+1CE1, U+1CEA, U+1CED, U+1CF2, U+1CF5-1CF7, U+200C-200D, U+25CC, U+A8F1;
+}
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
+}
+
+/* Urdu reads right to left. The page layout stays as it is; each piece of text finds its own direction, so an
+   Urdu sentence runs right to left (and aligns right) while numbers, #4441 and English names stay in order. */
+html[lang='ur'] body :is(p, h1, h2, h3, h4, li, dt, dd, label, span, a, button, div, td, th, summary, option) {
+  unicode-bidi: plaintext;
+}
+/* Cards whose data stays Latin (trait names, scores) keep their Urdu label on the same left edge */
+html[lang='ur'] .trait-b-cat {
+  text-align: left;
+}
+
+/* Naskh needs a little more line height in running text; controls and the header keep theirs */
+html[lang='ur'] :is(p, .section-sub, .hero-desc, .notice-body, .rarity-note, .share-text, .share-note) {
+  line-height: 1.75;
 }
 
 html {
@@ -223,6 +270,44 @@ button {
 .lang-btn.active {
   background: var(--surface-3);
   color: var(--text);
+}
+
+/* One chip for five languages; the transparent select on top takes the tap and opens the native picker */
+.lang-picker {
+  position: relative;
+}
+
+.lang-current {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+}
+
+.lang-current::after {
+  content: '';
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid currentColor;
+  opacity: 0.7;
+}
+
+.lang-select {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  font-size: 16px; /* below 16px iOS zooms the page when the picker opens */
+  border: none;
+}
+
+.lang-picker:focus-within {
+  outline: 2px solid var(--ice);
+  outline-offset: 1px;
 }
 
 /* Official VeryChat channel: sits in the empty right end of the hero eyebrow line, centred on it and

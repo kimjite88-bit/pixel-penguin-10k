@@ -281,16 +281,16 @@ function drawScene0Alarm(ctx, now, esc, finalStage = false) {
 function drawScene0AlarmBody(ctx, now, esc, finalStage) {
   const ko = CURRENT_LANG === 'ko';
   const on = Math.floor(now / (520 - esc * 260)) % 2 === 0;
-  const text = ko ? '남극 붕괴 경보' : 'ANTARCTIC COLLAPSE ALERT';
+  const text = ko ? '남극 붕괴 경보' : i18n('ANTARCTIC COLLAPSE ALERT');
   // Seconds until the pillar takes the penguin (stage 5) instead of an abstract LV: a deadline you can read
   const left = finalStage ? 0 : scene0SecondsLeft(now);
-  const sub = ko ? `${left}초` : `${left}s`;
+  const sub = ko ? `${left}초` : i18n('{0}s', left);
   const urgent = left <= 10;
   ctx.save();
   ctx.font = '900 26px "Pretendard", "Malgun Gothic", sans-serif';
   const tw = Math.ceil(ctx.measureText(text).width);
   ctx.font = '900 22px "Pretendard", "Malgun Gothic", sans-serif';
-  const sw = Math.max(ctx.measureText(ko ? '30초' : '30s').width, ctx.measureText(sub).width) + 18;
+  const sw = Math.max(ctx.measureText(ko ? '30초' : i18n('{0}s', 30)).width, ctx.measureText(sub).width) + 18;
   const w = tw + sw + 92;
   const h = 46;
   const bx = Math.round(480 - w / 2);
@@ -472,7 +472,7 @@ function drawScene0Escape(ctx, now) {
       : vehicle === 'boat'
       ? { x: boat.x - 30, y: boat.y - 116 * boat.scale - 4 }
       : { x: plane.x - 20, y: plane.y - 46 * plane.scale - 4 };
-  const label = vehicle === 'car' ? (ko ? '자동차' : 'CAR') : vehicle === 'boat' ? (ko ? '쇄빙선' : 'ICEBREAKER') : ko ? '경비행기' : 'PLANE';
+  const label = vehicle === 'car' ? (ko ? '자동차' : i18n('CAR')) : vehicle === 'boat' ? (ko ? '쇄빙선' : i18n('ICEBREAKER')) : ko ? '경비행기' : i18n('PLANE');
   drawScene0Marker(ctx, now, target, label, accent);
 
   // The penguin's line gets more desperate stage by stage
@@ -486,6 +486,7 @@ function drawScene0Escape(ctx, now) {
 // Big two-line shout right of the penguin's head (the shared speech bubble is too small to read on a phone);
 // it never covers the icebreaker behind the penguin
 function drawScene0Shout(ctx, now, lines, accent, quake) {
+  lines = lines.map((l) => i18n(l)); // English lines -> current language; Korean has no rows and stays
   ctx.save();
   const phone = stageUiK() > 1;
   let sk = 1 + (stageUiK() - 1) * 0.5; // already big: 1.3x on phones is enough

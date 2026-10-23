@@ -9,11 +9,12 @@ const LANG_STORE = 'ppeng-lang';
 let CURRENT_LANG = (() => {
   try {
     const saved = localStorage.getItem(LANG_STORE);
-    if (saved === 'ko' || saved === 'en') return saved;
+    if (LANGS.includes(saved)) return saved;
   } catch (e) {}
-  // A shared ranking link carries the sharer's language (?lang=ko); a saved pick still wins
+  // A shared ranking link carries the sharer's language (?lang=ko|pcm|ur|bn); a saved pick still wins
   try {
-    if (new URLSearchParams(window.location.search).get('lang') === 'ko') return 'ko';
+    const fromLink = new URLSearchParams(window.location.search).get('lang');
+    if (LANGS.includes(fromLink)) return fromLink;
   } catch (e) {}
   return 'en';
 })();
@@ -642,7 +643,7 @@ function drawTownMenuBox(ctx) {
   const menuItems =
     CURRENT_LANG === 'ko'
       ? ['10,000 도감도 보러가기', '다시 플레이하기']
-      : ['10,000 CODEX', 'PLAY AGAIN'];
+      : [i18n('10,000 CODEX'), i18n('PLAY AGAIN')];
 
   menuItems.forEach((mText, idx) => {
     const rowY = menu.rowY(idx);
@@ -913,7 +914,7 @@ function updateUfoBoardingDockUI() {
       const summary = UFO_GAME.pilotTraitsSummary || UFO_GAME.pilotSpeciesLabel;
       badgeEl.textContent = `#${UFO_GAME.pilotTokenId} (${code}) · ${summary}`;
     } else {
-      badgeEl.textContent = CURRENT_LANG === 'ko' ? '기본 펭귄 · 기록 안 됨' : 'Default penguin · not recorded';
+      badgeEl.textContent = CURRENT_LANG === 'ko' ? '기본 펭귄 · 기록 안 됨' : i18n('Default penguin · not recorded');
     }
   }
 
@@ -923,13 +924,13 @@ function updateUfoBoardingDockUI() {
       s1SubEl.textContent =
         CURRENT_LANG === 'ko'
           ? `#${UFO_GAME.pilotTokenId} 탑승 · ${summary}`
-          : `#${UFO_GAME.pilotTokenId} on board · ${summary}`;
+          : i18n('#{0} on board · {1}', UFO_GAME.pilotTokenId, summary);
       s1SubEl.style.color = '#fde047';
     } else {
       s1SubEl.textContent =
         CURRENT_LANG === 'ko'
           ? '번호를 넣으면 최고점 기록 · 비우면 기록 없음'
-          : 'Your NFT # saves your high score · blank = unrecorded';
+          : i18n('Your NFT # saves your high score · blank = unrecorded');
       s1SubEl.style.color = '';
     }
   }
@@ -1302,7 +1303,7 @@ function updateVehicleUI() {
         : 'Hold to climb · release to dive';
     padText.dataset.ko = ko;
     padText.dataset.en = en;
-    padText.textContent = CURRENT_LANG === 'ko' ? ko : en;
+    padText.textContent = CURRENT_LANG === 'ko' ? ko : i18n(en);
   }
 }
 
@@ -1491,7 +1492,7 @@ function rankMedalSvg(rank, label) {
 function buildLeaderboardRowsHtml(items, showBoardAction = true) {
   if (!items || items.length === 0) {
     return `<div class="empty-state">${
-      CURRENT_LANG === 'ko' ? '조건에 맞는 기록이 없습니다.' : 'No matching records.'
+      CURRENT_LANG === 'ko' ? '조건에 맞는 기록이 없습니다.' : i18n('No matching records.')
     }</div>`;
   }
   return items
@@ -1509,8 +1510,8 @@ function buildLeaderboardRowsHtml(items, showBoardAction = true) {
       const spText = item.species || 'Classic';
       const subText = spText;
       const scoreText = `${Number(item.score).toLocaleString()} PTS`;
-      const goLabel = CURRENT_LANG === 'ko' ? '보기' : 'View';
-      const boardLabel = CURRENT_LANG === 'ko' ? '이 번호로 플레이' : 'Play';
+      const goLabel = CURRENT_LANG === 'ko' ? '보기' : i18n('View');
+      const boardLabel = CURRENT_LANG === 'ko' ? '이 번호로 플레이' : i18n('Play');
 
       return `
         <div class="rank-row-card ${topClass}" onclick="jumpToRankedNft(${item.edition})">
@@ -1583,7 +1584,7 @@ function renderRankingPageList() {
     listEl.innerHTML = `<div class="empty-state">${
       CURRENT_LANG === 'ko'
         ? '아직 기록이 없습니다. 번호를 넣고 플레이하면 첫 기록이 됩니다.'
-        : 'No scores yet. Enter your number and play to set the first one.'
+        : i18n('No scores yet. Enter your number and play to set the first one.')
     }</div>`;
   } else {
     listEl.innerHTML = buildLeaderboardRowsHtml(pageItems, true);
@@ -1598,9 +1599,9 @@ function renderRankingPageList() {
       rangeEl.textContent =
         CURRENT_LANG === 'ko'
           ? `${firstRank}–${lastRank}위 · ${CURRENT_RANKING_PAGE}/${RANKING_TOTAL_PAGES} 페이지`
-          : `#${firstRank}–${lastRank} · Page ${CURRENT_RANKING_PAGE}/${RANKING_TOTAL_PAGES}`;
+          : i18n('#{0}–{1} · Page {2}/{3}', firstRank, lastRank, CURRENT_RANKING_PAGE, RANKING_TOTAL_PAGES);
     } else {
-      rangeEl.textContent = CURRENT_LANG === 'ko' ? '결과 없음' : 'No results';
+      rangeEl.textContent = CURRENT_LANG === 'ko' ? '결과 없음' : i18n('No results');
     }
   }
 
@@ -1667,7 +1668,7 @@ async function fetchAndRenderRankingPage() {
   const game = RANKING_GAME;
   if (listEl && RANKING_PAGE_CACHE.length === 0) {
     listEl.innerHTML = `<div class="empty-state">${
-      CURRENT_LANG === 'ko' ? '불러오는 중…' : 'Loading…'
+      CURRENT_LANG === 'ko' ? '불러오는 중…' : i18n('Loading…')
     }</div>`;
   }
   try {
@@ -1682,7 +1683,7 @@ async function fetchAndRenderRankingPage() {
   } catch (e) {
     if (listEl) {
       listEl.innerHTML = `<div class="empty-state error">${
-        CURRENT_LANG === 'ko' ? '순위를 불러오지 못했습니다. 잠시 후 새로고침해 주세요.' : 'Could not load rankings. Try refreshing.'
+        CURRENT_LANG === 'ko' ? '순위를 불러오지 못했습니다. 잠시 후 새로고침해 주세요.' : i18n('Could not load rankings. Try refreshing.')
       }</div>`;
     }
   }
@@ -1755,57 +1756,57 @@ let RANK_SHARE_PICK = 0; // which brag line: random when the sheet opens, 다른
 const BRAG_LINES = {
   first: [
     (v) => [`[속보] 픽셀펭귄 #${v.n}, ${v.board} 1위 등극 ㅋㅋㅋ ${v.score}. 남극 무너질 때 혼자 살아남은 레전드. 덤빌 펭귄?`,
-      `BREAKING: Pixel Penguin #${v.n} takes #1 on the ${v.board} board lol. ${v.pts}. Antarctica fell, I didn't. Come at me`],
+      i18n('BREAKING: Pixel Penguin #{n} takes #1 on the {board} board lol. {pts}. Antarctica fell, I didn\'t. Come at me', v)],
     (v) => [`${v.board} 1위 먹었다 ㅋㅋ #${v.n} ${v.score}. 기둥도 나는 못 빨아들임. 나 이기면 인정해 줌`,
-      `${v.board} #1, penguin #${v.n}, ${v.pts}. Even the pillar couldn't suck me in lol. Beat it if you can`],
+      i18n('{board} #1, penguin #{n}, {pts}. Even the pillar couldn\'t suck me in lol. Beat it if you can', v)],
     (v) => [`ㅋㅋㅋ 미안 ${v.board} 1위 내가 가져감. #${v.n} ${v.score}. 억울하면 와서 뺏어 가든가~`,
-      `Sorry, ${v.board} #1 is mine now lol. Penguin #${v.n}, ${v.pts}. Mad? Come take it`],
+      i18n('Sorry, {board} #1 is mine now lol. Penguin #{n}, {pts}. Mad? Come take it', v)],
   ],
   podium: [
     (v) => [`${v.board} ${v.r}위 ㅋㅋ 메달 땄다. #${v.n} ${v.score}. 1위 놈 기다려라 곧 간다`,
-      `${v.board} #${v.r}, got a medal lol. Penguin #${v.n}, ${v.pts}. Number one, I'm coming for you`],
+      i18n('{board} #{r}, got a medal lol. Penguin #{n}, {pts}. Number one, I\'m coming for you', v)],
     (v) => [`[단독] 픽셀펭귄 #${v.n}, ${v.board} 시상대 ${v.r}위 ㅋㅋ ${v.score}. 1위 아니라서 지금 분노 중`,
-      `EXCLUSIVE: penguin #${v.n} on the ${v.board} podium at #${v.r} lol. ${v.pts}. Still furious it's not #1`],
+      i18n('EXCLUSIVE: penguin #{n} on the {board} podium at #{r} lol. {pts}. Still furious it\'s not #1', v)],
     (v) => [`#${v.n} ${v.board} ${v.r}위 찍음 ${v.score} ㅋㅋ 1위까지 쪼끔 남음. 응원 말고 도전해라`,
-      `Penguin #${v.n}: ${v.board} #${v.r}, ${v.pts}. So close to #1 lol. Don't cheer, play`],
+      i18n('Penguin #{n}: {board} #{r}, {pts}. So close to #1 lol. Don\'t cheer, play', v)],
   ],
   top10: [
     (v) => [`${v.board} TOP 10 입성 ㅋㅋ #${v.n} ${v.r}위 ${v.score}. 펭귄 인생 이 정도면 성공한 거 아님?`,
-      `${v.board} TOP 10 lol. Penguin #${v.n} at #${v.r}, ${v.pts}. Peak penguin life tbh`],
+      i18n('{board} TOP 10 lol. Penguin #{n} at #{r}, {pts}. Peak penguin life tbh', v)],
     (v) => [`#${v.n} ${v.board} ${v.r}위 ${v.score} ㅋㅋ 기둥한테 빨려 갈 뻔했는데 살아남음`,
-      `Penguin #${v.n} is ${v.board} #${v.r} with ${v.pts}. Nearly got sucked into the pillar, survived lol`],
+      i18n('Penguin #{n} is {board} #{r} with {pts}. Nearly got sucked into the pillar, survived lol', v)],
     (v) => [`${v.board} ${v.r}위 찍었다 #${v.n} ${v.score}. 나보다 못하면 펭귄 자격 박탈 ㅋㅋ`,
-      `${v.board} #${v.r}, penguin #${v.n}, ${v.pts}. Score lower and lose your penguin license lol`],
+      i18n('{board} #{r}, penguin #{n}, {pts}. Score lower and lose your penguin license lol', v)],
   ],
   top100: [
     (v) => [`${v.board} ${v.r}위 ㅋㅋ #${v.n} ${v.score}. TOP 100 안에는 들었다 이 말이야`,
-      `${v.board} #${v.r} lol. Penguin #${v.n}, ${v.pts}. Made the TOP 100, that's what matters`],
+      i18n('{board} #{r} lol. Penguin #{n}, {pts}. Made the TOP 100, that\'s what matters', v)],
     (v) => [`#${v.n} ${v.board} ${v.r}위 ${v.score}. 강제 도트화 직전에 탈출 성공 ㅋㅋ 너도 해 봐`,
-      `Penguin #${v.n}: ${v.board} #${v.r}, ${v.pts}. Escaped right before forced pixelation lol. Your turn`],
+      i18n('Penguin #{n}: {board} #{r}, {pts}. Escaped right before forced pixelation lol. Your turn', v)],
     (v) => [`${v.board} ${v.r}위… 애매하지만 순위는 순위다 ㅋㅋ #${v.n} ${v.score}. 나보다 낮으면 놀림 받음`,
-      `${v.board} #${v.r}... mid, but a rank is a rank lol. Penguin #${v.n}, ${v.pts}. Rank lower and get roasted`],
+      i18n('{board} #{r}... mid, but a rank is a rank lol. Penguin #{n}, {pts}. Rank lower and get roasted', v)],
   ],
   chasing: [
     (v) => [`#${v.n} ${v.board} TOP 100 도전 중 ㅋㅋ 아직 기둥한테 계속 빨려 감. 같이 망할 사람?`,
-      `Penguin #${v.n}, still chasing the ${v.board} TOP 100 lol. Keep getting sucked into the pillar. Fail with me?`],
+      i18n('Penguin #{n}, still chasing the {board} TOP 100 lol. Keep getting sucked into the pillar. Fail with me?', v)],
     (v) => [`나 #${v.n}, ${v.board} 순위권 밖 ㅋㅋㅋ 근데 너도 못 들어갈걸? 해 보고 말해`,
-      `Penguin #${v.n}: not on the ${v.board} board yet lol. Bet you can't make it either. Try it`],
+      i18n('Penguin #{n}: not on the {board} board yet lol. Bet you can\'t make it either. Try it', v)],
     (v) => [`#${v.n} ${v.board} 강제 도트화만 몇 번째냐 ㅋㅋ TOP 100 들 때까지 간다`,
-      `Penguin #${v.n} got pixelated way too many times lol. Not stopping till the ${v.board} TOP 100`],
+      i18n('Penguin #{n} got pixelated way too many times lol. Not stopping till the {board} TOP 100', v)],
   ],
   board: [
     (v) => [`픽셀펭귄 ${v.board} 지금 1위 #${v.top} ${v.score} ㅋㅋ 이거 깰 사람 나와 봐`,
-      `Pixel Penguin ${v.board} #1 right now: #${v.top} with ${v.pts} lol. Who's breaking that?`],
+      i18n('Pixel Penguin {board} #1 right now: #{top} with {pts} lol. Who\'s breaking that?', v)],
     (v) => [`[속보] 남극 붕괴, 펭귄들 ${v.board} 타고 탈출 중 ㅋㅋ 1위는 #${v.top} ${v.score}`,
-      `BREAKING: Antarctica collapses, penguins flee by ${v.board} lol. #1 is #${v.top} with ${v.pts}`],
+      i18n('BREAKING: Antarctica collapses, penguins flee by {board} lol. #1 is #{top} with {pts}', v)],
     (v) => [`${v.board} 1위 #${v.top} ${v.score}… 이게 펭귄이 낼 수 있는 점수냐 ㅋㅋ`,
-      `${v.board} #1: #${v.top}, ${v.pts}... is that even penguinly possible lol`],
+      i18n('{board} #1: #{top}, {pts}... is that even penguinly possible lol', v)],
   ],
   empty: [
     (v) => [`픽셀펭귄 ${v.board} 1위 자리 아직 공석 ㅋㅋ 지금 하면 그냥 1위임. 날로 먹을 사람?`,
-      `The Pixel Penguin ${v.board} #1 spot is still empty lol. Play now and it's yours for free`],
+      i18n('The Pixel Penguin {board} #1 spot is still empty lol. Play now and it\'s yours for free', v)],
     (v) => [`[속보] ${v.board} 순위표 텅 빔 ㅋㅋ 1등 줍줍 기회`,
-      `BREAKING: the ${v.board} board is totally empty lol. Free #1 up for grabs`],
+      i18n('BREAKING: the {board} board is totally empty lol. Free #1 up for grabs', v)],
   ],
 };
 
@@ -1831,7 +1832,7 @@ function shareOrigin() {
 function buildRankShare() {
   const game = RANKING_GAME;
   const ko = CURRENT_LANG === 'ko';
-  const board = SHARE_BOARD_LABEL[game][ko ? 'ko' : 'en'];
+  const board = ko ? SHARE_BOARD_LABEL[game].ko : i18n(SHARE_BOARD_LABEL[game].en);
   const raw = (document.getElementById('rank-share-no')?.value || '').trim();
   const n = /^\d{1,4}$/.test(raw) ? Number(raw) : null;
   const loaded = RANKING_CACHE_GAME === game;
@@ -1839,7 +1840,7 @@ function buildRankShare() {
   const top = loaded ? RANKING_PAGE_CACHE[0] || null : null;
   const params = new URLSearchParams({ board: game });
   if (n !== null) params.set('n', String(n));
-  if (ko) params.set('lang', 'ko');
+  if (CURRENT_LANG !== 'en') params.set('lang', CURRENT_LANG); // the link opens in the sharer's language
   const url = `${shareOrigin()}/?${params}`;
 
   const scored = row || top;
@@ -1850,7 +1851,7 @@ function buildRankShare() {
   else if (n !== null) kind = 'chasing';
   else kind = top ? 'board' : 'empty';
   const lines = BRAG_LINES[kind];
-  const text = lines[RANK_SHARE_PICK % lines.length](v)[ko ? 0 : 1];
+  const text = lines[RANK_SHARE_PICK % lines.length](v)[ko ? 0 : 1]; // the English side already went through i18n()
   return { game, board, raw, n, loaded, row, url, text };
 }
 
@@ -1874,7 +1875,7 @@ function renderRankShare() {
 
   let head;
   if (!s.loaded) {
-    head = `<div class="share-note">${ko ? '순위 불러오는 중…' : 'Loading the board…'}</div>`;
+    head = `<div class="share-note">${ko ? '순위 불러오는 중…' : i18n('Loading the board…')}</div>`;
   } else if (s.row) {
     const rankLabel = ko ? `${s.row.rank}위` : `#${s.row.rank}`;
     const nftName = getNftDisplayName(s.row);
@@ -1888,22 +1889,22 @@ function renderRankShare() {
         </div>
       </div>`;
   } else if (s.raw && s.n === null) {
-    head = `<div class="share-note">${ko ? '번호는 0 ~ 9999 숫자만 됩니다.' : 'Numbers 0 to 9999 only.'}</div>`;
+    head = `<div class="share-note">${ko ? '번호는 0 ~ 9999 숫자만 됩니다.' : i18n('Numbers 0 to 9999 only.')}</div>`;
   } else if (s.n !== null) {
     head = `<div class="share-note">${
       ko
         ? `#${s.n}은 아직 ${escapeHtml(s.board)} TOP 100 밖입니다. 순위 없이 도전 문구로 공유돼요.`
-        : `#${s.n} is not in the ${escapeHtml(s.board)} TOP 100 yet, so it shares as a challenge.`
+        : i18n('#{0} is not in the {1} TOP 100 yet, so it shares as a challenge.', s.n, escapeHtml(s.board))
     }</div>`;
   } else {
     head = `<div class="share-note">${
-      ko ? '번호를 넣으면 그 번호 순위로 자랑합니다. 비우면 순위표를 공유해요.' : 'Enter your number to brag its rank, or share the whole board.'
+      ko ? '번호를 넣으면 그 번호 순위로 자랑합니다. 비우면 순위표를 공유해요.' : i18n('Enter your number to brag its rank, or share the whole board.')
     }</div>`;
   }
   const preview = document.getElementById('rank-share-preview');
   if (preview) {
     preview.innerHTML = `${head}<p class="share-text">${escapeHtml(s.text)}</p><button type="button" class="share-reroll" data-share-reroll>${
-      ko ? '다른 멘트' : 'Another line'
+      ko ? '다른 멘트' : i18n('Another line')
     }</button>`;
   }
 
@@ -1968,14 +1969,14 @@ async function copyRankShare(withText) {
   if (await copyToClipboard(withText ? `${s.text}\n${s.url}` : s.url)) {
     setRankShareStatus(
       withText
-        ? ko ? '문구와 링크를 복사했어요. 붙여넣기만 하면 됩니다.' : 'Message and link copied. Just paste it.'
-        : ko ? '링크를 복사했어요.' : 'Link copied.'
+        ? ko ? '문구와 링크를 복사했어요. 붙여넣기만 하면 됩니다.' : i18n('Message and link copied. Just paste it.')
+        : ko ? '링크를 복사했어요.' : i18n('Link copied.')
     );
   } else {
     const linkEl = document.getElementById('rank-share-link');
     linkEl?.focus();
     linkEl?.select();
-    setRankShareStatus(ko ? '자동 복사가 막혀 있어요. 위 링크를 길게 눌러 복사해 주세요.' : 'Copy is blocked here. Press and hold the link above to copy it.');
+    setRankShareStatus(ko ? '자동 복사가 막혀 있어요. 위 링크를 길게 눌러 복사해 주세요.' : i18n('Copy is blocked here. Press and hold the link above to copy it.'));
   }
 }
 
@@ -1993,13 +1994,13 @@ function veryChatRankShare(e) {
   // Started inside the tap, before the app takes over; the link itself is followed as a normal tap
   copyToClipboard(`${s.text}\n${s.url}`).then((ok) => {
     if (!ok) {
-      setRankShareStatus(ko ? '자동 복사가 막혀 있어요. 아래 링크를 길게 눌러 복사한 뒤 베리챗에 붙여넣어 주세요.' : 'Copy is blocked here. Press and hold the link below, then paste it in VeryChat.');
+      setRankShareStatus(ko ? '자동 복사가 막혀 있어요. 아래 링크를 길게 눌러 복사한 뒤 베리챗에 붙여넣어 주세요.' : i18n('Copy is blocked here. Press and hold the link below, then paste it in VeryChat.'));
       return;
     }
     setRankShareStatus(
       phone
-        ? ko ? '자랑 문구를 복사했어요. 베리챗이 열리면 대화방에 붙여넣기만 하세요.' : 'Copied. Paste it into any VeryChat chat when the app opens.'
-        : ko ? '자랑 문구를 복사했어요. 베리챗은 폰 앱이라 PC에선 열리지 않아요. 폰에서 이 버튼을 누르면 바로 열립니다.' : 'Copied. VeryChat is a phone app, so tap this button on your phone to open it directly.'
+        ? ko ? '자랑 문구를 복사했어요. 베리챗이 열리면 대화방에 붙여넣기만 하세요.' : i18n('Copied. Paste it into any VeryChat chat when the app opens.')
+        : ko ? '자랑 문구를 복사했어요. 베리챗은 폰 앱이라 PC에선 열리지 않아요. 폰에서 이 버튼을 누르면 바로 열립니다.' : i18n('Copied. VeryChat is a phone app, so tap this button on your phone to open it directly.')
     );
   });
 }
@@ -3445,7 +3446,7 @@ function initPixelMotionStudio() {
       const subEl = document.getElementById('s1-overlay-sub');
       if (subEl) {
         subEl.textContent =
-          CURRENT_LANG === 'ko' ? '0~9999 사이 번호만 기록됩니다.' : 'Only numbers 0–9999 can be recorded.';
+          CURRENT_LANG === 'ko' ? '0~9999 사이 번호만 기록됩니다.' : i18n('Only numbers 0–9999 can be recorded.');
         subEl.style.color = '#fb7185';
       }
       sourceInput?.focus();
@@ -3717,6 +3718,9 @@ function initPixelMotionStudio() {
     }
     const now = performance.now();
     updateStageUiScale(canvas);
+    // Urdu lines read right to left: "10,000 کی فہرست" must start at the right. Only the base direction changes;
+    // every fillText here aligns left / center / right (never start / end), so nothing moves.
+    ctx.direction = CURRENT_LANG === 'ur' ? 'rtl' : 'ltr';
     const activeSpId = UFO_GAME.pilotSpeciesId || '01';
     ensureSpeciesSprite(activeSpId);
     ensureHero2DSprite();
@@ -3978,10 +3982,10 @@ function initPixelMotionStudio() {
               ? '어어 차가 하늘로 빨려 올라가!! 내 차까지 도트 찍히잖아?!!'
               : '으악 내 뽀샤시한 몸이!! 강제로 도트 찍히고 있잖아?!!'
             : isBoat
-            ? 'The whole ship is getting sucked up!! Even the icebreaker is going pixel?!!'
+            ? i18n('The whole ship is getting sucked up!! Even the icebreaker is going pixel?!!')
             : isCar
-            ? 'The car is getting sucked up!! Even my ride is going pixel?!!'
-            : 'Aaagh my smooth body!! I am being forcibly pixelated?!!'
+            ? i18n('The car is getting sucked up!! Even my ride is going pixel?!!')
+            : i18n('Aaagh my smooth body!! I am being forcibly pixelated?!!')
           : CURRENT_LANG === 'ko'
           ? isBoat
             ? '강제 도트화 완료... 어 잠깐 여기 바다가 없잖아 떨어진다아악!!'
@@ -3989,10 +3993,10 @@ function initPixelMotionStudio() {
             ? '강제 도트화 완료... 어 잠깐 바퀴가 허공에서 헛돈다 떨어진다아악!!'
             : '강제 도트화 완료... 근데 나 아직 추락 중이었잖아아악!!'
           : isBoat
-          ? 'Pixelation complete... Wait, there is no sea up here?! FALLING!!'
+          ? i18n('Pixelation complete... Wait, there is no sea up here?! FALLING!!')
           : isCar
-          ? 'Pixelation complete... Wait, the wheels are spinning on air?! FALLING!!'
-          : 'Pixelation complete... But I was still falling?! CRASHING!!',
+          ? i18n('Pixelation complete... Wait, the wheels are spinning on air?! FALLING!!')
+          : i18n('Pixelation complete... But I was still falling?! CRASHING!!'),
         scanRatio === 0 ? '#fb7185' : pct < 78 ? '#38bdf8' : '#fb7185',
         now
       );
@@ -4060,7 +4064,7 @@ function initPixelMotionStudio() {
         ctx.fillText(
           CURRENT_LANG === 'ko'
             ? `멍때리다 기둥에 빨려옴 · 기본 펭귄으로 ${INTRO_TOWN.koPixel} 도착  |  [게임 순위 보기]`
-            : `Sucked in while idling · Default Penguin in ${INTRO_TOWN.en}  |  [Rankings]`,
+            : i18n('Sucked in while idling · Default Penguin in {0}  |  [Rankings]', i18n(INTRO_TOWN.en)),
           480,
           banY + banH / 2 + 1
         );
@@ -4068,18 +4072,22 @@ function initPixelMotionStudio() {
         ctx.fillText(
           CURRENT_LANG === 'ko'
             ? `기본 펭귄으로 ${INTRO_TOWN.koPixel} 도착  |  [게임 순위 보기]`
-            : `Arrived at ${INTRO_TOWN.en} (Default Penguin)  |  [Rankings]`,
+            : i18n('Arrived at {0} (Default Penguin)  |  [Rankings]', i18n(INTRO_TOWN.en)),
           480,
           banY + banH / 2 + 1
         );
       } else if (UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null) {
         const pilotCode = `P${String(UFO_GAME.pilotTokenId).padStart(4, '0')}`;
         const bestPts = Math.max(finalPts, runResult.lastBestScore || finalPts);
-        const rankTag = runResult.lastRank ? ` · 순위 #${runResult.lastRank}` : '';
+        const rankTag = runResult.lastRank
+          ? CURRENT_LANG === 'ko'
+            ? ` · 순위 #${runResult.lastRank}`
+            : i18n(' · Rank #{0}', runResult.lastRank)
+          : '';
         ctx.fillText(
           CURRENT_LANG === 'ko'
             ? `#${UFO_GAME.pilotTokenId} (${pilotCode}) · 최고점 ${bestPts.toLocaleString()} PTS${rankTag}  |  [게임 순위 보기]`
-            : `#${UFO_GAME.pilotTokenId} (${pilotCode}) · High Score ${bestPts.toLocaleString()} PTS${rankTag}  |  [Rankings]`,
+            : i18n('#{0} ({1}) · High Score {2} PTS{3}  |  [Rankings]', UFO_GAME.pilotTokenId, pilotCode, bestPts.toLocaleString(), rankTag),
           480,
           banY + banH / 2 + 1
         );
@@ -4087,7 +4095,7 @@ function initPixelMotionStudio() {
         ctx.fillText(
           CURRENT_LANG === 'ko'
             ? `번호 미입력 (기록 미저장) · 이번 점수 ${finalPts.toLocaleString()} PTS  |  [게임 순위 보기]`
-            : `No Number (Unrecorded) · Score ${finalPts.toLocaleString()} PTS  |  [Rankings]`,
+            : i18n('No Number (Unrecorded) · Score {0} PTS  |  [Rankings]', finalPts.toLocaleString()),
           480,
           banY + banH / 2 + 1
         );
@@ -4249,7 +4257,8 @@ function initPixelMotionStudio() {
         const ko = CURRENT_LANG === 'ko';
         const hero = { fx: row.heroX, fy: spriteY };
         const fr = (i) => renderedFriends[i] || { fx: row.friendsX[i], fy: spriteY };
-        const L = (who, col, k, e) => ({ who, col, text: ko ? k : e });
+        const L = (who, col, k, e) => ({ who, col, text: ko ? k : i18n(e) });
+        const townEn = i18n(INTRO_TOWN.en);
         const chatter = [
           L(fr(1), '#fbbf24', '근데 너 진짜 게임 1초도 안 했어? 제작자 지금 울고 있음 ㅋㅋ', 'Wait, you skipped the whole game? The dev is crying right now lol'),
           L(hero, '#38bdf8', '게임은 다음에... 일단 트리 구경부터 ㅎㅎ', 'Game later... tree first hehe'),
@@ -4263,11 +4272,11 @@ function initPixelMotionStudio() {
           ? [
               L(fr(0), '#ff4d6d', '야 안 누르고 뭐했냐?! 남극 무너지는 거 30초 동안 멍때리고 구경했냐 ㅋㅋㅋ', 'Yo, why did you not press anything?! Watched Antarctica fall apart for 30 s? lol'),
               L(hero, '#38bdf8', '아니 그게... 셋 중에 뭐 탈지 고르다가... 정신 차려보니 빨려왔어...', 'Well... I was still picking a ride... and then I got sucked up...'),
-              L(fr(1), '#fbbf24', `결정장애 펭귄 레전드 ㅋㅋㅋ 탈 것도 없이 맨몸 입성 축하한다!! ${INTRO_TOWN.ko} 환영~`, `Legendary indecisive penguin lol. Welcome to ${INTRO_TOWN.en}, no ride needed!!`),
+              L(fr(1), '#fbbf24', `결정장애 펭귄 레전드 ㅋㅋㅋ 탈 것도 없이 맨몸 입성 축하한다!! ${INTRO_TOWN.ko} 환영~`, i18n('Legendary indecisive penguin lol. Welcome to {0}, no ride needed!!', townEn)),
             ]
           : [
-              L(hero, '#38bdf8', `남극 탈출이고 나발이고 귀찮아서 바로 ${INTRO_TOWN.ko}로 째버렸지롱~`, `Skipped the whole escape game and walked straight to ${INTRO_TOWN.en}~`),
-              L(fr(0), '#ff4d6d', `ㅋㅋㅋ 탈 것도 안 타고 날로 먹었네?! 어쨌든 ${INTRO_TOWN.ko} 환영한다!!`, `Haha you skipped the ride?! Welcome to ${INTRO_TOWN.en} anyway!!`),
+              L(hero, '#38bdf8', `남극 탈출이고 나발이고 귀찮아서 바로 ${INTRO_TOWN.ko}로 째버렸지롱~`, i18n('Skipped the whole escape game and walked straight to {0}~', townEn)),
+              L(fr(0), '#ff4d6d', `ㅋㅋㅋ 탈 것도 안 타고 날로 먹었네?! 어쨌든 ${INTRO_TOWN.ko} 환영한다!!`, i18n('Haha you skipped the ride?! Welcome to {0} anyway!!', townEn)),
             ];
         const talk = [...opening, ...chatter.slice(MOTION_STATE.idleSucked ? 1 : 0)];
         const line = talk[Math.min(talk.length - 1, Math.floor(elapsed / TOWN_TALK.turnMs))];
@@ -4288,10 +4297,10 @@ function initPixelMotionStudio() {
               ? '쿠과광—!! 어우 내 허리... 차는 폐차각인데 도착은 성공이다!!'
               : '쿠과광—!! 어우 내 허리... 비행기는 폐기각인데 불시착은 성공이다!!'
             : isBoatRun
-            ? 'CRAAASH—!! Ow my back... the ship ran aground on dry land, but we made it!!'
+            ? i18n('CRAAASH—!! Ow my back... the ship ran aground on dry land, but we made it!!')
             : isCarRun
-            ? 'CRAAASH—!! Ow my back... the car is totaled, but we made it!!'
-            : 'CRAAASH—!! Ow my back... the plane is totaled, but we made it!!',
+            ? i18n('CRAAASH—!! Ow my back... the car is totaled, but we made it!!')
+            : i18n('CRAAASH—!! Ow my back... the plane is totaled, but we made it!!'),
           '#38bdf8',
           now
         );
@@ -4310,7 +4319,11 @@ function initPixelMotionStudio() {
             speaker1.fy - 4,
             CURRENT_LANG === 'ko'
               ? `우와 ${isCarRun ? '하늘에서 차가 떨어졌어' : isBoatRun ? '하늘에서 배가 떨어졌어' : '비행기 불시착했어'} ㅋㅋ 살아있냐?! ${INTRO_TOWN.koPixel}에 온 걸 환영해!!`
-              : `Whoa ${isCarRun ? 'a car fell from the sky' : isBoatRun ? 'a ship fell from the sky' : 'your plane crash-landed'} haha—you alive?! Welcome to ${INTRO_TOWN.en}!!`,
+              : isCarRun
+              ? i18n('Whoa a car fell from the sky haha—you alive?! Welcome to {0}!!', i18n(INTRO_TOWN.en))
+              : isBoatRun
+              ? i18n('Whoa a ship fell from the sky haha—you alive?! Welcome to {0}!!', i18n(INTRO_TOWN.en))
+              : i18n('Whoa your plane crash-landed haha—you alive?! Welcome to {0}!!', i18n(INTRO_TOWN.en)),
             '#ff4d6d',
             now,
             friendArea
@@ -4322,7 +4335,7 @@ function initPixelMotionStudio() {
             speaker2.fy - 4,
             CURRENT_LANG === 'ko'
               ? '사신다고 뭐 안 드립니다 ㅋㅋ 내 눈에 제일 이쁜 자식 골라서 프사나 박아~'
-              : 'Zero perks as promised haha—just pick the cutest penguin for your PFP~',
+              : i18n('Zero perks as promised haha—just pick the cutest penguin for your PFP~'),
             '#fbbf24',
             now,
             friendArea
@@ -4334,7 +4347,11 @@ function initPixelMotionStudio() {
             306,
             CURRENT_LANG === 'ko'
               ? `${rideKo} 수리비도 안 주네... 에라 모르겠다 10,000 도감도나 구경 가자!!`
-              : `Not even paying for ${rideEn} repairs... Whatever, let us check the 10K Codex!!`,
+              : isCarRun
+              ? i18n('Not even paying for car repairs... Whatever, let us check the 10K Codex!!')
+              : isBoatRun
+              ? i18n('Not even paying for ship repairs... Whatever, let us check the 10K Codex!!')
+              : i18n('Not even paying for plane repairs... Whatever, let us check the 10K Codex!!'),
             '#38bdf8',
             now
           );
@@ -4392,7 +4409,7 @@ function buildPixelParadeMarquee() {
     const id = `P${String(item.edition).padStart(4, '0')}`;
     const src =
       item.edition <= 10 ? `/assets/specials/${item.edition}_fast.gif?v=v322` : `/img/${id}.png?v=v322`;
-    const name = CURRENT_LANG === 'ko' ? item.labelKo : item.labelEn;
+    const name = CURRENT_LANG === 'ko' ? item.labelKo : i18n(item.labelEn);
     return `
       <button type="button" class="parade-card" onclick="handleParadeClick(${item.edition})">
         <img src="${src}" alt="${escapeHtml(name)}" class="pixelated" loading="lazy" />
@@ -4427,7 +4444,7 @@ function startMintCountdown() {
     const now = Date.now();
     const diff = targetDate - now;
     if (diff <= 0) {
-      badge.textContent = CURRENT_LANG === 'ko' ? 'MINT LIVE ON VERY MAINNET' : 'MINT LIVE NOW';
+      badge.textContent = CURRENT_LANG === 'ko' ? 'MINT LIVE ON VERY MAINNET' : i18n('MINT LIVE NOW');
       return;
     }
     const d = Math.floor(diff / (1000 * 60 * 60 * 24));
@@ -4446,22 +4463,25 @@ const PAGE_TITLE = {
   en: 'PIXEL PENGUIN (PPENG) — 10,000 pixel penguins for VeryChat',
 };
 function applyLanguage(lang) {
+  if (!LANGS.includes(lang)) lang = 'en';
   CURRENT_LANG = lang;
   document.documentElement.lang = lang;
-  document.title = PAGE_TITLE[lang] || PAGE_TITLE.en;
+  document.title = lang === 'ko' ? PAGE_TITLE.ko : i18n(PAGE_TITLE.en);
   try {
     localStorage.setItem(LANG_STORE, lang);
   } catch (e) {}
-  document.querySelectorAll('.lang-btn[data-lang]').forEach((b) => {
-    b.classList.toggle('active', b.dataset.lang === lang);
-  });
+  const chip = document.getElementById('lang-current');
+  if (chip) chip.textContent = LANG_META[lang].chip;
+  const picker = document.getElementById('lang-select');
+  if (picker) picker.value = lang;
 
+  // Korean has its own text; every other language is looked up by the English (t falls back to it)
   document.querySelectorAll('[data-ko][data-en]').forEach((el) => {
-    el.textContent = lang === 'ko' ? el.dataset.ko : el.dataset.en;
+    el.textContent = lang === 'ko' ? el.dataset.ko : i18n(el.dataset.en);
   });
 
   document.querySelectorAll('[data-placeholder-ko][data-placeholder-en]').forEach((el) => {
-    el.placeholder = lang === 'ko' ? el.dataset.placeholderKo : el.dataset.placeholderEn;
+    el.placeholder = lang === 'ko' ? el.dataset.placeholderKo : i18n(el.dataset.placeholderEn);
   });
 
   updateMobileTraitFilterBtnLabel();
@@ -4627,7 +4647,7 @@ function updateMobileTraitFilterBtnLabel() {
   });
   const span = toggleBtn.querySelector('span');
   if (span) {
-    const base = CURRENT_LANG === 'ko' ? '파츠 필터' : 'Filters';
+    const base = CURRENT_LANG === 'ko' ? '파츠 필터' : i18n('Filters');
     span.textContent = activeCount > 0 ? `${base} · ${activeCount}` : base;
     toggleBtn.classList.toggle('active-toggle', activeCount > 0);
   }
@@ -4647,8 +4667,8 @@ function buildExplorerTraitDropdowns() {
       )
       .join('');
     const labelKo = CAT_LABELS_KO[cat] || cat;
-    const labelText = CURRENT_LANG === 'ko' ? labelKo : cat;
-    const allText = CURRENT_LANG === 'ko' ? '전체' : 'All';
+    const labelText = CURRENT_LANG === 'ko' ? labelKo : i18n(cat);
+    const allText = CURRENT_LANG === 'ko' ? '전체' : i18n('All');
     return `
       <div class="trait-select-box">
         <label for="filter-cat-${cat}" data-ko="${escapeHtml(labelKo)}" data-en="${escapeHtml(cat)}">${escapeHtml(labelText)}</label>
@@ -4704,7 +4724,7 @@ async function fetchExplorerTokens() {
       countEl.innerHTML =
         CURRENT_LANG === 'ko'
           ? `<strong>${data.total.toLocaleString()}</strong>마리 · ${data.page}/${TOTAL_PAGES} 페이지`
-          : `<strong>${data.total.toLocaleString()}</strong> penguins · Page ${data.page}/${TOTAL_PAGES}`;
+          : i18n('{0} penguins · Page {1}/{2}', `<strong>${data.total.toLocaleString()}</strong>`, data.page, TOTAL_PAGES);
     }
 
     document.getElementById('page-indicator').textContent = `${data.page} / ${TOTAL_PAGES}`;
@@ -4715,7 +4735,7 @@ async function fetchExplorerTokens() {
 
     if (!data.items || data.items.length === 0) {
       grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">${
-        CURRENT_LANG === 'ko' ? '맞는 펭귄이 없습니다. 필터를 초기화해 보세요.' : 'No penguins match. Try resetting the filters.'
+        CURRENT_LANG === 'ko' ? '맞는 펭귄이 없습니다. 필터를 초기화해 보세요.' : i18n('No penguins match. Try resetting the filters.')
       }</div>`;
       return;
     }
@@ -4828,7 +4848,7 @@ function centerActiveTraitTab() {
 }
 
 function catLabel(cat) {
-  return CURRENT_LANG === 'ko' ? CAT_LABELS_KO[cat] || cat : cat;
+  return CURRENT_LANG === 'ko' ? CAT_LABELS_KO[cat] || cat : i18n(cat);
 }
 
 function formatTraitCount(count, pct) {
@@ -4870,7 +4890,7 @@ async function openTokenModal(tokenNum) {
 
   modal.classList.add('open');
   body.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">#${Number(tokenNum)} ${
-    CURRENT_LANG === 'ko' ? '불러오는 중…' : 'loading…'
+    CURRENT_LANG === 'ko' ? '불러오는 중…' : i18n('loading…')
   }</div>`;
 
   try {
@@ -4896,10 +4916,10 @@ async function openTokenModal(tokenNum) {
     const dlIcon = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>`;
     const downloadBtnHtml = isSpecial
       ? `<a href="${tok.full_image_url}" download="${tok.id}.gif" class="btn-primary" style="text-decoration:none; width:100%;">
-          ${dlIcon}<span>${CURRENT_LANG === 'ko' ? '원본 GIF 저장' : 'Save original GIF'}</span>
+          ${dlIcon}<span>${CURRENT_LANG === 'ko' ? '원본 GIF 저장' : i18n('Save original GIF')}</span>
          </a>`
       : `<button type="button" class="btn-primary" style="width:100%;" onclick="downloadHighRes3072('${tok.id}', '${tok.pixel_48_url}')">
-          ${dlIcon}<span>${CURRENT_LANG === 'ko' ? '고해상도 PNG 저장 (3072px)' : 'Save PNG (3072px)'}</span>
+          ${dlIcon}<span>${CURRENT_LANG === 'ko' ? '고해상도 PNG 저장 (3072px)' : i18n('Save PNG (3072px)')}</span>
          </button>`;
 
     const titleKo = tok.name_ko || tok.name;
@@ -4915,10 +4935,10 @@ async function openTokenModal(tokenNum) {
           ${downloadBtnHtml}
           <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
             <button type="button" class="btn-secondary" style="padding:9px;" onclick="loadPfpPreview(${tok.edition}); closeTokenModal(); scrollToSection('top');">
-              ${CURRENT_LANG === 'ko' ? '프사로 써보기' : 'Try as PFP'}
+              ${CURRENT_LANG === 'ko' ? '프사로 써보기' : i18n('Try as PFP')}
             </button>
             <a href="/api/metadata/${tok.id}.json" target="_blank" rel="noopener" class="btn-secondary" style="text-decoration:none; padding:9px;">
-              ${CURRENT_LANG === 'ko' ? '메타데이터' : 'Metadata'}
+              ${CURRENT_LANG === 'ko' ? '메타데이터' : i18n('Metadata')}
             </a>
           </div>
         </div>
@@ -4935,28 +4955,28 @@ async function openTokenModal(tokenNum) {
 
         <div class="spec-rows-stack" style="margin-bottom:12px;">
           <div class="spec-row">
-            <span class="spec-label">${CURRENT_LANG === 'ko' ? '번호' : 'Token ID'}</span>
+            <span class="spec-label">${CURRENT_LANG === 'ko' ? '번호' : i18n('Token ID')}</span>
             <span class="spec-value">${tok.id} · #${tok.edition}</span>
           </div>
           <div class="spec-row">
-            <span class="spec-label">${CURRENT_LANG === 'ko' ? '희귀도 순위' : 'Rarity rank'}</span>
+            <span class="spec-label">${CURRENT_LANG === 'ko' ? '희귀도 순위' : i18n('Rarity rank')}</span>
             <span class="spec-value">#${Number(tok.rarity_rank).toLocaleString()} · ${Number(tok.rarity_score).toLocaleString()} pts</span>
           </div>
           <div class="spec-row">
-            <span class="spec-label">${CURRENT_LANG === 'ko' ? '착용 파츠 수' : 'Traits worn'}</span>
+            <span class="spec-label">${CURRENT_LANG === 'ko' ? '착용 파츠 수' : i18n('Traits worn')}</span>
             <span class="spec-value">${tok.active_trait_stat.active_count} · +${Number(tok.active_trait_stat.score).toLocaleString()} pts</span>
           </div>
           ${
             isSpecial && tok.genesis_bonus > 0
               ? `<div class="spec-row">
-            <span class="spec-label">${CURRENT_LANG === 'ko' ? 'Genesis 가산점' : 'Genesis bonus'}</span>
+            <span class="spec-label">${CURRENT_LANG === 'ko' ? 'Genesis 가산점' : i18n('Genesis bonus')}</span>
             <span class="spec-value" style="color:var(--tier-genesis);">+${Number(tok.genesis_bonus).toLocaleString()} pts</span>
           </div>`
               : ''
           }
         </div>
 
-        <h4 class="modal-sub-title">${CURRENT_LANG === 'ko' ? '파츠별 점수' : 'Trait scores'} <span>rarity.tools · 10,000 ÷ ${CURRENT_LANG === 'ko' ? '보유 수' : 'count'}</span></h4>
+        <h4 class="modal-sub-title">${CURRENT_LANG === 'ko' ? '파츠별 점수' : i18n('Trait scores')} <span>rarity.tools · 10,000 ÷ ${CURRENT_LANG === 'ko' ? '보유 수' : i18n('count')}</span></h4>
         <div class="trait-breakdown-list">
           ${traitsHtml}
         </div>
@@ -4964,7 +4984,7 @@ async function openTokenModal(tokenNum) {
     `;
   } catch (err) {
     body.innerHTML = `<div class="empty-state error" style="grid-column:1/-1;">${
-      CURRENT_LANG === 'ko' ? '정보를 불러오지 못했습니다.' : 'Could not load this token.'
+      CURRENT_LANG === 'ko' ? '정보를 불러오지 못했습니다.' : i18n('Could not load this token.')
     }</div>`;
   }
 }
@@ -4982,9 +5002,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   buildPixelParadeMarquee();
 
   // Language buttons
-  document.querySelectorAll('.lang-btn[data-lang]').forEach((btn) => {
-    btn.addEventListener('click', () => applyLanguage(btn.dataset.lang));
-  });
+  document.getElementById('lang-select')?.addEventListener('change', (e) => applyLanguage(e.target.value));
   // The page is written in Korean: switch it to the visitor's language (English unless they picked KR before)
   applyLanguage(CURRENT_LANG);
 

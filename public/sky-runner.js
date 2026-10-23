@@ -439,7 +439,7 @@ function drawSkyHud(ctx, now, run) {
   } else {
     ctx.fillStyle = '#5eead4';
     ctx.font = '900 11.5px "Pretendard", "Malgun Gothic", sans-serif';
-    ctx.fillText(CURRENT_LANG === 'ko' ? 'GUEST (기본)' : 'GUEST', hx + 12, hy + hh / 2 + 1);
+    ctx.fillText(CURRENT_LANG === 'ko' ? 'GUEST (기본)' : i18n('GUEST'), hx + 12, hy + hh / 2 + 1);
   }
   ctx.fillStyle = '#ffffff';
   ctx.font = '900 12.5px "Pretendard", "Malgun Gothic", sans-serif';
@@ -501,7 +501,7 @@ function drawSkyRunnerFrame(ctx, now, spId) {
     } else if (ev.type === 'gateMiss') {
       SKY_GAME.popups.push({ x: ev.x, y: ev.y - 60, vy: -1, text: 'MISS', col: '#94a3b8', alpha: 0.9 });
     } else if (ev.type === 'near') {
-      SKY_GAME.popups.push({ x: ev.x + 40, y: ev.y, vy: -1.3, text: ko ? '아슬아슬! +100' : 'CLOSE CALL +100', col: '#67e8f9', alpha: 1 });
+      SKY_GAME.popups.push({ x: ev.x + 40, y: ev.y, vy: -1.3, text: ko ? '아슬아슬! +100' : i18n('CLOSE CALL +100'), col: '#67e8f9', alpha: 1 });
     } else if (ev.type === 'fuel') {
       SKY_GAME.popups.push({ x: ev.x, y: ev.y - 24, vy: -1.4, text: `FUEL +${ev.gain}`, col: '#f472b6', alpha: 1 });
       spawnSkyBurst(ev.x, ev.y, ['#ef4444', '#fde047', '#ffffff'], 10, 3, 5);
@@ -612,7 +612,7 @@ function drawSkyRunnerFrame(ctx, now, spId) {
 
   withStageUi(ctx, 16, 12, 564, () => drawSkyHud(ctx, now, run));
   if (now - run.startAt < 6000) {
-    const msg = ko ? '누르고 있으면 상승 · 떼면 하강 · 별을 따라 날아요' : 'Hold to climb · release to dive · follow the stars';
+    const msg = ko ? '누르고 있으면 상승 · 떼면 하강 · 별을 따라 날아요' : i18n('Hold to climb · release to dive · follow the stars');
     ctx.save();
     ctx.font = '800 14px "Pretendard", "Malgun Gothic", sans-serif';
     const tw = Math.ceil(ctx.measureText(msg).width) + 28;

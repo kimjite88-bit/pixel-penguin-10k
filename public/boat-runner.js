@@ -1154,7 +1154,7 @@ function drawBoatGauge(ctx, run, now) {
   ctx.fillStyle = '#ffffff';
   ctx.font = '900 11px "Pretendard", "Malgun Gothic", sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'ko' ? '충격' : 'RAM', gx + gw / 2, gy + gh + 16);
+  ctx.fillText(typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'ko' ? '충격' : i18n('RAM'), gx + gw / 2, gy + gh + 16);
   ctx.restore();
 }
 
@@ -1179,7 +1179,7 @@ function drawBoatHud(ctx, now, run) {
   } else {
     ctx.fillStyle = '#5eead4';
     ctx.font = '900 11.5px "Pretendard", "Malgun Gothic", sans-serif';
-    ctx.fillText(ko ? 'GUEST (기본)' : 'GUEST', hx + 12, hy + hh / 2 + 1);
+    ctx.fillText(ko ? 'GUEST (기본)' : i18n('GUEST'), hx + 12, hy + hh / 2 + 1);
   }
   ctx.fillStyle = '#ffffff';
   ctx.font = '900 12.5px "Pretendard", "Malgun Gothic", sans-serif';
@@ -1202,12 +1202,12 @@ function drawBoatHud(ctx, now, run) {
   ctx.fillStyle = '#fecaca';
   ctx.font = '900 10px "Pretendard", "Malgun Gothic", sans-serif';
   ctx.textAlign = 'right';
-  ctx.fillText(ko ? '선체' : 'HULL', bx - 6, hy + hh / 2 + 1);
+  ctx.fillText(ko ? '선체' : i18n('HULL'), bx - 6, hy + hh / 2 + 1);
 
   ctx.textAlign = 'right';
   ctx.font = '900 12px "Pretendard", "Malgun Gothic", sans-serif';
   ctx.fillStyle = '#bae6fd';
-  ctx.fillText(`${ko ? '구조' : 'SAVED'} ${run.rescued} · LV.${run.level}`, hx + hw - 12, hy + hh / 2 + 1);
+  ctx.fillText(`${ko ? '구조' : i18n('SAVED')} ${run.rescued} · LV.${run.level}`, hx + hw - 12, hy + hh / 2 + 1);
   ctx.restore();
 }
 
@@ -1324,7 +1324,7 @@ function drawBoatRunnerFrame(ctx, now, spId) {
       const cols = ['#ffffff', '#bae6fd', '#7dd3fc'];
       spawnBoatBurst(X, bowY - 6, cols, ev.perfect ? 22 : 14, ev.perfect ? 6 : 4.5, 7);
       BOAT_GAME.shakeUntil = now + (ev.perfect ? 260 : 180);
-      const label = ev.perfect ? (ko ? `PERFECT x${Math.min(5, ev.combo)}` : `PERFECT x${Math.min(5, ev.combo)}`) : ko ? '쾅!' : 'CRUNCH!';
+      const label = ev.perfect ? (ko ? `PERFECT x${Math.min(5, ev.combo)}` : `PERFECT x${Math.min(5, ev.combo)}`) : ko ? '쾅!' : i18n('CRUNCH!');
       BOAT_GAME.popups.push({ x: X, y: bowY - 40, vy: -1.5, text: `${label} +${ev.points}`, col: ev.perfect ? '#4ade80' : '#fde047', alpha: 1 });
       if (ev.saved) {
         // Each one leaps from where it stood onto the aft deck
@@ -1332,26 +1332,26 @@ function drawBoatRunnerFrame(ctx, now, spId) {
         ev.band.penguins.forEach((pg, i) =>
           BOAT_GAME.jumpers.push({ sp: boatPenguinSpecies(ev.band.seed, i), x: pg.x, y: yNear - pg.dy, t0: now + i * 90, slot: (run.rescued - ev.saved + i) % 6 })
         );
-        BOAT_GAME.popups.push({ x: X + 130, y: bowY - 10, vy: -1.2, text: ko ? `펭귄 ${ev.saved}마리 구조!` : `${ev.saved} saved!`, col: '#fde68a', alpha: 1 });
+        BOAT_GAME.popups.push({ x: X + 130, y: bowY - 10, vy: -1.2, text: ko ? `펭귄 ${ev.saved}마리 구조!` : i18n('{0} saved!', ev.saved), col: '#fde68a', alpha: 1 });
       }
-      if (ev.crate) BOAT_GAME.popups.push({ x: X - 130, y: bowY - 10, vy: -1.2, text: ko ? `선체 수리 +${BOAT_CFG.REPAIR}` : `Repair +${BOAT_CFG.REPAIR}`, col: '#fbbf24', alpha: 1 });
+      if (ev.crate) BOAT_GAME.popups.push({ x: X - 130, y: bowY - 10, vy: -1.2, text: ko ? `선체 수리 +${BOAT_CFG.REPAIR}` : i18n('Repair +{0}', BOAT_CFG.REPAIR), col: '#fbbf24', alpha: 1 });
       if (ev.dent) {
         BOAT_GAME.hitFlashUntil = now + 520;
         BOAT_GAME.shakeUntil = now + 360;
         const tooHard = ev.excess > BOAT_CFG.SAFE;
-        const label = tooHard ? (ko ? '너무 셌다!' : 'Too hard!') : ko ? '초록 칸 놓침!' : 'Missed the green!';
-        BOAT_GAME.popups.push({ x: X, y: bowY + 40, vy: -1.3, text: `${label} ${ko ? '선체' : 'Hull'} -${ev.dent}`, col: '#fb7185', alpha: 1 });
+        const label = tooHard ? (ko ? '너무 셌다!' : i18n('Too hard!')) : ko ? '초록 칸 놓침!' : i18n('Missed the green!');
+        BOAT_GAME.popups.push({ x: X, y: bowY + 40, vy: -1.3, text: `${label} ${ko ? '선체' : i18n('Hull')} -${ev.dent}`, col: '#fb7185', alpha: 1 });
         spawnBoatBurst(X, bowY + 10, ['#fb7185', '#fecaca', '#ffffff'], 10, 3.4, 5);
       }
     } else if (ev.type === 'stuck') {
       BOAT_GAME.shakeUntil = now + 200;
       spawnBoatBurst(X, bowY - 4, ['#e0f2fe', '#ffffff'], 8, 3, 5);
       BOAT_GAME.hitFlashUntil = now + 520;
-      BOAT_GAME.popups.push({ x: X, y: bowY - 40, vy: -1.3, text: ko ? `약했다! 튕겨남 선체 -${ev.dent}` : `Too weak! Bounced, hull -${ev.dent}`, col: '#fb7185', alpha: 1 });
+      BOAT_GAME.popups.push({ x: X, y: bowY - 40, vy: -1.3, text: ko ? `약했다! 튕겨남 선체 -${ev.dent}` : i18n('Too weak! Bounced, hull -{0}', ev.dent), col: '#fb7185', alpha: 1 });
     } else if (ev.type === 'whiff') {
-      BOAT_GAME.popups.push({ x: X, y: bowY - 40, vy: -1.2, text: ko ? '너무 멀어요' : 'Too far away', col: '#cbd5e1', alpha: 1 });
+      BOAT_GAME.popups.push({ x: X, y: bowY - 40, vy: -1.2, text: ko ? '너무 멀어요' : i18n('Too far away'), col: '#cbd5e1', alpha: 1 });
     } else if (ev.type === 'level') {
-      BOAT_GAME.popups.push({ x: 480, y: 92, vy: -1.2, text: ko ? `LV.${ev.level} 얼음이 두꺼워진다!` : `LV.${ev.level} Thicker ice!`, col: '#fde047', alpha: 1 });
+      BOAT_GAME.popups.push({ x: 480, y: 92, vy: -1.2, text: ko ? `LV.${ev.level} 얼음이 두꺼워진다!` : i18n('LV.{0} Thicker ice!', ev.level), col: '#fde047', alpha: 1 });
     } else if (ev.type === 'crash') {
       crashed = true;
     }
@@ -1437,7 +1437,7 @@ function drawBoatRunnerFrame(ctx, now, spId) {
   withStageUi(ctx, 16, 12, 564, () => drawBoatHud(ctx, now, run));
 
   if (run.rams < 3 && now - run.startAt < 15000) {
-    const msg = ko ? '누르고 있으면 힘이 모이고 · 떼면 들이받기 · 초록 칸을 놓치면 선체가 깎여요' : 'Hold to charge · let go to ram · miss the green and the hull takes damage';
+    const msg = ko ? '누르고 있으면 힘이 모이고 · 떼면 들이받기 · 초록 칸을 놓치면 선체가 깎여요' : i18n('Hold to charge · let go to ram · miss the green and the hull takes damage');
     ctx.save();
     ctx.font = '800 14px "Pretendard", "Malgun Gothic", sans-serif';
     const tw = Math.ceil(ctx.measureText(msg).width) + 28;
@@ -1463,7 +1463,7 @@ function drawBoatRunnerFrame(ctx, now, spId) {
     ctx.font = '900 15px "Pretendard", "Malgun Gothic", sans-serif';
     ctx.textAlign = 'center';
     ctx.fillStyle = Math.floor(now / 220) % 2 === 0 ? '#fb7185' : '#ffffff';
-    ctx.fillText(ko ? '뒤에서 빙하떼가 몰려온다!' : 'The iceberg pack is right behind you!', 480, 524);
+    ctx.fillText(ko ? '뒤에서 빙하떼가 몰려온다!' : i18n('The iceberg pack is right behind you!'), 480, 524);
     ctx.restore();
   }
   ctx.restore();
@@ -1539,7 +1539,7 @@ function drawBoatScene1Departure(ctx, now, p, spId) {
       ctx,
       boatX + 10,
       Math.max(64, boatY - 150),
-      CURRENT_LANG === 'ko' ? '뒤에서 기둥이 빨아들인다!! 전속력 출항, 얼음 부수고 도망간다!!' : 'The pillar is sucking everything in!! Full ahead, ram our way out!!',
+      CURRENT_LANG === 'ko' ? '뒤에서 기둥이 빨아들인다!! 전속력 출항, 얼음 부수고 도망간다!!' : i18n('The pillar is sucking everything in!! Full ahead, ram our way out!!'),
       '#38bdf8',
       now
     );

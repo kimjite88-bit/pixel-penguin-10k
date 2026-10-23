@@ -460,14 +460,14 @@ function openingPanicPose(i, f, t, now, base) {
       p.flip = true;
       p.sx = 1 + Math.sin(now * 0.04) * 0.04;
       p.sweat = false;
-      p.yell = [ko ? '아야야...' : 'Ouch...', 7100, 7900];
+      p.yell = [ko ? '아야야...' : i18n('Ouch...'), 7100, 7900];
     } else if (d < 3400) {
       p.x = base - 66 + (d - 1900) * 0.06;
       run(1);
     } else {
       p.x = base - 66 + 90 - (d - 3400) * 0.03;
       run(-1, 80);
-      p.yell = [ko ? '앗 이쪽 아니야!!' : 'Wrong way!!', 9400, 10300];
+      p.yell = [ko ? '앗 이쪽 아니야!!' : i18n('Wrong way!!'), 9400, 10300];
     }
   } else if (f.panic === 'circle') {
     // Runs round in circles, getting nowhere
@@ -483,7 +483,7 @@ function openingPanicPose(i, f, t, now, base) {
       p.lift = Math.sin(q * Math.PI) * 18;
       p.rot = Math.sin(now * 0.03) * 0.3;
       p.flip = Math.floor(now / 130) % 2 === 0;
-      p.yell = [ko ? '엄마아아!!' : 'MOMMY!!', 6200, 7600];
+      p.yell = [ko ? '엄마아아!!' : i18n('MOMMY!!'), 6200, 7600];
     } else {
       p.x = base - (d - 1600) * 0.05;
       run(-1, 75);
@@ -517,7 +517,7 @@ function openingPanicPose(i, f, t, now, base) {
     } else {
       p.x = OPENING_HERO_X + 98 + (d - hit - 1500) * 0.06;
       run(1, 60);
-      p.yell = [ko ? '어디로 가야 돼?!' : 'Which way?!', 6000 + hit + 1500, 6000 + hit + 2600];
+      p.yell = [ko ? '어디로 가야 돼?!' : i18n('Which way?!'), 6000 + hit + 1500, 6000 + hit + 2600];
     }
   } else if (f.panic === 'stranded') {
     // Cut off on the far ledge: jumps up and down waving, nearly topples into the chasm
@@ -525,7 +525,7 @@ function openingPanicPose(i, f, t, now, base) {
     p.lift = Math.sin(q * Math.PI) * 20;
     p.flip = Math.floor(now / 150) % 2 === 0;
     p.rot = d > 1400 && d < 1800 ? -Math.sin(((d - 1400) / 400) * Math.PI) * 0.5 : Math.sin(now * 0.03) * 0.15;
-    p.yell = [ko ? '살려줘~!' : 'Help me~!', 6100, 8100];
+    p.yell = [ko ? '살려줘~!' : i18n('Help me~!'), 6100, 8100];
   }
   return p;
 }
@@ -691,7 +691,7 @@ function drawOpeningHero(ctx, now, t) {
     // Anticipation: crouch, ready to run
     const q = (t - 10000) / 300;
     drawOpeningPenguin2D(ctx, '01', X + q * 8, feet, size, 6, false, 1 + q * 0.14, 1 - q * 0.16);
-    drawOpeningYell(ctx, X, feet - size - 8, ko ? '튀어!!' : 'RUN!!', 10000, 10700, t);
+    drawOpeningYell(ctx, X, feet - size - 8, ko ? '튀어!!' : i18n('RUN!!'), 10000, 10700, t);
     return;
   }
   // Hops away on both feet, the way penguins hop over rough ground, flippers out for balance: squash, spring,
@@ -729,7 +729,7 @@ function drawOpeningHero(ctx, now, t) {
   drawOpeningPenguin2D(ctx, '01', x, feet - lift, size, lift > 0 ? 6 : 0, !lookBack, 2 - sy, sy, rot);
   drawOpeningSweat(ctx, x, feet - lift - size * 0.95, now, 9);
   if (lookBack) drawScene0Mark(ctx, x + 34, feet - lift - size - 4, '!', '#fb7185');
-  drawOpeningYell(ctx, X, feet - size - 8, ko ? '튀어!!' : 'RUN!!', 10000, 10700, t);
+  drawOpeningYell(ctx, X, feet - size - 8, ko ? '튀어!!' : i18n('RUN!!'), 10000, 10700, t);
 }
 
 // B: a pixel star appears high up, grows, then falls with a trail
@@ -952,7 +952,7 @@ function drawOpeningFound(ctx, now, t) {
             : f.kind === 'boat'
             ? { x: sp.x - 30, y: sp.y - 116 * sp.scale - 4 }
             : { x: sp.x - 20, y: sp.y - 46 * sp.scale - 4 };
-        drawScene0Marker(ctx, now, target, ko ? f.ko : f.en, SCENE0_ACCENT[f.kind]);
+        drawScene0Marker(ctx, now, target, ko ? f.ko : i18n(f.en), SCENE0_ACCENT[f.kind]);
       }
     });
     // The hero runs in from the right onto its floe, turns to each find, then strikes the picker's pose
@@ -1022,7 +1022,7 @@ function drawOpeningCaption(ctx, now, t) {
   if (line) {
     const [a, b] = line;
     const alpha = Math.min(1, (t - a) / 250, (b - t) / 250);
-    const text = ko ? line[2] : line[3];
+    const text = ko ? line[2] : i18n(line[3]);
     // Typed out, one character per 30 ms
     const shown = text.slice(0, Math.ceil((t - a) / 30));
     ctx.save();
@@ -1040,7 +1040,7 @@ function drawOpeningCaption(ctx, now, t) {
     ctx.restore();
   }
   // Skip tag, top right
-  const label = ko ? '건너뛰기 ▶' : 'SKIP ▶';
+  const label = ko ? '건너뛰기 ▶' : i18n('SKIP ▶');
   ctx.save();
   ctx.globalAlpha = slide;
   const fs = 14 * Math.min(k, 1.5);
@@ -1056,7 +1056,7 @@ function drawOpeningCaption(ctx, now, t) {
   OPENING.skipRect = { x: 948 - w - 12, y: 0, w: w + 24, h: fs + 34 }; // a little larger than drawn, for fingers
   // Browsers keep it silent until the first tap: say so (top left) while the score is waiting for it
   if (openingNeedsSoundTap()) {
-    const hint = ko ? '탭하면 소리가 나와요' : 'TAP FOR SOUND';
+    const hint = ko ? '탭하면 소리가 나와요' : i18n('TAP FOR SOUND');
     ctx.save();
     ctx.globalAlpha = slide * (0.65 + 0.35 * Math.sin(now * 0.006));
     ctx.font = `800 ${fs}px "Pretendard", "Malgun Gothic", sans-serif`;
@@ -1166,14 +1166,14 @@ function updateOpeningButton() {
   const btn = typeof document !== 'undefined' && document.getElementById('btn-opening-toggle');
   if (!btn) return;
   const on = openingPrefOn();
-  const en = typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'en';
-  const label = en
+  const ko = typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'ko';
+  const label = ko
     ? on
-      ? 'Intro video on (tap to turn off)'
-      : 'Intro video off (tap to watch it)'
+      ? '오프닝 영상 켜짐 (누르면 끄기)'
+      : '오프닝 영상 꺼짐 (누르면 바로 보기)'
     : on
-    ? '오프닝 영상 켜짐 (누르면 끄기)'
-    : '오프닝 영상 꺼짐 (누르면 바로 보기)';
+    ? i18n('Intro video on (tap to turn off)')
+    : i18n('Intro video off (tap to watch it)');
   btn.innerHTML = ppGlyph(['slate'], !on);
   btn.setAttribute('aria-label', label);
   btn.title = label;
@@ -1198,8 +1198,7 @@ if (typeof window !== 'undefined') {
       e.stopPropagation();
       setOpeningPref(!openingPrefOn());
     });
-    document.querySelectorAll('.lang-btn').forEach((b) => b.addEventListener('click', () => setTimeout(updateOpeningButton, 0)));
-    updateOpeningButton();
+    updateOpeningButton(); // and again from applyLanguage on every language change
   });
   window.addEventListener('keydown', (e) => {
     if (!OPENING.active || !openingActive()) return;

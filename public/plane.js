@@ -571,7 +571,7 @@ function drawPlaneScene1Takeoff(ctx, now, p, spId) {
     ctx,
     Math.min(520, x + 10),
     Math.max(64, y - 96),
-    CURRENT_LANG === 'ko' ? '야야 남극 깨진다!! 스로틀 끝까지, 이륙한다 꽉 잡아!!' : 'Antarctica is cracking!! Full throttle, rotate, hold on!!',
+    CURRENT_LANG === 'ko' ? '야야 남극 깨진다!! 스로틀 끝까지, 이륙한다 꽉 잡아!!' : i18n('Antarctica is cracking!! Full throttle, rotate, hold on!!'),
     '#fb923c',
     now
   );

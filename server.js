@@ -699,10 +699,63 @@ const INDEX_ETAG = `"${crypto.createHash('sha256').update(INDEX_HTML).digest('he
 // preview: crawlers (X, Facebook, chat apps) read og:title/og:description without running scripts, so the rank
 // is written into the page here. og:url must be the shared link too, or Facebook previews the home page instead.
 const SHARE_BOARD_NAMES = {
-  ufo: { en: 'Plane', ko: '경비행기' },
-  boat: { en: 'Icebreaker', ko: '쇄빙선' },
-  car: { en: 'Car', ko: '자동차' },
+  ufo: { en: 'Plane', ko: '경비행기', pcm: 'Plane', ur: 'ہوائی جہاز', bn: 'বিমান' },
+  boat: { en: 'Icebreaker', ko: '쇄빙선', pcm: 'Icebreaker', ur: 'برف توڑ جہاز', bn: 'বরফভাঙা জাহাজ' },
+  car: { en: 'Car', ko: '자동차', pcm: 'Motor', ur: 'گاڑی', bn: 'গাড়ি' },
 };
+
+// Preview texts per language (same B-grade voice and words as the share sheet; public/i18n.js has the glossary)
+const SHARE_META = {
+  en: {
+    rankedTitle: '#{n} · {board} #{rank} · {pts}',
+    first: "#1 on the Pixel Penguin {board} board lol. Antarctica fell, this penguin didn't. Come at it",
+    ranked: '#{rank} on the Pixel Penguin {board} board lol. Beat it before the pillar sucks you in',
+    chasingTitle: '#{n} · going for the {board} TOP 100',
+    chasing: 'Pixelated way too many times lol. Pixel Penguin escape game, fail with me?',
+    boardTitle: 'Escape game · {board} TOP 100',
+    board: 'BREAKING: Antarctica collapses, penguins flee lol. Best score per penguin. Steal #1?',
+  },
+  ko: {
+    rankedTitle: '#{n} · {board} {rank}위 · {pts}',
+    first: '픽셀펭귄 탈출 게임 {board} 1위 ㅋㅋㅋ 남극 무너질 때 혼자 살아남은 레전드. 덤빌 펭귄?',
+    ranked: '픽셀펭귄 탈출 게임 {board} {rank}위 ㅋㅋ 기둥한테 빨려 가기 전에 와서 이겨 봐',
+    chasingTitle: '#{n} · {board} TOP 100 도전 중',
+    chasing: '강제 도트화만 몇 번째냐 ㅋㅋ 픽셀펭귄 탈출 게임, 같이 망할 사람?',
+    boardTitle: '탈출 게임 · {board} TOP 100',
+    board: '[속보] 남극 붕괴, 펭귄들 탈출 중 ㅋㅋ 번호별 최고점 순위. 1위 뺏어 볼 사람?',
+  },
+  pcm: {
+    rankedTitle: '#{n} · {board} #{rank} · {pts}',
+    first: '#1 for Pixel Penguin {board} board lol. Antarctica fall, this penguin no fall. Come try am',
+    ranked: '#{rank} for Pixel Penguin {board} board lol. Beat am before the pillar swallow you',
+    chasingTitle: '#{n} · still dey find {board} TOP 100',
+    chasing: 'Dem don turn me pixel too many times lol. Pixel Penguin escape game, who wan fail with me?',
+    boardTitle: 'Escape game · {board} TOP 100',
+    board: 'BREAKING NEWS: Antarctica don collapse, penguins dey run lol. Best score for each penguin. Who go collect #1?',
+  },
+  ur: {
+    rankedTitle: '#{n} · {board} میں #{rank} · {pts}',
+    first: 'Pixel Penguin {board} بورڈ پر #1 ہاہا۔ انٹارکٹکا گر گیا، یہ پینگوئن نہیں گرا۔ ہمت ہے تو آؤ',
+    ranked: 'Pixel Penguin {board} بورڈ پر #{rank} ہاہا۔ ستون کے کھینچنے سے پہلے آ کر ہرا دو',
+    chasingTitle: '#{n} · {board} TOP 100 کی تلاش میں',
+    chasing: 'اتنی بار پکسل بن چکا ہوں ہاہا۔ Pixel Penguin فرار گیم، ساتھ فیل ہونا ہے؟',
+    boardTitle: 'فرار گیم · {board} TOP 100',
+    board: 'بریکنگ نیوز: انٹارکٹکا ڈھے گیا، پینگوئن بھاگ رہے ہیں ہاہا۔ ہر پینگوئن کا بہترین اسکور۔ #1 چھیننا ہے؟',
+  },
+  bn: {
+    rankedTitle: '#{n} · {board} বোর্ডে #{rank} · {pts}',
+    first: 'Pixel Penguin {board} বোর্ডে #1 হাহা। অ্যান্টার্কটিকা ভাঙল, এই পেঙ্গুইন ভাঙেনি। সাহস থাকলে আয়',
+    ranked: 'Pixel Penguin {board} বোর্ডে #{rank} হাহা। স্তম্ভ টেনে নেওয়ার আগে এসে হারিয়ে দেখা',
+    chasingTitle: '#{n} · {board} TOP 100-এর খোঁজে',
+    chasing: 'কতবার যে পিক্সেল হলাম হাহা। Pixel Penguin পালানোর গেম, একসাথে ফেল করবি?',
+    boardTitle: 'পালানোর গেম · {board} TOP 100',
+    board: 'ব্রেকিং নিউজ: অ্যান্টার্কটিকা ধসে পড়েছে, পেঙ্গুইনরা পালাচ্ছে হাহা। প্রতি পেঙ্গুইনের সেরা স্কোর। #1 কেড়ে নিবি?',
+  },
+};
+
+function fillMeta(text, vars) {
+  return text.replace(/\{(\w+)\}/g, (m, k) => (vars[k] !== undefined ? String(vars[k]) : m));
+}
 
 function escapeAttr(s) {
   return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -716,8 +769,10 @@ async function sharedRankHtml(req) {
   const board = String(req.query.board || '');
   if (!SHARE_BOARD_NAMES[board]) return null;
   const n = parseTokenNumber(req.query.n);
-  const ko = req.query.lang === 'ko';
-  const name = SHARE_BOARD_NAMES[board][ko ? 'ko' : 'en'];
+  // Own keys only: ?lang=constructor must not reach Object.prototype
+  const lang = Object.prototype.hasOwnProperty.call(SHARE_META, req.query.lang) ? req.query.lang : 'en';
+  const T = SHARE_META[lang];
+  const name = SHARE_BOARD_NAMES[board][lang];
   let row = null;
   let rank = 0;
   if (n !== null) {
@@ -732,33 +787,22 @@ async function sharedRankHtml(req) {
       // Board unreadable: fall back to the board's plain preview
     }
   }
-  const pts = row ? `${Number(row.score).toLocaleString('en-US')} PTS` : '';
+  const vars = { n, board: name, rank, pts: row ? `${Number(row.score).toLocaleString('en-US')} PTS` : '' };
   let title;
   let desc;
-  // Same B-grade voice as the share sheet's brag lines
   if (row) {
-    title = ko ? `#${n} · ${name} ${rank}위 · ${pts}` : `#${n} · ${name} #${rank} · ${pts}`;
-    desc = ko
-      ? rank === 1
-        ? `픽셀펭귄 탈출 게임 ${name} 1위 ㅋㅋㅋ 남극 무너질 때 혼자 살아남은 레전드. 덤빌 펭귄?`
-        : `픽셀펭귄 탈출 게임 ${name} ${rank}위 ㅋㅋ 기둥한테 빨려 가기 전에 와서 이겨 봐`
-      : rank === 1
-        ? `#1 on the Pixel Penguin ${name} board lol. Antarctica fell, this penguin didn't. Come at it`
-        : `#${rank} on the Pixel Penguin ${name} board lol. Beat it before the pillar sucks you in`;
+    title = fillMeta(T.rankedTitle, vars);
+    desc = fillMeta(rank === 1 ? T.first : T.ranked, vars);
   } else if (n !== null) {
-    title = ko ? `#${n} · ${name} TOP 100 도전 중` : `#${n} · going for the ${name} TOP 100`;
-    desc = ko
-      ? '강제 도트화만 몇 번째냐 ㅋㅋ 픽셀펭귄 탈출 게임, 같이 망할 사람?'
-      : 'Pixelated way too many times lol. Pixel Penguin escape game, fail with me?';
+    title = fillMeta(T.chasingTitle, vars);
+    desc = T.chasing;
   } else {
-    title = ko ? `탈출 게임 · ${name} TOP 100` : `Escape game · ${name} TOP 100`;
-    desc = ko
-      ? '[속보] 남극 붕괴, 펭귄들 탈출 중 ㅋㅋ 번호별 최고점 순위. 1위 뺏어 볼 사람?'
-      : 'BREAKING: Antarctica collapses, penguins flee lol. Best score per penguin. Steal #1?';
+    title = fillMeta(T.boardTitle, vars);
+    desc = T.board;
   }
   const params = new URLSearchParams({ board });
   if (n !== null) params.set('n', String(n));
-  if (ko) params.set('lang', 'ko');
+  if (lang !== 'en') params.set('lang', lang);
   let html = INDEX_HTML;
   html = setMetaContent(html, 'og:url', `https://www.ppeng.org/?${params}`);
   html = setMetaContent(html, 'og:title', `${title} | PIXEL PENGUIN`);
