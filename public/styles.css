@@ -1936,15 +1936,21 @@ body.ufo-fullscreen-lock {
   background: var(--surface-3);
 }
 
+.share-targets .share-btn.share-verychat,
 .share-targets .share-btn.share-native {
   grid-column: 1 / -1;
+}
+
+.share-btn.share-verychat {
+  min-height: 48px;
   background: var(--accent-strong);
   border-color: transparent;
   color: #fff;
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 800;
 }
 
-.share-btn.share-native:hover {
+.share-btn.share-verychat:hover {
   background: var(--accent);
 }
 

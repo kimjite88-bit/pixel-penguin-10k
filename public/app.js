@@ -1744,8 +1744,12 @@ function jumpToRankedNft(edition) {
 // RANKING SHARE SHEET: brag a number's rank. The link is /?board=<game>&n=<number>[&lang=ko]: the server writes
 // the rank into that link's preview title (X, Facebook, chat apps) and the page opens on that board with the
 // row lit (openSharedRank). X intent/tweet, Threads intent/post, Telegram share/url and WhatsApp wa.me ?text are
-// documented share URLs; Facebook sharer.php is undocumented but still answers. KakaoTalk and VeryChat have no
-// web share URL without an SDK key, so phones reach them through the OS share sheet (navigator.share).
+// documented share URLs; Facebook sharer.php is undocumented but still answers. KakaoTalk has no web share URL
+// without an SDK key, so phones reach it through the OS share sheet (navigator.share).
+// VeryChat has no URL that pre-fills a message either. Its own link page maps link.verychat.io/<path> to
+// verychat://<path> (store fallback after 1 s), and its apple-app-site-association ("*") and assetlinks.json
+// (handle_all_urls) make that domain open the app directly. So the VeryChat button copies the brag and a real tap
+// on https://link.verychat.io/ opens the app home, ready to paste into any chat.
 // ============================================================================
 const SHARE_BOARD_LABEL = {
   ufo: { ko: '경비행기', en: 'Plane' },
@@ -1931,6 +1935,31 @@ async function copyRankShare(withText) {
     linkEl?.select();
     setRankShareStatus(ko ? '자동 복사가 막혀 있어요. 위 링크를 길게 눌러 복사해 주세요.' : 'Copy is blocked here. Press and hold the link above to copy it.');
   }
+}
+
+function isPhoneOrTablet() {
+  // iPadOS reports itself as a Mac with touch
+  return /android|iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+}
+
+function veryChatRankShare(e) {
+  const s = RANK_SHARE_NOW || buildRankShare();
+  const ko = CURRENT_LANG === 'ko';
+  const phone = isPhoneOrTablet();
+  // VeryChat is a phone app: on a computer the link would only show its store page, so just copy
+  if (!phone) e.preventDefault();
+  // Started inside the tap, before the app takes over; the link itself is followed as a normal tap
+  copyToClipboard(`${s.text}\n${s.url}`).then((ok) => {
+    if (!ok) {
+      setRankShareStatus(ko ? '자동 복사가 막혀 있어요. 아래 링크를 길게 눌러 복사한 뒤 베리챗에 붙여넣어 주세요.' : 'Copy is blocked here. Press and hold the link below, then paste it in VeryChat.');
+      return;
+    }
+    setRankShareStatus(
+      phone
+        ? ko ? '자랑 문구를 복사했어요. 베리챗이 열리면 대화방에 붙여넣기만 하세요.' : 'Copied. Paste it into any VeryChat chat when the app opens.'
+        : ko ? '자랑 문구를 복사했어요. 베리챗은 폰 앱이라 PC에선 열리지 않아요. 폰에서 이 버튼을 누르면 바로 열립니다.' : 'Copied. VeryChat is a phone app, so tap this button on your phone to open it directly.'
+    );
+  });
 }
 
 async function nativeRankShare() {
@@ -4930,6 +4959,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('rank-share-copy-link')?.addEventListener('click', () => copyRankShare(false));
   document.getElementById('rank-share-copy-text')?.addEventListener('click', () => copyRankShare(true));
   document.getElementById('rank-share-native')?.addEventListener('click', nativeRankShare);
+  document.getElementById('rank-share-verychat')?.addEventListener('click', veryChatRankShare);
   document.getElementById('ranking-search-input')?.addEventListener('input', () => {
     CURRENT_RANKING_PAGE = 1;
     renderRankingPageList();
