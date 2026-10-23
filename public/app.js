@@ -9,10 +9,13 @@ const LANG_STORE = 'ppeng-lang';
 let CURRENT_LANG = (() => {
   try {
     const saved = localStorage.getItem(LANG_STORE);
-    return saved === 'ko' || saved === 'en' ? saved : 'en';
-  } catch (e) {
-    return 'en';
-  }
+    if (saved === 'ko' || saved === 'en') return saved;
+  } catch (e) {}
+  // A shared ranking link carries the sharer's language (?lang=ko); a saved pick still wins
+  try {
+    if (new URLSearchParams(window.location.search).get('lang') === 'ko') return 'ko';
+  } catch (e) {}
+  return 'en';
 })();
 let CURRENT_PAGE = 1;
 let TOTAL_PAGES = 1;
@@ -1515,7 +1518,9 @@ function buildLeaderboardRowsHtml(items, showBoardAction = true) {
       const rankLabel = CURRENT_LANG === 'ko' ? `${item.rank}위` : `#${item.rank}`;
       // Top 3 get a pixel medal (gold / silver / bronze) with the number on it; the rest the plain rank
       const medal = item.rank <= 3 ? rankMedalSvg(item.rank, rankLabel) : rankLabel;
-      const topClass = item.rank <= 3 ? `rank-top-${item.rank}` : '';
+      const topClass = `${item.rank <= 3 ? `rank-top-${item.rank}` : ''}${
+        SHARED_RANK && SHARED_RANK.board === RANKING_GAME && item.edition === SHARED_RANK.n ? ' is-shared' : ''
+      }`;
       const nftName = getNftDisplayName(item);
       // "Pixel Penguin " is shared by every entry; phones hide it so the number stays visible
       const namePrefix = nftName.startsWith('Pixel Penguin ') ? 'Pixel Penguin ' : '';
@@ -1656,6 +1661,7 @@ function renderRankingPageList() {
     if (topNameEl) topNameEl.textContent = '–';
     if (topScoreEl) topScoreEl.textContent = '–';
   }
+  renderRankShare();
 }
 
 // Switch the ranking tab between the plane, icebreaker and car boards
@@ -1670,6 +1676,7 @@ function setRankingGame(game) {
   });
   if (changed) {
     RANKING_PAGE_CACHE = [];
+    RANKING_CACHE_GAME = null;
     CURRENT_RANKING_PAGE = 1;
   }
 }
@@ -1688,6 +1695,7 @@ async function fetchAndRenderRankingPage() {
       const data = await res.json();
       if (game !== RANKING_GAME) return; // switched boards while this one loaded
       RANKING_PAGE_CACHE = data.items || [];
+      RANKING_CACHE_GAME = game;
       renderRankingPageList();
     }
   } catch (e) {
@@ -1730,6 +1738,220 @@ function jumpToRankedNft(edition) {
   closeLeaderboardModal();
   loadPfpPreview(num, false);
   openTokenModal(num);
+}
+
+// ============================================================================
+// RANKING SHARE SHEET: brag a number's rank. The link is /?board=<game>&n=<number>[&lang=ko]: the server writes
+// the rank into that link's preview title (X, Facebook, chat apps) and the page opens on that board with the
+// row lit (openSharedRank). X intent/tweet, Threads intent/post, Telegram share/url and WhatsApp wa.me ?text are
+// documented share URLs; Facebook sharer.php is undocumented but still answers. KakaoTalk and VeryChat have no
+// web share URL without an SDK key, so phones reach them through the OS share sheet (navigator.share).
+// ============================================================================
+const SHARE_BOARD_LABEL = {
+  ufo: { ko: '경비행기', en: 'Plane' },
+  boat: { ko: '쇄빙선', en: 'Icebreaker' },
+  car: { ko: '자동차', en: 'Car' },
+};
+const SHARE_NO_STORE = 'ppeng-share-no';
+const SHARE_TARGETS = {
+  x: (s) => `https://x.com/intent/tweet?text=${encodeURIComponent(s.text)}&url=${encodeURIComponent(s.url)}`,
+  facebook: (s) => `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(s.url)}`,
+  whatsapp: (s) => `https://wa.me/?text=${encodeURIComponent(`${s.text} ${s.url}`)}`,
+  telegram: (s) => `https://t.me/share/url?url=${encodeURIComponent(s.url)}&text=${encodeURIComponent(s.text)}`,
+  threads: (s) => `https://www.threads.com/intent/post?text=${encodeURIComponent(s.text)}&url=${encodeURIComponent(s.url)}`,
+};
+let RANKING_CACHE_GAME = null; // board whose top 100 RANKING_PAGE_CACHE holds (null while it loads)
+let RANK_SHARE_NOW = null;
+
+// Opened from a shared link? (/?board=car&n=4441)
+const SHARED_RANK = (() => {
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const board = params.get('board');
+    if (!ESCAPE_VEHICLES.includes(board)) return null;
+    const n = params.get('n');
+    return { board, n: /^\d{1,4}$/.test(n || '') ? Number(n) : null };
+  } catch (e) {
+    return null;
+  }
+})();
+
+function shareOrigin() {
+  // A local test server shares itself; anything else shares the canonical address
+  const host = window.location.hostname;
+  return host === 'localhost' || host === '127.0.0.1' ? window.location.origin : 'https://www.ppeng.org';
+}
+
+function buildRankShare() {
+  const game = RANKING_GAME;
+  const ko = CURRENT_LANG === 'ko';
+  const board = SHARE_BOARD_LABEL[game][ko ? 'ko' : 'en'];
+  const raw = (document.getElementById('rank-share-no')?.value || '').trim();
+  const n = /^\d{1,4}$/.test(raw) ? Number(raw) : null;
+  const loaded = RANKING_CACHE_GAME === game;
+  const row = loaded && n !== null ? RANKING_PAGE_CACHE.find((it) => it.edition === n) || null : null;
+  const top = loaded ? RANKING_PAGE_CACHE[0] || null : null;
+  const pts = (item) => `${Number(item.score).toLocaleString('en-US')} PTS`;
+
+  const params = new URLSearchParams({ board: game });
+  if (n !== null) params.set('n', String(n));
+  if (ko) params.set('lang', 'ko');
+  const url = `${shareOrigin()}/?${params}`;
+
+  let text;
+  if (row) {
+    text = ko
+      ? `PIXEL PENGUIN 탈출 게임 ${board} ${row.rank}위 찍음. #${n} 최고점 ${pts(row)}. 이겨볼 사람?`
+      : `#${row.rank} on the PIXEL PENGUIN ${board} board with penguin #${n}: ${pts(row)}. Beat that.`;
+  } else if (n !== null) {
+    text = ko
+      ? `PIXEL PENGUIN 탈출 게임 ${board}, #${n}로 TOP 100 도전 중. 같이 할 사람?`
+      : `Going for the PIXEL PENGUIN ${board} TOP 100 with penguin #${n}. Who's in?`;
+  } else if (top) {
+    text = ko
+      ? `PIXEL PENGUIN 탈출 게임 ${board} 순위. 지금 1위 #${top.edition} ${pts(top)}. 이길 수 있음?`
+      : `PIXEL PENGUIN ${board} board: #${top.edition} leads with ${pts(top)}. Can you beat it?`;
+  } else {
+    text = ko
+      ? `PIXEL PENGUIN 탈출 게임 ${board} 순위, 1위 자리 아직 비어 있음.`
+      : `The PIXEL PENGUIN ${board} board is still empty. Take #1.`;
+  }
+  return { game, board, raw, n, loaded, row, url, text };
+}
+
+function setRankShareStatus(msg) {
+  const el = document.getElementById('rank-share-status');
+  if (el) el.textContent = msg;
+}
+
+function renderRankShare() {
+  const modal = document.getElementById('rank-share-modal');
+  if (!modal || !modal.classList.contains('open')) return;
+  const s = buildRankShare();
+  RANK_SHARE_NOW = s;
+  const ko = CURRENT_LANG === 'ko';
+
+  let head;
+  if (!s.loaded) {
+    head = `<div class="share-note">${ko ? '순위 불러오는 중…' : 'Loading the board…'}</div>`;
+  } else if (s.row) {
+    const rankLabel = ko ? `${s.row.rank}위` : `#${s.row.rank}`;
+    const nftName = getNftDisplayName(s.row);
+    head = `
+      <div class="share-hit">
+        <div class="share-hit-rank">${s.row.rank <= 3 ? rankMedalSvg(s.row.rank, rankLabel) : rankLabel}</div>
+        <img src="${s.row.image_url}" alt="" class="rank-avatar-thumb" />
+        <div class="share-hit-info">
+          <div class="share-hit-name">${escapeHtml(nftName)}</div>
+          <div class="share-hit-sub">${escapeHtml(s.board)} · ${Number(s.row.score).toLocaleString()} PTS</div>
+        </div>
+      </div>`;
+  } else if (s.raw && s.n === null) {
+    head = `<div class="share-note">${ko ? '번호는 0 ~ 9999 숫자만 됩니다.' : 'Numbers 0 to 9999 only.'}</div>`;
+  } else if (s.n !== null) {
+    head = `<div class="share-note">${
+      ko
+        ? `#${s.n}은 아직 ${escapeHtml(s.board)} TOP 100 밖입니다. 순위 없이 도전 문구로 공유돼요.`
+        : `#${s.n} is not in the ${escapeHtml(s.board)} TOP 100 yet, so it shares as a challenge.`
+    }</div>`;
+  } else {
+    head = `<div class="share-note">${
+      ko ? '번호를 넣으면 그 번호 순위로 자랑합니다. 비우면 순위표를 공유해요.' : 'Enter your number to brag its rank, or share the whole board.'
+    }</div>`;
+  }
+  const preview = document.getElementById('rank-share-preview');
+  if (preview) preview.innerHTML = `${head}<p class="share-text">${escapeHtml(s.text)}</p>`;
+
+  const linkEl = document.getElementById('rank-share-link');
+  if (linkEl) linkEl.value = s.url;
+  modal.querySelectorAll('.share-btn[data-net]').forEach((a) => {
+    a.href = SHARE_TARGETS[a.dataset.net](s);
+  });
+}
+
+function openRankShare() {
+  const modal = document.getElementById('rank-share-modal');
+  if (!modal) return;
+  const input = document.getElementById('rank-share-no');
+  if (input && !input.value) {
+    // The number just played with, else the one used last time
+    let saved = null;
+    try {
+      saved = localStorage.getItem(SHARE_NO_STORE);
+    } catch (e) {}
+    if (UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null) input.value = String(UFO_GAME.pilotTokenId);
+    else if (/^\d{1,4}$/.test(saved || '')) input.value = saved;
+  }
+  const nativeBtn = document.getElementById('rank-share-native');
+  if (nativeBtn) nativeBtn.hidden = typeof navigator.share !== 'function';
+  setRankShareStatus('');
+  modal.classList.add('open');
+  renderRankShare();
+  if (RANKING_CACHE_GAME !== RANKING_GAME) fetchAndRenderRankingPage();
+}
+
+function closeRankShare() {
+  document.getElementById('rank-share-modal')?.classList.remove('open');
+}
+
+async function copyToClipboard(str) {
+  try {
+    await navigator.clipboard.writeText(str);
+    return true;
+  } catch (e) {
+    // No async clipboard (old WebView, permission): copy through a hidden textarea
+  }
+  const ta = document.createElement('textarea');
+  ta.value = str;
+  ta.setAttribute('readonly', '');
+  ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;';
+  document.body.appendChild(ta);
+  ta.select();
+  ta.setSelectionRange(0, str.length);
+  let ok = false;
+  try {
+    ok = document.execCommand('copy');
+  } catch (e) {}
+  ta.remove();
+  return ok;
+}
+
+async function copyRankShare(withText) {
+  const s = RANK_SHARE_NOW || buildRankShare();
+  const ko = CURRENT_LANG === 'ko';
+  if (await copyToClipboard(withText ? `${s.text}\n${s.url}` : s.url)) {
+    setRankShareStatus(
+      withText
+        ? ko ? '문구와 링크를 복사했어요. 붙여넣기만 하면 됩니다.' : 'Message and link copied. Just paste it.'
+        : ko ? '링크를 복사했어요.' : 'Link copied.'
+    );
+  } else {
+    const linkEl = document.getElementById('rank-share-link');
+    linkEl?.focus();
+    linkEl?.select();
+    setRankShareStatus(ko ? '자동 복사가 막혀 있어요. 위 링크를 길게 눌러 복사해 주세요.' : 'Copy is blocked here. Press and hold the link above to copy it.');
+  }
+}
+
+async function nativeRankShare() {
+  const s = RANK_SHARE_NOW || buildRankShare();
+  try {
+    await navigator.share({ title: 'PIXEL PENGUIN', text: s.text, url: s.url });
+  } catch (e) {
+    // Closing the share sheet is not an error; anything else falls back to copying
+    if (e && e.name !== 'AbortError') copyRankShare(true);
+  }
+}
+
+// A shared link opens on its board, on the page holding the number, with that row lit
+async function openSharedRank() {
+  setActiveTab('tab-ranking');
+  await fetchAndRenderRankingPage();
+  const row = SHARED_RANK.n === null ? null : RANKING_PAGE_CACHE.find((it) => it.edition === SHARED_RANK.n);
+  if (row) goToRankingPage(Math.ceil(row.rank / RANKING_PAGE_SIZE));
+  SCROLL_SPY_PAUSE_UNTIL = performance.now() + 900;
+  const target = (row && document.querySelector('.rank-row-card.is-shared')) || document.getElementById('tab-page-ranking');
+  target?.scrollIntoView({ block: row ? 'center' : 'start' });
 }
 
 function ensureHero2DSprite() {
@@ -4690,7 +4912,24 @@ document.addEventListener('DOMContentLoaded', async () => {
       fetchAndRenderRankingPage();
     });
   });
-  setRankingGame(RANKING_GAME);
+  setRankingGame(SHARED_RANK ? SHARED_RANK.board : RANKING_GAME);
+  document.getElementById('btn-open-rank-share')?.addEventListener('click', openRankShare);
+  document.getElementById('close-rank-share')?.addEventListener('click', closeRankShare);
+  document.getElementById('rank-share-modal')?.addEventListener('click', (e) => {
+    if (e.target.id === 'rank-share-modal') closeRankShare();
+  });
+  document.getElementById('rank-share-no')?.addEventListener('input', (e) => {
+    const digits = e.target.value.replace(/\D/g, '').slice(0, 4);
+    if (digits !== e.target.value) e.target.value = digits;
+    try {
+      localStorage.setItem(SHARE_NO_STORE, digits);
+    } catch (err) {}
+    setRankShareStatus('');
+    renderRankShare();
+  });
+  document.getElementById('rank-share-copy-link')?.addEventListener('click', () => copyRankShare(false));
+  document.getElementById('rank-share-copy-text')?.addEventListener('click', () => copyRankShare(true));
+  document.getElementById('rank-share-native')?.addEventListener('click', nativeRankShare);
   document.getElementById('ranking-search-input')?.addEventListener('input', () => {
     CURRENT_RANKING_PAGE = 1;
     renderRankingPageList();
@@ -4733,6 +4972,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (e.key === 'Escape') {
       closeTokenModal();
       closeLeaderboardModal();
+      closeRankShare();
       if (MOTION_STATE.isFullscreen) exitUfoFullscreenGame();
     }
   });
@@ -4802,7 +5042,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     renderTraitDirectory();
     loadPfpPreview(4441);
     fetchExplorerTokens();
-    fetchAndRenderRankingPage();
+    if (SHARED_RANK) openSharedRank();
+    else fetchAndRenderRankingPage();
   } catch (err) {
     console.error('Failed to initialize config:', err);
   }

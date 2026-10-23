@@ -1798,6 +1798,185 @@ body.ufo-fullscreen-lock {
   min-width: 200px;
 }
 
+/* Row opened from a shared link */
+.rank-row-card.is-shared {
+  border-color: var(--ice);
+  box-shadow: 0 0 0 1px var(--ice);
+}
+
+/* Ranking share sheet */
+.modal-card.share-card {
+  max-width: 440px;
+}
+
+.share-title {
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.3;
+  padding-top: 4px;
+}
+
+.share-board-tabs {
+  display: flex;
+  clear: both;
+  margin: 12px 0 14px;
+}
+
+.share-board-tabs .rank-game-btn {
+  flex: 1 1 0;
+  padding: 7px 8px;
+}
+
+.share-no-row {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-2);
+}
+
+.share-no-row .search-input {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+
+.share-preview {
+  margin: 12px 0 14px;
+  padding: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.share-note {
+  font-size: 13px;
+  color: var(--text-2);
+  line-height: 1.5;
+}
+
+.share-hit {
+  display: grid;
+  grid-template-columns: 40px 44px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+}
+
+.share-hit-rank {
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+
+.share-hit-rank .rank-medal {
+  width: 28px;
+  height: 38px;
+}
+
+.share-hit-name {
+  font-size: 14px;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.share-hit-sub {
+  font-size: 12.5px;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.share-text {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: var(--text);
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+/* Five networks: three on top, two wider ones below (6-column grid) */
+.share-targets {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.share-targets .share-btn {
+  grid-column: span 2;
+}
+
+.share-targets .share-btn:nth-last-child(-n + 2) {
+  grid-column: span 3;
+}
+
+.share-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 8px 6px;
+  border-radius: 10px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  text-align: center;
+  cursor: pointer;
+}
+
+.share-btn:hover {
+  background: var(--surface-3);
+}
+
+.share-targets .share-btn.share-native {
+  grid-column: 1 / -1;
+  background: var(--accent-strong);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 700;
+}
+
+.share-btn.share-native:hover {
+  background: var(--accent);
+}
+
+.share-btn[hidden] {
+  display: none;
+}
+
+.share-copy-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.share-copy-row .share-link-field {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--text-2);
+}
+
+.share-copy-text {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.share-status {
+  min-height: 20px;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--ice);
+}
+
 .ranking-range {
   font-size: 12.5px;
   color: var(--text-3);

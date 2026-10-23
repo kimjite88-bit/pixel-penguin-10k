@@ -391,6 +391,9 @@
             <button type="button" class="btn-secondary" id="btn-refresh-ranking-page">
               <span data-ko="새로고침" data-en="Refresh">새로고침</span>
             </button>
+            <button type="button" class="btn-secondary" id="btn-open-rank-share">
+              <span data-ko="자랑하기" data-en="Share">자랑하기</span>
+            </button>
           </div>
         </div>
 
@@ -482,6 +485,38 @@
     <div class="modal-card">
       <button type="button" class="modal-close-btn" id="close-token-modal" data-ko="닫기" data-en="Close">닫기</button>
       <div class="modal-detail-grid" id="modal-detail-body"></div>
+    </div>
+  </div>
+
+  <!-- RANKING SHARE SHEET: brag a number's rank on SNS or copy the link -->
+  <div class="modal-backdrop" id="rank-share-modal" role="dialog" aria-modal="true" aria-labelledby="rank-share-title">
+    <div class="modal-card share-card">
+      <button type="button" class="modal-close-btn" id="close-rank-share" data-ko="닫기" data-en="Close">닫기</button>
+      <h3 class="share-title" id="rank-share-title" data-ko="순위 자랑하기" data-en="Show off your rank">순위 자랑하기</h3>
+      <div class="rank-game-tabs share-board-tabs" role="tablist" aria-label="Game">
+        <button type="button" class="rank-game-btn" data-game="ufo" role="tab" data-ko="경비행기" data-en="Plane">경비행기</button>
+        <button type="button" class="rank-game-btn" data-game="boat" role="tab" data-ko="쇄빙선" data-en="Icebreaker">쇄빙선</button>
+        <button type="button" class="rank-game-btn" data-game="car" role="tab" data-ko="자동차" data-en="Car">자동차</button>
+      </div>
+      <label class="share-no-row" for="rank-share-no">
+        <span data-ko="내 NFT 번호" data-en="My NFT #">내 NFT 번호</span>
+        <input type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" id="rank-share-no" class="search-input" data-placeholder-ko="비우면 순위표 공유" data-placeholder-en="Empty = share the board" placeholder="비우면 순위표 공유" />
+      </label>
+      <div class="share-preview" id="rank-share-preview"></div>
+      <div class="share-targets">
+        <button type="button" class="share-btn share-native" id="rank-share-native" hidden data-ko="다른 앱으로 공유 (카톡·베리챗 등)" data-en="Share to other apps">다른 앱으로 공유 (카톡·베리챗 등)</button>
+        <a class="share-btn" data-net="x" href="#" target="_blank" rel="noopener noreferrer">X</a>
+        <a class="share-btn" data-net="facebook" href="#" target="_blank" rel="noopener noreferrer">Facebook</a>
+        <a class="share-btn" data-net="whatsapp" href="#" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+        <a class="share-btn" data-net="telegram" href="#" target="_blank" rel="noopener noreferrer">Telegram</a>
+        <a class="share-btn" data-net="threads" href="#" target="_blank" rel="noopener noreferrer">Threads</a>
+      </div>
+      <div class="share-copy-row">
+        <input type="text" readonly id="rank-share-link" class="search-input share-link-field" aria-label="Share link" />
+        <button type="button" class="btn-secondary" id="rank-share-copy-link" data-ko="링크 복사" data-en="Copy link">링크 복사</button>
+      </div>
+      <button type="button" class="btn-secondary share-copy-text" id="rank-share-copy-text" data-ko="자랑 문구까지 복사" data-en="Copy message + link">자랑 문구까지 복사</button>
+      <div class="share-status" id="rank-share-status" role="status" aria-live="polite"></div>
     </div>
   </div>
 

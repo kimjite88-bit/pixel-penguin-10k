@@ -695,7 +695,76 @@ const INDEX_HTML = fs
   });
 const INDEX_ETAG = `"${crypto.createHash('sha256').update(INDEX_HTML).digest('hex').slice(0, 16)}"`;
 
-function sendIndex(req, res) {
+// A shared ranking link (/?board=car&n=4441[&lang=ko], made by the ranking tab's share sheet) gets its own link
+// preview: crawlers (X, Facebook, chat apps) read og:title/og:description without running scripts, so the rank
+// is written into the page here. og:url must be the shared link too, or Facebook previews the home page instead.
+const SHARE_BOARD_NAMES = {
+  ufo: { en: 'Plane', ko: '경비행기' },
+  boat: { en: 'Icebreaker', ko: '쇄빙선' },
+  car: { en: 'Car', ko: '자동차' },
+};
+
+function escapeAttr(s) {
+  return String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function setMetaContent(html, prop, value) {
+  return html.replace(new RegExp(`(<meta property="${prop}" content=")[^"]*(")`), (m, a, b) => `${a}${escapeAttr(value)}${b}`);
+}
+
+async function sharedRankHtml(req) {
+  const board = String(req.query.board || '');
+  if (!SHARE_BOARD_NAMES[board]) return null;
+  const n = parseTokenNumber(req.query.n);
+  const ko = req.query.lang === 'ko';
+  const name = SHARE_BOARD_NAMES[board][ko ? 'ko' : 'en'];
+  let row = null;
+  let rank = 0;
+  if (n !== null) {
+    try {
+      const top = await leaderboards.getTop(board);
+      const idx = top.rows.slice(0, 100).findIndex((r) => r.edition === n);
+      if (idx >= 0) {
+        row = top.rows[idx];
+        rank = idx + 1;
+      }
+    } catch (e) {
+      // Board unreadable: fall back to the board's plain preview
+    }
+  }
+  const pts = row ? `${Number(row.score).toLocaleString('en-US')} PTS` : '';
+  let title;
+  let desc;
+  if (row) {
+    title = ko ? `#${n} · ${name} ${rank}위 · ${pts}` : `#${n} · ${name} #${rank} · ${pts}`;
+    desc = ko
+      ? `PIXEL PENGUIN 탈출 게임 ${name} 순위 ${rank}위. 이 점수 이길 수 있음?`
+      : `Ranked #${rank} on the PIXEL PENGUIN ${name} escape board. Can you beat it?`;
+  } else if (n !== null) {
+    title = ko ? `#${n} · ${name} TOP 100 도전 중` : `#${n} · going for the ${name} TOP 100`;
+    desc = ko ? 'PIXEL PENGUIN 탈출 게임. 같이 할 사람?' : 'PIXEL PENGUIN escape game. Who is in?';
+  } else {
+    title = ko ? `탈출 게임 · ${name} TOP 100` : `Escape game · ${name} TOP 100`;
+    desc = ko ? '번호별 최고점 순위. 1위 자리 노려볼 사람?' : 'Best score per penguin number. Think you can take #1?';
+  }
+  const params = new URLSearchParams({ board });
+  if (n !== null) params.set('n', String(n));
+  if (ko) params.set('lang', 'ko');
+  let html = INDEX_HTML;
+  html = setMetaContent(html, 'og:url', `https://www.ppeng.org/?${params}`);
+  html = setMetaContent(html, 'og:title', `${title} | PIXEL PENGUIN`);
+  html = setMetaContent(html, 'og:description', desc);
+  return html;
+}
+
+async function sendIndex(req, res) {
+  if (req.query.board) {
+    const html = await sharedRankHtml(req).catch(() => null);
+    if (html) {
+      res.setHeader('Cache-Control', 'no-cache');
+      return res.type('html').send(html);
+    }
+  }
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('ETag', INDEX_ETAG);
   if (req.get('if-none-match') === INDEX_ETAG) return res.status(304).end();
