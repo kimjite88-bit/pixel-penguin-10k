@@ -1766,6 +1766,67 @@ const SHARE_TARGETS = {
 };
 let RANKING_CACHE_GAME = null; // board whose top 100 RANKING_PAGE_CACHE holds (null while it loads)
 let RANK_SHARE_NOW = null;
+let RANK_SHARE_PICK = 0; // which brag line: random when the sheet opens, 다른 멘트 steps on
+
+// B-grade brag lines in the site's own voice (banmal, ㅋㅋ, the pillar, forced pixelation, [속보]). Each entry
+// gives [ko, en] for v = { n, board, r, score: '12,345점', pts: '12,345 PTS', top }. Worst case (rank 100,
+// #9999, 999,999) stays well under X's 280: Hangul weighs 2 there and the link 23 (twitter-text config v3).
+const BRAG_LINES = {
+  first: [
+    (v) => [`[속보] 픽셀펭귄 #${v.n}, ${v.board} 1위 등극 ㅋㅋㅋ ${v.score}. 남극 무너질 때 혼자 살아남은 레전드. 덤빌 펭귄?`,
+      `BREAKING: Pixel Penguin #${v.n} takes #1 on the ${v.board} board lol. ${v.pts}. Antarctica fell, I didn't. Come at me`],
+    (v) => [`${v.board} 1위 먹었다 ㅋㅋ #${v.n} ${v.score}. 기둥도 나는 못 빨아들임. 나 이기면 인정해 줌`,
+      `${v.board} #1, penguin #${v.n}, ${v.pts}. Even the pillar couldn't suck me in lol. Beat it if you can`],
+    (v) => [`ㅋㅋㅋ 미안 ${v.board} 1위 내가 가져감. #${v.n} ${v.score}. 억울하면 와서 뺏어 가든가~`,
+      `Sorry, ${v.board} #1 is mine now lol. Penguin #${v.n}, ${v.pts}. Mad? Come take it`],
+  ],
+  podium: [
+    (v) => [`${v.board} ${v.r}위 ㅋㅋ 메달 땄다. #${v.n} ${v.score}. 1위 놈 기다려라 곧 간다`,
+      `${v.board} #${v.r}, got a medal lol. Penguin #${v.n}, ${v.pts}. Number one, I'm coming for you`],
+    (v) => [`[단독] 픽셀펭귄 #${v.n}, ${v.board} 시상대 ${v.r}위 ㅋㅋ ${v.score}. 1위 아니라서 지금 분노 중`,
+      `EXCLUSIVE: penguin #${v.n} on the ${v.board} podium at #${v.r} lol. ${v.pts}. Still furious it's not #1`],
+    (v) => [`#${v.n} ${v.board} ${v.r}위 찍음 ${v.score} ㅋㅋ 1위까지 쪼끔 남음. 응원 말고 도전해라`,
+      `Penguin #${v.n}: ${v.board} #${v.r}, ${v.pts}. So close to #1 lol. Don't cheer, play`],
+  ],
+  top10: [
+    (v) => [`${v.board} TOP 10 입성 ㅋㅋ #${v.n} ${v.r}위 ${v.score}. 펭귄 인생 이 정도면 성공한 거 아님?`,
+      `${v.board} TOP 10 lol. Penguin #${v.n} at #${v.r}, ${v.pts}. Peak penguin life tbh`],
+    (v) => [`#${v.n} ${v.board} ${v.r}위 ${v.score} ㅋㅋ 기둥한테 빨려 갈 뻔했는데 살아남음`,
+      `Penguin #${v.n} is ${v.board} #${v.r} with ${v.pts}. Nearly got sucked into the pillar, survived lol`],
+    (v) => [`${v.board} ${v.r}위 찍었다 #${v.n} ${v.score}. 나보다 못하면 펭귄 자격 박탈 ㅋㅋ`,
+      `${v.board} #${v.r}, penguin #${v.n}, ${v.pts}. Score lower and lose your penguin license lol`],
+  ],
+  top100: [
+    (v) => [`${v.board} ${v.r}위 ㅋㅋ #${v.n} ${v.score}. TOP 100 안에는 들었다 이 말이야`,
+      `${v.board} #${v.r} lol. Penguin #${v.n}, ${v.pts}. Made the TOP 100, that's what matters`],
+    (v) => [`#${v.n} ${v.board} ${v.r}위 ${v.score}. 강제 도트화 직전에 탈출 성공 ㅋㅋ 너도 해 봐`,
+      `Penguin #${v.n}: ${v.board} #${v.r}, ${v.pts}. Escaped right before forced pixelation lol. Your turn`],
+    (v) => [`${v.board} ${v.r}위… 애매하지만 순위는 순위다 ㅋㅋ #${v.n} ${v.score}. 나보다 낮으면 놀림 받음`,
+      `${v.board} #${v.r}... mid, but a rank is a rank lol. Penguin #${v.n}, ${v.pts}. Rank lower and get roasted`],
+  ],
+  chasing: [
+    (v) => [`#${v.n} ${v.board} TOP 100 도전 중 ㅋㅋ 아직 기둥한테 계속 빨려 감. 같이 망할 사람?`,
+      `Penguin #${v.n}, still chasing the ${v.board} TOP 100 lol. Keep getting sucked into the pillar. Fail with me?`],
+    (v) => [`나 #${v.n}, ${v.board} 순위권 밖 ㅋㅋㅋ 근데 너도 못 들어갈걸? 해 보고 말해`,
+      `Penguin #${v.n}: not on the ${v.board} board yet lol. Bet you can't make it either. Try it`],
+    (v) => [`#${v.n} ${v.board} 강제 도트화만 몇 번째냐 ㅋㅋ TOP 100 들 때까지 간다`,
+      `Penguin #${v.n} got pixelated way too many times lol. Not stopping till the ${v.board} TOP 100`],
+  ],
+  board: [
+    (v) => [`픽셀펭귄 ${v.board} 지금 1위 #${v.top} ${v.score} ㅋㅋ 이거 깰 사람 나와 봐`,
+      `Pixel Penguin ${v.board} #1 right now: #${v.top} with ${v.pts} lol. Who's breaking that?`],
+    (v) => [`[속보] 남극 붕괴, 펭귄들 ${v.board} 타고 탈출 중 ㅋㅋ 1위는 #${v.top} ${v.score}`,
+      `BREAKING: Antarctica collapses, penguins flee by ${v.board} lol. #1 is #${v.top} with ${v.pts}`],
+    (v) => [`${v.board} 1위 #${v.top} ${v.score}… 이게 펭귄이 낼 수 있는 점수냐 ㅋㅋ`,
+      `${v.board} #1: #${v.top}, ${v.pts}... is that even penguinly possible lol`],
+  ],
+  empty: [
+    (v) => [`픽셀펭귄 ${v.board} 1위 자리 아직 공석 ㅋㅋ 지금 하면 그냥 1위임. 날로 먹을 사람?`,
+      `The Pixel Penguin ${v.board} #1 spot is still empty lol. Play now and it's yours for free`],
+    (v) => [`[속보] ${v.board} 순위표 텅 빔 ㅋㅋ 1등 줍줍 기회`,
+      `BREAKING: the ${v.board} board is totally empty lol. Free #1 up for grabs`],
+  ],
+};
 
 // Opened from a shared link? (/?board=car&n=4441)
 const SHARED_RANK = (() => {
@@ -1795,32 +1856,27 @@ function buildRankShare() {
   const loaded = RANKING_CACHE_GAME === game;
   const row = loaded && n !== null ? RANKING_PAGE_CACHE.find((it) => it.edition === n) || null : null;
   const top = loaded ? RANKING_PAGE_CACHE[0] || null : null;
-  const pts = (item) => `${Number(item.score).toLocaleString('en-US')} PTS`;
-
   const params = new URLSearchParams({ board: game });
   if (n !== null) params.set('n', String(n));
   if (ko) params.set('lang', 'ko');
   const url = `${shareOrigin()}/?${params}`;
 
-  let text;
-  if (row) {
-    text = ko
-      ? `PIXEL PENGUIN 탈출 게임 ${board} ${row.rank}위 찍음. #${n} 최고점 ${pts(row)}. 이겨볼 사람?`
-      : `#${row.rank} on the PIXEL PENGUIN ${board} board with penguin #${n}: ${pts(row)}. Beat that.`;
-  } else if (n !== null) {
-    text = ko
-      ? `PIXEL PENGUIN 탈출 게임 ${board}, #${n}로 TOP 100 도전 중. 같이 할 사람?`
-      : `Going for the PIXEL PENGUIN ${board} TOP 100 with penguin #${n}. Who's in?`;
-  } else if (top) {
-    text = ko
-      ? `PIXEL PENGUIN 탈출 게임 ${board} 순위. 지금 1위 #${top.edition} ${pts(top)}. 이길 수 있음?`
-      : `PIXEL PENGUIN ${board} board: #${top.edition} leads with ${pts(top)}. Can you beat it?`;
-  } else {
-    text = ko
-      ? `PIXEL PENGUIN 탈출 게임 ${board} 순위, 1위 자리 아직 비어 있음.`
-      : `The PIXEL PENGUIN ${board} board is still empty. Take #1.`;
-  }
+  const scored = row || top;
+  const num = scored ? Number(scored.score).toLocaleString('en-US') : '';
+  const v = { n, board, r: row ? row.rank : 0, score: `${num}점`, pts: `${num} PTS`, top: top ? top.edition : null };
+  let kind;
+  if (row) kind = row.rank === 1 ? 'first' : row.rank <= 3 ? 'podium' : row.rank <= 10 ? 'top10' : 'top100';
+  else if (n !== null) kind = 'chasing';
+  else kind = top ? 'board' : 'empty';
+  const lines = BRAG_LINES[kind];
+  const text = lines[RANK_SHARE_PICK % lines.length](v)[ko ? 0 : 1];
   return { game, board, raw, n, loaded, row, url, text };
+}
+
+function rerollRankShare() {
+  RANK_SHARE_PICK += 1;
+  setRankShareStatus('');
+  renderRankShare();
 }
 
 function setRankShareStatus(msg) {
@@ -1864,7 +1920,11 @@ function renderRankShare() {
     }</div>`;
   }
   const preview = document.getElementById('rank-share-preview');
-  if (preview) preview.innerHTML = `${head}<p class="share-text">${escapeHtml(s.text)}</p>`;
+  if (preview) {
+    preview.innerHTML = `${head}<p class="share-text">${escapeHtml(s.text)}</p><button type="button" class="share-reroll" data-share-reroll>${
+      ko ? '다른 멘트' : 'Another line'
+    }</button>`;
+  }
 
   const linkEl = document.getElementById('rank-share-link');
   if (linkEl) linkEl.value = s.url;
@@ -1888,6 +1948,7 @@ function openRankShare() {
   }
   const nativeBtn = document.getElementById('rank-share-native');
   if (nativeBtn) nativeBtn.hidden = typeof navigator.share !== 'function';
+  RANK_SHARE_PICK = Math.floor(Math.random() * 6);
   setRankShareStatus('');
   modal.classList.add('open');
   renderRankShare();
@@ -4985,6 +5046,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('rank-share-copy-text')?.addEventListener('click', () => copyRankShare(true));
   document.getElementById('rank-share-native')?.addEventListener('click', nativeRankShare);
   document.getElementById('rank-share-verychat')?.addEventListener('click', veryChatRankShare);
+  document.getElementById('rank-share-preview')?.addEventListener('click', (e) => {
+    if (e.target.closest('[data-share-reroll]')) rerollRankShare();
+  });
   document.getElementById('ranking-search-input')?.addEventListener('input', () => {
     CURRENT_RANKING_PAGE = 1;
     renderRankingPageList();

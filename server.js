@@ -735,17 +735,26 @@ async function sharedRankHtml(req) {
   const pts = row ? `${Number(row.score).toLocaleString('en-US')} PTS` : '';
   let title;
   let desc;
+  // Same B-grade voice as the share sheet's brag lines
   if (row) {
     title = ko ? `#${n} · ${name} ${rank}위 · ${pts}` : `#${n} · ${name} #${rank} · ${pts}`;
     desc = ko
-      ? `PIXEL PENGUIN 탈출 게임 ${name} 순위 ${rank}위. 이 점수 이길 수 있음?`
-      : `Ranked #${rank} on the PIXEL PENGUIN ${name} escape board. Can you beat it?`;
+      ? rank === 1
+        ? `픽셀펭귄 탈출 게임 ${name} 1위 ㅋㅋㅋ 남극 무너질 때 혼자 살아남은 레전드. 덤빌 펭귄?`
+        : `픽셀펭귄 탈출 게임 ${name} ${rank}위 ㅋㅋ 기둥한테 빨려 가기 전에 와서 이겨 봐`
+      : rank === 1
+        ? `#1 on the Pixel Penguin ${name} board lol. Antarctica fell, this penguin didn't. Come at it`
+        : `#${rank} on the Pixel Penguin ${name} board lol. Beat it before the pillar sucks you in`;
   } else if (n !== null) {
     title = ko ? `#${n} · ${name} TOP 100 도전 중` : `#${n} · going for the ${name} TOP 100`;
-    desc = ko ? 'PIXEL PENGUIN 탈출 게임. 같이 할 사람?' : 'PIXEL PENGUIN escape game. Who is in?';
+    desc = ko
+      ? '강제 도트화만 몇 번째냐 ㅋㅋ 픽셀펭귄 탈출 게임, 같이 망할 사람?'
+      : 'Pixelated way too many times lol. Pixel Penguin escape game, fail with me?';
   } else {
     title = ko ? `탈출 게임 · ${name} TOP 100` : `Escape game · ${name} TOP 100`;
-    desc = ko ? '번호별 최고점 순위. 1위 자리 노려볼 사람?' : 'Best score per penguin number. Think you can take #1?';
+    desc = ko
+      ? '[속보] 남극 붕괴, 펭귄들 탈출 중 ㅋㅋ 번호별 최고점 순위. 1위 뺏어 볼 사람?'
+      : 'BREAKING: Antarctica collapses, penguins flee lol. Best score per penguin. Steal #1?';
   }
   const params = new URLSearchParams({ board });
   if (n !== null) params.set('n', String(n));

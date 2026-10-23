@@ -1900,6 +1900,25 @@ body.ufo-fullscreen-lock {
 }
 
 /* Five networks: three on top, two wider ones below (6-column grid) */
+.share-reroll {
+  display: block;
+  margin: 8px 0 0 auto;
+  padding: 4px 2px;
+  background: none;
+  border: none;
+  color: var(--text-2);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.share-reroll:hover {
+  color: var(--text);
+}
+
 .share-targets {
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
