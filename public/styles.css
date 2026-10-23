@@ -225,6 +225,51 @@ button {
   color: var(--text);
 }
 
+/* Official VeryChat channel: sits in the empty right end of the hero eyebrow line, centred on it and
+   absolutely placed, so the intro text keeps its exact layout (30px tall over a 19px line + 8px margin) */
+.hero-top-block {
+  position: relative;
+}
+
+.channel-join-btn {
+  position: absolute;
+  top: 10px;
+  right: 0;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 11px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.channel-join-btn:hover {
+  background: var(--accent-strong);
+  border-color: transparent;
+  color: #fff;
+}
+
+.channel-join-btn .ch-short {
+  display: none;
+}
+
+/* Under 360px the long label would run into the eyebrow text */
+@media (max-width: 359px) {
+  .channel-join-btn .ch-long {
+    display: none;
+  }
+  .channel-join-btn .ch-short {
+    display: inline;
+  }
+}
+
 .market-tabs-bar {
   border-top: 1px solid var(--line);
 }
