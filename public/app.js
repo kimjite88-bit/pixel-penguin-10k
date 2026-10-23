@@ -1982,9 +1982,11 @@ async function openSharedRank(explorerLoad) {
   await Promise.all([fetchAndRenderRankingPage(), Promise.race([explorerLoad, settleCap])]);
   const row = SHARED_RANK.n === null ? null : RANKING_PAGE_CACHE.find((it) => it.edition === SHARED_RANK.n);
   if (row) goToRankingPage(Math.ceil(row.rank / RANKING_PAGE_SIZE));
-  // Looked up each time: a re-render (language switch, refresh) replaces the row element
+  // Looked up each time: a re-render (language switch, refresh) replaces the row element. The tab bar is set
+  // here too: the spy is paused during the jump, so it kept whatever a load-time scroll had marked.
   const land = () => {
     SCROLL_SPY_PAUSE_UNTIL = performance.now() + 900;
+    setActiveTab('tab-ranking');
     const target = (row && document.querySelector('.rank-row-card.is-shared')) || document.getElementById('tab-page-ranking');
     target?.scrollIntoView({ block: row ? 'center' : 'start' });
   };
