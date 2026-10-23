@@ -124,6 +124,11 @@ const PP_GLYPHS = {
     cut: [[4, 2, 2, 1], [8, 2, 2, 1], [12, 2, 2, 1], [3, 3, 2, 1], [7, 3, 2, 1], [11, 3, 2, 1], [2, 4, 2, 1], [6, 4, 2, 1], [10, 4, 2, 1],
       [6, 8, 1, 5], [7, 9, 1, 3], [8, 10, 1, 1]],
   },
+  // Restart: a clockwise ring, two cells thick, the arrowhead at the end of its top arc
+  restart: {
+    fill: [[5, 3, 5, 2], [3, 4, 2, 2], [2, 6, 2, 6], [3, 12, 2, 2], [5, 13, 6, 2], [11, 12, 2, 2], [12, 8, 2, 4],
+      [10, 1, 1, 6], [11, 2, 1, 4], [12, 3, 1, 2]],
+  },
 };
 function ppGlyph(names, slashed = false) {
   const g = new Uint8Array(256);

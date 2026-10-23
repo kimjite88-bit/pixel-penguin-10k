@@ -3086,3 +3086,15 @@ body.ufo-fullscreen-lock {
 .game-top-btn.icon-btn.is-off {
   color: #94a3b8;
 }
+
+/* Restart shares one slot with the intro-video toggle: the toggle means nothing mid-run, the restart nothing
+   outside it, so the bar never gets wider (on a 375px phone the pilot badge is already down to 46px) */
+#btn-restart-run {
+  display: none;
+}
+.retro-intro-theater:is([data-scene='2'], [data-scene='3']) #btn-restart-run {
+  display: inline-flex;
+}
+.retro-intro-theater:is([data-scene='2'], [data-scene='3']) #btn-opening-toggle {
+  display: none;
+}

@@ -353,6 +353,7 @@ const I18N_ROWS = [
   ['TAP FOR SOUND', 'TAP FOR SOUND', 'آواز کے لیے ٹیپ کریں', 'শব্দের জন্য ট্যাপ করুন'],
   ['Intro video on (tap to turn off)', 'Intro video dey on (tap to off am)', 'تعارفی ویڈیو آن (بند کرنے کے لیے ٹیپ کریں)', 'ইন্ট্রো ভিডিও চালু (বন্ধ করতে ট্যাপ করুন)'],
   ['Intro video off (tap to watch it)', 'Intro video dey off (tap to watch am)', 'تعارفی ویڈیو بند (دیکھنے کے لیے ٹیپ کریں)', 'ইন্ট্রো ভিডিও বন্ধ (দেখতে ট্যাপ করুন)'],
+  ['Restart this run (same NFT)', 'Start again (same NFT)', 'دوبارہ شروع کریں (وہی NFT)', 'আবার শুরু (একই NFT)'],
   ['Music on (tap to mute)', 'Music dey on (tap to off am)', 'موسیقی آن (بند کرنے کے لیے ٹیپ کریں)', 'মিউজিক চালু (বন্ধ করতে ট্যাপ করুন)'],
   ['Music off (tap to play)', 'Music dey off (tap to play)', 'موسیقی بند (چلانے کے لیے ٹیپ کریں)', 'মিউজিক বন্ধ (চালাতে ট্যাপ করুন)'],
   ['Sound effects on (tap to mute)', 'Sound effects dey on (tap to off am)', 'ساؤنڈ ایفیکٹس آن (بند کرنے کے لیے ٹیپ کریں)', 'সাউন্ড এফেক্ট চালু (বন্ধ করতে ট্যাপ করুন)'],

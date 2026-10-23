@@ -1208,6 +1208,24 @@ function updateFullscreenExitOrCodexButton() {
   // No-op (minimal topbar uses CSS .is-fullscreen-mode toggle)
 }
 
+// Start the run over from its first second with the same pilot (NFT number or default penguin), the same vehicle
+// and the same screen mode. Only during a run or the pull right after it (scenes 2-3); an abandoned run submits
+// nothing, since scores are only sent at game over. Returns whether it restarted.
+function restartRunSameNft() {
+  if (MOTION_STATE.sceneIdx !== 2 && MOTION_STATE.sceneIdx !== 3) return false;
+  setIntroScene(2, true);
+  return true;
+}
+
+function updateRestartButton() {
+  const btn = document.getElementById('btn-restart-run');
+  if (!btn || typeof ppGlyph !== 'function') return;
+  const label = CURRENT_LANG === 'ko' ? '처음부터 다시 (같은 번호로)' : i18n('Restart this run (same NFT)');
+  btn.innerHTML = ppGlyph(['restart']);
+  btn.setAttribute('aria-label', label);
+  btn.title = `${label} · R`;
+}
+
 function enterUfoFullscreenGame(startCombatImmediately = true) {
   const theaterEl = document.getElementById('retro-intro-theater');
   if (!theaterEl) return;
@@ -3536,6 +3554,19 @@ function initPixelMotionStudio() {
   document.getElementById('btn-open-leaderboard')?.addEventListener('click', () => {
     openLeaderboardModal();
   });
+  // Restart the run: top-bar button (in the intro-video toggle's slot during scenes 2-3) or R on a keyboard
+  document.getElementById('btn-restart-run')?.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // Space drives the game: a focused button would take the next Space as another restart
+    e.currentTarget.blur();
+    restartRunSameNft();
+  });
+  window.addEventListener('keydown', (e) => {
+    if (e.code !== 'KeyR' || e.repeat || e.ctrlKey || e.metaKey || e.altKey) return;
+    if (e.target && /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    if (restartRunSameNft()) e.preventDefault();
+  });
+  updateRestartButton();
   document.getElementById('btn-open-leaderboard-bottom')?.addEventListener('click', () => {
     openLeaderboardModal();
   });
@@ -4495,6 +4526,7 @@ function applyLanguage(lang) {
   setIntroScene(MOTION_STATE.sceneIdx, false);
   if (typeof updateSoundButton === 'function') updateSoundButton();
   if (typeof updateOpeningButton === 'function') updateOpeningButton();
+  updateRestartButton();
 }
 
 // PFP Simulator
