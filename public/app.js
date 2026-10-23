@@ -1972,15 +1972,38 @@ async function nativeRankShare() {
   }
 }
 
-// A shared link opens on its board, on the page holding the number, with that row lit
-async function openSharedRank() {
+// A shared link opens on its board, on the page holding the number, with that row lit. The codex grid above
+// loads on its own and is ~4,700 px tall on a phone: if it filled in after the jump, browsers without scroll
+// anchoring (iOS Safari) pushed the row off screen. So wait for it (max 5 s), then hold the row in place while
+// the page settles, until the visitor scrolls or touches, or 6 s pass.
+async function openSharedRank(explorerLoad) {
   setActiveTab('tab-ranking');
-  await fetchAndRenderRankingPage();
+  const settleCap = new Promise((resolve) => setTimeout(resolve, 5000));
+  await Promise.all([fetchAndRenderRankingPage(), Promise.race([explorerLoad, settleCap])]);
   const row = SHARED_RANK.n === null ? null : RANKING_PAGE_CACHE.find((it) => it.edition === SHARED_RANK.n);
   if (row) goToRankingPage(Math.ceil(row.rank / RANKING_PAGE_SIZE));
-  SCROLL_SPY_PAUSE_UNTIL = performance.now() + 900;
-  const target = (row && document.querySelector('.rank-row-card.is-shared')) || document.getElementById('tab-page-ranking');
-  target?.scrollIntoView({ block: row ? 'center' : 'start' });
+  // Looked up each time: a re-render (language switch, refresh) replaces the row element
+  const land = () => {
+    SCROLL_SPY_PAUSE_UNTIL = performance.now() + 900;
+    const target = (row && document.querySelector('.rank-row-card.is-shared')) || document.getElementById('tab-page-ranking');
+    target?.scrollIntoView({ block: row ? 'center' : 'start' });
+  };
+  land();
+  if (typeof ResizeObserver !== 'function') return;
+  const STOP_EVENTS = ['wheel', 'touchstart', 'pointerdown', 'keydown'];
+  let held = true;
+  const stop = () => {
+    if (!held) return;
+    held = false;
+    observer.disconnect();
+    STOP_EVENTS.forEach((t) => window.removeEventListener(t, stop, true));
+  };
+  const observer = new ResizeObserver(() => {
+    if (held) land();
+  });
+  observer.observe(document.querySelector('.main-container') || document.body);
+  STOP_EVENTS.forEach((t) => window.addEventListener(t, stop, { capture: true, passive: true }));
+  setTimeout(stop, 6000);
 }
 
 function ensureHero2DSprite() {
@@ -5071,8 +5094,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     buildExplorerTraitDropdowns();
     renderTraitDirectory();
     loadPfpPreview(4441);
-    fetchExplorerTokens();
-    if (SHARED_RANK) openSharedRank();
+    const explorerLoad = fetchExplorerTokens();
+    if (SHARED_RANK) openSharedRank(explorerLoad);
     else fetchAndRenderRankingPage();
   } catch (err) {
     console.error('Failed to initialize config:', err);
