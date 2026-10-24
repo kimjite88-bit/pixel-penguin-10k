@@ -712,6 +712,10 @@ function sceneCues(fromMs, toMs, emit) {
       } else if (v === 'car') {
         sndTone(t, 60, 2.2, { to: 240, type: 'sawtooth', vol: 0.12, attack: 0.1 });
         sndNoise(t + 0.3, 0.4, { freq: 1500, vol: 0.12 });
+      } else if (v === 'fish') {
+        sndNoise(t + 0.15, 0.25, { filter: 'bandpass', freq: 800, to: 3200, q: 1.5, vol: 0.14 });
+        sndTone(t + 0.65, 380, 0.18, { to: 160, type: 'triangle', vol: 0.18 });
+        sndTone(t + 0.82, 220, 0.22, { to: 520, type: 'sine', vol: 0.16 });
       } else {
         sndTone(t, 80, 2.2, { to: 320, type: 'square', vol: 0.07, attack: 0.2 });
         sndNoise(t + 0.6, 1.6, { filter: 'bandpass', freq: 400, to: 3000, q: 1.2, vol: 0.14, attack: 0.5 });

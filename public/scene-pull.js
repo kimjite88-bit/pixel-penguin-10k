@@ -41,6 +41,22 @@ function scene3Pose(vehicle, subP, now) {
   const hover = Math.sin(now * 0.012) * 4;
   if (a >= 1) return { x: T.x, y: T.y + hover, tilt: Math.sin(now * 0.02) * 0.04, flip: false, caught: 1, phase: 'beam' };
 
+  if (vehicle === 'fish') {
+    const groundY = 412;
+    if (a < 0.35) {
+      return { x: 640, y: groundY + Math.sin(now * 0.02) * 2, tilt: 0, flip: false, caught: 0, phase: 'fishSit' };
+    }
+    const g = scene3Smooth((a - 0.35) / 0.65);
+    return {
+      x: scene3Bezier(640, 480, T.x, g),
+      y: scene3Bezier(groundY, 190, T.y, g) + hover * g,
+      tilt: Math.sin(g * Math.PI) * -0.28,
+      flip: false,
+      caught: g,
+      phase: 'yank',
+    };
+  }
+
   if (vehicle === 'car') {
     const groundOriginY = SCENE3_ROAD_Y - 57 * 1.3; // tyres on the same snow road as the departure
     if (a < 0.35) {
@@ -280,7 +296,10 @@ function drawScene3Whirlpool(ctx, subP, now, pose) {
 
 function drawScene3Approach(ctx, vehicle, subP, now, pose) {
   if (vehicle === 'boat') drawScene3Whirlpool(ctx, subP, now, pose);
-  else if (vehicle === 'car') {
+  else if (vehicle === 'fish') {
+    // Ice chips & water droplets trailing off the tackle box as the beam drags the angler off the cliff
+    drawScene3CarSpray(ctx, pose, now);
+  } else if (vehicle === 'car') {
     // The road it was fleeing along stays under the whole capture; the crack runs up to the car
     drawCarSnowRoad(ctx, SCENE3_ROAD_Y, 0, Math.max(80, Math.min(pose.x - 140, 760)));
     drawScene3CarSpray(ctx, pose, now);
@@ -291,6 +310,10 @@ function drawScene3Approach(ctx, vehicle, subP, now, pose) {
 
 // What the pilot yells before the scan starts
 function scene3ApproachLine(vehicle, pose, ko) {
+  if (vehicle === 'fish') {
+    if (pose.phase === 'fishSit') return ko ? '낚싯줄 끊어졌다~ 이제 슬슬 집이나 가볼까...' : i18n('Line snapped~ guess it is time to head home...');
+    return ko ? '어어?! 탈출도 안 했는데 기둥이 왜 날 낚아채?!!' : i18n('Huh?! I did not even try to escape, why is the pillar hooking ME?!!');
+  }
   if (vehicle === 'car') {
     if (pose.phase === 'drive') return ko ? '좋아 이대로 쭉 밟으면 탈출이다!!' : i18n('Nice, just keep it floored and we are out!!');
     if (pose.phase === 'drag') return ko ? '어?! 차가 옆으로 끌려간다!! 브레이크 안 먹혀!!' : i18n('Huh?! The car is being dragged!! The brakes do nothing!!');
@@ -488,6 +511,8 @@ function drawScene3Rise(ctx, now, r, vehicle, spId) {
   if (vehicle === 'penguin') {
     // Stage 5 of the escape scene: no vehicle, just the pixelated default penguin
     drawScene0PixelHero(ctx, vx, vy, 104 * S, tilt, now);
+  } else if (vehicle === 'fish') {
+    drawFishingPenguinWithRod(ctx, vx, vy, tilt, now, { scale: S, spId, pixelMode: true, isShocked: true });
   } else if (vehicle === 'car') {
     drawPixelCarWithPilot(ctx, vx, vy, tilt, now, { scale: S, spId, isShocked: true, beam: false, wheelAngle: now * 0.02 });
   } else if (vehicle === 'boat') {

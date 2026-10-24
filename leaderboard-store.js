@@ -12,7 +12,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const GAMES = ['ufo', 'car', 'boat'];
+const GAMES = ['ufo', 'car', 'boat', 'fish'];
 const TOP_LIMIT = 100;
 const CACHE_TTL_SEC = 30;
 const POST_LIMIT_PER_MIN = 12;
@@ -49,7 +49,7 @@ function seedRows() {
 }
 
 function normalizeGame(game) {
-  return game === 'car' || game === 'boat' ? game : 'ufo';
+  return game === 'car' || game === 'boat' || game === 'fish' ? game : 'ufo';
 }
 
 function readBundleRows(file, parseTokenNumber) {

@@ -12,11 +12,12 @@
 const SCENE0_UFO_SPOT = { x: 300, y: 296 - 66 * 0.74, tilt: 0, scale: 0.74 }; // plane ('ufo' key kept for saved picks + the board)
 const SCENE0_BOAT_SPOT = { x: 565, y: 352 - 34 * 0.44, tilt: 0, scale: 0.44 }; // waterline in the lead at y = 352
 const SCENE0_CAR_SPOT = { x: 880, y: 366 - 57 * 0.64, tilt: 0, scale: 0.64 };
+const SCENE0_FISH_SPOT = { x: 836, y: 474, holeX: 764, holeY: 498, scale: 0.46 }; // hidden corner fishing penguin
 // The penguin stands front and centre on a floe in the glowing crevasse; the start card sits bottom-left over the cliff
 const SCENE0_HERO = { x: 590, feet: 496, size: 140 };
 const SCENE0_K = '#0b1020';
 
-const SCENE0_ACCENT = { ufo: '#fb923c', boat: '#38bdf8', car: '#f472b6' };
+const SCENE0_ACCENT = { ufo: '#fb923c', boat: '#38bdf8', car: '#f472b6', fish: '#34d399' };
 
 // 0 at the start, 1 after ~24 s of waiting
 function scene0Escalation(now) {
@@ -395,6 +396,121 @@ function drawScene0Marker(ctx, now, target, label, accent) {
   ctx.restore();
 }
 
+// Hidden 4th game in the bottom-right snow corner: a tiny, completely unbothered penguin sitting on a cooler
+// and fishing in a little ice hole while Antarctica collapses around it
+function drawScene0CornerFisher(ctx, now, isSelected) {
+  const f = SCENE0_FISH_SPOT;
+  const ko = CURRENT_LANG === 'ko';
+  ctx.save();
+
+  // 1. Small ice-fishing hole in the snow at (f.holeX, f.holeY)
+  ctx.fillStyle = SCENE0_K;
+  ctx.beginPath();
+  ctx.ellipse(f.holeX, f.holeY, 27, 10, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#e0f2fe';
+  ctx.beginPath();
+  ctx.ellipse(f.holeX, f.holeY, 24, 8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#075985';
+  ctx.beginPath();
+  ctx.ellipse(f.holeX, f.holeY + 1, 21, 6.2, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Ripple & bobbing red-and-white float in the hole
+  const rp = (now * 0.0016) % 1;
+  ctx.strokeStyle = `rgba(186, 230, 253, ${(1 - rp) * 0.8})`;
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.ellipse(f.holeX, f.holeY + 1, 5 + rp * 14, 1.5 + rp * 4, 0, 0, Math.PI * 2);
+  ctx.stroke();
+
+  const bobDip = Math.sin(now * 0.007) * 2 + (isSelected ? Math.sin(now * 0.03) * 3 : 0);
+  const bx = f.holeX;
+  const by = f.holeY - 1 + bobDip;
+  ctx.fillStyle = SCENE0_K;
+  ctx.beginPath();
+  ctx.arc(bx, by, 5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.arc(bx, by, 3.6, 0, Math.PI);
+  ctx.fill();
+  ctx.fillStyle = '#ef4444';
+  ctx.beginPath();
+  ctx.arc(bx, by, 3.6, Math.PI, Math.PI * 2);
+  ctx.fill();
+
+  // 2. Shadow & Red Tackle-Box Stool under the corner penguin
+  ctx.fillStyle = 'rgba(9, 13, 26, 0.28)';
+  ctx.beginPath();
+  ctx.ellipse(f.x, f.y + 26, 28, 5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.fillStyle = SCENE0_K;
+  ctx.fillRect(f.x - 16, f.y + 8, 32, 18);
+  ctx.fillStyle = '#dc2626';
+  ctx.fillRect(f.x - 14, f.y + 10, 28, 14);
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(f.x - 14, f.y + 10, 28, 3);
+
+  // 3. Small Penguin facing left toward the ice hole
+  ensureHero2DSprite();
+  const sheet = MOTION_STATE.hero2DSheetLoaded ? MOTION_STATE.hero2DSheet : null;
+  const sz = 62;
+  const nod = Math.sin(now * 0.004) * 1.5;
+  ctx.save();
+  ctx.translate(f.x, f.y - 6 + nod);
+  ctx.scale(-1, 1); // face left toward its ice hole
+  const blink = Math.floor(now / 1400) % 3 === 0 ? 1 : 0;
+  if (sheet) {
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(sheet, blink * 256, 0, 256, 256, -sz / 2, -sz / 2, sz, sz);
+  }
+  ctx.restore();
+
+  // 4. Bamboo Fishing Rod & Line from the corner penguin to the bobber
+  const rodTipX = f.holeX + 4;
+  const rodTipY = f.y - 26 + Math.sin(now * 0.005) * 2;
+  ctx.strokeStyle = SCENE0_K;
+  ctx.lineWidth = 4.5;
+  ctx.beginPath();
+  ctx.moveTo(f.x - 10, f.y + 2);
+  ctx.quadraticCurveTo(f.x - 36, f.y - 22, rodTipX, rodTipY);
+  ctx.stroke();
+  ctx.strokeStyle = '#fbbf24';
+  ctx.lineWidth = 2.2;
+  ctx.stroke();
+
+  ctx.strokeStyle = 'rgba(241, 245, 249, 0.9)';
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(rodTipX, rodTipY);
+  ctx.lineTo(bx, by - 2);
+  ctx.stroke();
+
+  // Subtle floating whisper tag when not selected so players can discover the hidden game
+  if (!isSelected) {
+    const tagX = f.holeX;
+    const tagY = f.holeY - 24 + (Math.floor(now / 360) % 2 === 0 ? 0 : -2);
+    const tagTxt = ko ? '낚시?' : i18n('Fish?');
+    ctx.font = '800 12px "Pretendard", "Malgun Gothic", sans-serif';
+    const tw = Math.ceil(ctx.measureText(tagTxt).width) + 12;
+    const tx = Math.round(tagX - tw / 2);
+    ctx.fillStyle = SCENE0_K;
+    ctx.fillRect(tx - 1, tagY - 11, tw + 2, 20);
+    ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+    ctx.fillRect(tx, tagY - 10, tw, 18);
+    ctx.fillStyle = '#34d399';
+    ctx.fillRect(tx, tagY - 10, tw, 2);
+    ctx.fillStyle = '#a7f3d0';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(tagTxt, tagX, tagY);
+  }
+  ctx.restore();
+}
+
 function drawScene0Escape(ctx, now) {
   // First visit: the opening story plays first (opening-scene.js)
   if (drawOpening(ctx, now)) return;
@@ -428,10 +544,11 @@ function drawScene0Escape(ctx, now) {
   const plane = SCENE0_UFO_SPOT;
   const boat = SCENE0_BOAT_SPOT;
   const car = SCENE0_CAR_SPOT;
-  const spot = vehicle === 'car' ? car : vehicle === 'boat' ? boat : plane;
+  const fish = SCENE0_FISH_SPOT;
+  const spot = vehicle === 'fish' ? fish : vehicle === 'car' ? car : vehicle === 'boat' ? boat : plane;
   const accent = SCENE0_ACCENT[vehicle] || SCENE0_ACCENT.ufo;
   const pulse = 0.35 + 0.3 * Math.sin(now * 0.01);
-  const glowX = spot.x - (vehicle === 'ufo' ? 20 : 0);
+  const glowX = spot.x - (vehicle === 'ufo' ? 20 : vehicle === 'fish' ? 24 : 0);
   const g = ctx.createRadialGradient(glowX, spot.y, 6, glowX, spot.y, 130);
   g.addColorStop(0, accent + Math.round(pulse * 140).toString(16).padStart(2, '0'));
   g.addColorStop(1, 'rgba(255, 255, 255, 0)');
@@ -451,6 +568,7 @@ function drawScene0Escape(ctx, now) {
     smokeOn: vehicle === 'boat',
   });
   drawCarWithPilot(ctx, car.x, car.y + rattle(3), car.tilt, now, { scale: car.scale, withPilot: false, lightsOn: vehicle === 'car', wheelAngle: 0 });
+  drawScene0CornerFisher(ctx, now, vehicle === 'fish');
 
   // The penguin, front and centre, on a cracking ledge (gone into the pillar once stage 5 starts)
   drawScene0HeroLedge(ctx, now, esc, quake);
@@ -467,20 +585,42 @@ function drawScene0Escape(ctx, now) {
   }
 
   const target =
-    vehicle === 'car'
+    vehicle === 'fish'
+      ? { x: fish.holeX + 12, y: fish.holeY - 12 }
+      : vehicle === 'car'
       ? { x: car.x - 10, y: car.y - 60 * car.scale - 6 }
       : vehicle === 'boat'
       ? { x: boat.x - 30, y: boat.y - 116 * boat.scale - 4 }
       : { x: plane.x - 20, y: plane.y - 46 * plane.scale - 4 };
-  const label = vehicle === 'car' ? (ko ? '자동차' : i18n('CAR')) : vehicle === 'boat' ? (ko ? '쇄빙선' : i18n('ICEBREAKER')) : ko ? '경비행기' : i18n('PLANE');
-  drawScene0Marker(ctx, now, target, label, accent);
+  const label =
+    vehicle === 'fish'
+      ? ko
+        ? '얼음낚시'
+        : i18n('ICE FISHING')
+      : vehicle === 'car'
+      ? ko
+        ? '자동차'
+        : i18n('CAR')
+      : vehicle === 'boat'
+      ? ko
+        ? '쇄빙선'
+        : i18n('ICEBREAKER')
+      : ko
+      ? '경비행기'
+      : i18n('PLANE');
 
-  // The penguin's line gets more desperate stage by stage
-  const lines = ko
-    ? [['으악 남극이 무너진다!!', '뭐 타고 도망가지?!'], ['발밑까지 갈라진다!!', '빨리 하나 골라!!'], ['진짜 끝장이야!!', '아무거나 타!! 지금!!']]
-    : [['Antarctica is falling apart!!', 'What do I ride out?!'], ['It is cracking under me!!', 'Pick one, quick!!'], ['This is the end!!', 'Anything!! NOW!!']];
-  const stage = Math.min(2, Math.floor(esc * 3));
-  drawScene0Shout(ctx, now, lines[stage], stage === 2 ? '#fb7185' : stage === 1 ? '#fde047' : '#38bdf8', quake);
+  // The penguin's line gets more desperate stage by stage (unless you picked the chill fishing option!)
+  const lines =
+    vehicle === 'fish'
+      ? ko
+        ? [['탈출은 무슨~ 낚시나 하자!!', '얼음구덩이 손맛이 최고야 ㅋㅋ']]
+        : [['Forget escaping~ let us fish!!', 'Nothing beats ice fishing lol']]
+      : ko
+      ? [['으악 남극이 무너진다!!', '뭐 타고 도망가지?!'], ['발밑까지 갈라진다!!', '빨리 하나 골라!!'], ['진짜 끝장이야!!', '아무거나 타!! 지금!!']]
+      : [['Antarctica is falling apart!!', 'What do I ride out?!'], ['It is cracking under me!!', 'Pick one, quick!!'], ['This is the end!!', 'Anything!! NOW!!']];
+  const stage = vehicle === 'fish' ? 0 : Math.min(2, Math.floor(esc * 3));
+  drawScene0Shout(ctx, now, lines[stage], vehicle === 'fish' ? '#34d399' : stage === 2 ? '#fb7185' : stage === 1 ? '#fde047' : '#38bdf8', quake);
+  drawScene0Marker(ctx, now, target, label, accent);
 }
 
 // Big two-line shout right of the penguin's head (the shared speech bubble is too small to read on a phone);
@@ -688,6 +828,8 @@ function finishScene0Idle() {
 
 // Which vehicle a click on the scene 1 picture picks (null = none)
 function scene0VehicleAt(mx, my) {
+  const f = SCENE0_FISH_SPOT;
+  if (mx >= f.holeX - 30 && mx <= f.x + 48 && my >= f.y - 56 && my <= f.y + 38) return 'fish';
   const c = SCENE0_CAR_SPOT;
   if (mx >= c.x - 110 * c.scale && mx <= c.x + 110 * c.scale && my >= c.y - 80 * c.scale && my <= c.y + 60 * c.scale) return 'car';
   const b = SCENE0_BOAT_SPOT;

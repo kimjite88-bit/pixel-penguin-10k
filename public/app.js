@@ -361,6 +361,70 @@ function setActiveTab(tabKey) {
   });
 }
 let CODEX_LOADED = false; // set by fetchExplorerTokens: the grid is fetched once its page has been opened
+function activeTabKey() {
+  for (const [key, pageId] of Object.entries(TAB_PAGES)) {
+    const el = document.getElementById(pageId);
+    if (el && (el.classList.contains('active') || el.style.display === 'block')) return key;
+  }
+  return 'tab-intro';
+}
+function isAnyModalOpen() {
+  return Boolean(
+    document.getElementById('token-modal')?.classList.contains('open') ||
+      document.getElementById('rank-share-modal')?.classList.contains('open') ||
+      document.getElementById('leaderboard-modal')?.classList.contains('open')
+  );
+}
+function closeAllModals() {
+  if (typeof closeTokenModal === 'function') closeTokenModal();
+  if (typeof closeRankShare === 'function') closeRankShare();
+  if (typeof closeLeaderboardModal === 'function') closeLeaderboardModal();
+}
+function isAtMainHome() {
+  const onIntroTab = activeTabKey() === 'tab-intro';
+  const onScene0 = typeof MOTION_STATE === 'undefined' || MOTION_STATE.sceneIdx === 0;
+  const openingActive = typeof OPENING !== 'undefined' && Boolean(OPENING.active);
+  const fullscreenActive = typeof MOTION_STATE !== 'undefined' && Boolean(MOTION_STATE.isFullscreen);
+  return onIntroTab && onScene0 && !openingActive && !fullscreenActive && !isAnyModalOpen();
+}
+function pushHistoryGuard() {
+  try {
+    if (window.history.state && window.history.state.ppeng === 'guard') return;
+    window.history.pushState({ ppeng: 'guard' }, '', window.location.pathname + window.location.search);
+  } catch (e) {}
+}
+function resetToMainHome(opts = {}) {
+  const fromPopState = Boolean(opts && opts.fromPopState);
+  closeAllModals();
+  if (typeof MOTION_STATE !== 'undefined' && MOTION_STATE.isFullscreen && typeof exitUfoFullscreenGame === 'function') {
+    exitUfoFullscreenGame();
+  }
+  if (typeof carJumpRelease === 'function') carJumpRelease();
+  if (typeof boatRamRelease === 'function') boatRamRelease();
+  if (typeof skyRelease === 'function') skyRelease();
+  if (typeof OPENING !== 'undefined' && OPENING.active && typeof finishOpening === 'function') {
+    finishOpening();
+  }
+  if (typeof MOTION_STATE !== 'undefined') {
+    MOTION_STATE.skippedEscape = false;
+    MOTION_STATE.idleSucked = false;
+    MOTION_STATE.scene0IdleStart = 0;
+    MOTION_STATE.scene0LastInput = performance.now();
+  }
+  showTabPage('tab-intro');
+  if (typeof setIntroScene === 'function') {
+    setIntroScene(0, true);
+  }
+  window.scrollTo({ top: 0, behavior: 'auto' });
+  try {
+    if (window.location.search) {
+      window.history.replaceState(window.history.state || { ppeng: 'root' }, '', window.location.pathname);
+    }
+  } catch (e) {}
+  if (!fromPopState) {
+    pushHistoryGuard();
+  }
+}
 function showTabPage(tabKey) {
   Object.entries(TAB_PAGES).forEach(([key, pageId]) => {
     const el = document.getElementById(pageId);
@@ -372,10 +436,20 @@ function showTabPage(tabKey) {
 }
 function scrollToSection(id) {
   const tabKey = tabKeyFor(id);
-  if (tabKey !== 'tab-intro' && typeof exitUfoFullscreenGame === 'function') {
+  if (typeof MOTION_STATE !== 'undefined' && MOTION_STATE.isFullscreen && typeof exitUfoFullscreenGame === 'function') {
     exitUfoFullscreenGame();
   }
   showTabPage(tabKey);
+  if (id === 'tab-intro' && typeof MOTION_STATE !== 'undefined') {
+    MOTION_STATE.skippedEscape = false;
+    MOTION_STATE.idleSucked = false;
+    MOTION_STATE.scene0IdleStart = 0;
+    MOTION_STATE.scene0LastInput = performance.now();
+    if (typeof setIntroScene === 'function') setIntroScene(0, true);
+  }
+  if (tabKey !== 'tab-intro') {
+    pushHistoryGuard();
+  }
   if (tabKey === 'tab-ranking' && typeof fetchAndRenderRankingPage === 'function') {
     fetchAndRenderRankingPage();
   }
@@ -705,7 +779,7 @@ function scene5RowLayout(skipped = false) {
 
 // Escape vehicle picked on the first screen: 'ufo' = light plane (sky-runner.js), 'car' (car-runner.js) or 'boat' =
 // icebreaker (boat-runner.js). ?vehicle=car|ufo|boat forces one; otherwise the last pick on this device.
-const ESCAPE_VEHICLES = ['ufo', 'boat', 'car'];
+const ESCAPE_VEHICLES = ['ufo', 'boat', 'car', 'fish'];
 const VEHICLE_STORAGE_KEY = 'ppeng_vehicle';
 function readInitialVehicle() {
   try {
@@ -743,6 +817,8 @@ const MOTION_STATE = {
   bgRefVortexLoaded: false,
   bgRefSkyGameImg: null,
   bgRefSkyGameLoaded: false,
+  bgRefFishingImg: null,
+  bgRefFishingLoaded: false,
   bgScene1Img: null,
   bgScene1Loaded: false,
   bgScene2Img: null,
@@ -1250,6 +1326,7 @@ function enterUfoFullscreenGame(startCombatImmediately = true) {
   if (!theaterEl) return;
   MOTION_STATE.isFullscreen = true;
   MOTION_STATE.skippedEscape = false;
+  pushHistoryGuard();
   document.documentElement.classList.add('ufo-fullscreen-lock');
   document.body.classList.add('ufo-fullscreen-lock');
   theaterEl.classList.add('is-fullscreen-mode');
@@ -1331,16 +1408,36 @@ function updateVehicleUI() {
         ? '아무 데나 누르면 점프 · 공중에서 한 번 더 = 2단 점프'
         : vehicle === 'boat'
         ? '누르고 있으면 힘이 모이고 · 떼면 들이받기'
+        : vehicle === 'fish'
+        ? '누르고 있으면 초록 바 상승 · 떼면 하강'
         : '누르고 있으면 상승 · 떼면 하강';
     const en =
       vehicle === 'car'
         ? 'Press anywhere to jump · again in the air to double jump'
         : vehicle === 'boat'
         ? 'Hold to charge · let go to ram'
+        : vehicle === 'fish'
+        ? 'Hold to raise the green bar · release to drop'
         : 'Hold to climb · release to dive';
     padText.dataset.ko = ko;
     padText.dataset.en = en;
     padText.textContent = CURRENT_LANG === 'ko' ? ko : i18n(en);
+  }
+  const s1Title = document.querySelector('.s1-overlay-title');
+  if (s1Title) {
+    const tKo = vehicle === 'fish' ? '탈출은 무슨… 얼음낚시나 하시겠습니까?' : '남극이 무너지고 있습니다. 탈출하시겠습니까?';
+    const tEn = vehicle === 'fish' ? 'Forget escaping… Care for some ice fishing?' : 'Antarctica is collapsing. Escape?';
+    s1Title.dataset.ko = tKo;
+    s1Title.dataset.en = tEn;
+    s1Title.textContent = CURRENT_LANG === 'ko' ? tKo : i18n(tEn);
+  }
+  const s1YesBtnEl = document.getElementById('btn-scene1-yes');
+  if (s1YesBtnEl) {
+    const yKo = vehicle === 'fish' ? '낚시하기' : '탈출하기';
+    const yEn = vehicle === 'fish' ? 'Go Fish' : 'Escape';
+    s1YesBtnEl.dataset.ko = yKo;
+    s1YesBtnEl.dataset.en = yEn;
+    s1YesBtnEl.textContent = CURRENT_LANG === 'ko' ? yKo : i18n(yEn);
   }
 }
 
@@ -1774,6 +1871,7 @@ const SHARE_BOARD_LABEL = {
   ufo: { ko: '경비행기', en: 'Plane' },
   boat: { ko: '쇄빙선', en: 'Icebreaker' },
   car: { ko: '자동차', en: 'Car' },
+  fish: { ko: '얼음낚시', en: 'Ice Fishing' },
 };
 const SHARE_NO_STORE = 'ppeng-share-no';
 const SHARE_TARGETS = {
@@ -1970,6 +2068,7 @@ function openRankShare() {
   RANK_SHARE_PICK = Math.floor(Math.random() * 6);
   setRankShareStatus('');
   modal.classList.add('open');
+  pushHistoryGuard();
   renderRankShare();
   if (RANKING_CACHE_GAME !== RANKING_GAME) fetchAndRenderRankingPage();
 }
@@ -2119,6 +2218,14 @@ function ensureIntroBackgrounds() {
     rs.src = '/assets/motion_sprites/bg_ref_skygame.jpg?v=5.3.0';
     MOTION_STATE.bgRefSkyGameImg = rs;
   }
+  if (!MOTION_STATE.bgRefFishingImg) {
+    const rf = new Image();
+    rf.onload = () => {
+      MOTION_STATE.bgRefFishingLoaded = true;
+    };
+    rf.src = '/assets/motion_sprites/bg_ref_fishing.jpg?v=5.35.0';
+    MOTION_STATE.bgRefFishingImg = rf;
+  }
   if (!MOTION_STATE.bgScene1Img) {
     const bg1 = new Image();
     bg1.onload = () => {
@@ -2195,6 +2302,8 @@ function setIntroScene(sceneIdx, resetTimer = true) {
         resetCarGame(MOTION_STATE.sceneStartTime);
       } else if (MOTION_STATE.vehicle === 'boat') {
         resetBoatGame(MOTION_STATE.sceneStartTime);
+      } else if (MOTION_STATE.vehicle === 'fish') {
+        resetFishGame(MOTION_STATE.sceneStartTime);
       } else {
         resetSkyGame(MOTION_STATE.sceneStartTime);
       }
@@ -2203,6 +2312,9 @@ function setIntroScene(sceneIdx, resetTimer = true) {
   const s1Overlay = document.getElementById('scene1-escape-overlay');
   if (s1Overlay) {
     s1Overlay.classList.toggle('hidden-overlay', MOTION_STATE.sceneIdx !== 0);
+  }
+  if (MOTION_STATE.sceneIdx !== 0) {
+    pushHistoryGuard();
   }
 }
 
@@ -3089,6 +3201,10 @@ function drawPixelScanHudPillBody(ctx, cx, y, pct) {
       ? pct < 100
         ? `SHIP & PILOT PIXEL SCAN · ${pct}%`
         : 'PIXEL SHIP COMPLETE!'
+      : MOTION_STATE.vehicle === 'fish'
+      ? pct < 100
+        ? `FISHER & CATCH PIXEL SCAN · ${pct}%`
+        : 'PIXEL FISHER COMPLETE!'
       : pct < 100
       ? `PLANE & PILOT PIXEL SCAN · ${pct}%`
       : 'PIXEL PLANE COMPLETE!',
@@ -4127,15 +4243,17 @@ function initPixelMotionStudio() {
   const pressAction = () => {
     if (carGameActive()) carJumpPress(performance.now());
     else if (boatGameActive()) boatRamPress(performance.now());
+    else if (fishGameActive()) fishActionPress();
     else if (skyGameActive()) skyPress();
   };
   const releaseAction = () => {
     carJumpRelease();
     boatRamRelease(performance.now());
+    fishActionRelease();
     skyRelease();
   };
   window.addEventListener('keydown', (e) => {
-    if (!isActionKey(e.code) || !(carGameActive() || boatGameActive() || skyGameActive())) return;
+    if (!isActionKey(e.code) || !(carGameActive() || boatGameActive() || fishGameActive() || skyGameActive())) return;
     const activeTag = document.activeElement?.tagName;
     if (activeTag === 'INPUT' || activeTag === 'SELECT' || activeTag === 'TEXTAREA') return;
     e.preventDefault();
@@ -4180,9 +4298,14 @@ function initPixelMotionStudio() {
     if (MOTION_STATE.sceneIdx === 0) {
       // A tap during the opening skips it (opening-scene.js)
       if (openingTap(mx, my)) return;
-      // Tapping the plane, the icebreaker or the car picks it
+      // Tapping the plane, the icebreaker, the car, or the hidden corner fishing penguin picks it;
+      // tapping the corner fishing penguin a second time starts fishing immediately!
       const picked = scene0VehicleAt(mx, my);
-      if (picked) setEscapeVehicle(picked);
+      if (picked) {
+        const wasAlreadyFish = picked === 'fish' && MOTION_STATE.vehicle === 'fish';
+        setEscapeVehicle(picked);
+        if (wasAlreadyFish) s1YesBtn?.click();
+      }
       return;
     }
 
@@ -4344,6 +4467,14 @@ function initPixelMotionStudio() {
       }
     }
 
+    // SCENE 2 for ice fishing: forgets escaping and casts a bobber into the giant ice hole (fish-runner.js)
+    else if (MOTION_STATE.sceneIdx === 1 && MOTION_STATE.vehicle === 'fish') {
+      drawFishScene1Departure(ctx, now, p, activeSpId);
+      if (elapsed >= curDuration) {
+        setIntroScene(2, true);
+      }
+    }
+
     // ========================================================================
     // SCENE 2 (sceneIdx === 1): the light plane's take-off run on skis across the cracking ice (plane.js)
     // ========================================================================
@@ -4369,6 +4500,11 @@ function initPixelMotionStudio() {
     // SCENE 3 for the icebreaker: ramming through the pack ice (boat-runner.js)
     else if (MOTION_STATE.sceneIdx === 2 && MOTION_STATE.vehicle === 'boat') {
       drawBoatRunnerFrame(ctx, now, activeSpId);
+    }
+
+    // SCENE 3 for ice fishing: Stardew Valley-style vertical tension gauge at the giant ice hole (fish-runner.js)
+    else if (MOTION_STATE.sceneIdx === 2 && MOTION_STATE.vehicle === 'fish') {
+      drawFishRunnerFrame(ctx, now, activeSpId);
     }
 
     // SCENE 3 for the plane: the one-touch flying run (sky-runner.js)
@@ -4414,6 +4550,7 @@ function initPixelMotionStudio() {
       // The lifted car's tyres hang lower than the plane's skis, so its scan runs further down
       const isCar = MOTION_STATE.vehicle === 'car';
       const isBoat = MOTION_STATE.vehicle === 'boat';
+      const isFish = MOTION_STATE.vehicle === 'fish';
       const carScale = 1.3;
       const planeScanScale = 1.02; // the plane is long: at this size it stays inside the 360px scan window
       const topEdge = ufoY - 120;
@@ -4438,6 +4575,8 @@ function initPixelMotionStudio() {
           });
         } else if (isBoat) {
           drawBoatWithPilot(ctx, ufoX, ufoY, ufoTilt, now, { scale: SCENE3_BOAT_SCALE, flipX: pose.flip, spId: activeSpId, pixelMode: true, isImpactBlink: pixelBlinkDuringBeam });
+        } else if (isFish) {
+          drawFishingPenguinWithRod(ctx, ufoX, ufoY, ufoTilt, now, { scale: 1.08, spId: activeSpId, pixelMode: true, forceBlink: pixelBlinkDuringBeam });
         } else {
           drawPixelPlaneWithPilot(ctx, ufoX, ufoY, ufoTilt, now, {
             scale: planeScanScale,
@@ -4474,6 +4613,15 @@ function initPixelMotionStudio() {
             wheelAngle: pose.phase === 'drive' ? now * 0.05 : now * 0.03,
             boost: pose.phase === 'drive' ? 1.2 : 0.6,
           })
+        );
+        ctx.restore();
+      } else if (scanRatio < 1 && isFish) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(ufoX - 180, scanY, 360, botEdge - scanY + 50);
+        ctx.clip();
+        drawScene3Mosaic(ctx, mosaicSize, (c) =>
+          drawFishingPenguinWithRod(c, ufoX, ufoY, ufoTilt, now, { scale: 1.08, spId: activeSpId, pixelMode: false, isShocked: pose.phase !== 'beam' })
         );
         ctx.restore();
       } else if (scanRatio < 1) {
@@ -4553,22 +4701,30 @@ function initPixelMotionStudio() {
               ? '어어 배가 통째로 하늘로 빨려 올라가!! 쇄빙선까지 도트 찍히잖아?!!'
               : isCar
               ? '어어 차가 하늘로 빨려 올라가!! 내 차까지 도트 찍히잖아?!!'
+              : isFish
+              ? '얼음낚시만 했는데 기둥이 어이없어서 끌고 가네?! 내 낚싯대까지 도트 찍히잖아?!!'
               : '으악 내 뽀샤시한 몸이!! 강제로 도트 찍히고 있잖아?!!'
             : isBoat
             ? i18n('The whole ship is getting sucked up!! Even the icebreaker is going pixel?!!')
             : isCar
             ? i18n('The car is getting sucked up!! Even my ride is going pixel?!!')
+            : isFish
+            ? i18n('I was only ice fishing and the pillar still dragged me in?! Even my rod is going pixel?!!')
             : i18n('Aaagh my smooth body!! I am being forcibly pixelated?!!')
           : CURRENT_LANG === 'ko'
           ? isBoat
             ? '강제 도트화 완료... 어 잠깐 여기 바다가 없잖아 떨어진다아악!!'
             : isCar
             ? '강제 도트화 완료... 어 잠깐 바퀴가 허공에서 헛돈다 떨어진다아악!!'
+            : isFish
+            ? '강제 도트화 완료... 내 횟감까지 도트 찍혔잖아 떨어진다아악!!'
             : '강제 도트화 완료... 근데 나 아직 추락 중이었잖아아악!!'
           : isBoat
           ? i18n('Pixelation complete... Wait, there is no sea up here?! FALLING!!')
           : isCar
           ? i18n('Pixelation complete... Wait, the wheels are spinning on air?! FALLING!!')
+          : isFish
+          ? i18n('Pixelation complete... Even my catch turned into pixels?! FALLING!!')
           : i18n('Pixelation complete... But I was still falling?! CRASHING!!'),
         scanRatio === 0 ? '#fb7185' : pct < 78 ? '#38bdf8' : '#fb7185',
         now
@@ -4609,10 +4765,11 @@ function initPixelMotionStudio() {
       // 1. Top Arcade Landing Score & Leaderboard Banner (Clickable to open #tab-ranking)
       const isCarRun = MOTION_STATE.vehicle === 'car';
       const isBoatRun = MOTION_STATE.vehicle === 'boat';
-      const runResult = isCarRun ? CAR_GAME : isBoatRun ? BOAT_GAME : UFO_GAME; // score, best and rank of the run just played
-      const finalPts = runResult.lastFinalScore || (isCarRun || isBoatRun ? 0 : UFO_GAME.score) || 3450;
-      const rideKo = isCarRun ? '차' : isBoatRun ? '배' : '비행기';
-      const rideEn = isCarRun ? 'car' : isBoatRun ? 'ship' : 'plane';
+      const isFishRun = MOTION_STATE.vehicle === 'fish';
+      const runResult = isCarRun ? CAR_GAME : isBoatRun ? BOAT_GAME : isFishRun ? FISH_GAME : UFO_GAME; // score, best and rank of the run just played
+      const finalPts = runResult.lastFinalScore || (isCarRun || isBoatRun || isFishRun ? 0 : UFO_GAME.score) || 3450;
+      const rideKo = isCarRun ? '차' : isBoatRun ? '배' : isFishRun ? '낚싯대' : '비행기';
+      const rideEn = isCarRun ? 'car' : isBoatRun ? 'ship' : isFishRun ? 'fishing rod' : 'plane';
       const banW = 560;
       const banH = 32;
       const banX = 480 - banW / 2;
@@ -4722,7 +4879,7 @@ function initPixelMotionStudio() {
         // Car tyres (+57 x 1.3) and plane skis (+66 x 1.0) end on the same walkway line (y = 450)
         // Every vehicle lands at TOWN_VEHICLE_SCALE with its lowest point (tyres +57, keel +48, skis +66) on y = 450
         const V = TOWN_VEHICLE_SCALE;
-        const landY = Math.round(ufoGroundY + 32 - (isCarRun ? 57 : isBoatRun ? 48 : 66) * V);
+        const landY = Math.round(ufoGroundY + 32 - (isCarRun ? 57 : isBoatRun ? 48 : isFishRun ? 46 : 66) * V);
         const ufoCurY =
           crashP < 1
             ? Math.round(90 + crashP * crashP * (landY - 90))
@@ -4730,7 +4887,7 @@ function initPixelMotionStudio() {
         ufoRenderY = ufoCurY;
         const ufoCrashTilt = crashP < 1 ? 0.18 : 0.04;
 
-        drawPixelGroundShadow(ctx, ufoLandX, ufoGroundY + 32, Math.round((isCarRun ? 182 : isBoatRun ? 250 : 192) * V), bounceOffset);
+        drawPixelGroundShadow(ctx, ufoLandX, ufoGroundY + 32, Math.round((isCarRun ? 182 : isBoatRun ? 250 : isFishRun ? 150 : 192) * V), bounceOffset);
 
         // Ground impact pixel dust & spark burst when the UFO slams into the stone walkway
         if (s5P >= 0.13 && s5P <= 0.28) {
@@ -4768,6 +4925,13 @@ function initPixelMotionStudio() {
             wheelAngle: crashP < 1 ? now * 0.05 : 0,
             beam: false,
             pilotLift: openHatchRatio > 0 && openHatchRatio < 1 ? Math.sin(openHatchRatio * Math.PI) * 14 : 0,
+          });
+        } else if (isFishRun) {
+          drawFishingPenguinWithRod(ctx, ufoLandX + 10, ufoCurY, crashP < 1 ? 0.14 : 0.02, now, {
+            scale: V,
+            spId: activeSpId,
+            pixelMode: true,
+            isShocked: crashP < 1,
           });
         } else {
           // Ski landing gone wrong: prop stops, the pilot pops up in the window
@@ -4883,11 +5047,15 @@ function initPixelMotionStudio() {
               ? '쿠과광—!! 어우 내 허리... 배는 땅바닥에 처박혔는데 도착은 성공이다!!'
               : isCarRun
               ? '쿠과광—!! 어우 내 허리... 차는 폐차각인데 도착은 성공이다!!'
+              : isFishRun
+              ? '쿠과광—!! 낚싯줄 끊어지자마자 마을로 직송됐네!! 오늘 낚은 횟감은 다 챙겼다!!'
               : '쿠과광—!! 어우 내 허리... 비행기는 폐기각인데 불시착은 성공이다!!'
             : isBoatRun
             ? i18n('CRAAASH—!! Ow my back... the ship ran aground on dry land, but we made it!!')
             : isCarRun
             ? i18n('CRAAASH—!! Ow my back... the car is totaled, but we made it!!')
+            : isFishRun
+            ? i18n('CRAAASH—!! Snapped the line and landed straight in town!! Saved all my fresh catch!!')
             : i18n('CRAAASH—!! Ow my back... the plane is totaled, but we made it!!'),
           '#38bdf8',
           now
@@ -4906,11 +5074,13 @@ function initPixelMotionStudio() {
             friendBubbleX(speaker1.fx),
             speaker1.fy - 4,
             CURRENT_LANG === 'ko'
-              ? `우와 ${isCarRun ? '하늘에서 차가 떨어졌어' : isBoatRun ? '하늘에서 배가 떨어졌어' : '비행기 불시착했어'} ㅋㅋ 살아있냐?! ${INTRO_TOWN.koPixel}에 온 걸 환영해!!`
+              ? `우와 ${isCarRun ? '하늘에서 차가 떨어졌어' : isBoatRun ? '하늘에서 배가 떨어졌어' : isFishRun ? '남극 무너지는데 혼자 얼음낚시하다 온 펭귄이다' : '비행기 불시착했어'} ㅋㅋ 살아있냐?! ${INTRO_TOWN.koPixel}에 온 걸 환영해!!`
               : isCarRun
               ? i18n('Whoa a car fell from the sky haha—you alive?! Welcome to {0}!!', i18n(INTRO_TOWN.en))
               : isBoatRun
               ? i18n('Whoa a ship fell from the sky haha—you alive?! Welcome to {0}!!', i18n(INTRO_TOWN.en))
+              : isFishRun
+              ? i18n('Whoa you were ice fishing while Antarctica collapsed haha—welcome to {0}!!', i18n(INTRO_TOWN.en))
               : i18n('Whoa your plane crash-landed haha—you alive?! Welcome to {0}!!', i18n(INTRO_TOWN.en)),
             '#ff4d6d',
             now,
@@ -4939,6 +5109,8 @@ function initPixelMotionStudio() {
               ? i18n('Not even paying for car repairs... Whatever, let us check the 10K Codex!!')
               : isBoatRun
               ? i18n('Not even paying for ship repairs... Whatever, let us check the 10K Codex!!')
+              : isFishRun
+              ? i18n('Not even paying for my snapped fishing rod... Whatever, let us check the 10K Codex!!')
               : i18n('Not even paying for plane repairs... Whatever, let us check the 10K Codex!!'),
             '#38bdf8',
             now
@@ -5478,6 +5650,7 @@ async function openTokenModal(tokenNum) {
   if (!modal || !body) return;
 
   modal.classList.add('open');
+  pushHistoryGuard();
   body.innerHTML = `<div class="empty-state" style="grid-column:1/-1;">#${Number(tokenNum)} ${
     CURRENT_LANG === 'ko' ? '불러오는 중…' : i18n('loading…')
   }</div>`;
@@ -5679,6 +5852,51 @@ document.addEventListener('DOMContentLoaded', async () => {
       closeRankShare();
       if (MOTION_STATE.isFullscreen) exitUfoFullscreenGame();
     }
+  });
+
+  // Sync fullscreen lock state when exiting native fullscreen via browser Esc or Android Back
+  const syncFullscreenChange = () => {
+    const fsEl = document.fullscreenElement || document.webkitFullscreenElement;
+    if (!fsEl && MOTION_STATE.isFullscreen) {
+      MOTION_STATE.isFullscreen = false;
+      document.documentElement.classList.remove('ufo-fullscreen-lock');
+      document.body.classList.remove('ufo-fullscreen-lock');
+      document.getElementById('retro-intro-theater')?.classList.remove('is-fullscreen-mode');
+      updateFullscreenExitOrCodexButton();
+    }
+  };
+  document.addEventListener('fullscreenchange', syncFullscreenChange);
+  document.addEventListener('webkitfullscreenchange', syncFullscreenChange);
+
+  // Browser Back / History Guard: prevent accidental page exit and reset to Main Home (Scene 0)
+  try {
+    if (!window.history.state || !window.history.state.ppeng) {
+      window.history.replaceState({ ppeng: 'root' }, '', window.location.pathname + window.location.search);
+    }
+    if (SHARED_RANK) {
+      pushHistoryGuard();
+    }
+  } catch (e) {}
+
+  const armHistoryGuardOnce = () => {
+    pushHistoryGuard();
+    window.removeEventListener('pointerdown', armHistoryGuardOnce, true);
+    window.removeEventListener('keydown', armHistoryGuardOnce, true);
+    window.removeEventListener('touchstart', armHistoryGuardOnce, true);
+  };
+  window.addEventListener('pointerdown', armHistoryGuardOnce, true);
+  window.addEventListener('keydown', armHistoryGuardOnce, true);
+  window.addEventListener('touchstart', armHistoryGuardOnce, true);
+
+  window.addEventListener('popstate', () => {
+    if (isAnyModalOpen()) {
+      closeAllModals();
+      if (!isAtMainHome()) {
+        pushHistoryGuard();
+      }
+      return;
+    }
+    resetToMainHome({ fromPopState: true });
   });
 
   // Explorer Controls

@@ -483,6 +483,31 @@ const I18N_ROWS = [
   ['Eyewear', 'Eyewear', 'چشمہ', 'চশমা'],
   ['Hat', 'Hat', 'ٹوپی', 'টুপি'],
   ['Prop', 'Prop', 'سامان', 'জিনিস'],
+
+  // ---- Ice Fishing (fish-runner.js, escape-scene.js, scene-pull.js) ----
+  ['Ice Fishing', 'Ice Fishing', 'برفانی مچھلی شکار', 'বরফে মাছ ধরা'],
+  ['Fish?', 'Fish?', 'مچھلی؟', 'মাছ?'],
+  ['Forget escaping… Care for some ice fishing?', 'Forget escape… Make we catch fish for ice?', 'فرار چھوڑو… برف میں مچھلی پکڑیں؟', 'পালানো বাদ দাও… বরফে মাছ ধরবে নাকি?'],
+  ['Go Fish', 'Catch Fish', 'مچھلی پکڑو', 'মাছ ধরো'],
+  ['Hold to raise the green bar · release to drop', 'Hold am make green bar climb · leave am make e drop', 'دبائے رکھو تو سبز بار اوپر · چھوڑو تو نیچے', 'চেপে ধরলে সবুজ বার উঠবে · ছাড়লে নামবে'],
+  ['ESCAPE? NAH, LET US JUST GO ICE FISHING~!!', 'ESCAPE? NAH, MAKE WE JUST CATCH FISH~!!', 'فرار؟ رہنے دو، چلو برف میں مچھلی پکڑتے ہیں~!!', 'পালানো? ধুর, চলো বরফে বসে মাছ ধরি~!!'],
+  ['Hold Space / Click / Touch to raise the green bar · Keep the fish inside!', 'Hold Space / Click / Touch make green bar rise · Keep the fish inside!', 'سبز بار اٹھانے کے لیے دبائے رکھو · مچھلی کو اندر رکھو!', 'সবুজ বার তুলতে চেপে ধরো · মাছটাকে ভেতরে রাখো!'],
+  ['LINE SNAPPED!! THE PIXEL PILLAR GOT US!!', 'ROPE DON CUT!! PIXEL PILLAR DON CATCH US!!', 'ڈور ٹوٹ گئی!! پکسل ستون نے پکڑ لیا!!', 'সুতো ছিঁড়ে গেছে!! পিক্সেল স্তম্ভ ধরে ফেলেছে!!'],
+  ['Glacier Smelt', 'Glacier Smelt', 'گلیشیئر اسمেলٹ', 'হিমবাহের স্মেল্ট'],
+  ['Soggy Escape Boot', 'Wet Escape Boot', 'بھیگا ہوا جوتا', 'ভেজা পালানোর বুট'],
+  ['Balloon Puffer', 'Balloon Puffer', 'غبارہ پفر مچھلی', 'বেলুন পাফার মাছ'],
+  ['Abyssal Anglerfish', 'Deep Sea Angler', 'گہرے سمندر کی لالٹین مچھلی', 'গভীর সমুদ্রের অ্যাংলারফিশ'],
+  ['Jack-o-Lantern Fish', 'Pumpkin Fish', 'کدو مچھلی', 'কুমড়ো মাছ'],
+  ['Golden King Krill', 'Golden King Krill', 'سنہری شاہی کرل', 'সোনালি রাজা ক্রিল'],
+  ['Colossal Squid', 'Giant Squid', 'دیوقامت اسکوئڈ', 'দৈত্যাকার স্কুইড'],
+  ['Legendary Gold Whale', 'Legend Gold Whale', 'افسانوی سنہری وہیل', 'কিংবদন্তি সোনালি তিমি'],
+  ['Forget escaping~ one more cast at the ice hole!', 'Forget escape~ one more cast for the ice hole!', 'فرار چھوڑو~ برف کے گڑھے میں ایک بار اور ڈور ڈالو!', 'পালানো বাদ~ বরফের গর্তে আরেকবার ছিপ ফেলি!'],
+  ['Wait, the ice hole is freezing shut?! MY ROD!!', 'Wait, the ice hole dey freeze close?! MY ROD!!', 'رکو، برف کا گڑھا جم رہا ہے؟! میری بنسی!!', 'দাঁড়াও, বরফের গর্ত জমে যাচ্ছে?! আমার ছিপ!!'],
+  ['I was only ice fishing and the pillar still dragged me in?! Even my rod is going pixel?!!', 'I just dey catch fish and the pillar still drag me?! Even my rod dey turn pixel?!!', 'میں تو صرف مچھلی پکڑ رہا تھا پھر بھی ستون نے کھینچ لیا؟! بنسی بھی پکسل بن رہی ہے؟!!', 'আমি তো শুধু মাছ ধরছিলাম তাও স্তম্ভ টেনে নিল?! ছিপটাও পিক্সেল হয়ে যাচ্ছে?!!'],
+  ['Pixelation complete... Even my catch turned into pixels?! FALLING!!', 'Pixel don complete... Even my fish don turn pixel?! FALLING!!', 'پکسل مکمل... میری پکڑی مچھلی بھی پکسل بن گئی؟! گر رہا ہوں!!', 'পিক্সেল সম্পূর্ণ... আমার ধরা মাছও পিক্সেল হয়ে গেল?! পড়ে যাচ্ছি!!'],
+  ['CRAAASH—!! Snapped the line and landed straight in town!! Saved all my fresh catch!!', 'CRAAASH—!! Rope cut and I land straight for town!! I save all my fresh fish!!', 'دھڑااام—!! ڈور ٹوٹتے ہی سیدھا شہر میں گرا!! ساری مچھلیاں بچا لیں!!', 'ধপাআআস—!! সুতো ছিঁড়েই সোজা শহরে এসে পড়লাম!! সব মাছ বাঁচিয়েছি!!'],
+  ['Whoa you were ice fishing while Antarctica collapsed haha—welcome to {0}!!', 'Whoa you dey catch fish while Antarctica dey collapse haha—welcome to {0}!!', 'واہ انٹارکٹکا ٹوٹ رہا تھا اور تم مچھلی پکڑ رہے تھے ہاہا—{0} میں خوش آمدید!!', 'বাব্বা অ্যান্টার্কটিকা ভেঙে পড়ছে আর তুমি মাছ ধরছিলে হাহা—{0}-এ স্বাগতম!!'],
+  ['Not even paying for my snapped fishing rod... Whatever, let us check the 10K Codex!!', 'Dem no even pay for my fishing rod wey broke... Anyway, make we check the 10K Codex!!', 'ٹوٹی ہوئی بنسی کے پیسے بھی نہیں دیے... خیر چھوڑو، 10K فہرست دیکھتے ہیں!!', 'ভাঙা ছিপের টাকাও দিল না... যাকগে, চলো 10K সংগ্রহ দেখে আসি!!'],
 ];
 
 const I18N = { pcm: new Map(), ur: new Map(), bn: new Map() };

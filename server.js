@@ -702,6 +702,7 @@ const SHARE_BOARD_NAMES = {
   ufo: { en: 'Plane', ko: '경비행기', pcm: 'Plane', ur: 'ہوائی جہاز', bn: 'বিমান' },
   boat: { en: 'Icebreaker', ko: '쇄빙선', pcm: 'Icebreaker', ur: 'برف توڑ جہاز', bn: 'বরফভাঙা জাহাজ' },
   car: { en: 'Car', ko: '자동차', pcm: 'Motor', ur: 'گاڑی', bn: 'গাড়ি' },
+  fish: { en: 'Ice Fishing', ko: '얼음낚시', pcm: 'Ice Fishing', ur: 'برفانی مچھلی شکار', bn: 'বরফে মাছ ধরা' },
 };
 
 // Preview texts per language (same B-grade voice and words as the share sheet; public/i18n.js has the glossary)
