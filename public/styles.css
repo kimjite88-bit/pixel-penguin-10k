@@ -312,60 +312,76 @@ button {
   outline-offset: 1px;
 }
 
-/* Official VeryChat channel: sits in the empty right end of the hero eyebrow line, centred on it and
-   absolutely placed, so the intro text keeps its exact layout (30px tall over a 19px line + 8px margin) */
+/* Official SNS logo buttons (VeryChat · Telegram · Instagram): sit in the right end of the hero eyebrow line,
+   centred on it and absolutely placed, so the intro text keeps its exact layout (30px tall over a 19px line) */
 .hero-top-block {
   position: relative;
 }
 
-.channel-join-btn {
+.hero-social-links {
   position: absolute;
   top: 10px;
   right: 0;
   transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
+  gap: 6px;
+}
+
+.social-logo-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
   height: 30px;
-  padding: 0 11px;
-  border-radius: 8px;
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 12px;
-  font-weight: 800;
-  white-space: nowrap;
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--text);
   text-decoration: none;
+  transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
 }
 
-.channel-join-btn:hover {
-  background: var(--accent-strong);
-  border-color: transparent;
-  color: #fff;
+.social-logo-btn svg {
+  display: block;
+  flex-shrink: 0;
 }
 
-/* Three labels by room left of the eyebrow text; each keeps "official" (the notices warn about look-alike
-   channels): the site's full term from 600px, "Join official channel" (139px) from 360px, "Official" below */
-.channel-join-btn .ch-long,
-.channel-join-btn .ch-short {
-  display: none;
+.social-logo-btn.social-verychat {
+  border-color: rgba(255, 90, 121, 0.42);
+  background: rgba(255, 90, 121, 0.11);
 }
 
-@media (max-width: 599px) {
-  .channel-join-btn .ch-full {
-    display: none;
-  }
-  .channel-join-btn .ch-long {
-    display: inline;
-  }
+.social-logo-btn.social-verychat:hover {
+  transform: translateY(-1.5px);
+  border-color: rgba(255, 90, 121, 0.8);
+  background: rgba(255, 90, 121, 0.22);
+  box-shadow: 0 4px 12px rgba(255, 71, 126, 0.25);
 }
 
-@media (max-width: 359px) {
-  .channel-join-btn .ch-long {
-    display: none;
-  }
-  .channel-join-btn .ch-short {
-    display: inline;
-  }
+.social-logo-btn.social-telegram {
+  color: #2aabee;
+  border-color: rgba(42, 171, 238, 0.38);
+  background: rgba(42, 171, 238, 0.1);
+}
+
+.social-logo-btn.social-telegram:hover {
+  transform: translateY(-1.5px);
+  border-color: rgba(42, 171, 238, 0.8);
+  background: rgba(42, 171, 238, 0.22);
+  box-shadow: 0 4px 12px rgba(42, 171, 238, 0.25);
+}
+
+.social-logo-btn.social-instagram {
+  border-color: rgba(225, 48, 108, 0.38);
+  background: rgba(225, 48, 108, 0.1);
+}
+
+.social-logo-btn.social-instagram:hover {
+  transform: translateY(-1.5px);
+  border-color: rgba(225, 48, 108, 0.8);
+  background: rgba(225, 48, 108, 0.22);
+  box-shadow: 0 4px 12px rgba(225, 48, 108, 0.25);
 }
 
 .market-tabs-bar {
@@ -2406,22 +2422,68 @@ body.ufo-fullscreen-lock {
   line-height: 1.7;
 }
 
+.notice-official-links-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 10px 0 12px;
+}
+
 .notice-official-link {
-  display: block;
-  margin: 10px 0;
-  padding: 10px 12px;
-  border: 1px solid var(--accent);
-  border-radius: 8px;
-  background: var(--accent-soft);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 9px 12px;
+  border: 1px solid rgba(255, 90, 121, 0.45);
+  border-radius: 9px;
+  background: rgba(255, 90, 121, 0.08);
   color: var(--text);
-  font-size: 14px;
+  font-size: 13.5px;
   font-weight: 600;
   overflow-wrap: anywhere;
   text-decoration: none;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.notice-official-link.notice-link-telegram {
+  border-color: rgba(42, 171, 238, 0.42);
+  background: rgba(42, 171, 238, 0.08);
+}
+
+.notice-official-link.notice-link-instagram {
+  border-color: rgba(225, 48, 108, 0.42);
+  background: rgba(225, 48, 108, 0.08);
 }
 
 .notice-official-link:hover {
   text-decoration: underline;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.notice-link-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.notice-link-badge.social-telegram {
+  color: #2aabee;
+}
+
+.notice-link-badge svg {
+  display: block;
+  flex-shrink: 0;
+}
+
+.notice-link-url {
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
 }
 
 .notice-warn {
@@ -2563,6 +2625,25 @@ body.ufo-fullscreen-lock {
 .footer-brand {
   color: var(--text);
   font-weight: 700;
+}
+
+.footer-right-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.footer-social-links {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.footer-social-links .social-logo-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
 }
 
 /* ===== Responsive ===== */
