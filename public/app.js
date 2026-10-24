@@ -4262,6 +4262,18 @@ function initPixelMotionStudio() {
   window.addEventListener('keyup', (e) => {
     if (isActionKey(e.code)) releaseAction();
   });
+  // Alt+Tab / a notification / switching tabs never delivers the keyup, so a held Space used to stay "held"
+  // (fishing bar pinned to the top, plane stuck climbing). Release the hold-type controls when focus is lost;
+  // the icebreaker is left alone on purpose because its release fires a ram.
+  const releaseOnFocusLoss = () => {
+    fishActionRelease();
+    skyRelease();
+    carJumpRelease();
+  };
+  window.addEventListener('blur', releaseOnFocusLoss);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) releaseOnFocusLoss();
+  });
 
   // Launch Fullscreen UFO Game Buttons
   const handleEnterFullscreenClick = () => {

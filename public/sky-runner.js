@@ -346,7 +346,9 @@ function resetSkyGame(now = performance.now()) {
 }
 
 function skyGameActive() {
-  return MOTION_STATE.vehicle !== 'car' && MOTION_STATE.sceneIdx === 2 && Boolean(SKY_GAME.run);
+  // Explicitly exclude every non-plane mode: a stale SKY_GAME.run must never steal input from boat / fish
+  const v = MOTION_STATE.vehicle;
+  return v !== 'car' && v !== 'boat' && v !== 'fish' && MOTION_STATE.sceneIdx === 2 && Boolean(SKY_GAME.run);
 }
 
 function skyPress() {

@@ -23,8 +23,12 @@ const FISH_CFG = {
   HOLE_RX: 204,
   HOLE_RY: 60,
   TRACK_H: 300,
-  BAR_H_BASE: 114, // 38% of track at LV.1 (forgiving Stardew green bar)
-  BAR_H_MIN: 88, // ~30% of track at LV.10
+  // v6 skill-first balance (FQL audit 2026-10-24, tuned with a headless bot simulation of fishStep):
+  // the run ends because the player lost fish, never because a clock ran out, so a great angler can fish forever
+  // like a flawless UFO / icebreaker pilot, while idling or button-mashing fails within ~15-20 s.
+  BAR_H_BASE: 108, // 36% of the track at LV.1
+  BAR_H_MIN: 80, // ~27% of the track at LV.10
+  BAR_GRACE_PX: 3, // the green bar you see is (almost exactly) the bar that counts
   LIFT: 0.34,
   GRAVITY: 0.26,
   REVERSE_ASSIST: 0.26,
@@ -32,29 +36,44 @@ const FISH_CFG = {
   MAX_VY: 5.0,
   BOUNCE_FLOOR: 0.24,
   BOUNCE_CEIL: 0.16,
-  LURE_MIN_FRAMES: 34, // ~0.56 s
-  LURE_MAX_FRAMES: 60, // ~1.00 s (snappy arcade pacing)
-  BITE_WINDOW_FRAMES: 54, // 0.90 s to hit a PERFECT STRIKE
+  // Lure: a random wait with 0-2 fake nibbles (small bobber twitches) before the real '!!' bite
+  LURE_MIN_FRAMES: 42, // ~0.7 s
+  LURE_MAX_FRAMES: 100, // ~1.67 s
+  LURE_PRESS_GRACE_FRAMES: 12, // presses right after a new cast are ignored (re-gripping the rod)
+  SPOOK_PENALTY: 8, // pressing before the '!!' (false strike) frightens the fish
+  SPOOK_EXTRA_FRAMES: 36, // ...and it circles a little longer before biting again
+  SPOOK_COOLDOWN_FRAMES: 18,
+  // Bite: the '!!' window shrinks with level; the first part of it is the PERFECT zone
+  BITE_WINDOW_BASE: 54, // 0.90 s at LV.1
+  BITE_WINDOW_MIN: 36, // 0.60 s at LV.10
+  PERFECT_WINDOW_RATIO: 0.45,
+  MISS_PENALTY: 17, // no strike at all: the fish steals the bait
   LAND_ANIM_FRAMES: 50, // ~0.83 s celebration arc into the tackle box
   SLIP_ANIM_FRAMES: 30,
+  MISS_ANIM_FRAMES: 34,
   ENERGY_MAX: 100,
-  COLD_DRAIN_PER_SEC: 1.42, // ambient freeze on the line (ramps after 42s like CAR/BOAT/UFO)
-  FRAY_DRAIN_PER_SEC: 5.0, // gentle tension drain while fish is outside the green bar
-  FRAY_GRACE_FRAMES: 16, // grace buffer before fray drain begins
-  ESCAPE_PENALTY: 14, // line shock if the catch gauge empties completely
+  FIGHT_COLD_PER_SEC: 0.9, // icy line wear only while a fish is on (no drain while waiting for a bite)
+  FRAY_DRAIN_PER_SEC: 12.0, // line frays while the fish is outside the green bar
+  FRAY_GRACE_FRAMES: 10,
+  ESCAPE_PENALTY: 32, // line shock if the catch gauge empties completely
+  FILL_SCALE: 0.72, // global multipliers on the per-species fillRate / drainRate below
+  DRAIN_SCALE: 1.9,
+  TUTORIAL_CASTS: 2, // the first two casts forgive false strikes and give a 1.5x longer '!!' window
   CATCH_HEAL: 6.0,
   CHEST_HEAL: 10.0,
   CHEST_CHANCE: 0.38,
   CHEST_FILL_RATE: 0.022, // ~0.75 s over the chest fills it
   CHEST_BONUS: 420,
   PERFECT_HOOK_BONUS: 120,
+  PERFECT_HOOK_HEAL: 5, // a sharp strike also re-tightens the line
+  GOOD_HOOK_BONUS: 30,
   REEL_TICK_POINTS: 6, // continuous score ticks while keeping the green bar on the fish
-  START_PROGRESS_NORMAL: 0.28,
-  START_PROGRESS_PERFECT: 0.40,
-  SECONDS_PER_LEVEL: 6,
+  START_PROGRESS_GOOD: 0.22,
+  START_PROGRESS_PERFECT: 0.34,
+  CATCHES_PER_LEVEL: 2, // difficulty follows fish landed, not seconds survived
+  LEVEL_BONUS_PER_LV: 150,
   MAX_LEVEL: 10,
   MAX_COMBO: 5,
-  PASSIVE_SCORE_PER_SEC: 15,
 };
 
 const FISH_K = '#0b1020';
@@ -281,13 +300,19 @@ const FISH_BGRADE_FIGHT_LINES = [
   },
 ];
 
-function fishLevelFor(seconds) {
-  return Math.min(FISH_CFG.MAX_LEVEL, 1 + Math.floor(seconds / FISH_CFG.SECONDS_PER_LEVEL));
+// Level follows the fish you have landed (2 per level), so difficulty is earned instead of waited out
+function fishLevelFor(caughtCount) {
+  return Math.min(FISH_CFG.MAX_LEVEL, 1 + Math.floor(Math.max(0, caughtCount) / FISH_CFG.CATCHES_PER_LEVEL));
 }
 
 function fishBarHeightFor(level) {
   const t = (level - 1) / (FISH_CFG.MAX_LEVEL - 1);
   return Math.round(FISH_CFG.BAR_H_BASE + (FISH_CFG.BAR_H_MIN - FISH_CFG.BAR_H_BASE) * t);
+}
+
+function fishBiteWindowFor(level) {
+  const t = (level - 1) / (FISH_CFG.MAX_LEVEL - 1);
+  return Math.round(FISH_CFG.BITE_WINDOW_BASE + (FISH_CFG.BITE_WINDOW_MIN - FISH_CFG.BITE_WINDOW_BASE) * t);
 }
 
 function fishPickSpecies(level, rng, lastSpId = null, castCount = 0) {
@@ -313,6 +338,16 @@ function fishPickSpecies(level, rng, lastSpId = null, castCount = 0) {
   return pool[pool.length - 1];
 }
 
+// Schedules 0-2 fake nibbles (small bobber twitches) strictly before the real bite
+function fishScheduleNibbles(run, rng) {
+  const count = run.castCount <= 1 ? 1 : rng() < 0.35 ? 0 : rng() < 0.7 ? 1 : 2;
+  const marks = [];
+  for (let i = 0; i < count; i++) {
+    marks.push(Math.round(14 + rng() * Math.max(1, run.lureDuration - 30)));
+  }
+  run.nibbleMarks = marks.sort((a, b) => a - b);
+}
+
 function fishBeginCast(run, rng) {
   run.phase = 'lure';
   run.phaseFrames = 0;
@@ -325,7 +360,10 @@ function fishBeginCast(run, rng) {
   run.castCount = (run.castCount || 0) + 1;
   run.strikePressed = false;
   run.perfectStrike = false;
+  run.strikeQuality = null;
+  run.spookCooldown = 0;
   run.bobberDip = 0;
+  fishScheduleNibbles(run, rng);
 }
 
 function fishBeginFight(run, perfect, rng) {
@@ -333,16 +371,19 @@ function fishBeginFight(run, perfect, rng) {
   run.phase = 'fight';
   run.phaseFrames = 0;
   run.perfectStrike = perfect;
+  run.strikeQuality = perfect ? 'perfect' : 'good';
   run.barH = barH;
   run.barY = Math.round((FISH_CFG.TRACK_H - barH) * 0.32);
   run.barV = 0;
-  // Spawn fish directly inside the player's green catch bar so every fight starts smoothly locked on!
-  run.fishY = Math.round(run.barY + barH * 0.5 + (rng() - 0.5) * 20);
+  // The fish starts inside the bar but near one edge, so the fight demands a reaction from the first frame
+  const side = rng() < 0.5 ? -1 : 1;
+  const offset = barH * (0.3 + rng() * 0.16);
+  run.fishY = Math.max(16, Math.min(FISH_CFG.TRACK_H - 16, Math.round(run.barY + barH * 0.5 + side * offset)));
   run.fishV = 0;
   run.fishTarget = run.fishY;
-  run.nextJumpFrames = 26;
+  run.nextJumpFrames = 22;
   run.frayGrace = FISH_CFG.FRAY_GRACE_FRAMES;
-  run.progress = perfect ? FISH_CFG.START_PROGRESS_PERFECT : FISH_CFG.START_PROGRESS_NORMAL;
+  run.progress = perfect ? FISH_CFG.START_PROGRESS_PERFECT : FISH_CFG.START_PROGRESS_GOOD;
   run.onTarget = true;
   run.reelTickFrames = 0;
   run.fightFrames = 0;
@@ -375,12 +416,15 @@ function createFishRun(startAt = 0, rng = Math.random) {
     frames: 0,
     score: 0,
     rawPoints: 0,
-    passiveAcc: 0,
     energy: FISH_CFG.ENERGY_MAX,
     level: 1,
     combo: 1,
     castCount: 0,
     caughtCount: 0,
+    fightsCount: 0,
+    slipCount: 0,
+    missCount: 0,
+    spookCount: 0,
     chestsCaught: 0,
     hold: false,
     justPressed: false,
@@ -388,8 +432,11 @@ function createFishRun(startAt = 0, rng = Math.random) {
     phaseFrames: 0,
     lureDuration: 46,
     nibbleTriggered: false,
+    nibbleMarks: [],
+    spookCooldown: 0,
     targetSp: FISH_SPECIES[1],
     perfectStrike: false,
+    strikeQuality: null,
     barH: FISH_CFG.BAR_H_BASE,
     barY: 84,
     barV: 0,
@@ -427,26 +474,7 @@ function fishRelease(run) {
 function fishStep(run, dt, now, rng = Math.random) {
   const events = [];
   run.frames += dt;
-  const seconds = run.frames / 60;
-  const newLevel = fishLevelFor(seconds);
-  if (newLevel > run.level) {
-    run.level = newLevel;
-    const lvPts = newLevel * 200;
-    run.rawPoints += lvPts;
-    events.push({ type: 'level', level: newLevel, points: lvPts });
-  }
-
-  // Passive survival score for chilling at the ice hole while Antarctica collapses
-  run.passiveAcc += (FISH_CFG.PASSIVE_SCORE_PER_SEC / 60) * dt;
-  if (run.passiveAcc >= 1) {
-    const add = Math.floor(run.passiveAcc);
-    run.passiveAcc -= add;
-    run.rawPoints += add;
-  }
-
-  // Ambient cold drain on line durability (gentle early game, ramps up after 42s like CAR/BOAT/UFO)
-  const blizzardRamp = 1 + Math.max(0, run.level - 1) * 0.16 + Math.max(0, seconds - 42) * 0.04;
-  run.energy -= (FISH_CFG.COLD_DRAIN_PER_SEC / 60) * blizzardRamp * dt;
+  const lvT = run.level - 1; // 0..9 difficulty steps
 
   // Step ambient fish shadows inside the ice hole
   for (let i = 0; i < run.shadows.length; i++) {
@@ -462,45 +490,77 @@ function fishStep(run, dt, now, rng = Math.random) {
   if (run.phase === 'lure') {
     run.rodBend += (Math.sin(run.frames * 0.08) * 0.08 - run.rodBend) * 0.15 * dt;
     run.bobberDip *= Math.pow(0.86, dt);
-    if (!run.nibbleTriggered && run.phaseFrames >= run.lureDuration * 0.55) {
+    if (run.spookCooldown > 0) run.spookCooldown -= dt;
+
+    // Fake nibbles: a small twitch of the bobber that must NOT be struck
+    if (run.nibbleMarks.length && run.phaseFrames >= run.nibbleMarks[0]) {
+      run.nibbleMarks.shift();
       run.nibbleTriggered = true;
       run.bobberDip = 6;
       events.push({ type: 'nibble', x: FISH_CFG.HOLE_CX, y: FISH_CFG.HOLE_CY });
     }
-    if (run.phaseFrames >= run.lureDuration) {
+
+    if (pressed && run.phaseFrames >= FISH_CFG.LURE_PRESS_GRACE_FRAMES && run.spookCooldown <= 0) {
+      // False strike before the '!!': the fish gets spooked, the combo breaks and it circles a while longer
+      // (the first two false strikes of the tutorial casts are free: the popup still teaches the rule)
+      const tutorial = run.castCount <= FISH_CFG.TUTORIAL_CASTS && run.spookCount < 2;
+      const cost = tutorial ? 0 : FISH_CFG.SPOOK_PENALTY;
+      run.energy -= cost;
+      run.combo = 1;
+      run.spookCount += 1;
+      run.spookCooldown = FISH_CFG.SPOOK_COOLDOWN_FRAMES;
+      run.lureDuration = run.phaseFrames + FISH_CFG.SPOOK_EXTRA_FRAMES + rng() * 30;
+      run.nibbleMarks = rng() < 0.5 ? [Math.round(run.phaseFrames + 14 + rng() * 14)] : [];
+      run.bobberDip = 3;
+      events.push({ type: 'spook', cost, x: FISH_CFG.HOLE_CX, y: FISH_CFG.HOLE_CY });
+    } else if (run.phaseFrames >= run.lureDuration) {
       run.phase = 'bite';
       run.phaseFrames = 0;
+      const tutorialK = run.castCount <= FISH_CFG.TUTORIAL_CASTS ? 1.5 : 1;
+      run.biteWindow = Math.round(fishBiteWindowFor(run.level) * tutorialK);
       run.bobberDip = 18;
       events.push({ type: 'bite', x: FISH_CFG.HOLE_CX, y: FISH_CFG.HOLE_CY, sp: run.targetSp });
     }
   } else if (run.phase === 'bite') {
     run.rodBend += (0.35 - run.rodBend) * 0.22 * dt;
+    const window = run.biteWindow || fishBiteWindowFor(run.level);
     if (pressed) {
-      // Timed strike during the '!!' window -> Perfect Hook!
-      const hookPts = FISH_CFG.PERFECT_HOOK_BONUS * run.combo;
+      // Strike inside the '!!' window: early = PERFECT HOOK, late = GOOD HOOK (weaker start)
+      const perfect = run.phaseFrames <= window * FISH_CFG.PERFECT_WINDOW_RATIO;
+      const hookPts = (perfect ? FISH_CFG.PERFECT_HOOK_BONUS : FISH_CFG.GOOD_HOOK_BONUS) * run.combo;
       run.rawPoints += hookPts;
+      run.fightsCount += 1;
       events.push({
         type: 'strike',
-        perfect: true,
+        perfect,
         points: hookPts,
+        reactMs: Math.round((run.phaseFrames / 60) * 1000),
         x: FISH_CFG.HOLE_CX,
         y: FISH_CFG.HOLE_CY - 28,
       });
-      fishBeginFight(run, true, rng);
-    } else if (run.phaseFrames >= FISH_CFG.BITE_WINDOW_FRAMES) {
-      // Auto-hook so a player holding or slightly late still enters the Stardew fight seamlessly
+      if (perfect) run.energy = Math.min(FISH_CFG.ENERGY_MAX, run.energy + FISH_CFG.PERFECT_HOOK_HEAL);
+      fishBeginFight(run, perfect, rng);
+    } else if (run.phaseFrames >= window) {
+      // Nobody struck: the fish steals the bait
+      run.energy -= FISH_CFG.MISS_PENALTY;
+      run.combo = 1;
+      run.missCount += 1;
       events.push({
-        type: 'strike',
-        perfect: false,
-        points: 0,
+        type: 'miss',
+        sp: run.targetSp,
+        cost: FISH_CFG.MISS_PENALTY,
         x: FISH_CFG.HOLE_CX,
-        y: FISH_CFG.HOLE_CY - 28,
+        y: FISH_CFG.HOLE_CY,
       });
-      fishBeginFight(run, false, rng);
+      run.phase = 'miss';
+      run.phaseFrames = 0;
     }
   } else if (run.phase === 'fight') {
     run.fightFrames += dt;
     const sp = run.targetSp;
+
+    // Icy line wear only while a fish is on
+    run.energy -= ((FISH_CFG.FIGHT_COLD_PER_SEC * (1 + lvT * 0.05)) / 60) * dt;
 
     // 1. Player green Catch Bar physics (Stardew Valley buoyancy + gravity + reverse assist + floor bounce)
     let accel = run.hold ? FISH_CFG.LIFT : -FISH_CFG.GRAVITY;
@@ -522,35 +582,39 @@ function fishStep(run, dt, now, rng = Math.random) {
     }
 
     // 2. Hooked Fish AI movement along the 0..TRACK_H gauge (readable pauses + smooth glides)
+    const fast = sp.pattern === 'dart' || sp.pattern === 'boss';
     run.nextJumpFrames -= dt;
     if (run.nextJumpFrames <= 0) {
-      const span = FISH_CFG.TRACK_H * sp.dodge * (1 + (run.level - 1) * 0.04);
-      let target = run.fishY + (rng() - 0.48) * span * 1.6;
+      const span = FISH_CFG.TRACK_H * sp.dodge * (1 + lvT * 0.05);
+      let target = run.fishY + (rng() - 0.5) * span * 1.6;
       if (sp.pattern === 'floater' && rng() < 0.55) {
         target = FISH_CFG.TRACK_H * (0.52 + rng() * 0.38);
       } else if (sp.pattern === 'sinker' && rng() < 0.55) {
         target = FISH_CFG.TRACK_H * (0.08 + rng() * 0.38);
-      } else if ((sp.pattern === 'dart' || sp.pattern === 'boss') && rng() < 0.45) {
+      } else if (fast && rng() < 0.45) {
         target = FISH_CFG.TRACK_H * (0.14 + rng() * 0.72);
       }
       run.fishTarget = Math.max(16, Math.min(FISH_CFG.TRACK_H - 16, target));
-      const minF = sp.pattern === 'dart' || sp.pattern === 'boss' ? 28 : 38;
-      const maxF = sp.pattern === 'dart' || sp.pattern === 'boss' ? 62 : 72;
+      const pace = 1 - lvT * 0.03;
+      const minF = (fast ? 28 : 38) * pace;
+      const maxF = (fast ? 62 : 72) * pace;
       run.nextJumpFrames = minF + rng() * (maxF - minF);
     }
 
-    const pull = sp.speed * (sp.pattern === 'dart' || sp.pattern === 'boss' ? 1.2 : 1.0) * (1 + (run.level - 1) * 0.03);
+    const pull = sp.speed * (fast ? 1.2 : 1.0) * (1 + lvT * 0.05);
     run.fishV += (run.fishTarget - run.fishY) * pull * dt * 0.48;
     run.fishV *= Math.pow(0.84, dt);
-    run.fishV = Math.max(-3.6, Math.min(3.6, run.fishV));
+    run.fishV = Math.max(-3.8, Math.min(3.8, run.fishV));
     run.fishY = Math.max(12, Math.min(FISH_CFG.TRACK_H - 12, run.fishY + run.fishV * dt));
 
-    // 3. Overlap check: is the fish inside the green Catch Bar? (forgiving 8px grace margin)
-    const onTarget = run.fishY >= run.barY - 8 && run.fishY <= run.barY + run.barH + 8;
+    // 3. Overlap check: is the fish inside the green Catch Bar? (what you see is what counts)
+    const g = FISH_CFG.BAR_GRACE_PX;
+    const onTarget = run.fishY >= run.barY - g && run.fishY <= run.barY + run.barH + g;
     run.onTarget = onTarget;
 
     if (onTarget) {
-      run.progress += sp.fillRate * dt;
+      run.progress += sp.fillRate * FISH_CFG.FILL_SCALE * dt;
+      run.frayGrace = Math.min(FISH_CFG.FRAY_GRACE_FRAMES, run.frayGrace + dt * 0.5);
       run.reelTickFrames += dt;
       if (run.reelTickFrames >= 8) {
         run.reelTickFrames = 0;
@@ -559,19 +623,19 @@ function fishStep(run, dt, now, rng = Math.random) {
         events.push({ type: 'reel', x: FISH_CFG.HOLE_CX, y: FISH_CFG.HOLE_CY, points: tickPts });
       }
     } else {
-      if (run.fightFrames > 18) {
-        run.progress -= sp.drainRate * (1 + (run.level - 1) * 0.03) * dt;
+      if (run.fightFrames > 12) {
+        run.progress -= sp.drainRate * FISH_CFG.DRAIN_SCALE * (1 + lvT * 0.04) * dt;
       }
       if (run.frayGrace > 0) {
         run.frayGrace -= dt;
       } else {
-        run.energy -= ((FISH_CFG.FRAY_DRAIN_PER_SEC * (1 + (run.level - 1) * 0.06)) / 60) * dt;
+        run.energy -= ((FISH_CFG.FRAY_DRAIN_PER_SEC * (1 + lvT * 0.05)) / 60) * dt;
       }
     }
 
     // 4. Stardew Valley Treasure Chest overlap check
     if (run.chest && !run.chest.caught) {
-      const onChest = run.chest.y >= run.barY - 8 && run.chest.y <= run.barY + run.barH + 8;
+      const onChest = run.chest.y >= run.barY - g && run.chest.y <= run.barY + run.barH + g;
       if (onChest) {
         run.chest.progress = Math.min(1, run.chest.progress + FISH_CFG.CHEST_FILL_RATE * dt);
         if (run.chest.progress >= 1) {
@@ -599,7 +663,8 @@ function fishStep(run, dt, now, rng = Math.random) {
       run.rawPoints += totalPts;
       if (chestGot) run.chestsCaught += 1;
 
-      const heal = (sp.heal || FISH_CFG.CATCH_HEAL) + (chestGot ? FISH_CFG.CHEST_HEAL : 0);
+      // Streaks keep the line healthy: every combo step adds 12% to the species' line repair
+      const heal = (sp.heal || FISH_CFG.CATCH_HEAL) * (1 + (run.combo - 1) * 0.12) + (chestGot ? FISH_CFG.CHEST_HEAL : 0);
       run.energy = Math.min(FISH_CFG.ENERGY_MAX, run.energy + heal);
 
       run.lastCatch = {
@@ -626,11 +691,22 @@ function fishStep(run, dt, now, rng = Math.random) {
       });
 
       run.combo = Math.min(FISH_CFG.MAX_COMBO, run.combo + 1);
+
+      // Level up from fish landed (deeper, faster monsters + smaller bar + shorter '!!' window)
+      const newLevel = fishLevelFor(run.caughtCount);
+      if (newLevel > run.level) {
+        run.level = newLevel;
+        const lvPts = newLevel * FISH_CFG.LEVEL_BONUS_PER_LV;
+        run.rawPoints += lvPts;
+        events.push({ type: 'level', level: newLevel, points: lvPts });
+      }
+
       run.phase = 'landed';
       run.phaseFrames = 0;
     } else if (run.progress <= 0) {
       run.progress = 0;
       run.combo = 1;
+      run.slipCount += 1;
       run.energy -= FISH_CFG.ESCAPE_PENALTY;
       events.push({
         type: 'slip',
@@ -647,9 +723,10 @@ function fishStep(run, dt, now, rng = Math.random) {
     if (run.phaseFrames >= FISH_CFG.LAND_ANIM_FRAMES) {
       fishBeginCast(run, rng);
     }
-  } else if (run.phase === 'slip') {
+  } else if (run.phase === 'slip' || run.phase === 'miss') {
     run.rodBend += (0 - run.rodBend) * 0.2 * dt;
-    if (run.phaseFrames >= FISH_CFG.SLIP_ANIM_FRAMES) {
+    const animFrames = run.phase === 'miss' ? FISH_CFG.MISS_ANIM_FRAMES : FISH_CFG.SLIP_ANIM_FRAMES;
+    if (run.phaseFrames >= animFrames) {
       fishBeginCast(run, rng);
     }
   }
@@ -1807,8 +1884,9 @@ function drawFishIceHoleWater(ctx, run, now) {
   // Expanding water ripples
   for (let i = FISH_GAME.ripples.length - 1; i >= 0; i--) {
     const rp = FISH_GAME.ripples[i];
-    rp.r += 1.4;
-    rp.alpha -= 0.018;
+    const rdt = FISH_GAME.lastDt || 1; // frame-rate independent ripple growth
+    rp.r += 1.4 * rdt;
+    rp.alpha -= 0.018 * rdt;
     if (rp.alpha <= 0 || rp.r >= rp.maxR) {
       FISH_GAME.ripples.splice(i, 1);
       continue;
@@ -1931,11 +2009,24 @@ function drawFishPenguinHandAndRod(ctx, run, now, spId) {
     }
     ctx.restore();
 
-    // Big '!!' Bite Alert over the bobber
+    // Big '!!' Bite Alert over the bobber: yellow inside the PERFECT zone, orange when late,
+    // with a draining ring that shows how much of the strike window is left
     if (run.phase === 'bite') {
+      const win = run.biteWindow || FISH_CFG.BITE_WINDOW_BASE;
+      const inPerfect = (run.phaseFrames || 0) <= win * FISH_CFG.PERFECT_WINDOW_RATIO;
+      const left = Math.max(0, 1 - (run.phaseFrames || 0) / win);
       const pop = 1 + Math.sin(now * 0.04) * 0.12;
       ctx.save();
       ctx.translate(bobX, bobY - 38);
+      ctx.lineWidth = 4;
+      ctx.strokeStyle = 'rgba(11, 16, 32, 0.75)';
+      ctx.beginPath();
+      ctx.arc(0, 0, 24, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.strokeStyle = inPerfect ? '#fde047' : '#fb923c';
+      ctx.beginPath();
+      ctx.arc(0, 0, 24, -Math.PI / 2, -Math.PI / 2 + left * Math.PI * 2);
+      ctx.stroke();
       ctx.scale(pop, pop);
       ctx.font = '900 32px "Pretendard", "Malgun Gothic", sans-serif';
       ctx.textAlign = 'center';
@@ -1943,7 +2034,7 @@ function drawFishPenguinHandAndRod(ctx, run, now, spId) {
       ctx.lineWidth = 7;
       ctx.strokeStyle = FISH_K;
       ctx.strokeText('!!', 0, 0);
-      ctx.fillStyle = '#fde047';
+      ctx.fillStyle = inPerfect ? '#fde047' : '#fb923c';
       ctx.fillText('!!', 0, 0);
       ctx.restore();
     }
@@ -2080,7 +2171,9 @@ function drawFishPenguinHandAndRod(ctx, run, now, spId) {
 function drawFishStardewBar(ctx, run, now) {
   const ko = typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'ko';
   const trackX = 696;
-  const trackY = 82;
+  // On phones the HUD is drawn 1.6x and would cover the bar's header, so the whole gauge drops below it
+  const uiK = typeof stageUiK === 'function' ? stageUiK() : 1;
+  const trackY = uiK > 1 ? 108 : 82;
   const trackW = 46;
   const trackH = FISH_CFG.TRACK_H;
   const progX = trackX + trackW + 8;
@@ -2176,16 +2269,18 @@ function drawFishStardewBar(ctx, run, now) {
     const fx = trackX + trackW / 2;
     drawFishCreatureSprite(ctx, run.targetSp, fx, fy, 0.72, now);
   } else {
-    // Waiting for bite prompt inside the bar
-    ctx.fillStyle = '#bae6fd';
-    ctx.font = '800 11px "Pretendard", "Malgun Gothic", sans-serif';
-    ctx.fillText(run.phase === 'bite' ? 'HIT!!' : 'WAIT', trackX + trackW / 2, trackY + trackH / 2);
+    // Waiting for bite prompt inside the bar (WAIT -> flashing HIT!! -> MISS)
+    const isBite = run.phase === 'bite';
+    const isMiss = run.phase === 'miss' || run.phase === 'slip';
+    ctx.fillStyle = isBite ? (Math.floor(now / 110) % 2 === 0 ? '#fde047' : '#ffffff') : isMiss ? '#fb7185' : '#bae6fd';
+    ctx.font = isBite ? '900 14px "Pretendard", "Malgun Gothic", sans-serif' : '800 11px "Pretendard", "Malgun Gothic", sans-serif';
+    ctx.fillText(isBite ? 'HIT!!' : isMiss ? 'MISS' : 'WAIT', trackX + trackW / 2, trackY + trackH / 2);
   }
 
   // Right-side Catch Progress Bar (0..100%)
   ctx.fillStyle = '#0f172a';
   ctx.fillRect(progX, trackY, progW, trackH);
-  const pct = run.phase === 'fight' ? Math.max(0, Math.min(1, run.progress)) : run.phase === 'landed' ? 1 : 0.24;
+  const pct = run.phase === 'fight' ? Math.max(0, Math.min(1, run.progress)) : run.phase === 'landed' ? 1 : 0;
   const fillH = Math.round(trackH * pct);
   const pCol = pct > 0.66 ? '#4ade80' : pct > 0.33 ? '#facc15' : '#fb7185';
   ctx.fillStyle = pCol;
@@ -2215,7 +2310,7 @@ function drawFishHud(ctx, now, run) {
   const ko = typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'ko';
   const hx = 16;
   const hy = 12;
-  const hw = 548;
+  const hw = 560;
   const hh = 34;
 
   ctx.save();
@@ -2225,21 +2320,32 @@ function drawFishHud(ctx, now, run) {
   ctx.lineWidth = 1.8;
   ctx.strokeRect(hx, hy, hw, hh);
 
-  ctx.fillStyle = '#fde047';
-  ctx.font = '900 14px "Pretendard", "Malgun Gothic", sans-serif';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText(`SCORE ${run.score.toLocaleString()}`, hx + 12, hy + hh / 2 + 1);
+  // Who is fishing: NFT number (score is recorded) or GUEST (not recorded), same tag as the other three modes
+  if (typeof UFO_GAME !== 'undefined' && UFO_GAME.hasNft && UFO_GAME.pilotTokenId !== null) {
+    ctx.fillStyle = '#fde047';
+    ctx.font = '900 12.5px "Pretendard", "Malgun Gothic", sans-serif';
+    ctx.fillText(`NFT P${String(UFO_GAME.pilotTokenId).padStart(4, '0')}`, hx + 12, hy + hh / 2 + 1);
+  } else {
+    ctx.fillStyle = '#5eead4';
+    ctx.font = '900 11.5px "Pretendard", "Malgun Gothic", sans-serif';
+    ctx.fillText(ko ? 'GUEST (기본)' : i18n('GUEST'), hx + 12, hy + hh / 2 + 1);
+  }
+
+  ctx.fillStyle = '#ffffff';
+  ctx.font = '900 12.5px "Pretendard", "Malgun Gothic", sans-serif';
+  ctx.fillText(`SCORE ${run.score.toLocaleString()}`, hx + 100, hy + hh / 2 + 1);
 
   if (run.combo > 1) {
     ctx.fillStyle = '#34d399';
     ctx.font = '900 13px "Pretendard", "Malgun Gothic", sans-serif';
-    ctx.fillText(`x${run.combo} COMBO`, hx + 146, hy + hh / 2 + 1);
+    ctx.fillText(`x${run.combo}`, hx + 214, hy + hh / 2 + 1);
   }
 
   // Line Tension / Durability Bar
-  const bx = hx + 244;
-  const bw = 136;
+  const bx = hx + 268;
+  const bw = 124;
   const ratio = Math.max(0, run.energy / FISH_CFG.ENERGY_MAX);
   const low = ratio < 0.28;
   ctx.fillStyle = '#1e293b';
@@ -2309,6 +2415,14 @@ function getFishBGradeBubble(run, now, ko) {
       text: ko
         ? '아악 내 횟감 도망갔다!! 방금 그거 고래만 했는데 ㅠㅠ'
         : i18n('Nooo my sashimi got away!! Swear it was the size of a whale!!'),
+      col: '#fb7185',
+    };
+  }
+  if (run.phase === 'miss') {
+    return {
+      text: ko
+        ? '아 늦었다!! 미끼만 홀랑 뜯겼네… !! 뜨면 바로 챔질!!'
+        : i18n('Too slow!! It stole the bait… strike the moment !! pops!!'),
       col: '#fb7185',
     };
   }
@@ -2386,8 +2500,10 @@ function getFishBGradeBubble(run, now, ko) {
 function drawFishRunnerFrame(ctx, now, spId) {
   if (!FISH_GAME.run) resetFishGame(now);
   const run = FISH_GAME.run;
-  const dt = Math.min(32, Math.max(8, now - (FISH_GAME.lastTickAt || now))) / 16.67;
+  // 2ms floor (not 8ms): the 8ms floor made 144Hz+ monitors run the fishing simulation 15-90% faster
+  const dt = Math.min(32, Math.max(2, now - (FISH_GAME.lastTickAt || now))) / 16.67;
   FISH_GAME.lastTickAt = now;
+  FISH_GAME.lastDt = dt;
   const ko = typeof CURRENT_LANG !== 'undefined' && CURRENT_LANG === 'ko';
 
   const events = fishStep(run, dt, now, Math.random);
@@ -2407,19 +2523,55 @@ function drawFishRunnerFrame(ctx, now, spId) {
         text: ko ? '입질 왔다!! 눌러서 챔질!' : i18n('BITE!! Press to strike!'),
         col: '#fde047',
         alpha: 1,
+        tag: 'bite',
       });
     } else if (ev.type === 'strike') {
       playIntroSfx(ev.perfect ? 'rescue' : 'jump', ev);
-      if (ev.perfect) {
-        FISH_GAME.popups.push({
-          x: ev.x,
-          y: ev.y - 30,
-          vy: -1.5,
-          text: ko ? `챔질 완벽!! +${ev.points}` : i18n('PERFECT HOOK! +{0}', ev.points),
-          col: '#4ade80',
-          alpha: 1,
-        });
-      }
+      // The strike result replaces the "BITE!!" prompt instead of stacking on top of it
+      FISH_GAME.popups = FISH_GAME.popups.filter((p) => p.tag !== 'bite');
+      FISH_GAME.popups.push({
+        x: ev.x,
+        y: ev.y - 30,
+        vy: -1.5,
+        text: ev.perfect
+          ? ko
+            ? `챔질 완벽!! ${ev.reactMs}ms +${ev.points}`
+            : i18n('PERFECT HOOK! {0}ms +{1}', ev.reactMs, ev.points)
+          : ko
+          ? `챔질 성공 (조금 늦음) +${ev.points}`
+          : i18n('GOOD HOOK (a bit late) +{0}', ev.points),
+        col: ev.perfect ? '#4ade80' : '#bae6fd',
+        alpha: 1,
+      });
+    } else if (ev.type === 'spook') {
+      playIntroSfx('whiff', ev);
+      spawnFishRipple(ev.x, ev.y, 'rgba(251, 113, 133, 0.85)');
+      FISH_GAME.popups.push({
+        x: ev.x,
+        y: ev.y - 48,
+        vy: -1.3,
+        text: ev.cost
+          ? ko
+            ? `헛챔질! 물고기가 놀랐다 -${ev.cost} · !! 뜰 때만 누르기`
+            : i18n('False strike! Fish spooked -{0} · press only on !!', ev.cost)
+          : ko
+          ? '헛챔질! 찌가 까딱이는 건 페이크 · !! 뜰 때만 누르기'
+          : i18n('False strike! Small twitches are fakes · press only on !!'),
+        col: '#fb7185',
+        alpha: 1,
+      });
+    } else if (ev.type === 'miss') {
+      playIntroSfx('gateMiss', ev);
+      FISH_GAME.popups = FISH_GAME.popups.filter((p) => p.tag !== 'bite');
+      FISH_GAME.hitFlashUntil = now + 300;
+      FISH_GAME.popups.push({
+        x: ev.x,
+        y: ev.y - 44,
+        vy: -1.4,
+        text: ko ? `챔질 실패! 미끼만 뜯겼다 -${ev.cost}` : i18n('Missed the bite! Bait stolen -{0}', ev.cost),
+        col: '#fb7185',
+        alpha: 1,
+      });
     } else if (ev.type === 'reel') {
       playIntroSfx('star', ev);
       if (Math.random() < 0.55) {
@@ -2547,6 +2699,7 @@ function drawFishRunnerFrame(ctx, now, spId) {
     ctx.restore();
   }
 
+  const popK = typeof stageUiK === 'function' ? stageUiK() : 1; // readable popups on phones
   for (let i = FISH_GAME.popups.length - 1; i >= 0; i--) {
     const pop = FISH_GAME.popups[i];
     pop.y += pop.vy * dt;
@@ -2557,21 +2710,30 @@ function drawFishRunnerFrame(ctx, now, spId) {
     }
     ctx.save();
     ctx.globalAlpha = Math.max(0, Math.min(1, pop.alpha));
-    ctx.font = '900 15px "Pretendard", "Malgun Gothic", sans-serif';
+    ctx.font = `900 ${Math.round(15 * popK)}px "Pretendard", "Malgun Gothic", sans-serif`;
     ctx.textAlign = 'center';
+    // keep wide (scaled) popups inside the stage
+    const half = ctx.measureText(pop.text).width / 2;
+    const px = Math.max(half + 8, Math.min(952 - half, pop.x));
     ctx.fillStyle = FISH_K;
-    ctx.fillText(pop.text, pop.x + 2, pop.y + 2);
+    ctx.fillText(pop.text, px + 2, pop.y + 2);
     ctx.fillStyle = pop.col;
-    ctx.fillText(pop.text, pop.x, pop.y);
+    ctx.fillText(pop.text, px, pop.y);
     ctx.restore();
   }
 
   // 8. Top-Left HUD + Bottom Controls Guide
-  withStageUi(ctx, 16, 12, 564, () => drawFishHud(ctx, now, run));
-  if (now - run.startAt < 7500) {
-    const msg = ko
-      ? '누르고 있으면 초록 바 상승 · 떼면 하강 · 물고기에 맞춰 밀당하세요!'
-      : i18n('Hold to raise the green bar · release to drop · keep it on the fish!');
+  withStageUi(ctx, 16, 12, 576, () => drawFishHud(ctx, now, run));
+  // Phase-aware coaching until the first two fish are landed (or 30 s): strike timing first, then the bar
+  if (run.caughtCount < 2 && now - run.startAt < 30000) {
+    const fightTip = run.phase === 'fight' || run.phase === 'landed';
+    const msg = fightTip
+      ? ko
+        ? '누르고 있으면 초록 바 상승 · 떼면 하강 · 물고기를 바 안에 가두세요!'
+        : i18n('Hold to raise the green bar · release to drop · keep it on the fish!')
+      : ko
+      ? '찌 위에 !! 가 뜨면 그때 누르세요 · 살짝 까딱이는 건 페이크!'
+      : i18n('Press only when !! pops over the bobber · small twitches are fakes!');
     ctx.save();
     ctx.font = '800 14px "Pretendard", "Malgun Gothic", sans-serif';
     const tw = Math.ceil(ctx.measureText(msg).width) + 28;
