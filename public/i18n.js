@@ -567,12 +567,14 @@ const I18N_ROWS = [
   ['Line snapped~ guess it is time to head home...', 'Rope don cut~ e be like say na time to go house...', 'ڈور ٹوٹ گئی~ لگتا ہے اب گھر جانے کا وقت ہے...', 'সুতো ছিঁড়ে গেল~ মনে হয় এবার বাড়ি ফেরার সময়...'],
   ['Huh?! I did not even try to escape, why is the pillar hooking ME?!!', 'Ehn?! I no even try run, why the pillar dey hook ME?!!', 'ہیں؟! میں نے تو بھاگنے کی کوشش بھی نہیں کی، ستون مجھے کیوں کھینچ رہا ہے؟!!', 'অ্যাঁ?! আমি তো পালানোর চেষ্টাও করিনি, স্তম্ভ আমাকেই টানছে কেন?!!'],
   ['★ GENESIS #9 · DARK HERO', '★ GENESIS #9 · DARK HERO', '★ جینیسس #9 · ڈارک ہیرو', '★ জেনেসিস #9 · ডার্ক হিরো'],
-  ['Halloween Special Cameo!', 'Halloween Special Cameo!', 'ہیلووین اسپیشل انٹری!', 'হ্যালোইন স্পেশাল ক্যামিও!'],
-  ["I'm Genesis #9 Dark Hero~ lol", 'Na me be Genesis #9 Dark Hero~ lol', 'میں جینیسس #9 ڈارک ہیرو ہوں~ ہاہا', 'আমি জেনেসিস #9 ডার্ক হিরো~ হাহা'],
-  ['Under the full moon atop the tree...', 'Under full moon for top the tree...', 'پورے چاند کے نیچے درخت کے اوپر...', 'পূর্ণিমার নিচে গাছের চূড়ায়...'],
-  ['my shadow-flame cape goes hard hehe', 'my shadow-fire cape fresh die hehe', 'میرا شیڈو فلیم کیپ کمال لگ رہا ہے ہیہی', 'আমার শ্যাডো-ফ্লেম কেপটা দারুণ মানিয়েছে হিহি'],
-  ['Zero perks even for a Genesis lol', 'Even Genesis no get any perk lol', 'جینیسس ہونے پر بھی کچھ نہیں ملے گا ہاہا', 'জেনেসিস হলেও বাড়তি কিছু নেই হাহা'],
-  ['go admire #9 in the 10K Codex~', 'go check #9 for 10K Codex~', '10K کوڈیکس میں #9 جا کر دیکھو~', '10K কোডেক্সে #9 দেখে এসো~'],
+  ['Halloween Cameo—Dark Hero here~', 'Halloween Cameo—Dark Hero don land~', 'ہیلووین اسپیشل—ڈارک ہیرو حاضر ہے~', 'হ্যালোইন ক্যামিও—ডার্ক হিরো হাজির~'],
+  ['Join the 10/26 Mint & I can be yours lol', 'Join 10/26 Mint make I be your own lol', '10/26 منٹنگ میں آؤ اور مجھے اپنا بنا لو ہاہا', '10/26 মিন্টিংয়ে যোগ দাও আর আমাকে নিজের করে নাও হাহা'],
+  ['Hehehe... my seal breaks on 10/26 Mint Day', 'Hehehe... my seal go break for 10/26 Mint Day', 'ہیہیہی... 10/26 منٹنگ کے دن میری مہر ٹوٹے گی', 'হিহিহি... 10/26 মিন্টিংয়ের দিন আমার সিল ভাঙবে'],
+  ['Who dares claim Genesis #9~?!', 'Who go fit claim Genesis #9~?!', 'جینیسس #9 کا مالک کون بنے گا~؟!', 'জেনেসিস #9-এর মালিক কে হবে~?!'],
+  ['Aura farming atop the tree under the moon...', 'Dey form fresh for top tree under full moon...', 'چاند کے نیچے درخت کی چوٹی پر اسٹائل مار رہا ہوں...', 'পূর্ণিমার নিচে গাছের চূড়ায় বসে ভাব নিচ্ছি...'],
+  ['Miss the 10/26 Mint & Dark Hero cries T_T', 'If you miss 10/26 Mint Dark Hero go cry T_T', '10/26 منٹنگ مس کی تو ڈارک ہیرو رو پڑے گا T_T', '10/26 মিন্টিং মিস করলে ডার্ক হিরো কাঁদবে T_T'],
+  ['Zero perks even if you pull me, pure aura lol', 'Zero perk even if you get me, na pure steeze lol', 'مجھے نکال کر بھی کچھ نہیں ملے گا، بس فل ٹشن ہے ہاہا', 'আমাকে পেলেও বাড়তি কিছু নেই, শুধুই ভাব হাহা'],
+  ['See you at the 10/26 Mint hehehe~', 'We go jam for 10/26 Mint hehehe~', '10/26 منٹنگ پر ملتے ہیں ہیہیہی~', '10/26 মিন্টিংয়ে দেখা হবে হিহিহি~'],
 ];
 
 const I18N = { pcm: new Map(), ur: new Map(), bn: new Map() };

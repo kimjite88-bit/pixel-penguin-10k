@@ -2915,16 +2915,20 @@ function getGenesis9DarkHeroLines() {
   const ko = CURRENT_LANG === 'ko';
   return [
     {
-      top: ko ? '할로윈 특집 특별출연!' : i18n('Halloween Special Cameo!'),
-      bot: ko ? '제네시스 #9 다크히어로다~ ㅋ' : i18n("I'm Genesis #9 Dark Hero~ lol"),
+      top: ko ? '할로윈 특집 특별출연 다크히어로다~' : i18n('Halloween Cameo—Dark Hero here~'),
+      bot: ko ? '10/26 민팅 참여하면 날 가질 수 있다구 ㅋ' : i18n('Join the 10/26 Mint & I can be yours lol'),
     },
     {
-      top: ko ? '보름달 아래 호박트리 꼭대기...' : i18n('Under the full moon atop the tree...'),
-      bot: ko ? '내 흑염룡 망토 폼 미쳤지 크크' : i18n('my shadow-flame cape goes hard hehe'),
+      top: ko ? '크크크... 10/26 민팅 날 내 봉인이 풀린다' : i18n('Hehehe... my seal breaks on 10/26 Mint Day'),
+      bot: ko ? '제네시스 #9 주인 될 자 누구냐~!' : i18n('Who dares claim Genesis #9~?!'),
     },
     {
-      top: ko ? '제네시스라고 뭐 주는 건 없다 ㅋ' : i18n('Zero perks even for a Genesis lol'),
-      bot: ko ? '10,000 도감서 #9나 구경해~' : i18n('go admire #9 in the 10K Codex~'),
+      top: ko ? '보름달 아래 트리 위에서 폼 잡는 중...' : i18n('Aura farming atop the tree under the moon...'),
+      bot: ko ? '10/26 민팅 놓치면 다크히어로 운다 ㅠ' : i18n('Miss the 10/26 Mint & Dark Hero cries T_T'),
+    },
+    {
+      top: ko ? '날 가져도 뭐 주는 건 없지만 간지는 1티어 ㅋ' : i18n('Zero perks even if you pull me, pure aura lol'),
+      bot: ko ? '10/26 민팅 때 보자구 크크크~' : i18n('See you at the 10/26 Mint hehehe~'),
     },
   ];
 }
@@ -2932,7 +2936,7 @@ function getGenesis9DarkHeroLines() {
 function drawGenesis9DarkHeroBubble(ctx, headX, headTopY, now, elapsed, phoneMode) {
   const P = 2;
   const lines = getGenesis9DarkHeroLines();
-  const autoTurn = Math.floor(Math.max(0, elapsed) / (TOWN_TALK.turnMs * 1.25));
+  const autoTurn = Math.floor(Math.max(0, elapsed) / (TOWN_TALK.turnMs * 1.1));
   const lineIdx = (autoTurn + (MOTION_STATE.darkHeroLineOffset || 0)) % lines.length;
   const pair = lines[lineIdx];
   const badgeText =
@@ -2949,11 +2953,17 @@ function drawGenesis9DarkHeroBubble(ctx, headX, headTopY, now, elapsed, phoneMod
   const bob = Math.floor(now / 260) % 2 === 0 ? 0 : -2;
 
   ctx.save();
-  const mainFontPx = phoneMode ? 12.5 : 12.5;
-  const badgeFontPx = phoneMode ? 10 : 10;
+  let mainFontPx = phoneMode ? 11.5 : 12.5;
+  const badgeFontPx = 10;
   ctx.font = `800 ${mainFontPx}px "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif`;
-  const w1 = Math.ceil(ctx.measureText(pair.top).width);
-  const w2 = Math.ceil(ctx.measureText(pair.bot).width);
+  let w1 = Math.ceil(ctx.measureText(pair.top).width);
+  let w2 = Math.ceil(ctx.measureText(pair.bot).width);
+  if (Math.max(w1, w2) > maxW - 18) {
+    mainFontPx = Math.max(9.5, Math.floor(((mainFontPx * (maxW - 18)) / Math.max(w1, w2)) * 2) / 2);
+    ctx.font = `800 ${mainFontPx}px "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif`;
+    w1 = Math.ceil(ctx.measureText(pair.top).width);
+    w2 = Math.ceil(ctx.measureText(pair.bot).width);
+  }
   ctx.font = `900 ${badgeFontPx}px "Pretendard", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif`;
   const wBadge = Math.ceil(ctx.measureText(badgeText).width) + 16;
 
