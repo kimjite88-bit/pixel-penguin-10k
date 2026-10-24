@@ -384,6 +384,31 @@ button {
   box-shadow: 0 4px 12px rgba(225, 48, 108, 0.25);
 }
 
+.social-logo-btn.social-x {
+  color: #f1f5f9;
+  border-color: rgba(226, 232, 240, 0.34);
+  background: rgba(226, 232, 240, 0.09);
+}
+
+.social-logo-btn.social-x:hover {
+  transform: translateY(-1.5px);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.18);
+}
+
+@media (max-width: 400px) {
+  .hero-social-links {
+    gap: 5px;
+  }
+  .hero-social-links .social-logo-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+  }
+}
+
 .market-tabs-bar {
   border-top: 1px solid var(--line);
 }
@@ -2457,6 +2482,11 @@ body.ufo-fullscreen-lock {
   background: rgba(225, 48, 108, 0.08);
 }
 
+.notice-official-link.notice-link-x {
+  border-color: rgba(226, 232, 240, 0.34);
+  background: rgba(226, 232, 240, 0.06);
+}
+
 .notice-official-link:hover {
   text-decoration: underline;
   background: rgba(255, 255, 255, 0.07);
@@ -2474,6 +2504,10 @@ body.ufo-fullscreen-lock {
 
 .notice-link-badge.social-telegram {
   color: #2aabee;
+}
+
+.notice-link-badge.social-x {
+  color: #f1f5f9;
 }
 
 .notice-link-badge svg {
