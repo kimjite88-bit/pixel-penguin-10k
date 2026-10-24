@@ -951,6 +951,7 @@ function getHero2DSheetForSpecies(spId = '01') {
 // ============================================================================
 const UFO_GAME = {
   hasNft: false, // false = '없음 (기록 안 남음)', true = NFT #0~#9999 boarded & records score!
+  pilotHasClothes: false, // true when equipped with upper clothes (or Genesis #0~#10), false for Clothes: 'None' (~1,500 NFTs) & default
   pilotTokenId: null,
   pilotSpeciesId: '01',
   pilotSpeciesLabel: '기본 파란 펭귄 (Adelie Classic)',
@@ -1105,7 +1106,9 @@ async function buildModularPilotSheets(tokenNum, traitsObj = null) {
       loadPilotPartImg(`/assets/parts_pixel/specials/sp_px_${tokenNum}.png`),
     ]);
     if (!sh2D || !shPx) return null;
-    const res = { sheet2D: sh2D, sheetPixel: shPx };
+    sh2D._hasClothes = true;
+    shPx._hasClothes = true;
+    const res = { sheet2D: sh2D, sheetPixel: shPx, hasClothes: true };
     PILOT_COMPOSED_CACHE.set(cacheKey, res);
     return res;
   }
@@ -1271,7 +1274,10 @@ async function buildModularPilotSheets(tokenNum, traitsObj = null) {
     composeModeSheet('pixel'),
   ]);
   if (!sheet2D || !sheetPixel) return null;
-  const res = { sheet2D, sheetPixel };
+  const hasClothes = cloCode !== 'None';
+  sheet2D._hasClothes = hasClothes;
+  sheetPixel._hasClothes = hasClothes;
+  const res = { sheet2D, sheetPixel, hasClothes };
   PILOT_COMPOSED_CACHE.set(cacheKey, res);
   return res;
 }
@@ -1445,6 +1451,7 @@ function updateVehicleUI() {
 function skipEscapeToCherryBlossomTown() {
   MOTION_STATE.skippedEscape = true;
   UFO_GAME.hasNft = false;
+  UFO_GAME.pilotHasClothes = false;
   UFO_GAME.pilotTokenId = null;
   UFO_GAME.pilotSpeciesId = '01';
   UFO_GAME.pilotSpeciesLabel = '기본 파란 펭귄 (Classic)';
@@ -1461,6 +1468,7 @@ function skipEscapeToCherryBlossomTown() {
 function boardUfoWithoutNft(startEscape = true) {
   MOTION_STATE.skippedEscape = false;
   UFO_GAME.hasNft = false;
+  UFO_GAME.pilotHasClothes = false;
   UFO_GAME.pilotTokenId = null;
   UFO_GAME.pilotSpeciesId = '01';
   UFO_GAME.pilotSpeciesLabel = '기본 파란 펭귄 (Classic)';
@@ -1491,6 +1499,8 @@ async function loadPilotForToken(num, attempt = 0) {
       const mappedId = SPECIES_NAME_TO_ID[spName] || '01';
       UFO_GAME.pilotSpeciesId = mappedId;
       UFO_GAME.pilotSpeciesLabel = spName;
+      UFO_GAME.pilotHasClothes =
+        num >= 0 && num <= 10 ? true : Boolean(traits.Clothes && traits.Clothes !== 'None');
 
       const equippedParts = [
         spName,

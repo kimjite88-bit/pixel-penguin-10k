@@ -2760,11 +2760,35 @@ function drawFishRunnerFrame(ctx, now, spId) {
 }
 
 // 16-bit Pixel Matrices for:
-// 1. FISH_DEFAULT_FEET_PIXEL_ROWS: Default Character (!UFO_GAME.hasNft) — Original rounded penguin lower belly +
-//    cute 3-toed orange webbed feet (원래 발 / 다른 친구들 발처럼) + shoulder-slung rod handle!
-// 2. FISH_WADER_PIXEL_ROWS: NFT Character (UFO_GAME.hasNft) — Seamless One-Piece Wader Pants + Boots (자연스러운 일체형 하의장화)
-//    starting at the waistline (r43) inside the outer sleeves so both sleeves/hands hang naturally on the sides,
-//    bridging across r47/r48 with zero horizontal cut line, and flowing in one piece into the dark rubber boots!
+// 1. FISH_DEFAULT_FEET_PIXEL_ROWS: Shirtless NFTs (~1,500 tokens with Clothes: 'None') & Default Character (!UFO_GAME.hasNft) —
+//    Species-matched feather lower body & belly (종별 깃털색 하체) + 3-toed orange webbed penguin feet + shoulder-slung rod handle!
+// 2. FISH_WADER_PIXEL_ROWS: Clothed NFTs (~8,500 tokens with Clothes !== 'None' & Genesis #0~#10) —
+//    100% Upper Clothes ON TOP overhanging Compact One-Piece Wader Pants + Boots (상의 위 + 일체형 하의장화)!
+const FISH_SPECIES_LOWER_PALETTES = {
+  '01': { p: '#0c143a', L: '#16449a', M: '#2860cc', b: '#2860cc', c: '#e8d0ac', w: '#fcf2dc', s: '#16449a' }, // Classic (SPC-05)
+  '02': { p: '#2a160e', L: '#62391f', M: '#8c5733', b: '#8c5733', c: '#ddbf98', w: '#f7e8cf', s: '#62391f' }, // Cocoa Penguin (Brown) (SPC-01)
+  '03': { p: '#0c143a', L: '#22222c', M: '#22222c', b: '#3a3a4c', c: '#e8d0ac', w: '#fcf2dc', s: '#22222c' }, // Midnight Penguin (SPC-02)
+  '04': { p: '#3a1c0a', L: '#c46f1e', M: '#f09b3a', b: '#f09b3a', c: '#ebcda6', w: '#fdf1de', s: '#c46f1e' }, // Apricot Penguin (Orange) (SPC-03)
+  '05': { p: '#0c143a', L: '#b8466e', M: '#b8466e', b: '#ee7aa2', c: '#e8d0ac', w: '#fcf2dc', s: '#b8466e' }, // Rose Penguin (Pink) (SPC-04)
+  '06': { p: '#1e0e40', L: '#5d35a4', M: '#8a56d6', b: '#8a56d6', c: '#e8d0ac', w: '#fcf2dc', s: '#5d35a4' }, // Violet Penguin (Purple) (SPC-06)
+  '07': { p: '#2c3448', L: '#b8c2d3', M: '#eef2f7', b: '#eef2f7', c: '#ebcdca', w: '#fdefec', s: '#b8c2d3' }, // Snow Penguin (Snow) (SPC-07)
+  '08': { p: '#3d2b15', L: '#af8d55', M: '#dabb80', b: '#dabb80', c: '#e6d3b0', w: '#fcf5e6', s: '#af8d55' }, // Dune Penguin (Sand) (SPC-08)
+  '09': { p: '#0c143a', L: '#1c7a50', M: '#1c7a50', b: '#34b07a', c: '#e8d0ac', w: '#fcf2dc', s: '#1c7a50' }, // Jade Penguin (Forest) (SPC-09)
+  '10': { p: '#2e0c0b', L: '#d4462b', M: '#ff9d3b', b: '#ff9d3b', c: '#e8d0ac', w: '#fcf2dc', s: '#9c2b1d' }, // Ember Penguin (Ember) (SPC-10)
+  '11': { p: '#24221f', L: '#a8a295', M: '#e3dfd3', b: '#e3dfd3', c: '#a8a295', w: '#a8a295', s: '#a8a295' }, // Bone Penguin (Skeleton) (SPC-11)
+  '12': { p: '#0c143a', L: '#5e9ac4', M: '#5e9ac4', b: '#96ccec', c: '#e8d0ac', w: '#fcf2dc', s: '#5e9ac4' }, // Glacier Penguin (Ice) (SPC-12)
+  '13': { p: '#0a2b31', L: '#1c7277', M: '#2fa5a6', b: '#2fa5a6', c: '#a6d7d0', w: '#d8f1ec', s: '#1c7277' }, // Reef Penguin (Sea) (SPC-22)
+  '14': { p: '#1c222b', L: '#7b8595', M: '#bac2cd', b: '#bac2cd', c: '#afb8c4', w: '#e9eef3', s: '#7b8595' }, // Chrome Penguin (Cyber) (SPC-14)
+  '15': { p: '#4a2c09', L: '#c28a1b', M: '#f1bb31', b: '#f1bb31', c: '#e7c777', w: '#fbebb9', s: '#c28a1b' }, // Gold Penguin (Golden) (SPC-15)
+  '16': { p: '#24262b', L: '#63666d', M: '#8f9197', b: '#8f9197', c: '#a3a095', w: '#cac7bd', s: '#63666d' }, // Ancient Stone Penguin (Ancient) (SPC-16)
+  '17': { p: '#0e2a1a', L: '#276b3f', M: '#3e9a5d', b: '#3e9a5d', c: '#9dcb8e', w: '#cdeac0', s: '#276b3f' }, // Abyssal Penguin (Eldritch Horror) (SPC-17)
+  '18': { p: '#141e3a', L: '#5a6a93', M: '#8a9cc0', b: '#8a9cc0', c: '#c3cbdd', w: '#eef2f8', s: '#5a6a93' }, // Stormcloud Penguin (Storm) (SPC-18)
+  '19': { p: '#c7a6ff', L: '#4a2894', M: '#6a3ec2', b: '#6a3ec2', c: '#b9a3ea', w: '#e4d5fa', s: '#4a2894' }, // Dreamglow Penguin (Dream) (SPC-19)
+  '20': { p: '#130a0c', L: '#c2262a', M: '#3d3a43', b: '#3d3a43', c: '#b0a2a4', w: '#d8cece', s: '#26242b' }, // Demon Penguin (Demon) (SPC-20)
+  '21': { p: '#3a0d07', L: '#a8321b', M: '#e9532a', b: '#e9532a', c: '#edbba6', w: '#fce2d2', s: '#a8321b' }, // Blaze Penguin (Fire) (SPC-21)
+  '22': { p: '#15123f', L: '#3a3b9c', M: '#5a5ed4', b: '#5a5ed4', c: '#c2b6e6', w: '#e6def8', s: '#3a3b9c' }, // Pearl Penguin (Lavender) (SPC-13)
+};
+
 const FISH_DEFAULT_FEET_PIXEL_ROWS = [
   // col 7..42 (36 cols; penguin torso col 11..39 is index 4..32)
   '......KCK...........................', // r38: rod shaft crossing left shoulder
@@ -2777,11 +2801,11 @@ const FISH_DEFAULT_FEET_PIXEL_ROWS = [
   '....................................', // r45
   '....................................', // r46
   '....................................', // r47
-  '....psssbbbbbbbbbpcccwwwwwwwwssbp...', // r48: seamless continuation of blue wings & cream belly
-  '.....ppssbbbbbbbbpcccwwwwwwwwssp....', // r49: left & right wing tips taper smoothly
-  '.......pssbbbbbbbbccccwwwwwwssp.....', // r50: rounded lower belly curve
-  '........psssbbbbbbbccccwwwwssp......', // r51: lower belly rounding inward
-  '.........ppssssbbbbbbbbbbsspp.......', // r52: lower body base above feet
+  '....pLLLMMMMMbbbbpcccwwwwwwwwssbp...', // r48: seamless continuation of species wings & belly from r47
+  '.....ppLLMMMMbbbbpcccwwwwwwwwssp....', // r49: left & right wing tips taper smoothly
+  '.......pLLMMMbbbbccccwwwwwwssp......', // r50: rounded lower belly curve
+  '........pLLMMbbbbccccwwwwssp........', // r51: lower belly rounding inward
+  '.........ppLsssbbbbbbbbbbsspp.......', // r52: lower body base above feet
   '.........FFOOOOFFppssssppFFOOTTFF...', // r53: two cute 3-toed orange penguin feet emerging!
   '........FOOTOOOTOF.pppp.FOOTOOOTOF..', // r54: 3 sculpted orange toes with highlights
   '........FFooFFooFF......FFooFFooFF..', // r55: orange webbed foot base
@@ -3021,10 +3045,20 @@ function drawFishingPenguinWithRod(ctx, cx, cy, tiltRad = 0, now = 0, options = 
 
   // ==========================================================================
   // 3. FRONT LAYER:
-  //    - Default Character (!hasNft): Original rounded penguin belly + cute 3-toed orange feet (원래 발처럼) + Rod Handle
-  //    - NFT Character (hasNft): Seamless One-Piece Wader Pants + Boots (자연스러운 일체형 하의장화) + Rod Handle
+  //    - Shirtless NFTs (~1,500 tokens with Clothes: 'None') & Default Character (!hasNft):
+  //      Species-matched rounded feather lower body & belly (종별 깃털색 하체) + 3-toed orange penguin feet + Rod Handle
+  //    - Clothed NFTs (~8,500 tokens with Clothes !== 'None' & Genesis #0~#10):
+  //      Upper Clothes ON TOP overhanging Compact One-Piece Wader Pants + Boots (일체형 하의장화) + Rod Handle
   // ==========================================================================
   const hasNft = Boolean(typeof UFO_GAME !== 'undefined' && UFO_GAME.hasNft);
+  const hasClothes =
+    hasNft &&
+    (UFO_GAME.pilotPixelSheet && typeof UFO_GAME.pilotPixelSheet._hasClothes === 'boolean'
+      ? UFO_GAME.pilotPixelSheet._hasClothes
+      : UFO_GAME.pilotHasClothes !== false);
+  const spKey = String(spId || '01').padStart(2, '0');
+  const spLowerPal = FISH_SPECIES_LOWER_PALETTES[spKey] || FISH_SPECIES_LOWER_PALETTES['01'];
+
   if (pixelMode) {
     const bootPalette = {
       K: FISH_K,
@@ -3033,22 +3067,23 @@ function drawFishingPenguinWithRod(ctx, cx, cy, tiltRad = 0, now = 0, options = 
       R: '#94a3b8', // metallic spinning reel
       W: '#94a3b8', // silver-grey rubber gloss glint
       H: '#475569', // dark gunmetal wader waist band / seam highlight
-      L: '#334155', // lit charcoal wader pants & boot front
+      L: hasClothes ? '#334155' : spLowerPal.L, // wader lit charcoal OR species left-wing feather shadow
+      M: spLowerPal.M, // species mid-wing feather transition
       B: '#1e293b', // main black-charcoal wader pants & boot body
       D: '#0f172a', // deep onyx shadow & trouser crease
       S: '#111827', // heavy vulcanized black rubber sole
-      // Default penguin lower body & 3-toed orange webbed feet palette:
-      p: '#0c143a', // penguin outline
-      s: cols.dark || '#16449a', // species feather shadow
-      b: cols.main || '#2860cc', // species feather main
-      c: '#e8d0ac', // cream belly shadow
-      w: '#fcf2dc', // cream belly main
+      // Species-matched penguin lower body & 3-toed orange webbed feet palette:
+      p: spLowerPal.p, // species outline
+      s: spLowerPal.s, // species inner body/belly border shadow
+      b: spLowerPal.b, // species main feather
+      c: spLowerPal.c, // species belly shadow
+      w: spLowerPal.w, // species belly main cream
       O: '#ff7a01', // bright orange penguin foot
       o: '#e44501', // shaded orange toe crease
       T: '#ffa83d', // orange toe highlight
       F: '#2a0a08', // dark foot outline
     };
-    const activeRows = hasNft ? FISH_WADER_PIXEL_ROWS : FISH_DEFAULT_FEET_PIXEL_ROWS;
+    const activeRows = hasClothes ? FISH_WADER_PIXEL_ROWS : FISH_DEFAULT_FEET_PIXEL_ROWS;
     const cSz = Math.ceil(cell + 0.35);
     activeRows.forEach((row, idx) => {
       const gridRow = 38 + idx;
@@ -3058,7 +3093,7 @@ function drawFishingPenguinWithRod(ctx, cx, cy, tiltRad = 0, now = 0, options = 
         if (!color) continue;
         const gridCol = 7 + colOffset;
         // Apply subtle foot/boot kick on lower rows when falling/yanked
-        const kickStartRow = hasNft ? 51 : 53;
+        const kickStartRow = hasClothes ? 51 : 53;
         const legDy = gridRow >= kickStartRow ? (gridCol < 25 ? bootL : bootR) : 0;
         const px = bustX + gridCol * cell;
         const py = bustY + gridRow * cell + legDy;
@@ -3070,10 +3105,11 @@ function drawFishingPenguinWithRod(ctx, cx, cy, tiltRad = 0, now = 0, options = 
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
 
-    if (!hasNft) {
-      // Smooth 2D Default Character: Rounded blue/cream lower body + two cute 3-toed orange webbed feet!
-      ctx.fillStyle = cols.main || '#2860cc';
-      ctx.strokeStyle = '#0c143a';
+    if (!hasClothes) {
+      // Smooth 2D Shirtless NFT (~1,500 tokens) & Default Character:
+      // Species-matched rounded feather lower body + belly + two cute 3-toed orange webbed feet!
+      ctx.fillStyle = spLowerPal.b || cols.main || '#2860cc';
+      ctx.strokeStyle = spLowerPal.p || '#0c143a';
       ctx.lineWidth = 2.4;
       ctx.beginPath();
       ctx.moveTo(-22, 28);
@@ -3084,8 +3120,8 @@ function drawFishingPenguinWithRod(ctx, cx, cy, tiltRad = 0, now = 0, options = 
       ctx.fill();
       ctx.stroke();
 
-      // Rounded cream lower belly
-      ctx.fillStyle = '#fcf2dc';
+      // Rounded species lower belly
+      ctx.fillStyle = spLowerPal.w || '#fcf2dc';
       ctx.beginPath();
       ctx.moveTo(0, 27.5);
       ctx.quadraticCurveTo(0, 37.5, 8, 37.5);
