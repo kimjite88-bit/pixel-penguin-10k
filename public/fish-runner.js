@@ -23,36 +23,38 @@ const FISH_CFG = {
   HOLE_RX: 204,
   HOLE_RY: 60,
   TRACK_H: 300,
-  BAR_H_BASE: 86,
-  BAR_H_MIN: 68,
-  LIFT: 0.44,
-  GRAVITY: 0.35,
-  REVERSE_ASSIST: 0.28,
-  DAMPING: 0.94,
-  MAX_VY: 6.8,
-  BOUNCE_FLOOR: 0.34,
-  BOUNCE_CEIL: 0.22,
-  LURE_MIN_FRAMES: 38, // ~0.63 s
-  LURE_MAX_FRAMES: 68, // ~1.13 s (fast arcade pacing: no boring wait)
-  BITE_WINDOW_FRAMES: 48, // 0.8 s to hit a PERFECT STRIKE
-  LAND_ANIM_FRAMES: 52, // ~0.86 s celebration arc into the tackle box
-  SLIP_ANIM_FRAMES: 32,
+  BAR_H_BASE: 114, // 38% of track at LV.1 (forgiving Stardew green bar)
+  BAR_H_MIN: 88, // ~30% of track at LV.10
+  LIFT: 0.34,
+  GRAVITY: 0.26,
+  REVERSE_ASSIST: 0.26,
+  DAMPING: 0.91,
+  MAX_VY: 5.0,
+  BOUNCE_FLOOR: 0.24,
+  BOUNCE_CEIL: 0.16,
+  LURE_MIN_FRAMES: 34, // ~0.56 s
+  LURE_MAX_FRAMES: 60, // ~1.00 s (snappy arcade pacing)
+  BITE_WINDOW_FRAMES: 54, // 0.90 s to hit a PERFECT STRIKE
+  LAND_ANIM_FRAMES: 50, // ~0.83 s celebration arc into the tackle box
+  SLIP_ANIM_FRAMES: 30,
   ENERGY_MAX: 100,
-  COLD_DRAIN_PER_SEC: 1.65, // ambient freeze on the line (ramps up with level)
-  FRAY_DRAIN_PER_SEC: 11.5, // tension drain while the fish is outside the green bar
-  ESCAPE_PENALTY: 24, // line shock if the catch gauge empties completely
-  CATCH_HEAL: 4,
-  CHEST_HEAL: 8,
-  CHEST_CHANCE: 0.42,
+  COLD_DRAIN_PER_SEC: 1.42, // ambient freeze on the line (ramps after 42s like CAR/BOAT/UFO)
+  FRAY_DRAIN_PER_SEC: 5.0, // gentle tension drain while fish is outside the green bar
+  FRAY_GRACE_FRAMES: 16, // grace buffer before fray drain begins
+  ESCAPE_PENALTY: 14, // line shock if the catch gauge empties completely
+  CATCH_HEAL: 6.0,
+  CHEST_HEAL: 10.0,
+  CHEST_CHANCE: 0.38,
   CHEST_FILL_RATE: 0.022, // ~0.75 s over the chest fills it
-  CHEST_BONUS: 180,
-  PERFECT_HOOK_BONUS: 80,
-  START_PROGRESS_NORMAL: 0.22,
-  START_PROGRESS_PERFECT: 0.34,
+  CHEST_BONUS: 420,
+  PERFECT_HOOK_BONUS: 120,
+  REEL_TICK_POINTS: 6, // continuous score ticks while keeping the green bar on the fish
+  START_PROGRESS_NORMAL: 0.28,
+  START_PROGRESS_PERFECT: 0.40,
   SECONDS_PER_LEVEL: 6,
   MAX_LEVEL: 10,
-  MAX_COMBO: 6,
-  PASSIVE_SCORE_PER_SEC: 10,
+  MAX_COMBO: 5,
+  PASSIVE_SCORE_PER_SEC: 15,
 };
 
 const FISH_K = '#0b1020';
@@ -61,156 +63,170 @@ const FISH_SPECIES = [
   {
     id: 'smelt',
     ko: '남극 빙어',
-    en: 'Antarctic Smelt',
+    en: 'Glacier Smelt',
     tier: 'common',
     pattern: 'smooth',
     minLv: 1,
-    pts: 120,
-    fillRate: 0.012,
-    drainRate: 0.0068,
-    dodge: 0.28,
-    speed: 0.085,
+    weight: 20,
+    pts: 240,
+    heal: 5.5,
+    fillRate: 0.0088,
+    drainRate: 0.0028,
+    dodge: 0.24,
+    speed: 0.055,
     col: '#38bdf8',
     belly: '#e0f2fe',
     accent: '#0284c7',
-    size: 1.0,
-    quoteKo: '입질 맛집이네~ 초장 가져와라!!',
+    size: 1.04,
+    quoteKo: '입질 맛집이네~ 남극 빙어 초장 가져와라!!',
     quoteEn: 'Fresh Antarctic smelt~ pass the sauce!!',
   },
   {
-    id: 'boot',
-    ko: '누가 버린 탈출 부츠',
-    en: "Escapee's Boot",
+    id: 'flounder',
+    ko: '남극 대왕광어',
+    en: 'Antarctic Halibut',
     tier: 'common',
     pattern: 'sinker',
     minLv: 1,
-    pts: 150,
-    fillRate: 0.0115,
-    drainRate: 0.0072,
-    dodge: 0.34,
-    speed: 0.095,
-    col: '#b45309',
+    weight: 22,
+    pts: 320,
+    heal: 6.0,
+    fillRate: 0.0082,
+    drainRate: 0.0030,
+    dodge: 0.30,
+    speed: 0.062,
+    col: '#a16207',
     belly: '#fde68a',
-    accent: '#ef4444',
-    size: 1.08,
-    quoteKo: '누가 도망가다 벗어던진 부츠냐 ㅋㅋ 안에 꽃게 들었음!',
-    quoteEn: 'Someone lost a boot fleeing lol—there is a crab inside!',
-  },
-  {
-    id: 'puffer',
-    ko: '풍선 복어',
-    en: 'Balloon Puffer',
-    tier: 'uncommon',
-    pattern: 'floater',
-    minLv: 1,
-    pts: 210,
-    fillRate: 0.0106,
-    drainRate: 0.0078,
-    dodge: 0.46,
-    speed: 0.11,
-    col: '#facc15',
-    belly: '#fef9c3',
-    accent: '#ea580c',
+    accent: '#ca8a04',
     size: 1.15,
-    quoteKo: '빵빵하게 부풀었네 ㅋㅋ 터지기 전에 건져!!',
-    quoteEn: 'Puffed up like a balloon lol—land it before it pops!!',
-  },
-  {
-    id: 'angler',
-    ko: '심해 초롱아귀',
-    en: 'Deep-Sea Angler',
-    tier: 'rare',
-    pattern: 'sinker',
-    minLv: 2,
-    pts: 290,
-    fillRate: 0.0098,
-    drainRate: 0.0085,
-    dodge: 0.58,
-    speed: 0.125,
-    col: '#6366f1',
-    belly: '#c7d2fe',
-    accent: '#fde047',
-    size: 1.24,
-    quoteKo: '얼음구덩이 밑에 왜 심해어가 살아?!!',
-    quoteEn: 'Why is a deep-sea angler living under this ice hole?!!',
-  },
-  {
-    id: 'pumpkin',
-    ko: '할로윈 호박 물고기',
-    en: "Jack-o'-Fish",
-    tier: 'rare',
-    pattern: 'smooth',
-    minLv: 2,
-    pts: 350,
-    fillRate: 0.0094,
-    drainRate: 0.0088,
-    dodge: 0.62,
-    speed: 0.13,
-    col: '#f97316',
-    belly: '#ffedd5',
-    accent: '#4ade80',
-    size: 1.26,
-    quoteKo: '물고기가 왜 호박 마스크를 쓰고 있냐 ㅋㅋㅋ',
-    quoteEn: 'Why is this fish wearing a pumpkin mask lol?!!',
-  },
-  {
-    id: 'krill',
-    ko: '황금 대왕크릴',
-    en: 'Golden Krill King',
-    tier: 'epic',
-    pattern: 'dart',
-    minLv: 3,
-    pts: 460,
-    heal: 8,
-    fillRate: 0.0090,
-    drainRate: 0.0092,
-    dodge: 0.72,
-    speed: 0.14,
-    col: '#fbbf24',
-    belly: '#fef08a',
-    accent: '#f43f5e',
-    size: 1.30,
-    quoteKo: '황금 크릴이다!! 낚싯줄 텐션까지 회복됨 ㅋㅋ',
-    quoteEn: 'Golden Krill!! Restored line tension too lol',
+    quoteKo: '와 넙치·광어 봐라 ㅋㅋ 눈 두 개가 한쪽으로 몰려있어!!',
+    quoteEn: 'Look at this wide flatfish lol—both eyes on one side!!',
   },
   {
     id: 'squid',
     ko: '남극 대왕오징어',
     en: 'Colossal Squid',
+    tier: 'rare',
+    pattern: 'dart',
+    minLv: 1,
+    weight: 20,
+    pts: 480,
+    heal: 6.5,
+    fillRate: 0.0074,
+    drainRate: 0.0034,
+    dodge: 0.42,
+    speed: 0.080,
+    col: '#e11d48',
+    belly: '#fda4af',
+    accent: '#fb7185',
+    size: 1.26,
+    quoteKo: '빨판 달린 다리만 열 개야!! 대왕오징어 숙회 먹자아악!!',
+    quoteEn: 'Ten waving tentacles with suction cups!! Takoyaki time!!',
+  },
+  {
+    id: 'puffer',
+    ko: '가시 풍선복어',
+    en: 'Balloon Puffer',
+    tier: 'uncommon',
+    pattern: 'floater',
+    minLv: 1,
+    weight: 16,
+    pts: 380,
+    heal: 6.0,
+    fillRate: 0.0078,
+    drainRate: 0.0032,
+    dodge: 0.34,
+    speed: 0.068,
+    col: '#eab308',
+    belly: '#fef9c3',
+    accent: '#84cc16',
+    size: 1.16,
+    quoteKo: '가시 돋친 복어가 빵빵하게 부풀었네 ㅋㅋ 터지기 전에 건져!!',
+    quoteEn: 'Puffed up with spikes lol—land it before it pops!!',
+  },
+  {
+    id: 'angler',
+    ko: '심해 초롱아귀',
+    en: 'Abyssal Anglerfish',
+    tier: 'rare',
+    pattern: 'sinker',
+    minLv: 2,
+    weight: 14,
+    pts: 600,
+    heal: 7.0,
+    fillRate: 0.0072,
+    drainRate: 0.0035,
+    dodge: 0.40,
+    speed: 0.076,
+    col: '#4338ca',
+    belly: '#818cf8',
+    accent: '#fde047',
+    size: 1.24,
+    quoteKo: '얼음구덩이 밑에 왜 이빨 날카로운 심해 초롱아귀가 살아?!!',
+    quoteEn: 'Why is a glowing deep-sea angler under this ice hole?!!',
+  },
+  {
+    id: 'pumpkin',
+    ko: '할로윈 호박광어',
+    en: 'Jack-o-Lantern Fish',
+    tier: 'epic',
+    pattern: 'floater',
+    minLv: 2,
+    weight: 13,
+    pts: 760,
+    heal: 7.5,
+    fillRate: 0.0068,
+    drainRate: 0.0036,
+    dodge: 0.44,
+    speed: 0.082,
+    col: '#ea580c',
+    belly: '#fed7aa',
+    accent: '#22c55e',
+    size: 1.26,
+    quoteKo: '할로윈 호박 물고기다?! 눈이랑 이빨에서 불빛 나옴 ㅋㅋㅋ',
+    quoteEn: 'A carved Halloween pumpkin fish?! Look at that glowing grin lol',
+  },
+  {
+    id: 'krill',
+    ko: '황금 대왕크릴',
+    en: 'Golden King Krill',
     tier: 'epic',
     pattern: 'dart',
-    minLv: 4,
-    pts: 640,
-    fillRate: 0.0085,
-    drainRate: 0.0096,
-    dodge: 0.80,
-    speed: 0.15,
-    col: '#ec4899',
-    belly: '#fbcfe8',
-    accent: '#a855f7',
-    size: 1.42,
-    quoteKo: '다리만 열 개야!! 타코야끼 해먹자아악!!',
-    quoteEn: 'Ten tentacles!! Think of all the takoyaki!!',
+    minLv: 3,
+    weight: 11,
+    pts: 950,
+    heal: 8.0,
+    fillRate: 0.0065,
+    drainRate: 0.0038,
+    dodge: 0.48,
+    speed: 0.088,
+    col: '#f59e0b',
+    belly: '#fef08a',
+    accent: '#ef4444',
+    size: 1.30,
+    quoteKo: '황금 갑각 대왕크릴이다!! 낚싯줄 텐션까지 든든하게 회복됨 ㅋㅋ',
+    quoteEn: 'Golden King Krill!! Crunchy armor and line tension restored!!',
   },
   {
     id: 'whale',
     ko: '전설의 황금고래',
-    en: 'Legendary Golden Whale',
+    en: 'Legendary Gold Whale',
     tier: 'legend',
     pattern: 'boss',
-    minLv: 5,
-    pts: 950,
-    heal: 10,
-    fillRate: 0.0080,
-    drainRate: 0.0102,
-    dodge: 0.88,
-    speed: 0.165,
+    minLv: 4,
+    weight: 8,
+    pts: 1400,
+    heal: 10.0,
+    fillRate: 0.0060,
+    drainRate: 0.0040,
+    dodge: 0.54,
+    speed: 0.095,
     col: '#f59e0b',
-    belly: '#ffffff',
+    belly: '#fef3c7',
     accent: '#38bdf8',
-    size: 1.60,
-    quoteKo: '미쳤다 얼음구덩이에서 고래가 왜 나와?!!',
-    quoteEn: 'Wait, how did a whole WHALE fit through this ice hole?!!',
+    size: 1.48,
+    quoteKo: '미쳤다 얼음구덩이에서 물보라 뿜는 황금고래가 왜 나와?!!',
+    quoteEn: 'Wait, how did a whole GOLDEN WHALE fit through this ice hole?!!',
   },
 ];
 
@@ -223,12 +239,18 @@ function fishBarHeightFor(level) {
   return Math.round(FISH_CFG.BAR_H_BASE + (FISH_CFG.BAR_H_MIN - FISH_CFG.BAR_H_BASE) * t);
 }
 
-function fishPickSpecies(level, rng) {
-  const pool = FISH_SPECIES.filter((s) => s.minLv <= level);
-  // Higher levels weight rarer catches more heavily
+function fishPickSpecies(level, rng, lastSpId = null, castCount = 0) {
+  // Showcase our signature diverse sea creatures right in the opening casts (광어 -> 오징어 -> 복어/빙어/초롱아귀)
+  if (castCount === 0) return FISH_SPECIES[1]; // flounder (남극 대왕광어)
+  if (castCount === 1) return FISH_SPECIES[2]; // squid (남극 대왕오징어)
+
+  let pool = FISH_SPECIES.filter((s) => s.minLv <= level);
+  if (pool.length > 1 && lastSpId) {
+    pool = pool.filter((s) => s.id !== lastSpId);
+  }
   const weights = pool.map((s, idx) => {
-    const base = idx === 0 ? 1.3 : idx === 1 ? 0.9 : 1.0;
-    const lvBoost = 1 + Math.max(0, level - s.minLv) * 0.22 + idx * (level * 0.06);
+    const base = s.weight || 12;
+    const lvBoost = 1 + Math.max(0, level - s.minLv) * 0.14 + idx * (level * 0.04);
     return base * lvBoost;
   });
   const total = weights.reduce((a, b) => a + b, 0);
@@ -247,25 +269,28 @@ function fishBeginCast(run, rng) {
     FISH_CFG.LURE_MIN_FRAMES + rng() * (FISH_CFG.LURE_MAX_FRAMES - FISH_CFG.LURE_MIN_FRAMES)
   );
   run.nibbleTriggered = false;
-  run.targetSp = fishPickSpecies(run.level, rng);
+  const prevId = run.targetSp ? run.targetSp.id : null;
+  run.targetSp = fishPickSpecies(run.level, rng, prevId, run.castCount || 0);
+  run.castCount = (run.castCount || 0) + 1;
   run.strikePressed = false;
   run.perfectStrike = false;
   run.bobberDip = 0;
 }
 
 function fishBeginFight(run, perfect, rng) {
-  const sp = run.targetSp;
   const barH = fishBarHeightFor(run.level);
   run.phase = 'fight';
   run.phaseFrames = 0;
   run.perfectStrike = perfect;
   run.barH = barH;
-  run.barY = Math.round((FISH_CFG.TRACK_H - barH) * 0.35);
+  run.barY = Math.round((FISH_CFG.TRACK_H - barH) * 0.32);
   run.barV = 0;
-  run.fishY = Math.round(FISH_CFG.TRACK_H * (0.28 + rng() * 0.44));
+  // Spawn fish directly inside the player's green catch bar so every fight starts smoothly locked on!
+  run.fishY = Math.round(run.barY + barH * 0.5 + (rng() - 0.5) * 20);
   run.fishV = 0;
   run.fishTarget = run.fishY;
-  run.nextJumpFrames = 14;
+  run.nextJumpFrames = 26;
+  run.frayGrace = FISH_CFG.FRAY_GRACE_FRAMES;
   run.progress = perfect ? FISH_CFG.START_PROGRESS_PERFECT : FISH_CFG.START_PROGRESS_NORMAL;
   run.onTarget = true;
   run.reelTickFrames = 0;
@@ -273,7 +298,7 @@ function fishBeginFight(run, perfect, rng) {
 
   if (rng() < FISH_CFG.CHEST_CHANCE) {
     run.chest = {
-      y: Math.round(42 + rng() * (FISH_CFG.TRACK_H - 84)),
+      y: Math.round(45 + rng() * (FISH_CFG.TRACK_H - 90)),
       progress: 0,
       caught: false,
     };
@@ -289,7 +314,7 @@ function createFishRun(startAt = 0, rng = Math.random) {
       ang: (i * Math.PI * 2) / 6 + rng() * 0.5,
       dist: 0.25 + rng() * 0.58,
       speed: (i % 2 === 0 ? 1 : -1) * (0.008 + rng() * 0.008),
-      size: 0.75 + (i % 3) * 0.28,
+      size: 0.8 + (i % 3) * 0.22,
       spIdx: i % FISH_SPECIES.length,
       wobble: rng() * Math.PI * 2,
     });
@@ -303,25 +328,27 @@ function createFishRun(startAt = 0, rng = Math.random) {
     energy: FISH_CFG.ENERGY_MAX,
     level: 1,
     combo: 1,
+    castCount: 0,
     caughtCount: 0,
     chestsCaught: 0,
     hold: false,
     justPressed: false,
     phase: 'lure',
     phaseFrames: 0,
-    lureDuration: 48,
+    lureDuration: 46,
     nibbleTriggered: false,
-    targetSp: FISH_SPECIES[0],
+    targetSp: FISH_SPECIES[1],
     perfectStrike: false,
     barH: FISH_CFG.BAR_H_BASE,
-    barY: 90,
+    barY: 84,
     barV: 0,
-    fishY: 140,
+    fishY: 135,
     fishV: 0,
-    fishTarget: 140,
-    nextJumpFrames: 20,
-    progress: 0.25,
-    onTarget: false,
+    fishTarget: 135,
+    nextJumpFrames: 26,
+    frayGrace: FISH_CFG.FRAY_GRACE_FRAMES,
+    progress: 0.28,
+    onTarget: true,
     reelTickFrames: 0,
     fightFrames: 0,
     chest: null,
@@ -353,7 +380,7 @@ function fishStep(run, dt, now, rng = Math.random) {
   const newLevel = fishLevelFor(seconds);
   if (newLevel > run.level) {
     run.level = newLevel;
-    const lvPts = newLevel * 120;
+    const lvPts = newLevel * 200;
     run.rawPoints += lvPts;
     events.push({ type: 'level', level: newLevel, points: lvPts });
   }
@@ -366,9 +393,9 @@ function fishStep(run, dt, now, rng = Math.random) {
     run.rawPoints += add;
   }
 
-  // Ambient cold drain on line durability
-  const coldScale = 1 + (run.level - 1) * 0.055;
-  run.energy -= (FISH_CFG.COLD_DRAIN_PER_SEC / 60) * coldScale * dt;
+  // Ambient cold drain on line durability (gentle early game, ramps up after 42s like CAR/BOAT/UFO)
+  const blizzardRamp = 1 + Math.max(0, run.level - 1) * 0.16 + Math.max(0, seconds - 42) * 0.04;
+  run.energy -= (FISH_CFG.COLD_DRAIN_PER_SEC / 60) * blizzardRamp * dt;
 
   // Step ambient fish shadows inside the ice hole
   for (let i = 0; i < run.shadows.length; i++) {
@@ -399,11 +426,12 @@ function fishStep(run, dt, now, rng = Math.random) {
     run.rodBend += (0.35 - run.rodBend) * 0.22 * dt;
     if (pressed) {
       // Timed strike during the '!!' window -> Perfect Hook!
-      run.rawPoints += FISH_CFG.PERFECT_HOOK_BONUS;
+      const hookPts = FISH_CFG.PERFECT_HOOK_BONUS * run.combo;
+      run.rawPoints += hookPts;
       events.push({
         type: 'strike',
         perfect: true,
-        points: FISH_CFG.PERFECT_HOOK_BONUS,
+        points: hookPts,
         x: FISH_CFG.HOLE_CX,
         y: FISH_CFG.HOLE_CY - 28,
       });
@@ -442,48 +470,57 @@ function fishStep(run, dt, now, rng = Math.random) {
       run.barV = Math.abs(run.barV) > 1.1 ? -run.barV * FISH_CFG.BOUNCE_CEIL : 0;
     }
 
-    // 2. Hooked Fish AI movement along the 0..TRACK_H gauge
+    // 2. Hooked Fish AI movement along the 0..TRACK_H gauge (readable pauses + smooth glides)
     run.nextJumpFrames -= dt;
     if (run.nextJumpFrames <= 0) {
-      const spread = (0.24 + sp.dodge * 0.56) * FISH_CFG.TRACK_H;
-      let target = run.fishY + (rng() * 2 - 1) * spread;
-      if (sp.pattern === 'floater' && rng() < 0.6) {
-        target = FISH_CFG.TRACK_H * (0.58 + rng() * 0.36);
-      } else if (sp.pattern === 'sinker' && rng() < 0.6) {
-        target = FISH_CFG.TRACK_H * (0.06 + rng() * 0.36);
-      } else if (sp.pattern === 'dart' || sp.pattern === 'boss') {
-        target = rng() < 0.5 ? FISH_CFG.TRACK_H * (0.1 + rng() * 0.8) : target;
+      const span = FISH_CFG.TRACK_H * sp.dodge * (1 + (run.level - 1) * 0.04);
+      let target = run.fishY + (rng() - 0.48) * span * 1.6;
+      if (sp.pattern === 'floater' && rng() < 0.55) {
+        target = FISH_CFG.TRACK_H * (0.52 + rng() * 0.38);
+      } else if (sp.pattern === 'sinker' && rng() < 0.55) {
+        target = FISH_CFG.TRACK_H * (0.08 + rng() * 0.38);
+      } else if ((sp.pattern === 'dart' || sp.pattern === 'boss') && rng() < 0.45) {
+        target = FISH_CFG.TRACK_H * (0.14 + rng() * 0.72);
       }
-      run.fishTarget = Math.max(14, Math.min(FISH_CFG.TRACK_H - 14, target));
-      const minF = sp.pattern === 'dart' || sp.pattern === 'boss' ? 18 : 26;
-      const maxF = sp.pattern === 'dart' || sp.pattern === 'boss' ? 46 : 68;
+      run.fishTarget = Math.max(16, Math.min(FISH_CFG.TRACK_H - 16, target));
+      const minF = sp.pattern === 'dart' || sp.pattern === 'boss' ? 28 : 38;
+      const maxF = sp.pattern === 'dart' || sp.pattern === 'boss' ? 62 : 72;
       run.nextJumpFrames = minF + rng() * (maxF - minF);
     }
 
-    const pull = sp.speed * (sp.pattern === 'dart' || sp.pattern === 'boss' ? 1.35 : 1.0);
-    run.fishV += (run.fishTarget - run.fishY) * pull * dt * 0.55;
+    const pull = sp.speed * (sp.pattern === 'dart' || sp.pattern === 'boss' ? 1.2 : 1.0) * (1 + (run.level - 1) * 0.03);
+    run.fishV += (run.fishTarget - run.fishY) * pull * dt * 0.48;
     run.fishV *= Math.pow(0.84, dt);
+    run.fishV = Math.max(-3.6, Math.min(3.6, run.fishV));
     run.fishY = Math.max(12, Math.min(FISH_CFG.TRACK_H - 12, run.fishY + run.fishV * dt));
 
-    // 3. Overlap check: is the fish inside the green Catch Bar? (forgiving 6px grace margin)
-    const onTarget = run.fishY >= run.barY - 6 && run.fishY <= run.barY + run.barH + 6;
+    // 3. Overlap check: is the fish inside the green Catch Bar? (forgiving 8px grace margin)
+    const onTarget = run.fishY >= run.barY - 8 && run.fishY <= run.barY + run.barH + 8;
     run.onTarget = onTarget;
 
     if (onTarget) {
       run.progress += sp.fillRate * dt;
       run.reelTickFrames += dt;
-      if (run.reelTickFrames >= 7) {
+      if (run.reelTickFrames >= 8) {
         run.reelTickFrames = 0;
-        events.push({ type: 'reel', x: FISH_CFG.HOLE_CX, y: FISH_CFG.HOLE_CY });
+        const tickPts = FISH_CFG.REEL_TICK_POINTS * run.combo;
+        run.rawPoints += tickPts;
+        events.push({ type: 'reel', x: FISH_CFG.HOLE_CX, y: FISH_CFG.HOLE_CY, points: tickPts });
       }
     } else {
-      run.progress -= sp.drainRate * dt;
-      run.energy -= (FISH_CFG.FRAY_DRAIN_PER_SEC / 60) * dt;
+      if (run.fightFrames > 18) {
+        run.progress -= sp.drainRate * (1 + (run.level - 1) * 0.03) * dt;
+      }
+      if (run.frayGrace > 0) {
+        run.frayGrace -= dt;
+      } else {
+        run.energy -= ((FISH_CFG.FRAY_DRAIN_PER_SEC * (1 + (run.level - 1) * 0.06)) / 60) * dt;
+      }
     }
 
     // 4. Stardew Valley Treasure Chest overlap check
     if (run.chest && !run.chest.caught) {
-      const onChest = run.chest.y >= run.barY - 6 && run.chest.y <= run.barY + run.barH + 6;
+      const onChest = run.chest.y >= run.barY - 8 && run.chest.y <= run.barY + run.barH + 8;
       if (onChest) {
         run.chest.progress = Math.min(1, run.chest.progress + FISH_CFG.CHEST_FILL_RATE * dt);
         if (run.chest.progress >= 1) {
@@ -491,7 +528,7 @@ function fishStep(run, dt, now, rng = Math.random) {
           events.push({ type: 'chestLock', x: 728, y: 400 - run.chest.y });
         }
       } else {
-        run.chest.progress = Math.max(0, run.chest.progress - FISH_CFG.CHEST_FILL_RATE * 0.35 * dt);
+        run.chest.progress = Math.max(0, run.chest.progress - FISH_CFG.CHEST_FILL_RATE * 0.25 * dt);
       }
     }
 
@@ -503,10 +540,10 @@ function fishStep(run, dt, now, rng = Math.random) {
     if (run.progress >= 1) {
       run.progress = 1;
       run.caughtCount += 1;
-      const mult = 1 + (run.combo - 1) * 0.25;
+      const mult = 1 + (run.combo - 1) * 0.28;
       const fishPts = Math.round(sp.pts * mult);
       const chestGot = Boolean(run.chest && run.chest.caught);
-      const chestPts = chestGot ? FISH_CFG.CHEST_BONUS * run.combo : 0;
+      const chestPts = chestGot ? FISH_CFG.CHEST_BONUS + run.combo * 100 : 0;
       const totalPts = fishPts + chestPts;
       run.rawPoints += totalPts;
       if (chestGot) run.chestsCaught += 1;
@@ -532,7 +569,7 @@ function fishStep(run, dt, now, rng = Math.random) {
         points: totalPts,
         chestGot,
         combo: run.combo,
-        heal,
+        heal: Math.round(heal),
         x: FISH_CFG.HOLE_CX,
         y: FISH_CFG.HOLE_CY,
       });
@@ -729,121 +766,944 @@ function drawRefFishingBackground(ctx, now) {
   ctx.restore();
 }
 
-// Draw a caught fish or mini icon for the Stardew Catch Bar and the flying catch celebration
+// Hand-crafted anatomical sprite renderer for all 8 sea creatures:
+// smelt (남극 빙어), flounder (남극 대왕광어), squid (남극 대왕오징어), puffer (가시 풍선복어),
+// angler (심해 초롱아귀), pumpkin (할로윈 호박광어), krill (황금 대왕크릴), whale (전설의 황금고래)
 function drawFishCreatureSprite(ctx, sp, x, y, scale = 1, now = 0) {
   ctx.save();
   ctx.translate(x, y);
   ctx.scale(scale, scale);
-  const wiggle = Math.sin(now * 0.02) * 0.1;
+  const wiggle = Math.sin(now * 0.016) * 0.07;
   ctx.rotate(wiggle);
 
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
   ctx.lineWidth = 2.4;
   ctx.strokeStyle = FISH_K;
 
-  if (sp.id === 'boot') {
-    // Discarded snow boot with a cheeky red crab peeking out the top!
-    ctx.fillStyle = sp.col;
+  const id = sp ? sp.id : 'smelt';
+  const finWag = Math.sin(now * 0.025) * 2.5;
+
+  if (id === 'flounder') {
+    // =========================================================================
+    // 1. ANTARCTIC HALIBUT / FLOUNDER (남극 대왕광어 — 비대칭 마름모 몸통 + 주름 지느러미 + 몰린 두 눈)
+    // =========================================================================
+    // Fanned wedge tail fin on the left
+    ctx.fillStyle = '#ca8a04';
     ctx.beginPath();
-    ctx.roundRect(-12, -14, 16, 20, 3);
-    ctx.roundRect(-12, 0, 26, 12, 4);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = '#1f2937';
-    ctx.fillRect(-12, 9, 26, 4);
-    // Crab claws peeking out
-    ctx.fillStyle = '#ef4444';
-    ctx.beginPath();
-    ctx.arc(-4, -16, 5, 0, Math.PI * 2);
-    ctx.arc(6, -15, 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-  } else if (sp.id === 'squid') {
-    // Colossal squid with mantle + waving tentacles
-    ctx.fillStyle = sp.col;
-    ctx.beginPath();
-    ctx.moveTo(-20, 0);
-    ctx.lineTo(6, -13);
-    ctx.lineTo(14, 0);
-    ctx.lineTo(6, 13);
+    ctx.moveTo(-17, 0);
+    ctx.lineTo(-29, -9 + finWag * 0.5);
+    ctx.quadraticCurveTo(-32, finWag * 0.5, -29, 9 + finWag * 0.5);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    for (let t = -2; t <= 2; t++) {
+
+    // Continuous dorsal & anal ribbon fin frill (지느러미 주름) around the wide diamond rim
+    ctx.fillStyle = '#eab308';
+    ctx.beginPath();
+    ctx.moveTo(-19, -2);
+    ctx.quadraticCurveTo(-2, -24 - finWag * 0.3, 15, -7);
+    ctx.lineTo(15, 7);
+    ctx.quadraticCurveTo(-2, 24 + finWag * 0.3, -19, 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Fin-ray stripes along the top & bottom ribbon fins
+    ctx.strokeStyle = '#713f12';
+    ctx.lineWidth = 1.4;
+    for (let r = -12; r <= 8; r += 4) {
+      const arcH = (1 - Math.pow(r / 16, 2)) * 11.5;
       ctx.beginPath();
-      ctx.moveTo(10, t * 3);
-      ctx.quadraticCurveTo(18, t * 4 + Math.sin(now * 0.025 + t) * 4, 24, t * 3.5);
-      ctx.strokeStyle = sp.col;
-      ctx.lineWidth = 3;
+      ctx.moveTo(r, -6);
+      ctx.lineTo(r - 1, -arcH - 2);
+      ctx.moveTo(r, 6);
+      ctx.lineTo(r - 1, arcH + 2);
       ctx.stroke();
     }
-    ctx.fillStyle = '#ffffff';
+
+    // Wide asymmetrical diamond/oval flatfish body
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 2.4;
+    ctx.fillStyle = '#854d0e';
     ctx.beginPath();
-    ctx.arc(4, -3, 4, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = FISH_K;
-    ctx.fillRect(4, -4, 2.5, 2.5);
-  } else {
-    // Classic / Puffer / Angler / Pumpkin / Whale body
-    const rx = sp.id === 'whale' ? 24 : sp.id === 'puffer' ? 15 : 18;
-    const ry = sp.id === 'whale' ? 14 : sp.id === 'puffer' ? 14 : 10;
-    // Tail fin
-    ctx.fillStyle = sp.accent;
-    ctx.beginPath();
-    ctx.moveTo(-rx + 3, 0);
-    ctx.lineTo(-rx - 10, -9);
-    ctx.lineTo(-rx - 8, 0);
-    ctx.lineTo(-rx - 10, 9);
+    ctx.moveTo(-19, 0);
+    ctx.quadraticCurveTo(-2, -16, 17, -4);
+    ctx.quadraticCurveTo(22, 0, 17, 5);
+    ctx.quadraticCurveTo(-2, 16, -19, 0);
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-    // Main body
-    ctx.fillStyle = sp.col;
+
+    // Golden-olive inner dorsal sheen
+    ctx.fillStyle = '#a16207';
     ctx.beginPath();
-    ctx.ellipse(0, 0, rx, ry, 0, 0, Math.PI * 2);
+    ctx.ellipse(-1, 0, 14, 9.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Mottled flatfish camouflage spots (광어 반점 무늬: dark umber + sandy cream)
+    const darkSpots = [[-10, -4, 2.3], [-4, -6, 2.6], [2, -5, 2.0], [-7, 5, 2.5], [1, 6, 2.4], [-2, 1, 2.2]];
+    ctx.fillStyle = '#422006';
+    darkSpots.forEach(([sx, sy, sr]) => {
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+      ctx.fill();
+    });
+    const lightSpots = [[-12, 2, 1.6], [-5, -2, 1.7], [4, 2, 1.6], [-1, 7, 1.4]];
+    ctx.fillStyle = '#fef08a';
+    lightSpots.forEach(([sx, sy, sr]) => {
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Curved S-shaped lateral line (광어 특유의 중앙 측선) & gill arch
+    ctx.strokeStyle = '#fef08a';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-17, 0);
+    ctx.bezierCurveTo(-6, 1, 0, -4, 8, -2);
+    ctx.stroke();
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.arc(7, 1, 6.5, Math.PI * 0.65, Math.PI * 1.35);
+    ctx.stroke();
+
+    // Small central pectoral fin
+    ctx.fillStyle = '#facc15';
+    ctx.beginPath();
+    ctx.ellipse(2, 2.5, 4.5, 2.4, -0.3, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
-    // Belly highlight
-    ctx.fillStyle = sp.belly;
+
+    // Slanted halibut jaw with tiny sharp teeth
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.ellipse(2, ry * 0.35, rx * 0.68, ry * 0.42, 0, 0, Math.PI);
-    ctx.fill();
-    // Angler lantern
-    if (sp.id === 'angler') {
-      ctx.strokeStyle = FISH_K;
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(4, -ry);
-      ctx.quadraticCurveTo(16, -ry - 12, 20, -ry - 2);
-      ctx.stroke();
+    ctx.moveTo(19, 1);
+    ctx.lineTo(13, 5);
+    ctx.stroke();
+
+    // Signature Flatfish Feature: BOTH bulging eyes perched side-by-side on the upper head!
+    const eyes = [[9.5, -6.5, 3.6], [14.2, -2.2, 3.3]];
+    eyes.forEach(([ex, ey, er]) => {
       ctx.fillStyle = '#fde047';
+      ctx.strokeStyle = FISH_K;
+      ctx.lineWidth = 1.8;
       ctx.beginPath();
-      ctx.arc(20, -ry - 2, 4.5, 0, Math.PI * 2);
+      ctx.arc(ex, ey, er, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
-    }
-    // Jack-o'-Fish carved pumpkin grin & stem
-    if (sp.id === 'pumpkin') {
-      ctx.fillStyle = '#15803d';
-      ctx.fillRect(-3, -ry - 5, 6, 6);
-      ctx.fillStyle = '#fde047';
-      ctx.fillRect(4, -5, 4, 4);
-      ctx.fillRect(2, 2, 9, 3);
-    } else {
-      // Eye
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.arc(rx * 0.45, -ry * 0.22, 3.8, 0, Math.PI * 2);
+      ctx.arc(ex + 0.3, ey, er * 0.72, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = FISH_K;
       ctx.beginPath();
-      ctx.arc(rx * 0.5, -ry * 0.22, 2, 0, Math.PI * 2);
+      ctx.arc(ex + 0.8, ey - 0.2, er * 0.42, 0, Math.PI * 2);
       ctx.fill();
+    });
+  } else if (id === 'squid') {
+    // =========================================================================
+    // 2. COLOSSAL SQUID (남극 대왕오징어 — 삼각 귀 지느러미 + 점박이 몸통 + 10개 다리 & 빨판)
+    // =========================================================================
+    // 2 extra-long hunting tentacles with broadened clubs & white suction cups (빨판)
+    for (const sgn of [-1, 1]) {
+      const wave = Math.sin(now * 0.022 + sgn * 1.2) * 4;
+      ctx.strokeStyle = FISH_K;
+      ctx.lineWidth = 5.4;
+      ctx.beginPath();
+      ctx.moveTo(10, sgn * 4);
+      ctx.bezierCurveTo(18, sgn * 9 + wave, 24, sgn * 3 - wave, 31, sgn * 6 + wave * 0.6);
+      ctx.stroke();
+      ctx.strokeStyle = '#fb7185';
+      ctx.lineWidth = 3.0;
+      ctx.stroke();
+
+      // Broadened tentacle club at the tip
+      const cx = 31;
+      const cy = sgn * 6 + wave * 0.6;
+      ctx.fillStyle = '#e11d48';
+      ctx.strokeStyle = FISH_K;
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 4.8, 2.6, sgn * 0.25, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // White suction cups (빨판) along the tentacle & club
+      ctx.fillStyle = '#ffffff';
+      for (let c = 0; c < 3; c++) {
+        ctx.beginPath();
+        ctx.arc(21 + c * 4.2, sgn * (5 + (c % 2)) + wave * 0.4, 1.3, 0, Math.PI * 2);
+        ctx.fill();
+      }
     }
+
+    // 6 inner waving arms
+    for (let t = -2.5; t <= 2.5; t += 1) {
+      const w = Math.sin(now * 0.028 + t * 1.1) * 3.2;
+      ctx.strokeStyle = FISH_K;
+      ctx.lineWidth = 4.4;
+      ctx.beginPath();
+      ctx.moveTo(10, t * 2.1);
+      ctx.quadraticCurveTo(17, t * 3.1 + w, 24, t * 2.6 - w * 0.5);
+      ctx.stroke();
+      ctx.strokeStyle = t % 2 === 0 ? '#f43f5e' : '#fda4af';
+      ctx.lineWidth = 2.3;
+      ctx.stroke();
+    }
+
+    // Muscular head & siphon funnel collar
+    ctx.fillStyle = '#be123c';
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.roundRect(4, -7.5, 9.5, 15, 4);
+    ctx.fill();
+    ctx.stroke();
+
+    // Diamond / spearhead caudal mantle fins (오징어 삼각 귀 지느러미)
+    const flap = Math.sin(now * 0.024) * 1.5;
+    ctx.fillStyle = '#be123c';
+    ctx.beginPath();
+    ctx.moveTo(-25, 0);
+    ctx.lineTo(-12, -14 - flap);
+    ctx.lineTo(-4, -5);
+    ctx.lineTo(-4, 5);
+    ctx.lineTo(-12, 14 + flap);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Tapered cylindrical squid mantle body (오징어 몸통)
+    ctx.fillStyle = '#e11d48';
+    ctx.beginPath();
+    ctx.moveTo(-23, 0);
+    ctx.quadraticCurveTo(-11, -10.5, 6, -8.5);
+    ctx.lineTo(7, 8.5);
+    ctx.quadraticCurveTo(-11, 10.5, -23, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Soft rose belly highlight & mantle collar crease
+    ctx.fillStyle = '#fda4af';
+    ctx.beginPath();
+    ctx.ellipse(-5, -2.2, 10, 3.2, -0.08, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Chromatophore spots on the squid mantle
+    ctx.fillStyle = '#881337';
+    [[-14, -2, 1.8], [-8, 3, 2.1], [-2, -4, 1.6], [-4, 4, 1.8], [1, 1, 1.5]].forEach(([sx, sy, sr]) => {
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Two expressive yellow-ringed squid eyes on the head
+    for (const ey of [-4.2, 4.2]) {
+      ctx.fillStyle = '#fef08a';
+      ctx.strokeStyle = FISH_K;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.arc(9.5, ey, 3.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = FISH_K;
+      ctx.beginPath();
+      ctx.arc(10.2, ey, 1.7, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(9.2, ey - 1.4, 1.3, 1.3);
+    }
+  } else if (id === 'puffer') {
+    // =========================================================================
+    // 3. SPIKY BALLOON PUFFER (가시 풍선복어 — 360도 뾰족 가시 + 빵빵한 배 + O자 입)
+    // =========================================================================
+    const puffR = 14.5 + Math.sin(now * 0.02) * 1.1;
+
+    // Stubby fluttering tail fin
+    ctx.fillStyle = '#84cc16';
+    ctx.beginPath();
+    ctx.moveTo(-puffR + 2, 0);
+    ctx.lineTo(-puffR - 8, -6 + finWag * 0.4);
+    ctx.lineTo(-puffR - 8, 6 + finWag * 0.4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // 12 sharp conical spines radiating around the entire 360° perimeter
+    ctx.fillStyle = '#fef08a';
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 2.0;
+    for (let i = 0; i < 12; i++) {
+      const a = (i * Math.PI * 2) / 12;
+      if (Math.abs(a) < 0.28) continue; // leave space for the puckered mouth
+      const bx1 = Math.cos(a - 0.16) * (puffR - 1);
+      const by1 = Math.sin(a - 0.16) * (puffR - 1);
+      const bx2 = Math.cos(a + 0.16) * (puffR - 1);
+      const by2 = Math.sin(a + 0.16) * (puffR - 1);
+      const tx = Math.cos(a) * (puffR + 5.5);
+      const ty = Math.sin(a) * (puffR + 5.5);
+      ctx.beginPath();
+      ctx.moveTo(bx1, by1);
+      ctx.lineTo(tx, ty);
+      ctx.lineTo(bx2, by2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // Round inflated body (golden-lime upper half, creamy-white pleated belly)
+    ctx.fillStyle = '#eab308';
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.arc(0, 0, puffR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Creamy white inflated belly half
+    ctx.fillStyle = '#fef9c3';
+    ctx.beginPath();
+    ctx.arc(0, 1, puffR - 1.2, 0.08, Math.PI - 0.08);
+    ctx.quadraticCurveTo(0, 3, Math.cos(0.08) * (puffR - 1.2), Math.sin(0.08) * (puffR - 1.2));
+    ctx.fill();
+
+    // Green-olive back spots & inner spine pricks
+    ctx.fillStyle = '#65a30d';
+    [[-6, -7, 2.2], [0, -9, 2.5], [5, -6, 1.8], [-8, -2, 1.8]].forEach(([sx, sy, sr]) => {
+      ctx.beginPath();
+      ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Tummy pleat arcs on the cream belly
+    ctx.strokeStyle = '#ca8a04';
+    ctx.lineWidth = 1.4;
+    for (const bx of [-5, 1, 6]) {
+      ctx.beginPath();
+      ctx.arc(bx, 7, 2.4, 0.2, Math.PI - 0.2);
+      ctx.stroke();
+    }
+
+    // Translucent pectoral fan fin
+    ctx.fillStyle = '#bef264';
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.ellipse(-2, 2, 5.2, 3.2, -0.25 + finWag * 0.05, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Cute pink puckered 'O' mouth on the right
+    ctx.fillStyle = '#fb7185';
+    ctx.beginPath();
+    ctx.arc(puffR + 0.5, 0.5, 3.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = FISH_K;
+    ctx.beginPath();
+    ctx.arc(puffR + 1.2, 0.5, 1.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Big surprised googly eye + rosy cheek
+    ctx.fillStyle = 'rgba(251, 113, 133, 0.55)';
+    ctx.beginPath();
+    ctx.arc(6.5, 3.5, 2.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(7.5, -3.5, 4.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = FISH_K;
+    ctx.beginPath();
+    ctx.arc(8.5, -3.5, 2.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(7.4, -5.0, 1.5, 1.5);
+  } else if (id === 'angler') {
+    // =========================================================================
+    // 4. ABYSSAL ANGLERFISH (심해 초롱아귀 — 발광 초롱 안테나 + 거대한 주걱턱과 날카로운 이빨)
+    // =========================================================================
+    // Ragged abyssal tail fin & spiny dorsal rays
+    ctx.fillStyle = '#312e81';
+    ctx.beginPath();
+    ctx.moveTo(-16, 0);
+    ctx.lineTo(-27, -10 + finWag * 0.4);
+    ctx.lineTo(-22, 0);
+    ctx.lineTo(-27, 10 + finWag * 0.4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(-11, -10);
+    ctx.lineTo(-14, -18);
+    ctx.lineTo(-5, -12);
+    ctx.lineTo(-6, -19);
+    ctx.lineTo(1, -12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Hunched bulbous deep-sea body
+    ctx.fillStyle = '#3730a3';
+    ctx.beginPath();
+    ctx.moveTo(-18, 0);
+    ctx.quadraticCurveTo(-8, -16, 11, -11);
+    ctx.lineTo(16, -2);
+    ctx.lineTo(6, 3);
+    ctx.lineTo(18, 8);
+    ctx.quadraticCurveTo(4, 16, -18, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Bioluminescent lavender belly glow
+    ctx.fillStyle = '#818cf8';
+    ctx.beginPath();
+    ctx.ellipse(-3, 6, 10, 4, 0.12, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Cavernous dark mouth interior + interlocking needle-sharp white fangs (날카로운 이빨)
+    ctx.fillStyle = '#1e1b4b';
+    ctx.beginPath();
+    ctx.moveTo(15, -3);
+    ctx.lineTo(5, 2);
+    ctx.lineTo(17, 7);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.fillStyle = '#ffffff';
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 1.2;
+    // Upper fangs
+    for (let f = 0; f < 4; f++) {
+      const fx = 7 + f * 2.5;
+      const fy = 1 - f * 0.8;
+      ctx.beginPath();
+      ctx.moveTo(fx - 1.1, fy);
+      ctx.lineTo(fx, fy + 4.2);
+      ctx.lineTo(fx + 1.1, fy);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+    // Lower jutting underbite fangs (longer & menacing!)
+    for (let f = 0; f < 4; f++) {
+      const fx = 8 + f * 2.6;
+      const fy = 3.5 + f * 0.9;
+      ctx.beginPath();
+      ctx.moveTo(fx - 1.2, fy);
+      ctx.lineTo(fx + 0.4, fy - 4.8);
+      ctx.lineTo(fx + 1.2, fy);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // Sweeping forehead antenna (illicium) + blazing bioluminescent lantern (발광 초롱)
+    const lx = 23;
+    const ly = -9 + Math.sin(now * 0.03) * 1.5;
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 3.6;
+    ctx.beginPath();
+    ctx.moveTo(4, -11);
+    ctx.quadraticCurveTo(14, -23, lx, ly);
+    ctx.stroke();
+    ctx.strokeStyle = '#a5b4fc';
+    ctx.lineWidth = 1.8;
+    ctx.stroke();
+
+    // Outer cyan-yellow bioluminescent halo
+    ctx.fillStyle = 'rgba(103, 232, 249, 0.42)';
+    ctx.beginPath();
+    ctx.arc(lx, ly, 8.5 + Math.sin(now * 0.04) * 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    // Bright yellow lantern bulb
+    ctx.fillStyle = '#fde047';
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.arc(lx, ly, 4.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(lx - 1, ly - 1, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Glaring cyan abyssal eye
+    ctx.fillStyle = '#67e8f9';
+    ctx.beginPath();
+    ctx.arc(7, -6.5, 3.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = FISH_K;
+    ctx.fillRect(7.2, -8.5, 1.6, 4.0);
+  } else if (id === 'pumpkin') {
+    // =========================================================================
+    // 5. JACK-O'-LANTERN FISH (할로윈 호박광어 — 주황 호박 골 + 초록 덩굴 꼭지 + 빛나는 잭오랜턴 얼굴)
+    // =========================================================================
+    // Leafy green autumn tail fin
+    ctx.fillStyle = '#16a34a';
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(-16, 0);
+    ctx.lineTo(-27, -10 + finWag * 0.4);
+    ctx.lineTo(-23, 0);
+    ctx.lineTo(-27, 10 + finWag * 0.4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Jagged green pumpkin-leaf dorsal fin + curled vine stem on top!
+    ctx.fillStyle = '#15803d';
+    ctx.beginPath();
+    ctx.moveTo(-9, -12);
+    ctx.lineTo(-5, -18);
+    ctx.lineTo(-1, -13);
+    ctx.lineTo(4, -18);
+    ctx.lineTo(7, -12);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Twisted pumpkin stem
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 4.5;
+    ctx.beginPath();
+    ctx.moveTo(0, -13);
+    ctx.quadraticCurveTo(-2, -21, -7, -20);
+    ctx.stroke();
+    ctx.strokeStyle = '#22c55e';
+    ctx.lineWidth = 2.4;
+    ctx.stroke();
+
+    // Plump gourd body with scalloped top/bottom ribs
+    ctx.fillStyle = '#ea580c';
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 18.5, 14.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Bright orange inner gourd highlight
+    ctx.fillStyle = '#f97316';
+    ctx.beginPath();
+    ctx.ellipse(1, 0, 15, 12, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 4 curved vertical pumpkin rib grooves (호박 골)
+    ctx.strokeStyle = '#9a3412';
+    ctx.lineWidth = 1.8;
+    for (const rx of [-9, -3, 3, 9]) {
+      ctx.beginPath();
+      ctx.moveTo(rx, -13.5);
+      ctx.quadraticCurveTo(rx + (rx >= 0 ? 3 : -3), 0, rx, 13.5);
+      ctx.stroke();
+    }
+
+    // Glowing carved Jack-o'-Lantern triangle eye & nose!
+    ctx.fillStyle = '#fde047';
+    ctx.strokeStyle = '#7c2d12';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(4, -2);
+    ctx.lineTo(8.5, -8.5);
+    ctx.lineTo(12.5, -2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Inner white-hot candle sparkle inside the carved eye
+    ctx.fillStyle = '#fef9c3';
+    ctx.beginPath();
+    ctx.arc(8.5, -4, 1.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Carved zig-zag Jack-o'-Lantern grin!
+    ctx.fillStyle = '#fde047';
+    ctx.beginPath();
+    ctx.moveTo(1, 3);
+    ctx.lineTo(4, 5);
+    ctx.lineTo(6.5, 3);
+    ctx.lineTo(9.5, 5);
+    ctx.lineTo(12, 3);
+    ctx.lineTo(15, 4.5);
+    ctx.lineTo(13, 8.5);
+    ctx.lineTo(9.5, 7);
+    ctx.lineTo(6.5, 9);
+    ctx.lineTo(3.5, 7);
+    ctx.lineTo(0.5, 7.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+  } else if (id === 'krill') {
+    // =========================================================================
+    // 6. GOLDEN KING KRILL (황금 대왕크릴 — 5단 황금 갑각 마디 + 부채꼴 꼬리 + 긴 수염과 헤엄다리)
+    // =========================================================================
+    // 2 long sweeping curved crimson-gold antennae trailing from the front head
+    ctx.strokeStyle = '#ef4444';
+    ctx.lineWidth = 2.0;
+    ctx.beginPath();
+    ctx.moveTo(15, -4);
+    ctx.quadraticCurveTo(28, -14, 6, -18 + finWag * 0.4);
+    ctx.moveTo(16, -1);
+    ctx.quadraticCurveTo(29, -6, 22, -14 - finWag * 0.4);
+    ctx.stroke();
+
+    // 5 paddling swimmeret pleopod legs (헤엄다리) along the belly
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 2.6;
+    for (let l = -10; l <= 6; l += 4) {
+      const kick = Math.sin(now * 0.035 + l) * 2.5;
+      ctx.beginPath();
+      ctx.moveTo(l, 5);
+      ctx.lineTo(l - 2 + kick, 12);
+      ctx.stroke();
+      ctx.strokeStyle = '#fbbf24';
+      ctx.lineWidth = 1.4;
+      ctx.stroke();
+      ctx.strokeStyle = FISH_K;
+      ctx.lineWidth = 2.6;
+    }
+
+    // Fanned 5-blade crustacean tail (부채꼴 꼬리)
+    ctx.fillStyle = '#d97706';
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 2.0;
+    for (const ty of [-6, -2, 2, 6]) {
+      ctx.beginPath();
+      ctx.ellipse(-20, ty + finWag * 0.3, 6.5, 2.6, ty * 0.06, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+
+    // 5 overlapping articulated golden carapace segments (황금 갑각 마디)
+    const segs = [
+      [-13, 1, 5.5, 6.5],
+      [-7, -1, 6.2, 7.8],
+      [-1, -2, 6.8, 8.6],
+      [6, -1.5, 7.5, 8.5],
+      [12, -0.5, 7.2, 7.2],
+    ];
+    segs.forEach(([sx, sy, rx, ry], idx) => {
+      ctx.fillStyle = idx % 2 === 0 ? '#f59e0b' : '#fbbf24';
+      ctx.strokeStyle = FISH_K;
+      ctx.lineWidth = 2.2;
+      ctx.beginPath();
+      ctx.ellipse(sx, sy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      // Golden dorsal highlight strip
+      ctx.fillStyle = '#fef08a';
+      ctx.beginPath();
+      ctx.ellipse(sx, sy - ry * 0.48, rx * 0.65, 2.0, 0, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Serrated golden rostrum horn & front pincer claw
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath();
+    ctx.moveTo(16, -5);
+    ctx.lineTo(25, -7);
+    ctx.lineTo(18, -1);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Stalked compound eye
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(15.5, -4.5, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = FISH_K;
+    ctx.beginPath();
+    ctx.arc(16.2, -4.5, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+  } else if (id === 'whale') {
+    // =========================================================================
+    // 7. LEGENDARY GOLDEN WHALE (전설의 황금고래 — 물보라 분수 + 고래 배 주름 + 초승달 꼬리와 긴 가슴지느러미)
+    // =========================================================================
+    // Twin water-spout fountain erupting from the blowhole on top of the head!
+    ctx.strokeStyle = '#67e8f9';
+    ctx.lineWidth = 2.2;
+    for (const sgn of [-1, 1]) {
+      ctx.beginPath();
+      ctx.moveTo(6, -13);
+      ctx.quadraticCurveTo(6 + sgn * 4, -24, 6 + sgn * 11, -21 + Math.sin(now * 0.03) * 1.5);
+      ctx.stroke();
+    }
+    ctx.fillStyle = '#e0f2fe';
+    [[-4, -22], [6, -24], [15, -22]].forEach(([dx, dy]) => {
+      ctx.beginPath();
+      ctx.arc(dx, dy, 1.8, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Broad horizontal humpback fluke tail on the left
+    ctx.fillStyle = '#d97706';
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.moveTo(-20, 0);
+    ctx.quadraticCurveTo(-28, -12 + finWag * 0.5, -31, -13 + finWag * 0.5);
+    ctx.quadraticCurveTo(-26, 0 + finWag * 0.5, -31, 13 + finWag * 0.5);
+    ctx.quadraticCurveTo(-28, 12 + finWag * 0.5, -20, 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Small dorsal hump fin toward the rear back
+    ctx.fillStyle = '#d97706';
+    ctx.beginPath();
+    ctx.moveTo(-12, -9);
+    ctx.quadraticCurveTo(-9, -15, -5, -10);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Majestic arched whale body (high rounded forehead + tapered peduncle)
+    ctx.fillStyle = '#f59e0b';
+    ctx.beginPath();
+    ctx.moveTo(-23, 0);
+    ctx.bezierCurveTo(-12, -13, 12, -18, 22, -4);
+    ctx.quadraticCurveTo(25, 2, 20, 7);
+    ctx.bezierCurveTo(10, 15, -8, 12, -23, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Royal golden sheen along the forehead & back
+    ctx.fillStyle = '#fde047';
+    ctx.beginPath();
+    ctx.ellipse(3, -7, 13, 3.6, -0.1, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Cream-gold ventral belly + 6 parallel pleated throat grooves (고래 배 주름)!
+    ctx.fillStyle = '#fef3c7';
+    ctx.beginPath();
+    ctx.moveTo(-10, 4);
+    ctx.quadraticCurveTo(6, 1, 21, 3);
+    ctx.quadraticCurveTo(16, 12, 2, 11);
+    ctx.quadraticCurveTo(-6, 10, -10, 4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.strokeStyle = '#b45309';
+    ctx.lineWidth = 1.3;
+    for (let g = 0; g < 4; g++) {
+      ctx.beginPath();
+      ctx.moveTo(-6 + g * 2, 5 + g * 1.3);
+      ctx.quadraticCurveTo(6, 5.5 + g * 1.5, 18 - g * 1.5, 4.5 + g * 1.3);
+      ctx.stroke();
+    }
+
+    // Long scalloped humpback pectoral flipper sweeping downward
+    ctx.fillStyle = '#fbbf24';
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(2, 4);
+    ctx.quadraticCurveTo(-4, 16, -9, 17);
+    ctx.quadraticCurveTo(-1, 14, 6, 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Gentle wise whale eye
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(13, -2, 3.0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = FISH_K;
+    ctx.beginPath();
+    ctx.arc(13.6, -2, 1.6, 0, Math.PI * 2);
+    ctx.fill();
+  } else {
+    // =========================================================================
+    // 8. GLACIER SMELT (남극 빙어 — 날렵한 은빛 유선형 몸통 + 깊게 갈라진 꼬리 + 푸른 측선과 비늘)
+    // =========================================================================
+    // Deeply forked translucent V-tail fin
+    ctx.fillStyle = '#0284c7';
+    ctx.beginPath();
+    ctx.moveTo(-16, 0);
+    ctx.lineTo(-27, -9 + finWag * 0.4);
+    ctx.lineTo(-21, 0 + finWag * 0.2);
+    ctx.lineTo(-27, 9 + finWag * 0.4);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Pointed dorsal & anal fins
+    ctx.fillStyle = '#38bdf8';
+    ctx.beginPath();
+    ctx.moveTo(-5, -7);
+    ctx.lineTo(-1, -14);
+    ctx.lineTo(5, -7);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(-8, 6);
+    ctx.lineTo(-5, 12);
+    ctx.lineTo(0, 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Sleek torpedo stream body
+    ctx.fillStyle = '#0ea5e9';
+    ctx.beginPath();
+    ctx.moveTo(-19, 0);
+    ctx.quadraticCurveTo(-2, -9.5, 20, 0);
+    ctx.quadraticCurveTo(-2, 9.5, -19, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Translucent silver-ice belly & iridescent cyan lateral stripe
+    ctx.fillStyle = '#e0f2fe';
+    ctx.beginPath();
+    ctx.moveTo(-16, 0.5);
+    ctx.quadraticCurveTo(0, 8.2, 18, 0.5);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = '#67e8f9';
+    ctx.lineWidth = 2.0;
+    ctx.beginPath();
+    ctx.moveTo(-15, -0.8);
+    ctx.lineTo(13, -0.8);
+    ctx.stroke();
+
+    // Delicate scale chevrons & gill operculum arc
+    ctx.strokeStyle = '#0369a1';
+    ctx.lineWidth = 1.3;
+    for (const sx of [-9, -4, 1, 6]) {
+      ctx.beginPath();
+      ctx.moveTo(sx, -3);
+      ctx.lineTo(sx - 2, 0);
+      ctx.lineTo(sx, 3);
+      ctx.stroke();
+    }
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.arc(9, 0, 4.8, Math.PI * 0.65, Math.PI * 1.35);
+    ctx.stroke();
+
+    // Bright smelt eye
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(13, -1.5, 3.0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = FISH_K;
+    ctx.beginPath();
+    ctx.arc(13.6, -1.5, 1.5, 0, Math.PI * 2);
+    ctx.fill();
   }
+
   ctx.restore();
 }
 
-// Draw thegiant ice hole's animated underwater life, ripples, bobber, and splashes
+// Draw species-specific underwater silhouettes inside the giant ice hole so the player can visually
+// recognize a swimming squid (tentacles), halibut/flounder (wide diamond), spiky puffer, or whale!
+function drawFishUnderwaterSilhouette(ctx, spId, wobble, isTarget, phase) {
+  const wag = Math.sin(wobble) * 3.5;
+  ctx.fillStyle = isTarget && phase === 'fight' ? 'rgba(14, 165, 233, 0.78)' : 'rgba(6, 48, 75, 0.56)';
+
+  if (spId === 'flounder') {
+    // Wide diamond flatfish silhouette
+    ctx.beginPath();
+    ctx.moveTo(-22, 0);
+    ctx.quadraticCurveTo(-2, -19, 18, -4);
+    ctx.quadraticCurveTo(23, 0, 18, 4);
+    ctx.quadraticCurveTo(-2, 19, -22, 0);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-20, 0);
+    ctx.lineTo(-30, -8 + wag);
+    ctx.lineTo(-30, 8 + wag);
+    ctx.closePath();
+    ctx.fill();
+  } else if (spId === 'squid') {
+    // Spearhead squid mantle + waving tentacles silhouette
+    ctx.beginPath();
+    ctx.moveTo(-25, 0);
+    ctx.lineTo(-12, -13);
+    ctx.lineTo(-4, -6);
+    ctx.lineTo(10, -7);
+    ctx.lineTo(10, 7);
+    ctx.lineTo(-4, 6);
+    ctx.lineTo(-12, 13);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = ctx.fillStyle;
+    ctx.lineWidth = 2.8;
+    for (let t = -2; t <= 2; t++) {
+      ctx.beginPath();
+      ctx.moveTo(9, t * 2.5);
+      ctx.quadraticCurveTo(18, t * 3.5 + wag, 27, t * 3 - wag * 0.5);
+      ctx.stroke();
+    }
+  } else if (spId === 'puffer') {
+    // Round inflated spiky puffer silhouette
+    ctx.beginPath();
+    ctx.arc(0, 0, 15, 0, Math.PI * 2);
+    ctx.fill();
+    for (let i = 0; i < 10; i++) {
+      const a = (i * Math.PI * 2) / 10;
+      ctx.beginPath();
+      ctx.arc(Math.cos(a) * 16.5, Math.sin(a) * 16.5, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  } else if (spId === 'whale') {
+    // Huge whale silhouette with broad horizontal flukes & long pectoral fin
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 27, 13, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-23, 0);
+    ctx.lineTo(-36, -12 + wag);
+    ctx.lineTo(-31, 0 + wag);
+    ctx.lineTo(-36, 12 + wag);
+    ctx.closePath();
+    ctx.fill();
+  } else {
+    // Sleek fish / angler / krill silhouette
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 21, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(-18, 0);
+    ctx.lineTo(-30, -8 + wag);
+    ctx.lineTo(-30, 8 + wag);
+    ctx.closePath();
+    ctx.fill();
+    if (spId === 'angler') {
+      ctx.fillStyle = 'rgba(253, 224, 71, 0.85)';
+      ctx.beginPath();
+      ctx.arc(24, -6, 4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+}
+
+// Draw the giant ice hole's animated underwater life, ripples, bobber, and splashes
 function drawFishIceHoleWater(ctx, run, now) {
   const { HOLE_CX: cx, HOLE_CY: cy, HOLE_RX: rx, HOLE_RY: ry } = FISH_CFG;
 
@@ -863,9 +1723,10 @@ function drawFishIceHoleWater(ctx, run, now) {
     ctx.fillRect(cx - rx, cy - ry, rx * 2, ry * 2);
   }
 
-  // Swimming dark-teal silhouettes of fish inside the ice hole
+  // Swimming silhouettes inside the ice hole (showing distinct squid, flounder, puffer, whale shapes!)
   run.shadows.forEach((sh, idx) => {
     const isTarget = idx === 0 && (run.phase === 'lure' || run.phase === 'bite' || run.phase === 'fight');
+    const spObj = isTarget && run.targetSp ? run.targetSp : FISH_SPECIES[sh.spIdx % FISH_SPECIES.length];
     let sx = cx + Math.cos(sh.ang) * rx * sh.dist;
     let sy = cy + Math.sin(sh.ang) * ry * sh.dist;
     let dir = -Math.sin(sh.ang) * sh.speed >= 0 ? 1 : -1;
@@ -881,19 +1742,9 @@ function drawFishIceHoleWater(ctx, run, now) {
     ctx.save();
     ctx.translate(sx, sy);
     ctx.scale(dir * sh.size, sh.size * 0.72);
-    ctx.fillStyle = isTarget && run.phase === 'fight' ? 'rgba(2, 132, 199, 0.72)' : 'rgba(6, 48, 75, 0.52)';
-    ctx.beginPath();
-    ctx.ellipse(0, 0, 22, 9, 0, 0, Math.PI * 2);
-    ctx.fill();
-    const tailWag = Math.sin(sh.wobble) * 4;
-    ctx.beginPath();
-    ctx.moveTo(-18, 0);
-    ctx.lineTo(-30, -8 + tailWag);
-    ctx.lineTo(-30, 8 + tailWag);
-    ctx.closePath();
-    ctx.fill();
-    // Golden glint if target is rare/legendary
-    if (isTarget && (run.targetSp.tier === 'epic' || run.targetSp.tier === 'legend')) {
+    drawFishUnderwaterSilhouette(ctx, spObj.id, sh.wobble, isTarget, run.phase);
+    // Golden glint if target is epic/legendary
+    if (isTarget && (spObj.tier === 'epic' || spObj.tier === 'legend')) {
       ctx.fillStyle = 'rgba(250, 204, 21, 0.45)';
       ctx.beginPath();
       ctx.ellipse(2, 0, 14, 5, 0, 0, Math.PI * 2);
@@ -1197,11 +2048,19 @@ function drawFishStardewBar(ctx, run, now) {
   ctx.lineWidth = 2.5;
   ctx.strokeRect(trackX - 10, trackY - 32, trackW + progW + 28, trackH + 62);
 
-  // Header label ("밀당 게이지" / "REEL")
-  ctx.font = '900 12.5px "Pretendard", "Malgun Gothic", sans-serif';
+  // Header label ("밀당 게이지" / "CATCH BAR" or current hooked species name)
+  ctx.font = '900 12px "Pretendard", "Malgun Gothic", sans-serif';
   ctx.textAlign = 'center';
   ctx.fillStyle = '#fde047';
-  ctx.fillText(ko ? '밀당 게이지' : i18n('CATCH BAR'), trackX + (trackW + progW + 8) / 2, trackY - 15);
+  const barTitle =
+    run.phase === 'fight' && run.targetSp
+      ? ko
+        ? run.targetSp.ko
+        : i18n(run.targetSp.en)
+      : ko
+      ? '밀당 게이지'
+      : i18n('CATCH BAR');
+  ctx.fillText(barTitle, trackX + (trackW + progW + 8) / 2, trackY - 15);
 
   // Water column track background
   const wg = ctx.createLinearGradient(0, trackY, 0, trackY + trackH);
@@ -1495,11 +2354,11 @@ function drawFishRunnerFrame(ctx, now, spId) {
   // 1. Giant Glacier Ice-Hole Background
   drawRefFishingBackground(ctx, now);
 
-  // 2. Caught fish stacked beside the red tackle box on the left snow ledge (x ~ 148, y ~ 245)
+  // 2. Caught fish stacked beside the red tackle box on the left snow ledge (x ~ 62..200, y ~ 296..328)
   run.caughtStack.forEach((sp, i) => {
-    const tx = 96 + (i % 4) * 24;
-    const ty = 292 + Math.floor(i / 4) * 18;
-    drawFishCreatureSprite(ctx, sp, tx, ty, 0.58, now + i * 200);
+    const tx = 64 + (i % 4) * 44;
+    const ty = 296 + Math.floor(i / 4) * 30;
+    drawFishCreatureSprite(ctx, sp, tx, ty, 0.70, now + i * 200);
   });
 
   // 3. Underwater Silhouettes, Ripples & Splashes inside the Giant Ice Hole
