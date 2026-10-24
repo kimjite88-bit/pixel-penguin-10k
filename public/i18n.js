@@ -566,6 +566,13 @@ const I18N_ROWS = [
   ['Too slow!! It stole the bait… strike the moment !! pops!!', 'You slow o!! E chop the bait… press the moment !! show!!', 'بہت دیر کر دی!! چارہ لے گئی… !! آتے ہی فوراً دباؤ!!', 'অনেক দেরি!! টোপটা নিয়ে গেল… !! উঠলেই সঙ্গে সঙ্গে চাপো!!'],
   ['Line snapped~ guess it is time to head home...', 'Rope don cut~ e be like say na time to go house...', 'ڈور ٹوٹ گئی~ لگتا ہے اب گھر جانے کا وقت ہے...', 'সুতো ছিঁড়ে গেল~ মনে হয় এবার বাড়ি ফেরার সময়...'],
   ['Huh?! I did not even try to escape, why is the pillar hooking ME?!!', 'Ehn?! I no even try run, why the pillar dey hook ME?!!', 'ہیں؟! میں نے تو بھاگنے کی کوشش بھی نہیں کی، ستون مجھے کیوں کھینچ رہا ہے؟!!', 'অ্যাঁ?! আমি তো পালানোর চেষ্টাও করিনি, স্তম্ভ আমাকেই টানছে কেন?!!'],
+  ['★ GENESIS #9 · DARK HERO', '★ GENESIS #9 · DARK HERO', '★ جینیسس #9 · ڈارک ہیرو', '★ জেনেসিস #9 · ডার্ক হিরো'],
+  ['Halloween Special Cameo!', 'Halloween Special Cameo!', 'ہیلووین اسپیشل انٹری!', 'হ্যালোইন স্পেশাল ক্যামিও!'],
+  ["I'm Genesis #9 Dark Hero~ lol", 'Na me be Genesis #9 Dark Hero~ lol', 'میں جینیسس #9 ڈارک ہیرو ہوں~ ہاہا', 'আমি জেনেসিস #9 ডার্ক হিরো~ হাহা'],
+  ['Under the full moon atop the tree...', 'Under full moon for top the tree...', 'پورے چاند کے نیچے درخت کے اوپر...', 'পূর্ণিমার নিচে গাছের চূড়ায়...'],
+  ['my shadow-flame cape goes hard hehe', 'my shadow-fire cape fresh die hehe', 'میرا شیڈو فلیم کیپ کمال لگ رہا ہے ہیہی', 'আমার শ্যাডো-ফ্লেম কেপটা দারুণ মানিয়েছে হিহি'],
+  ['Zero perks even for a Genesis lol', 'Even Genesis no get any perk lol', 'جینیسس ہونے پر بھی کچھ نہیں ملے گا ہاہا', 'জেনেসিস হলেও বাড়তি কিছু নেই হাহা'],
+  ['go admire #9 in the 10K Codex~', 'go check #9 for 10K Codex~', '10K کوڈیکس میں #9 جا کر دیکھو~', '10K কোডেক্সে #9 দেখে এসো~'],
 ];
 
 const I18N = { pcm: new Map(), ur: new Map(), bn: new Map() };
