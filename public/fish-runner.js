@@ -1598,84 +1598,379 @@ function drawFishRunnerFrame(ctx, now, spId) {
   if (crashed) triggerFishCrash(now);
 }
 
-// Used in Scene 1 (corner hidden penguin), Scene 4 (vortex capture & pixel scan), and Scene 5 (town landing):
-// Draws the penguin sitting on its red fishing cooler/stool holding its fishing rod with a big golden fish on the line!
+// 16-bit Pixel Matrices for the Blue Boot-Integrated Fisherman Waders (col 7..42, row 38..57 in the 48x48 NFT grid)
+// and the Dangling Golden Catch, so every pixel matches the exact 80/48 cell size of UFO_GAME.pilotPixelSheet!
+const FISH_WADER_PIXEL_ROWS = [
+  // col 7..42 (36 cols; penguin torso col 11..39 is index 4..32, center col 25 is index 18)
+  '......KCKSSK.............KSSK.......', // r38: rod crossing left shoulder + suspender straps
+  '.......KCYSSK............KSSK.......', // r39: rod shaft over shoulder + straps
+  '.....KKmmKCYYK...........KYYK.......', // r40: left flipper + rod grip + yellow wader buckles
+  '....KMMMMKCHHHHHHHHHHHHHHHHHK.......', // r41: left flipper gripping rod + top waterproof bib welt
+  '...KMMMMmKLCKLLLBBBBBBBBDDDDKKmmK...', // r42: cork handle across left chest + blue bib + right flipper
+  '...KKKKKKLLKCLLLLKKKKKKKKDDDDKMMmK..', // r43: cork butt + front pocket flap top
+  '......KRRKLLKYLLKSSSSSSSSKDDDDKMMmK.', // r44: blue spinning reel + gold rod butt cap + pocket flap
+  '......KKKKLLLKLKSSSSYYSSSKDDDDKmmKK.', // r45: reel bottom + yellow pocket snap button
+  '........KLLLLLLKDDDDDDDDDKDDDDKKK...', // r46: waterproof pocket body
+  '........KLLLLLLBBBBBBBBBBDDDDDK.....', // r47: lower chest bib
+  '........KNNNNNNNNYYYNNNNNNNNK.......', // r48: heavy-duty waterproof waist seam belt + gold buckle
+  '........KNNNNNNNNOOONNNNNNNNK.......', // r49: belt lower edge
+  '........KLLBBBBBBBBBBBBBBBDDK.......', // r50: wader hip / pelvis
+  '........KLLBBSSSHHHHKKKBBSSDK.......', // r51: integrated wader thighs + knee guard top
+  '........KLLBBSSSSSSSK.KSSSSDK.......', // r52: reinforced knee guards + leg split
+  '.......KUUUHHHHHHHHHK.KUUHHUUK......', // r53: boot-integrated weld seam + glossy rubber boot upper
+  '......KUUUUUHHUUUUUUK.KUUUUUUUK.....', // r54: chunky fisherman rubber boot toe boxes
+  '......KYYYYYYYYYYYYYK.KYYYYYYYK.....', // r55: bright yellow non-slip fisherman boot sole welt
+  '......KOOOOOOOOOOOOOK.KOOOOOOOK.....', // r56: amber lugged rubber sole tread
+  '.......KKKKKKKKKKKKK...KKKKKKK......', // r57: crisp bottom outline touching y = +47
+];
+
+const FISH_DANGLING_PIXEL_ROWS = [
+  'KK......KKKKKK.....',
+  'KTK...KKYYYYYYKK...',
+  'KTTK.KYYHHHHYYYYK..',
+  '.KTTKKYYYYYYYYWKYYK',
+  '..KTKOOYYYYYYYWKYYK',
+  '.KTTKOOYYYYYYYYYYYK',
+  'KTTK.KYYYYYYYYYYYKK',
+  'KTK...KYYOOOOOOYYK.',
+  'KK.....KKOOOOOOKK..',
+  '.........KKKKKK....',
+];
+
+// Used in Scene 4 (vortex capture, pixel scan & pillar rise) and Scene 5 (Halloween Town sky-drop & arrival):
+// Draws the player's actual NFT Penguin (UFO_GAME.pilotPixelSheet / pilot2DSheet) wearing Blue Boot-Integrated
+// Fisherman Waders (파란 어부용 장화일체형 하의) with a Fishing Rod slung over its shoulder (어깨에 들쳐멘 낚싯대)!
 function drawFishingPenguinWithRod(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
   const {
     scale = 1,
-    spId = '01',
+    spId = (typeof UFO_GAME !== 'undefined' && UFO_GAME.pilotSpeciesId) || '01',
     pixelMode = false,
     isShocked = false,
     isImpactBlink = false,
+    forceBlink = false,
   } = options;
+
+  if (typeof ensureDefaultPilotSheets === 'function') ensureDefaultPilotSheets();
+  const cols = getSpeciesFeatherColors(spId);
+  const blinkNow = isImpactBlink || forceBlink;
+  const stepWave = Math.sin(now * (isShocked ? 0.028 : 0.008));
+  const bootL = isShocked ? Math.round(stepWave * 2) : 0;
+  const bootR = isShocked ? Math.round(-stepWave * 2) : 0;
+  const fishSwing = Math.sin(now * 0.011) * (isShocked ? 8 : 4);
 
   ctx.save();
   ctx.translate(Math.round(cx), Math.round(cy));
   ctx.rotate(tiltRad);
   ctx.scale(scale, scale);
 
-  // 1. Red Fishing Tackle Box / Stool under the penguin (bottom touches y = +58)
-  ctx.fillStyle = FISH_K;
-  ctx.fillRect(-38, 18, 76, 40);
-  ctx.fillStyle = '#dc2626';
-  ctx.fillRect(-34, 22, 68, 32);
-  ctx.fillStyle = '#f8fafc';
-  ctx.fillRect(-34, 22, 68, 6);
-  ctx.fillStyle = '#facc15';
-  ctx.fillRect(-6, 28, 12, 8);
+  const bustX = -42;
+  const bustY = -48;
+  const bustSize = 80;
+  const cell = bustSize / 48; // 1.6667 stage px per NFT pixel cell
 
-  // 2. The Pilot Penguin sitting on the tackle box
-  const pSize = 84;
-  const px = -pSize / 2;
-  const py = -52;
+  // Shoulder-slung rod coordinates (from left shoulder (-18, +14) up-left to rod tip (-68, -36))
+  const tipX = -68;
+  const tipY = -36;
+  const shX = -18;
+  const shY = 14;
+  const buttX = -12;
+  const buttY = 22;
+
+  // ==========================================================================
+  // 1. BEHIND LAYER: Upper shaft of the shoulder-slung fishing rod + dangling catch
+  // ==========================================================================
+  if (pixelMode) {
+    const snapCell = (v) => Math.round(v / cell) * cell;
+    const cSz = Math.ceil(cell + 0.35);
+
+    // Pixel fishing line from rod tip (-68, -36) down to dangling golden fish
+    const lineEndX = snapCell(tipX + fishSwing);
+    const lineEndY = 6;
+    for (let ly = tipY; ly <= lineEndY; ly += cell) {
+      const t = (ly - tipY) / (lineEndY - tipY);
+      const lx = snapCell(tipX + fishSwing * t);
+      ctx.fillStyle = '#e0f2fe';
+      ctx.fillRect(lx, snapCell(ly), cSz, cSz);
+    }
+
+    // 16-bit Pixel Red & White Bobber on the line
+    const bobX = snapCell(tipX + fishSwing * 0.45);
+    const bobY = snapCell(-16);
+    ctx.fillStyle = FISH_K;
+    ctx.fillRect(bobX - cell * 2, bobY - cell * 2, cell * 4, cell * 4);
+    ctx.fillStyle = '#ef4444';
+    ctx.fillRect(bobX - cell, bobY - cell, cell * 2, cell);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(bobX - cell, bobY, cell * 2, cell);
+
+    // 16-bit Pixel Dangling Golden Fish at the end of the line (same cell grid!)
+    const fishPalette = {
+      K: FISH_K,
+      Y: '#facc15',
+      H: '#fef08a',
+      O: '#f97316',
+      T: '#fb7185',
+      W: '#ffffff',
+    };
+    const fLeft = snapCell(lineEndX - (FISH_DANGLING_PIXEL_ROWS[0].length * cell) / 2);
+    const fTop = snapCell(lineEndY);
+    FISH_DANGLING_PIXEL_ROWS.forEach((row, ry) => {
+      for (let rx = 0; rx < row.length; rx++) {
+        const col = fishPalette[row[rx]];
+        if (!col) continue;
+        ctx.fillStyle = col;
+        ctx.fillRect(fLeft + rx * cell, fTop + ry * cell, cSz, cSz);
+      }
+    });
+
+    // Stepped 16-bit pixel rod shaft from shoulder (-18, +14) to tip (-68, -36)
+    const steps = 32;
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const rx = snapCell(shX + (tipX - shX) * t);
+      const ry = snapCell(shY + (tipY - shY) * t - Math.sin(t * Math.PI) * 3);
+      ctx.fillStyle = FISH_K;
+      ctx.fillRect(rx - cell, ry - cell, cell * 3, cell * 3);
+    }
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      const rx = snapCell(shX + (tipX - shX) * t);
+      const ry = snapCell(shY + (tipY - shY) * t - Math.sin(t * Math.PI) * 3);
+      ctx.fillStyle = i % 5 === 0 ? '#fef08a' : '#f59e0b';
+      ctx.fillRect(rx, ry, cSz, cSz);
+    }
+  } else {
+    // Smooth 2D fishing line + bobber + dangling golden catch (for Scene 4 pre-scan 2D bottom half)
+    const lineEndX = tipX + fishSwing;
+    const lineEndY = 8;
+    ctx.strokeStyle = 'rgba(224, 242, 254, 0.92)';
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(tipX, tipY);
+    ctx.quadraticCurveTo(tipX + fishSwing * 0.5, (tipY + lineEndY) / 2, lineEndX, lineEndY);
+    ctx.stroke();
+
+    const bobX = tipX + fishSwing * 0.45;
+    const bobY = -16;
+    ctx.fillStyle = '#ef4444';
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(bobX, bobY, 4.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.arc(bobX, bobY + 1.5, 4, 0, Math.PI);
+    ctx.fill();
+
+    drawFishCreatureSprite(ctx, FISH_SPECIES[5], lineEndX, lineEndY + 8, 0.65, now);
+
+    // Smooth 2D bamboo/carbon rod shaft from shoulder to tip
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 6.5;
+    ctx.beginPath();
+    ctx.moveTo(shX, shY);
+    ctx.quadraticCurveTo((shX + tipX) / 2 - 3, (shY + tipY) / 2 - 4, tipX, tipY);
+    ctx.stroke();
+    ctx.strokeStyle = '#f59e0b';
+    ctx.lineWidth = 3.4;
+    ctx.stroke();
+    ctx.strokeStyle = '#fef08a';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
+
+  // ==========================================================================
+  // 2. MIDDLE LAYER: The Player's Actual NFT Penguin Upper Body
+  //    Uses UFO_GAME.pilotPixelSheet (48x48x3) in pixelMode and UFO_GAME.pilot2DSheet
+  //    (288x288x3) in 2D mode, matching drawCarPilot (Species, Clothes, Eyes, Mouth, Eyewear, Hat).
+  // ==========================================================================
+  const fbSize = Math.round(bustSize * (86 / 79));
+  const fbH = Math.round(fbSize * (220 / 256));
+  const fbY = bustY + bustSize - fbH;
+
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(bustX - 24, -120, bustSize + 48, 142); // clips cleanly inside the wader chest bib at y = +22
+  ctx.clip();
   if (pixelMode) {
     ctx.imageSmoothingEnabled = false;
-    const entry = ensureSpeciesSprite(spId);
-    drawAnimatedPixelPenguin(ctx, entry, px, py, pSize, now, {
-      seed: 0,
-      isWalking: false,
-      forceBlink: isImpactBlink,
-      isShocked,
-      santaHat: typeof INTRO_TOWN !== 'undefined' && INTRO_TOWN.id === 'xmas',
-      halloweenHat: typeof INTRO_TOWN !== 'undefined' && INTRO_TOWN.id === 'halloween',
-    });
+    const anim = getPenguinAnimState(now, 1, false, blinkNow, isShocked);
+    const sheet =
+      typeof UFO_GAME !== 'undefined' && UFO_GAME.hasNft
+        ? UFO_GAME.pilotPixelSheet
+        : (typeof UFO_GAME !== 'undefined' && UFO_GAME.pilotPixelSheet) || MOTION_STATE.defaultPilotPixelSheet;
+    const f3 = isShocked ? 2 : anim.frameIdx === 1 ? 1 : 0;
+    if (sheet) {
+      ctx.drawImage(sheet, f3 * 48, 0, 48, 48, bustX, bustY, bustSize, bustSize);
+    } else {
+      const spEntry = ensureSpeciesSprite(spId);
+      const src = spEntry && spEntry.sheetLoaded ? spEntry.sheet : spEntry && spEntry.loaded ? spEntry.img : null;
+      if (src) {
+        ctx.drawImage(src, src === spEntry.sheet ? anim.frameIdx * 256 : 0, 0, 256, 220, bustX - 2, fbY, fbSize, fbH);
+      }
+    }
   } else {
     ctx.imageSmoothingEnabled = true;
-    const anim = getPenguinAnimState(isImpactBlink ? 320 : now, 0, false, isImpactBlink, isShocked && !isImpactBlink);
-    const sheet = typeof UFO_GAME !== 'undefined' && UFO_GAME.hasNft
-      ? UFO_GAME.pilot2DSheet
-      : (typeof UFO_GAME !== 'undefined' && UFO_GAME.pilot2DSheet) || MOTION_STATE.defaultPilot2DSheet;
+    const anim = getPenguinAnimState(blinkNow ? 320 : now, 0, false, blinkNow, isShocked && !blinkNow);
+    const sheet =
+      typeof UFO_GAME !== 'undefined' && UFO_GAME.hasNft
+        ? UFO_GAME.pilot2DSheet
+        : (typeof UFO_GAME !== 'undefined' && UFO_GAME.pilot2DSheet) || MOTION_STATE.defaultPilot2DSheet;
     const f3 = anim.frameIdx === 6 ? 2 : anim.frameIdx === 1 || anim.frameIdx === 4 || anim.frameIdx === 5 ? 1 : 0;
     if (sheet) {
-      ctx.drawImage(sheet, f3 * 288, 0, 288, 288, px, py, pSize, pSize);
+      ctx.drawImage(sheet, f3 * 288, 0, 288, 288, bustX, bustY, bustSize, bustSize);
     } else {
       const heroSheet = getHero2DSheetForSpecies(spId);
       if (heroSheet && (MOTION_STATE.hero2DSheetLoaded || heroSheet.width)) {
-        ctx.drawImage(heroSheet, anim.frameIdx * 256, 0, 256, 256, px, py, pSize, pSize);
+        ctx.drawImage(heroSheet, anim.frameIdx * 256, 0, 256, 220, bustX - 2, fbY, fbSize, fbH);
       }
     }
   }
+  ctx.restore();
 
-  // 3. Bamboo Fishing Rod + Dangling Golden Fish
-  ctx.strokeStyle = FISH_K;
-  ctx.lineWidth = 6;
-  ctx.beginPath();
-  ctx.moveTo(18, 4);
-  ctx.lineTo(86, -42);
-  ctx.stroke();
-  ctx.strokeStyle = '#fbbf24';
-  ctx.lineWidth = 3;
-  ctx.stroke();
+  // ==========================================================================
+  // 3. FRONT LAYER: Blue Boot-Integrated Fisherman Waders (파란 어부용 장화일체형 하의)
+  //    + Shoulder-Slung Rod Cork Handle & Spinning Reel + Penguin Flippers
+  // ==========================================================================
+  if (pixelMode) {
+    const waderPalette = {
+      K: FISH_K,
+      S: '#1e3a8a',
+      Y: '#facc15',
+      O: '#d97706',
+      H: '#60a5fa',
+      L: '#3b82f6',
+      B: '#2563eb',
+      D: '#1d4ed8',
+      U: '#1e40af',
+      N: '#0f172a',
+      M: cols.main,
+      m: cols.shade,
+      C: '#d97706',
+      R: '#38bdf8',
+    };
+    const cSz = Math.ceil(cell + 0.35);
+    FISH_WADER_PIXEL_ROWS.forEach((row, idx) => {
+      const gridRow = 38 + idx;
+      for (let colOffset = 0; colOffset < row.length; colOffset++) {
+        const ch = row[colOffset];
+        const color = waderPalette[ch];
+        if (!color) continue;
+        const gridCol = 7 + colOffset;
+        // Apply subtle boot kick on rows 51..57 when falling/yanked
+        const legDy = gridRow >= 51 ? (gridCol < 25 ? bootL : bootR) : 0;
+        const px = bustX + gridCol * cell;
+        const py = bustY + gridRow * cell + legDy;
+        ctx.fillStyle = color;
+        ctx.fillRect(px, py, cSz, cSz);
+      }
+    });
+  } else {
+    // Smooth 2D Cel-Shaded Blue Boot-Integrated Fisherman Waders + Shoulder Rod Grip
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
 
-  // Fishing line & wriggling golden fish
-  const fishSwing = Math.sin(now * 0.012) * 8;
-  ctx.strokeStyle = '#e0f2fe';
-  ctx.lineWidth = 1.8;
-  ctx.beginPath();
-  ctx.moveTo(86, -42);
-  ctx.lineTo(86 + fishSwing, 12);
-  ctx.stroke();
-  drawFishCreatureSprite(ctx, FISH_SPECIES[5], 86 + fishSwing, 18, 0.72, now);
+    // A. Suspender Straps & Yellow Buckles
+    [-13, 13].forEach((sx) => {
+      ctx.fillStyle = '#1e3a8a';
+      ctx.strokeStyle = FISH_K;
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.roundRect(sx - 3.5, 14, 7, 9, 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#facc15';
+      ctx.fillRect(sx - 2.5, 18, 5, 3);
+    });
+
+    // B. High-Waisted Waterproof Blue Chest Bib
+    const bibGrad = ctx.createLinearGradient(-22, 20, 22, 35);
+    bibGrad.addColorStop(0, '#3b82f6');
+    bibGrad.addColorStop(0.55, '#2563eb');
+    bibGrad.addColorStop(1, '#1d4ed8');
+    ctx.fillStyle = bibGrad;
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 2.8;
+    ctx.beginPath();
+    ctx.roundRect(-22, 20, 44, 15, 6);
+    ctx.fill();
+    ctx.stroke();
+
+    // Front Waterproof Pouch Pocket
+    ctx.fillStyle = '#1d4ed8';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(-9, 23, 18, 7.5, 2.5);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#1e3a8a';
+    ctx.fillRect(-8, 23.5, 16, 2.5);
+    ctx.fillStyle = '#facc15';
+    ctx.beginPath();
+    ctx.arc(0, 26, 1.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Waist Seam Belt
+    ctx.fillStyle = '#0f172a';
+    ctx.fillRect(-21, 31.5, 42, 3);
+    ctx.fillStyle = '#facc15';
+    ctx.fillRect(-3.5, 31, 7, 4);
+
+    // C. Boot-Integrated Wader Legs & Yellow-Soled Rubber Fisherman Boots
+    [
+      { x: -12, dy: bootL },
+      { x: 12, dy: bootR },
+    ].forEach((leg) => {
+      ctx.fillStyle = '#1e40af';
+      ctx.strokeStyle = FISH_K;
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.roundRect(leg.x - 10.5, 34 + leg.dy, 21, 11.5, 4);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#60a5fa';
+      ctx.fillRect(leg.x - 6, 36 + leg.dy, 9, 2);
+      ctx.fillStyle = '#facc15';
+      ctx.strokeStyle = FISH_K;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(leg.x - 11, 42 + leg.dy, 22, 4, 2);
+      ctx.fill();
+      ctx.stroke();
+    });
+
+    // D. Right Flipper on hip
+    ctx.fillStyle = cols.main;
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    ctx.ellipse(23, 24, 4, 6.5, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // E. Front Cork Grip & Spinning Reel of Shoulder-Slung Rod
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 6.5;
+    ctx.beginPath();
+    ctx.moveTo(shX, shY);
+    ctx.lineTo(buttX, buttY);
+    ctx.stroke();
+    ctx.strokeStyle = '#d97706';
+    ctx.lineWidth = 3.5;
+    ctx.stroke();
+
+    // F. Left Flipper gripping the shoulder rod
+    ctx.fillStyle = cols.main;
+    ctx.strokeStyle = FISH_K;
+    ctx.lineWidth = 2.6;
+    ctx.beginPath();
+    ctx.ellipse(-21, 19, 6, 4.5, 0.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+  }
 
   ctx.restore();
 }

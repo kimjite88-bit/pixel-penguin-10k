@@ -4874,7 +4874,7 @@ function initPixelMotionStudio() {
         const openHatchRatio =
           s5P < 0.16 ? 0 : Math.min(1, (s5P - 0.16) / 0.18);
 
-        const ufoLandX = 228;
+        const ufoLandX = isFishRun ? 284 : 228;
         const ufoGroundY = 418 + townDrop();
         // Car tyres (+57 x 1.3) and plane skis (+66 x 1.0) end on the same walkway line (y = 450)
         // Every vehicle lands at TOWN_VEHICLE_SCALE with its lowest point (tyres +57, keel +48, skis +66) on y = 450
@@ -4887,7 +4887,7 @@ function initPixelMotionStudio() {
         ufoRenderY = ufoCurY;
         const ufoCrashTilt = crashP < 1 ? 0.18 : 0.04;
 
-        drawPixelGroundShadow(ctx, ufoLandX, ufoGroundY + 32, Math.round((isCarRun ? 182 : isBoatRun ? 250 : isFishRun ? 150 : 192) * V), bounceOffset);
+        drawPixelGroundShadow(ctx, ufoLandX, ufoGroundY + 32, Math.round((isCarRun ? 182 : isBoatRun ? 250 : isFishRun ? 88 : 192) * V), bounceOffset);
 
         // Ground impact pixel dust & spark burst when the UFO slams into the stone walkway
         if (s5P >= 0.13 && s5P <= 0.28) {
@@ -4927,7 +4927,9 @@ function initPixelMotionStudio() {
             pilotLift: openHatchRatio > 0 && openHatchRatio < 1 ? Math.sin(openHatchRatio * Math.PI) * 14 : 0,
           });
         } else if (isFishRun) {
-          drawFishingPenguinWithRod(ctx, ufoLandX + 10, ufoCurY, crashP < 1 ? 0.14 : 0.02, now, {
+          const tb = townBeat(now);
+          const fisherBop = crashP >= 1 && tb >= 0 && Math.floor(tb) % 2 === 0 && tb % 1 < 0.28 ? 3 : 0;
+          drawFishingPenguinWithRod(ctx, ufoLandX, ufoCurY - fisherBop, crashP < 1 ? 0.12 : 0, now, {
             scale: V,
             spId: activeSpId,
             pixelMode: true,
@@ -5048,14 +5050,14 @@ function initPixelMotionStudio() {
               : isCarRun
               ? '쿠과광—!! 어우 내 허리... 차는 폐차각인데 도착은 성공이다!!'
               : isFishRun
-              ? '쿠과광—!! 낚싯줄 끊어지자마자 마을로 직송됐네!! 오늘 낚은 횟감은 다 챙겼다!!'
+              ? '쿠과광—!! 어부 장화 신고 하늘에서 직송됐네!! 어깨에 멘 낚싯대랑 횟감은 무사하다!!'
               : '쿠과광—!! 어우 내 허리... 비행기는 폐기각인데 불시착은 성공이다!!'
             : isBoatRun
             ? i18n('CRAAASH—!! Ow my back... the ship ran aground on dry land, but we made it!!')
             : isCarRun
             ? i18n('CRAAASH—!! Ow my back... the car is totaled, but we made it!!')
             : isFishRun
-            ? i18n('CRAAASH—!! Snapped the line and landed straight in town!! Saved all my fresh catch!!')
+            ? i18n('CRAAASH—!! Dropped straight from the sky in my fisherman waders!! Rod on my shoulder and catch intact!!')
             : i18n('CRAAASH—!! Ow my back... the plane is totaled, but we made it!!'),
           '#38bdf8',
           now
