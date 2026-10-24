@@ -2795,20 +2795,20 @@ const FISH_WADER_PIXEL_ROWS = [
   '........KCCK........................', // r40: cork fore-grip
   '.......KRRKCK.......................', // r41: compact spinning reel + cork handle
   '.......KKKKCYK......................', // r42: reel base + gold butt cap
-  '........KKKKKKKKKKKKKKKKKKKKK.......', // r43: natural waistline outline (col 15..35, sleeves stay outside!)
-  '.......KHHHHHHHHHHHHHHHHHHHHHK......', // r44: dark gunmetal wader waist band (col 14..36)
-  '.......KLLHBBBBBBBDBBBBBBBDDDK......', // r45: upper trouser hip (col 14..36)
-  '......KLLHBBBBBBBBDBBBBBBBDDDK......', // r46: mid trouser hip (col 13..36, right sleeve cols 37..38 visible!)
-  '......KLLHBBBBBBBBDBLHBBBBDDDK......', // r47: lower trouser hip bridging across row 47!
-  '....KKKLLHBBBBBBBBDBLLBBBBDDDKKK....', // r48: outer sleeve tips close symmetrically (KK on both sides) while pants continue unbroken!
-  '......KLLHBBBBBBBBDBLLBBBBDDDK......', // r49: upper thigh (continuous with r45..r48, ZERO horizontal seam!)
-  '......KLLHBBBBBBBBDBLLBBBBDDDK......', // r50: mid thigh
-  '......KLLHBBBBBBBKKKLLBBBBDDDK......', // r51: lower thigh meeting crotch inseam K
-  '.....KLLHHBBBBBBBK.KLLBBBBHLLK......', // r52: seamless one-piece transition into boot ankle & instep
-  '....KLLHWBBBBBBBBK.KBBBBBBBWHLLK....', // r53: rounded glossy black wader boot toe boxes
-  '....KLLBBBBBBBBBBK.KBBBBBBBBBLLK....', // r54: lower black rubber boot vamp
-  '....KSSSSSSSSSSSSK.KSSSSSSSSSSSK....', // r55: heavy vulcanized rubber lugged sole
-  '.....KKKKKKKKKKKK...KKKKKKKKKKK.....', // r56: crisp bottom outline touching ground line (y = +46)
+  '...........KKK......................', // r43: rod butt cap outline
+  '....................................', // r44: 100% unoccluded NFT upper clothes ON TOP!
+  '....................................', // r45: 100% unoccluded NFT upper clothes ON TOP!
+  '....................................', // r46: 100% unoccluded NFT upper clothes ON TOP!
+  '....................................', // r47: 100% unoccluded NFT upper clothes bottom hem ON TOP!
+  '....KKKKKKKKKKKKKKKKKKKKKKKKKKKKK...', // r48: upper clothes bottom hem outline (col 11..39)
+  '........KDDDBBBBBBBDBDDBBBBBDDK.....', // r49: overhang shadow under upper clothes on unified wader pants (col 15..35)
+  '........KLLHBBBBBBBDBLHBBBBBDDK.....', // r50: unified one-piece wader trouser thighs (col 15..35, NO middle gap!)
+  '........KLLHBBBBBBKKKLLBBBBBDDK.....', // r51: lower trouser thighs meeting crotch inseam K (col 15..35)
+  '.......KLLHHBBBBBK...KLLBBBBHLLK....', // r52: seamless one-piece flow into boot ankles (col 14..22 & 26..34)
+  '......KLLHWBBBBBBK...KBBBBBBWHLLK...', // r53: cute compact rounded black boot toes (col 13..22 & 26..35)
+  '......KLLBBBBBBBBK...KBBBBBBBBLLK...', // r54: lower black rubber boot vamp
+  '......KSSSSSSSSSSK...KSSSSSSSSSSK...', // r55: dark vulcanized lugged sole
+  '.......KKKKKKKKKK.....KKKKKKKKKK....', // r56: crisp bottom outline touching ground line (y = +46)
 ];
 
 const FISH_DANGLING_PIXEL_ROWS = [
@@ -3110,55 +3110,49 @@ function drawFishingPenguinWithRod(ctx, cx, cy, tiltRad = 0, now = 0, options = 
         ctx.fillRect(ft.x - 5, fy - 1, 10, 2);
       });
     } else {
-      // Smooth 2D NFT Character: Seamless One-Piece Wader Pants + Boots (자연스러운 일체형 하의장화)
-      // Outer sleeve tips close cleanly at y = 30 on left/right sides
-      ctx.strokeStyle = FISH_K;
-      ctx.lineWidth = 2.4;
-      ctx.beginPath();
-      ctx.moveTo(-23.5, 29.5);
-      ctx.lineTo(-18, 29.5);
-      ctx.moveTo(18, 29.5);
-      ctx.lineTo(23.5, 29.5);
-      ctx.stroke();
-
-      // Unified One-Piece Wader Trousers + Boots polygon from waist (y = 22.5) down to boots (y = 43.5)
-      const waderGrad = ctx.createLinearGradient(-20, 22, 22, 44);
-      waderGrad.addColorStop(0, '#334155');
-      waderGrad.addColorStop(0.5, '#1e293b');
-      waderGrad.addColorStop(1, '#0f172a');
-      ctx.fillStyle = waderGrad;
+      // Smooth 2D NFT Character: Upper Clothes (상의) ON TOP overhanging Compact One-Piece Wader Pants + Boots (일체형 하의장화)
       ctx.strokeStyle = FISH_K;
       ctx.lineWidth = 2.6;
       ctx.beginPath();
-      ctx.roundRect(-19, 22.5, 39, 13.5, [2, 2, 3, 3]);
+      ctx.moveTo(-23, 29.5);
+      ctx.lineTo(23, 29.5);
+      ctx.stroke();
+
+      // Unified One-Piece Wader Trousers emerging from under the overhanging upper clothes (y = 29.5..36.5, narrower than sleeves!)
+      const waderGrad = ctx.createLinearGradient(-16, 29.5, 16, 44);
+      waderGrad.addColorStop(0, '#0f172a');
+      waderGrad.addColorStop(0.28, '#334155');
+      waderGrad.addColorStop(0.7, '#1e293b');
+      waderGrad.addColorStop(1, '#0f172a');
+      ctx.fillStyle = waderGrad;
+      ctx.strokeStyle = FISH_K;
+      ctx.lineWidth = 2.5;
+      ctx.beginPath();
+      ctx.roundRect(-15, 29.5, 31, 7.5, [1, 1, 2, 2]);
       ctx.fill();
       ctx.stroke();
 
-      // Gunmetal wader waist band at y = 23.5
-      ctx.fillStyle = '#475569';
-      ctx.fillRect(-17.5, 23.8, 36, 2.2);
-
-      // Seamless transition into left & right wader boots (y = 33..44, overlapping the pelvis so there is no horizontal seam!)
+      // Seamless transition into compact left & right wader boots (y = 35..44)
       [
-        { x: -10, toeDx: -2.5, dy: bootL },
-        { x: 10.5, toeDx: 2.5, dy: bootR },
+        { x: -8.5, toeDx: -2, dy: bootL },
+        { x: 9.5, toeDx: 2, dy: bootR },
       ].forEach((leg) => {
-        const by = 33 + leg.dy;
+        const by = 35 + leg.dy;
         ctx.fillStyle = waderGrad;
         ctx.strokeStyle = FISH_K;
-        ctx.lineWidth = 2.6;
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.roundRect(leg.x - 9 + Math.min(0, leg.toeDx), by, 18.5 + Math.abs(leg.toeDx), 10.8, [1, 1, 5, 5]);
+        ctx.roundRect(leg.x - 7.5 + Math.min(0, leg.toeDx), by, 15 + Math.abs(leg.toeDx), 9.5, [1, 1, 4.5, 4.5]);
         ctx.fill();
         ctx.stroke();
-        // Cover the top overlap line so trousers flow seamlessly into boots without a horizontal cut!
+        // Seamless join between trouser thighs and boots (no horizontal boot cuff line!)
         ctx.fillStyle = '#1e293b';
-        ctx.fillRect(leg.x - 7.5, by - 2, 15.5, 4);
+        ctx.fillRect(leg.x - 6, by - 2, 12.5, 3.5);
 
         // Glossy rubber highlight on rounded boot toe
         ctx.fillStyle = '#94a3b8';
         ctx.beginPath();
-        ctx.roundRect(leg.x - 5.5 + leg.toeDx * 0.4, by + 3.5, 5.2, 2.8, 1.4);
+        ctx.roundRect(leg.x - 4.5 + leg.toeDx * 0.4, by + 2.8, 4.5, 2.5, 1.2);
         ctx.fill();
 
         // Heavy vulcanized rubber sole
@@ -3166,17 +3160,17 @@ function drawFishingPenguinWithRod(ctx, cx, cy, tiltRad = 0, now = 0, options = 
         ctx.strokeStyle = FISH_K;
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.roundRect(leg.x - 9.5 + Math.min(0, leg.toeDx), by + 9, 19.5 + Math.abs(leg.toeDx), 3.4, 1.7);
+        ctx.roundRect(leg.x - 8 + Math.min(0, leg.toeDx), by + 7.8, 16 + Math.abs(leg.toeDx), 3.2, 1.5);
         ctx.fill();
         ctx.stroke();
       });
 
-      // Subtle center trouser fly/crotch seam line
+      // Subtle center trouser fly/crotch seam line under the upper clothes hem
       ctx.strokeStyle = '#0f172a';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.moveTo(0.5, 26.5);
-      ctx.lineTo(0.5, 35);
+      ctx.moveTo(0.5, 30.5);
+      ctx.lineTo(0.5, 36);
       ctx.stroke();
     }
 
