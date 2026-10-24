@@ -2457,30 +2457,29 @@ function drawFishRunnerFrame(ctx, now, spId) {
   if (crashed) triggerFishCrash(now);
 }
 
-// 16-bit Pixel Matrices for the Blue Boot-Integrated Fisherman Waders (col 7..42, row 38..57 in the 48x48 NFT grid)
-// and the Dangling Golden Catch, so every pixel matches the exact 80/48 cell size of UFO_GAME.pilotPixelSheet!
+// 16-bit Pixel Matrices for the Shoulder-Slung Rod Handle + Natural Black/Dark Rubber Boots (검정/어두운 장화)
+// beneath the full unoccluded NFT upper clothes (상의 전체, rows 0..47), matching the exact 80/48 cell grid!
 const FISH_WADER_PIXEL_ROWS = [
-  // col 7..42 (36 cols; penguin torso col 11..39 is index 4..32, center col 25 is index 18)
-  '......KCKSSK.............KSSK.......', // r38: rod crossing left shoulder + suspender straps
-  '.......KCYSSK............KSSK.......', // r39: rod shaft over shoulder + straps
-  '.....KKmmKCYYK...........KYYK.......', // r40: left flipper + rod grip + yellow wader buckles
-  '....KMMMMKCHHHHHHHHHHHHHHHHHK.......', // r41: left flipper gripping rod + top waterproof bib welt
-  '...KMMMMmKLCKLLLBBBBBBBBDDDDKKmmK...', // r42: cork handle across left chest + blue bib + right flipper
-  '...KKKKKKLLKCLLLLKKKKKKKKDDDDKMMmK..', // r43: cork butt + front pocket flap top
-  '......KRRKLLKYLLKSSSSSSSSKDDDDKMMmK.', // r44: blue spinning reel + gold rod butt cap + pocket flap
-  '......KKKKLLLKLKSSSSYYSSSKDDDDKmmKK.', // r45: reel bottom + yellow pocket snap button
-  '........KLLLLLLKDDDDDDDDDKDDDDKKK...', // r46: waterproof pocket body
-  '........KLLLLLLBBBBBBBBBBDDDDDK.....', // r47: lower chest bib
-  '........KNNNNNNNNYYYNNNNNNNNK.......', // r48: heavy-duty waterproof waist seam belt + gold buckle
-  '........KNNNNNNNNOOONNNNNNNNK.......', // r49: belt lower edge
-  '........KLLBBBBBBBBBBBBBBBDDK.......', // r50: wader hip / pelvis
-  '........KLLBBSSSHHHHKKKBBSSDK.......', // r51: integrated wader thighs + knee guard top
-  '........KLLBBSSSSSSSK.KSSSSDK.......', // r52: reinforced knee guards + leg split
-  '.......KUUUHHHHHHHHHK.KUUHHUUK......', // r53: boot-integrated weld seam + glossy rubber boot upper
-  '......KUUUUUHHUUUUUUK.KUUUUUUUK.....', // r54: chunky fisherman rubber boot toe boxes
-  '......KYYYYYYYYYYYYYK.KYYYYYYYK.....', // r55: bright yellow non-slip fisherman boot sole welt
-  '......KOOOOOOOOOOOOOK.KOOOOOOOK.....', // r56: amber lugged rubber sole tread
-  '.......KKKKKKKKKKKKK...KKKKKKK......', // r57: crisp bottom outline touching y = +47
+  // col 7..42 (36 cols; penguin torso col 11..39 is index 4..32)
+  '......KCK...........................', // r38: rod shaft crossing left shoulder
+  '.......KCYK.........................', // r39: cork grip + gold ring
+  '........KCCK........................', // r40: cork fore-grip
+  '.......KRRKCK.......................', // r41: compact spinning reel + cork handle
+  '.......KKKKCYK......................', // r42: reel base + gold butt cap
+  '...........KKK......................', // r43: rod butt cap outline
+  '....................................', // r44: 100% unoccluded NFT upper clothes (상의 전체)
+  '....................................', // r45: 100% unoccluded NFT upper clothes (상의 전체)
+  '....................................', // r46: 100% unoccluded NFT upper clothes (상의 전체)
+  '....................................', // r47: 100% unoccluded NFT upper clothes bottom row
+  '....KKKKKKKKKKKKKKKKKKKKKKKKKKKKK...', // r48: crisp dark bottom hem outline closing upper clothes (col 11..39)
+  '.......KHHHHHHHHHK.KHHHHHHHHHK......', // r49: dark gunmetal boot cuff rim (col 14..24 & col 26..36)
+  '.......KLLWBBBBDDK.KLLWBBBBDDK......', // r50: black rubber boot shaft upper + specular glint
+  '.......KLLHBBBBDDK.KLLHBBBBDDK......', // r51: black rubber boot shaft lower
+  '......KLLHHBBBBDDK.KLLBBBBBHLLK.....', // r52: boot ankle curving outward toward rounded toes
+  '.....KLLHWBBBBBBBK.KBBBBBBBWHLLK....', // r53: rounded glossy black rubber boot toe boxes
+  '.....KLLBBBBBBBBBK.KBBBBBBBBBLLK....', // r54: lower black rubber boot vamp
+  '.....KSSSSSSSSSSSK.KSSSSSSSSSSSK....', // r55: heavy dark vulcanized rubber lugged sole
+  '......KKKKKKKKKKK...KKKKKKKKKKK.....', // r56: crisp bottom outline touching ground line
 ];
 
 const FISH_DANGLING_PIXEL_ROWS = [
@@ -2652,7 +2651,8 @@ function drawFishingPenguinWithRod(ctx, cx, cy, tiltRad = 0, now = 0, options = 
 
   ctx.save();
   ctx.beginPath();
-  ctx.rect(bustX - 24, -120, bustSize + 48, 142); // clips cleanly inside the wader chest bib at y = +22
+  // Keep 100% of the NFT upper clothes (상의 전체, rows 0..47 -> y = -48..+32) unoccluded!
+  ctx.rect(bustX - 24, -120, bustSize + 48, pixelMode ? 152 : 149.5);
   ctx.clip();
   if (pixelMode) {
     ctx.imageSmoothingEnabled = false;
@@ -2691,36 +2691,32 @@ function drawFishingPenguinWithRod(ctx, cx, cy, tiltRad = 0, now = 0, options = 
   ctx.restore();
 
   // ==========================================================================
-  // 3. FRONT LAYER: Blue Boot-Integrated Fisherman Waders (파란 어부용 장화일체형 하의)
-  //    + Shoulder-Slung Rod Cork Handle & Spinning Reel + Penguin Flippers
+  // 3. FRONT LAYER: Natural Black / Dark Rubber Boots (검정색/어두운색 장화)
+  //    right beneath the full unoccluded upper clothes (상의 전체) + Shoulder Rod Handle
   // ==========================================================================
   if (pixelMode) {
-    const waderPalette = {
+    const bootPalette = {
       K: FISH_K,
-      S: '#1e3a8a',
-      Y: '#facc15',
-      O: '#d97706',
-      H: '#60a5fa',
-      L: '#3b82f6',
-      B: '#2563eb',
-      D: '#1d4ed8',
-      U: '#1e40af',
-      N: '#0f172a',
-      M: cols.main,
-      m: cols.shade,
-      C: '#d97706',
-      R: '#38bdf8',
+      C: '#d97706', // cork rod handle
+      Y: '#facc15', // gold rod ring
+      R: '#94a3b8', // metallic spinning reel
+      W: '#94a3b8', // silver-grey rubber gloss glint
+      H: '#475569', // dark gunmetal boot cuff / highlight
+      L: '#334155', // lit charcoal rubber
+      B: '#1e293b', // main black-charcoal rubber boot body
+      D: '#0f172a', // deep onyx shadow
+      S: '#111827', // heavy vulcanized black rubber sole
     };
     const cSz = Math.ceil(cell + 0.35);
     FISH_WADER_PIXEL_ROWS.forEach((row, idx) => {
       const gridRow = 38 + idx;
       for (let colOffset = 0; colOffset < row.length; colOffset++) {
         const ch = row[colOffset];
-        const color = waderPalette[ch];
+        const color = bootPalette[ch];
         if (!color) continue;
         const gridCol = 7 + colOffset;
-        // Apply subtle boot kick on rows 51..57 when falling/yanked
-        const legDy = gridRow >= 51 ? (gridCol < 25 ? bootL : bootR) : 0;
+        // Apply subtle boot kick on rows 49..56 when falling/yanked
+        const legDy = gridRow >= 49 ? (gridCol < 25 ? bootL : bootR) : 0;
         const px = bustX + gridCol * cell;
         const py = bustY + gridRow * cell + legDy;
         ctx.fillStyle = color;
@@ -2728,105 +2724,72 @@ function drawFishingPenguinWithRod(ctx, cx, cy, tiltRad = 0, now = 0, options = 
       }
     });
   } else {
-    // Smooth 2D Cel-Shaded Blue Boot-Integrated Fisherman Waders + Shoulder Rod Grip
+    // Smooth 2D Cel-Shaded Black / Dark Rubber Boots beneath full 2D upper clothes + Shoulder Rod Grip
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
 
-    // A. Suspender Straps & Yellow Buckles
-    [-13, 13].forEach((sx) => {
-      ctx.fillStyle = '#1e3a8a';
-      ctx.strokeStyle = FISH_K;
-      ctx.lineWidth = 2.4;
-      ctx.beginPath();
-      ctx.roundRect(sx - 3.5, 14, 7, 9, 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = '#facc15';
-      ctx.fillRect(sx - 2.5, 18, 5, 3);
-    });
-
-    // B. High-Waisted Waterproof Blue Chest Bib
-    const bibGrad = ctx.createLinearGradient(-22, 20, 22, 35);
-    bibGrad.addColorStop(0, '#3b82f6');
-    bibGrad.addColorStop(0.55, '#2563eb');
-    bibGrad.addColorStop(1, '#1d4ed8');
-    ctx.fillStyle = bibGrad;
+    // A. Crisp dark bottom hem outline closing the 2D upper clothes at y = 29.5
     ctx.strokeStyle = FISH_K;
-    ctx.lineWidth = 2.8;
+    ctx.lineWidth = 2.6;
     ctx.beginPath();
-    ctx.roundRect(-22, 20, 44, 15, 6);
-    ctx.fill();
+    ctx.moveTo(-23, 29.5);
+    ctx.lineTo(23, 29.5);
     ctx.stroke();
 
-    // Front Waterproof Pouch Pocket
-    ctx.fillStyle = '#1d4ed8';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.roundRect(-9, 23, 18, 7.5, 2.5);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = '#1e3a8a';
-    ctx.fillRect(-8, 23.5, 16, 2.5);
-    ctx.fillStyle = '#facc15';
-    ctx.beginPath();
-    ctx.arc(0, 26, 1.6, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Waist Seam Belt
-    ctx.fillStyle = '#0f172a';
-    ctx.fillRect(-21, 31.5, 42, 3);
-    ctx.fillStyle = '#facc15';
-    ctx.fillRect(-3.5, 31, 7, 4);
-
-    // C. Boot-Integrated Wader Legs & Yellow-Soled Rubber Fisherman Boots
+    // B. Two Natural Black/Dark Rubber Boots emerging from under the upper clothes (y = 30..45)
     [
-      { x: -12, dy: bootL },
-      { x: 12, dy: bootR },
+      { x: -10.5, toeDx: -2, dy: bootL },
+      { x: 10.5, toeDx: 2, dy: bootR },
     ].forEach((leg) => {
-      ctx.fillStyle = '#1e40af';
+      const by = 30 + leg.dy;
+      // Boot shaft & rounded toe box
+      const bootGrad = ctx.createLinearGradient(leg.x - 10, by, leg.x + 10, by + 14);
+      bootGrad.addColorStop(0, '#334155');
+      bootGrad.addColorStop(0.5, '#1e293b');
+      bootGrad.addColorStop(1, '#0f172a');
+      ctx.fillStyle = bootGrad;
       ctx.strokeStyle = FISH_K;
       ctx.lineWidth = 2.6;
       ctx.beginPath();
-      ctx.roundRect(leg.x - 10.5, 34 + leg.dy, 21, 11.5, 4);
+      ctx.roundRect(leg.x - 9 + Math.min(0, leg.toeDx), by, 18 + Math.abs(leg.toeDx), 13.5, [2, 2, 5, 5]);
       ctx.fill();
       ctx.stroke();
-      ctx.fillStyle = '#60a5fa';
-      ctx.fillRect(leg.x - 6, 36 + leg.dy, 9, 2);
-      ctx.fillStyle = '#facc15';
+
+      // Gunmetal boot top cuff rim
+      ctx.fillStyle = '#475569';
+      ctx.fillRect(leg.x - 7.5, by + 1, 15, 2.2);
+
+      // Glossy rubber highlight on front shin & rounded toe
+      ctx.fillStyle = '#94a3b8';
+      ctx.beginPath();
+      ctx.roundRect(leg.x - 5.5 + leg.toeDx * 0.4, by + 4.5, 5.5, 3.2, 1.5);
+      ctx.fill();
+
+      // Heavy dark vulcanized rubber sole
+      ctx.fillStyle = '#111827';
       ctx.strokeStyle = FISH_K;
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.roundRect(leg.x - 11, 42 + leg.dy, 22, 4, 2);
+      ctx.roundRect(leg.x - 9.5 + Math.min(0, leg.toeDx), by + 11.5, 19 + Math.abs(leg.toeDx), 3.6, 1.8);
       ctx.fill();
       ctx.stroke();
     });
 
-    // D. Right Flipper on hip
-    ctx.fillStyle = cols.main;
+    // C. Compact Cork Grip & Metallic Spinning Reel of Shoulder-Slung Rod on left shoulder
     ctx.strokeStyle = FISH_K;
-    ctx.lineWidth = 2.4;
-    ctx.beginPath();
-    ctx.ellipse(23, 24, 4, 6.5, -0.2, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.stroke();
-
-    // E. Front Cork Grip & Spinning Reel of Shoulder-Slung Rod
-    ctx.strokeStyle = FISH_K;
-    ctx.lineWidth = 6.5;
+    ctx.lineWidth = 6.2;
     ctx.beginPath();
     ctx.moveTo(shX, shY);
     ctx.lineTo(buttX, buttY);
     ctx.stroke();
     ctx.strokeStyle = '#d97706';
-    ctx.lineWidth = 3.5;
+    ctx.lineWidth = 3.4;
     ctx.stroke();
-
-    // F. Left Flipper gripping the shoulder rod
-    ctx.fillStyle = cols.main;
+    ctx.fillStyle = '#94a3b8';
     ctx.strokeStyle = FISH_K;
-    ctx.lineWidth = 2.6;
+    ctx.lineWidth = 1.8;
     ctx.beginPath();
-    ctx.ellipse(-21, 19, 6, 4.5, 0.35, 0, Math.PI * 2);
+    ctx.arc(shX + 2, shY + 6, 3.2, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
   }
