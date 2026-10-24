@@ -5496,7 +5496,9 @@ function initPixelMotionStudio() {
               : isCarRun
               ? '쿠과광—!! 어우 내 허리... 차는 폐차각인데 도착은 성공이다!!'
               : isFishRun
-              ? '쿠과광—!! 어부 장화 신고 하늘에서 직송됐네!! 어깨에 멘 낚싯대랑 횟감은 무사하다!!'
+              ? UFO_GAME.hasNft
+                ? '쿠과광—!! 어부 장화 신고 하늘에서 직송됐네!! 어깨에 멘 낚싯대랑 횟감은 무사하다!!'
+                : '쿠과광—!! 낚싯대 하나 메고 하늘에서 직송됐네!! 어깨에 멘 낚싯대랑 횟감은 무사하다!!'
               : '쿠과광—!! 어우 내 허리... 비행기는 폐기각인데 불시착은 성공이다!!'
             : isBoatRun
             ? i18n('CRAAASH—!! Ow my back... the ship ran aground on dry land, but we made it!!')

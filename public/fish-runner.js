@@ -2759,9 +2759,13 @@ function drawFishRunnerFrame(ctx, now, spId) {
   if (crashed) triggerFishCrash(now);
 }
 
-// 16-bit Pixel Matrices for the Shoulder-Slung Rod Handle + Natural Black/Dark Rubber Boots (검정/어두운 장화)
-// beneath the full unoccluded NFT upper clothes (상의 전체, rows 0..47), matching the exact 80/48 cell grid!
-const FISH_WADER_PIXEL_ROWS = [
+// 16-bit Pixel Matrices for:
+// 1. FISH_DEFAULT_FEET_PIXEL_ROWS: Default Character (!UFO_GAME.hasNft) — Original rounded penguin lower belly +
+//    cute 3-toed orange webbed feet (원래 발 / 다른 친구들 발처럼) + shoulder-slung rod handle!
+// 2. FISH_WADER_PIXEL_ROWS: NFT Character (UFO_GAME.hasNft) — Seamless One-Piece Wader Pants + Boots (자연스러운 일체형 하의장화)
+//    starting at the waistline (r43) inside the outer sleeves so both sleeves/hands hang naturally on the sides,
+//    bridging across r47/r48 with zero horizontal cut line, and flowing in one piece into the dark rubber boots!
+const FISH_DEFAULT_FEET_PIXEL_ROWS = [
   // col 7..42 (36 cols; penguin torso col 11..39 is index 4..32)
   '......KCK...........................', // r38: rod shaft crossing left shoulder
   '.......KCYK.........................', // r39: cork grip + gold ring
@@ -2769,19 +2773,42 @@ const FISH_WADER_PIXEL_ROWS = [
   '.......KRRKCK.......................', // r41: compact spinning reel + cork handle
   '.......KKKKCYK......................', // r42: reel base + gold butt cap
   '...........KKK......................', // r43: rod butt cap outline
-  '....................................', // r44: 100% unoccluded NFT upper clothes (상의 전체)
-  '....................................', // r45: 100% unoccluded NFT upper clothes (상의 전체)
-  '....................................', // r46: 100% unoccluded NFT upper clothes (상의 전체)
-  '....................................', // r47: 100% unoccluded NFT upper clothes bottom row
-  '....KKKKKKKKKKKKKKKKKKKKKKKKKKKKK...', // r48: crisp dark bottom hem outline closing upper clothes (col 11..39)
-  '.......KHHHHHHHHHK.KHHHHHHHHHK......', // r49: dark gunmetal boot cuff rim (col 14..24 & col 26..36)
-  '.......KLLWBBBBDDK.KLLWBBBBDDK......', // r50: black rubber boot shaft upper + specular glint
-  '.......KLLHBBBBDDK.KLLHBBBBDDK......', // r51: black rubber boot shaft lower
-  '......KLLHHBBBBDDK.KLLBBBBBHLLK.....', // r52: boot ankle curving outward toward rounded toes
-  '.....KLLHWBBBBBBBK.KBBBBBBBWHLLK....', // r53: rounded glossy black rubber boot toe boxes
-  '.....KLLBBBBBBBBBK.KBBBBBBBBBLLK....', // r54: lower black rubber boot vamp
-  '.....KSSSSSSSSSSSK.KSSSSSSSSSSSK....', // r55: heavy dark vulcanized rubber lugged sole
-  '......KKKKKKKKKKK...KKKKKKKKKKK.....', // r56: crisp bottom outline touching ground line
+  '....................................', // r44
+  '....................................', // r45
+  '....................................', // r46
+  '....................................', // r47
+  '....psssbbbbbbbbbpcccwwwwwwwwssbp...', // r48: seamless continuation of blue wings & cream belly
+  '.....ppssbbbbbbbbpcccwwwwwwwwssp....', // r49: left & right wing tips taper smoothly
+  '.......pssbbbbbbbbccccwwwwwwssp.....', // r50: rounded lower belly curve
+  '........psssbbbbbbbccccwwwwssp......', // r51: lower belly rounding inward
+  '.........ppssssbbbbbbbbbbsspp.......', // r52: lower body base above feet
+  '.........FFOOOOFFppssssppFFOOTTFF...', // r53: two cute 3-toed orange penguin feet emerging!
+  '........FOOTOOOTOF.pppp.FOOTOOOTOF..', // r54: 3 sculpted orange toes with highlights
+  '........FFooFFooFF......FFooFFooFF..', // r55: orange webbed foot base
+  '.........FFFFFFFF........FFFFFFFF...', // r56: crisp bottom outline touching ground line (y = +46)
+];
+
+const FISH_WADER_PIXEL_ROWS = [
+  // col 7..42 (36 cols; penguin torso col 11..39 is index 4..32)
+  '......KCK...........................', // r38: rod shaft crossing left shoulder
+  '.......KCYK.........................', // r39: cork grip + gold ring
+  '........KCCK........................', // r40: cork fore-grip
+  '.......KRRKCK.......................', // r41: compact spinning reel + cork handle
+  '.......KKKKCYK......................', // r42: reel base + gold butt cap
+  '........KKKKKKKKKKKKKKKKKKKKK.......', // r43: natural waistline outline (col 15..35, sleeves stay outside!)
+  '.......KHHHHHHHHHHHHHHHHHHHHHK......', // r44: dark gunmetal wader waist band (col 14..36)
+  '.......KLLHBBBBBBBDBBBBBBBDDDK......', // r45: upper trouser hip (col 14..36)
+  '......KLLHBBBBBBBBDBBBBBBBDDDK......', // r46: mid trouser hip (col 13..36, right sleeve cols 37..38 visible!)
+  '......KLLHBBBBBBBBDBLHBBBBDDDK......', // r47: lower trouser hip bridging across row 47!
+  '....KKKLLHBBBBBBBBDBLLBBBBDDDKKK....', // r48: outer sleeve tips close symmetrically (KK on both sides) while pants continue unbroken!
+  '......KLLHBBBBBBBBDBLLBBBBDDDK......', // r49: upper thigh (continuous with r45..r48, ZERO horizontal seam!)
+  '......KLLHBBBBBBBBDBLLBBBBDDDK......', // r50: mid thigh
+  '......KLLHBBBBBBBKKKLLBBBBDDDK......', // r51: lower thigh meeting crotch inseam K
+  '.....KLLHHBBBBBBBK.KLLBBBBHLLK......', // r52: seamless one-piece transition into boot ankle & instep
+  '....KLLHWBBBBBBBBK.KBBBBBBBWHLLK....', // r53: rounded glossy black wader boot toe boxes
+  '....KLLBBBBBBBBBBK.KBBBBBBBBBLLK....', // r54: lower black rubber boot vamp
+  '....KSSSSSSSSSSSSK.KSSSSSSSSSSSK....', // r55: heavy vulcanized rubber lugged sole
+  '.....KKKKKKKKKKKK...KKKKKKKKKKK.....', // r56: crisp bottom outline touching ground line (y = +46)
 ];
 
 const FISH_DANGLING_PIXEL_ROWS = [
@@ -2993,9 +3020,11 @@ function drawFishingPenguinWithRod(ctx, cx, cy, tiltRad = 0, now = 0, options = 
   ctx.restore();
 
   // ==========================================================================
-  // 3. FRONT LAYER: Natural Black / Dark Rubber Boots (검정색/어두운색 장화)
-  //    right beneath the full unoccluded upper clothes (상의 전체) + Shoulder Rod Handle
+  // 3. FRONT LAYER:
+  //    - Default Character (!hasNft): Original rounded penguin belly + cute 3-toed orange feet (원래 발처럼) + Rod Handle
+  //    - NFT Character (hasNft): Seamless One-Piece Wader Pants + Boots (자연스러운 일체형 하의장화) + Rod Handle
   // ==========================================================================
+  const hasNft = Boolean(typeof UFO_GAME !== 'undefined' && UFO_GAME.hasNft);
   if (pixelMode) {
     const bootPalette = {
       K: FISH_K,
@@ -3003,22 +3032,34 @@ function drawFishingPenguinWithRod(ctx, cx, cy, tiltRad = 0, now = 0, options = 
       Y: '#facc15', // gold rod ring
       R: '#94a3b8', // metallic spinning reel
       W: '#94a3b8', // silver-grey rubber gloss glint
-      H: '#475569', // dark gunmetal boot cuff / highlight
-      L: '#334155', // lit charcoal rubber
-      B: '#1e293b', // main black-charcoal rubber boot body
-      D: '#0f172a', // deep onyx shadow
+      H: '#475569', // dark gunmetal wader waist band / seam highlight
+      L: '#334155', // lit charcoal wader pants & boot front
+      B: '#1e293b', // main black-charcoal wader pants & boot body
+      D: '#0f172a', // deep onyx shadow & trouser crease
       S: '#111827', // heavy vulcanized black rubber sole
+      // Default penguin lower body & 3-toed orange webbed feet palette:
+      p: '#0c143a', // penguin outline
+      s: cols.dark || '#16449a', // species feather shadow
+      b: cols.main || '#2860cc', // species feather main
+      c: '#e8d0ac', // cream belly shadow
+      w: '#fcf2dc', // cream belly main
+      O: '#ff7a01', // bright orange penguin foot
+      o: '#e44501', // shaded orange toe crease
+      T: '#ffa83d', // orange toe highlight
+      F: '#2a0a08', // dark foot outline
     };
+    const activeRows = hasNft ? FISH_WADER_PIXEL_ROWS : FISH_DEFAULT_FEET_PIXEL_ROWS;
     const cSz = Math.ceil(cell + 0.35);
-    FISH_WADER_PIXEL_ROWS.forEach((row, idx) => {
+    activeRows.forEach((row, idx) => {
       const gridRow = 38 + idx;
       for (let colOffset = 0; colOffset < row.length; colOffset++) {
         const ch = row[colOffset];
         const color = bootPalette[ch];
         if (!color) continue;
         const gridCol = 7 + colOffset;
-        // Apply subtle boot kick on rows 49..56 when falling/yanked
-        const legDy = gridRow >= 49 ? (gridCol < 25 ? bootL : bootR) : 0;
+        // Apply subtle foot/boot kick on lower rows when falling/yanked
+        const kickStartRow = hasNft ? 51 : 53;
+        const legDy = gridRow >= kickStartRow ? (gridCol < 25 ? bootL : bootR) : 0;
         const px = bustX + gridCol * cell;
         const py = bustY + gridRow * cell + legDy;
         ctx.fillStyle = color;
@@ -3026,58 +3067,120 @@ function drawFishingPenguinWithRod(ctx, cx, cy, tiltRad = 0, now = 0, options = 
       }
     });
   } else {
-    // Smooth 2D Cel-Shaded Black / Dark Rubber Boots beneath full 2D upper clothes + Shoulder Rod Grip
     ctx.lineJoin = 'round';
     ctx.lineCap = 'round';
 
-    // A. Crisp dark bottom hem outline closing the 2D upper clothes at y = 29.5
-    ctx.strokeStyle = FISH_K;
-    ctx.lineWidth = 2.6;
-    ctx.beginPath();
-    ctx.moveTo(-23, 29.5);
-    ctx.lineTo(23, 29.5);
-    ctx.stroke();
+    if (!hasNft) {
+      // Smooth 2D Default Character: Rounded blue/cream lower body + two cute 3-toed orange webbed feet!
+      ctx.fillStyle = cols.main || '#2860cc';
+      ctx.strokeStyle = '#0c143a';
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(-22, 28);
+      ctx.quadraticCurveTo(-20, 38, -8, 39.5);
+      ctx.lineTo(14, 39.5);
+      ctx.quadraticCurveTo(22, 38, 23, 28);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
 
-    // B. Two Natural Black/Dark Rubber Boots emerging from under the upper clothes (y = 30..45)
-    [
-      { x: -10.5, toeDx: -2, dy: bootL },
-      { x: 10.5, toeDx: 2, dy: bootR },
-    ].forEach((leg) => {
-      const by = 30 + leg.dy;
-      // Boot shaft & rounded toe box
-      const bootGrad = ctx.createLinearGradient(leg.x - 10, by, leg.x + 10, by + 14);
-      bootGrad.addColorStop(0, '#334155');
-      bootGrad.addColorStop(0.5, '#1e293b');
-      bootGrad.addColorStop(1, '#0f172a');
-      ctx.fillStyle = bootGrad;
+      // Rounded cream lower belly
+      ctx.fillStyle = '#fcf2dc';
+      ctx.beginPath();
+      ctx.moveTo(0, 27.5);
+      ctx.quadraticCurveTo(0, 37.5, 8, 37.5);
+      ctx.quadraticCurveTo(18, 37.5, 19, 27.5);
+      ctx.closePath();
+      ctx.fill();
+
+      // Two 3-toed orange penguin feet
+      [
+        { x: -9.5, dy: bootL },
+        { x: 11.5, dy: bootR },
+      ].forEach((ft) => {
+        const fy = 40.5 + ft.dy;
+        ctx.fillStyle = '#ff7a01';
+        ctx.strokeStyle = '#2a0a08';
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.roundRect(ft.x - 8, fy - 2, 16, 6.2, 3);
+        ctx.fill();
+        ctx.stroke();
+        ctx.fillStyle = '#ffa83d';
+        ctx.fillRect(ft.x - 5, fy - 1, 10, 2);
+      });
+    } else {
+      // Smooth 2D NFT Character: Seamless One-Piece Wader Pants + Boots (자연스러운 일체형 하의장화)
+      // Outer sleeve tips close cleanly at y = 30 on left/right sides
+      ctx.strokeStyle = FISH_K;
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(-23.5, 29.5);
+      ctx.lineTo(-18, 29.5);
+      ctx.moveTo(18, 29.5);
+      ctx.lineTo(23.5, 29.5);
+      ctx.stroke();
+
+      // Unified One-Piece Wader Trousers + Boots polygon from waist (y = 22.5) down to boots (y = 43.5)
+      const waderGrad = ctx.createLinearGradient(-20, 22, 22, 44);
+      waderGrad.addColorStop(0, '#334155');
+      waderGrad.addColorStop(0.5, '#1e293b');
+      waderGrad.addColorStop(1, '#0f172a');
+      ctx.fillStyle = waderGrad;
       ctx.strokeStyle = FISH_K;
       ctx.lineWidth = 2.6;
       ctx.beginPath();
-      ctx.roundRect(leg.x - 9 + Math.min(0, leg.toeDx), by, 18 + Math.abs(leg.toeDx), 13.5, [2, 2, 5, 5]);
+      ctx.roundRect(-19, 22.5, 39, 13.5, [2, 2, 3, 3]);
       ctx.fill();
       ctx.stroke();
 
-      // Gunmetal boot top cuff rim
+      // Gunmetal wader waist band at y = 23.5
       ctx.fillStyle = '#475569';
-      ctx.fillRect(leg.x - 7.5, by + 1, 15, 2.2);
+      ctx.fillRect(-17.5, 23.8, 36, 2.2);
 
-      // Glossy rubber highlight on front shin & rounded toe
-      ctx.fillStyle = '#94a3b8';
-      ctx.beginPath();
-      ctx.roundRect(leg.x - 5.5 + leg.toeDx * 0.4, by + 4.5, 5.5, 3.2, 1.5);
-      ctx.fill();
+      // Seamless transition into left & right wader boots (y = 33..44, overlapping the pelvis so there is no horizontal seam!)
+      [
+        { x: -10, toeDx: -2.5, dy: bootL },
+        { x: 10.5, toeDx: 2.5, dy: bootR },
+      ].forEach((leg) => {
+        const by = 33 + leg.dy;
+        ctx.fillStyle = waderGrad;
+        ctx.strokeStyle = FISH_K;
+        ctx.lineWidth = 2.6;
+        ctx.beginPath();
+        ctx.roundRect(leg.x - 9 + Math.min(0, leg.toeDx), by, 18.5 + Math.abs(leg.toeDx), 10.8, [1, 1, 5, 5]);
+        ctx.fill();
+        ctx.stroke();
+        // Cover the top overlap line so trousers flow seamlessly into boots without a horizontal cut!
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(leg.x - 7.5, by - 2, 15.5, 4);
 
-      // Heavy dark vulcanized rubber sole
-      ctx.fillStyle = '#111827';
-      ctx.strokeStyle = FISH_K;
+        // Glossy rubber highlight on rounded boot toe
+        ctx.fillStyle = '#94a3b8';
+        ctx.beginPath();
+        ctx.roundRect(leg.x - 5.5 + leg.toeDx * 0.4, by + 3.5, 5.2, 2.8, 1.4);
+        ctx.fill();
+
+        // Heavy vulcanized rubber sole
+        ctx.fillStyle = '#111827';
+        ctx.strokeStyle = FISH_K;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.roundRect(leg.x - 9.5 + Math.min(0, leg.toeDx), by + 9, 19.5 + Math.abs(leg.toeDx), 3.4, 1.7);
+        ctx.fill();
+        ctx.stroke();
+      });
+
+      // Subtle center trouser fly/crotch seam line
+      ctx.strokeStyle = '#0f172a';
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.roundRect(leg.x - 9.5 + Math.min(0, leg.toeDx), by + 11.5, 19 + Math.abs(leg.toeDx), 3.6, 1.8);
-      ctx.fill();
+      ctx.moveTo(0.5, 26.5);
+      ctx.lineTo(0.5, 35);
       ctx.stroke();
-    });
+    }
 
-    // C. Compact Cork Grip & Metallic Spinning Reel of Shoulder-Slung Rod on left shoulder
+    // Compact Cork Grip & Metallic Spinning Reel of Shoulder-Slung Rod on left shoulder
     ctx.strokeStyle = FISH_K;
     ctx.lineWidth = 6.2;
     ctx.beginPath();
