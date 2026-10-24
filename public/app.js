@@ -2823,25 +2823,25 @@ function drawPixelHalloweenTree(ctx, centerX, baseY, now) {
 
 // ============================================================================
 // GENESIS #9 (P0009 — 다크 히어로 / Dark Hero) Halloween Special Cameo
-// Hovering above the right Halloween Tree and below the Full Moon in Scene 5
+// Superman-Style Cape Flight Patrol above the Halloween Tree & below the Moon
 // ============================================================================
-const GENESIS_9_GRID_W = 44;
-const GENESIS_9_GRID_H = 35;
-const GENESIS_9_P = 2; // 88x70 stage px (body 50px wide matching 48px town penguins + left cape)
-let GENESIS_9_CACHE = null;
+const GENESIS_9_GRID_W = 58;
+const GENESIS_9_GRID_H = 36;
+const GENESIS_9_P = 2; // 116x72 stage px (58x36 grid: outstretched Superman arm + 25-col billowing cape)
+let GENESIS_9_FRAMES = null;
 
 const GENESIS_9_PALETTE = {
   K: '#080b16', // obsidian-black outline
   D: '#111c38', // deep midnight navy shadow
   N: '#172554', // midnight navy head feathers
   B: '#1e3a8a', // royal dark-blue feathers
-  b: '#2563eb', // mid-blue crown tone
-  H: '#3b82f6', // brow & tuft highlight
+  b: '#2563eb', // mid-blue crown & wing tone
+  H: '#3b82f6', // brow, crest & leading wing highlight
   W: '#fffbeb', // warm ivory face & belly
-  w: '#e6dec8', // warm left-cheek & belly shadow
+  w: '#e6dec8', // warm cheek & belly shadow
   P: '#f497a9', // cute rose-pink cheek blush
-  O: '#fb923c', // bright orange upper beak & feet
-  o: '#ea580c', // deep orange lower beak & feet
+  O: '#fb923c', // bright orange upper beak & flying feet
+  o: '#ea580c', // deep orange lower beak & feet shade
   G: '#ffffff', // pure white eye specular & gem star glint
   E: '#1e1b4b', // deep indigo upper iris
   C: '#3b82f6', // sapphire right eye mid-blue
@@ -2857,58 +2857,79 @@ const GENESIS_9_PALETTE = {
   e: '#1e293b', // obsidian cloak lit fold
 };
 
+// 58x36 Master Pixel Grid for Genesis #9 Dark Hero in Diagonal Superman Flight Pose (facing RIGHT):
+// - Continuous blazing Amethyst Psychic Eye-Flame streaming directly out of the left eye across the brow/cheek
+// - Outstretched Superman Lead Arm punching forward-upward (+x, -y) with silver/amethyst hero gauntlet
+// - Diagonally angled flying torso & belly (/) leading down-left to two streamlined flying orange penguin feet
+// - Massive billowing Royal-Violet & Obsidian Superman Cape streaming high behind the shoulders with 3 flame tails
 const GENESIS_9_BASE_MATRIX = [
-  '.......................KK...................',
-  '......................KNNKK.................',
-  '....................KKNBBNNKKK..............',
-  '...................KNNBBbBHHNNK.............',
-  '.................KKDNBBBBBBHHBNK............',
-  '................KDDNNBBBBBBBHHBNK...........',
-  '...............KDDNNNBBBBBBBBHBBNK..........',
-  '..............KDDNNNNBBBBBBBBBBHBNK.........',
-  '..............KDDNNBBWWWWBNBBBWWBNK.........',
-  '.............KDDNNBBWWWWWWNNNWWWWBNK........',
-  '.............KDDNNBWWWKKWWWNWWWKKWWNK.......',
-  '............KDDNNBWWKEGGWWWWWKNGGWWNK.......',
-  '............KDDNNBWWEEGGWWWWWNNGGWWNK.......',
-  '............KDDNNBwWAMFAWWKKWBCcBWWNK.......',
-  '............KDDNNBwWWMGWWKOOOKCcWWWNK.......',
-  '.............KDDNBwWPPPWWKoooKWPPPWWNK......',
-  '.............KDDNNwwWPPWWWKKKWWPPWWWNK......',
-  '..........KKKKDDNNwwwWWWWWWWWWWWWWWWNKK.....',
-  '........KKSSsKKKNNwwwwWWWWWWWWWWWWNNKsSKK...',
-  '.......KSvvVsKKKNNNwwwwWWWWWWWWWWNNKKsVvSK..',
-  '......KSvVVAVsKKKNNNNNNWWWWWWNNNNKKsVAVvSK..',
-  '....KKSvVVAAVsSSKKKKKKKddKdddKKKKSSsVAAvSK..',
-  '...KsvVVVAAVsSKsddddddKKSMSKdddddKsSsvVvK...',
-  '.KKdvvVVVAAVsSKssddddKSMGFAKddddssKSsvKK....',
-  'KddvvVVVAAVsSKddBbbddKKsAFKKdddddeKSKK......',
-  'KddvvVVAAVsSKKddBBbbdWWKsKWWddddeesdK.......',
-  'KFMvvVVAVsSKKdddBBbdWWWWKWWWWdddeesddK......',
-  'KFMAvVVsSKK.KdddBBBdWWWWWWWWWdddeesddK......',
-  '.KFMAMSKK...KdddBBddwWWWWWWWWddeesdddK......',
-  '..KKKKK.....KddddBddwWWWWWWWWddesddddK......',
-  '.............KddddddwwWWWWWWWddsdddddK......',
-  '..............KdddddwwwWWWWWWdddddddK.......',
-  '...............KKKdddwwwwwwwwdddddKKK.......',
-  '.................KOOKKKKKKKKKKKKOOK.........',
-  '................KOOoK..........KOOoK........',
+  '..........................................................',
+  '....................................KKK...................',
+  '...................................KNNHK..................',
+  '..................................KNNBBHKK................',
+  '.................................KNNBBBBHNKK..............',
+  '...............................KKDNBBBBBBHHNKK............',
+  '..............................KDDNNBBBBBBBBHHNK...........',
+  '.............................KDDNNNBBBBBBBBBHBNK..........',
+  '............................KDDNNNNBBBBBBBBBBHBNK.........',
+  '............................KDDNNBBWWWWBNBBBBWWBNK........',
+  '........................F..KDDNNBBWWWWWWNNNWWWWBNK...KKKK.',
+  '.......................FM.KDDNNBMFKKKKWWWNWWKKKKWNK.KHBbHK',
+  '......................KFMKKDDNBMFFEGGGKWWNWKEGGKWNKKHBBBHK',
+  '.......................KFFMDDNBwMFEMGGKWWNWKEMGKWNKSMFBBHK',
+  '..........KKKKKKK.......KFMDDNBwWKAMFFKWKKWKBCcKWNKSABBHK.',
+  '......KKKKSSSSsssKKKK....KDDNNBwWWKMFKWWKOOKKCcWWNKBBBBK..',
+  '...KKKSvvVVVVAAAAVVssSKK.KDDNNBwWPPPWWWKoooKWPPWWNKBBK....',
+  '.KKFMAMvvVVVVAAAAAAVVvsSKKDDNNNwwWPPWWWWKKKKWWPPWNKsSKK...',
+  'KFFMAMvvvVVVAAAAAAAAVVvsSSKNNNwwwwWWWWWWWWWWWWWWNNKsVvSK..',
+  'KFFMAMvvvVVVVAAAAAAVVvvddssKNNNwwwwWWWWWWWWWWWWNNKsVAVvSK.',
+  '.KFMAMvvvVVVVAAAAVVvvdddeesSKKKNNNNNNWWWWWWNNNNKSSsVAAvSK.',
+  '..KKKKvvvVVVVAAAVVvvddddeesdKKKKKKddKKSFSKKddKKKKsSsvVvKK.',
+  '...KFFMVVVVVAAVVvvddddddeedddBBBddssKSMGFGMSKssddddKSvKK..',
+  '..KFFMAMVVVAVVvvddddddddeeddBBBBbddKSMFAFAMSKdddddKKK.....',
+  '.KFFMAMvvVVvvvdddddddddeeddBBBBbbddWWKSMFMSKWWddddeK......',
+  '.KFMAMvvvvvddddKKKdddddeeddBBBbbdWWWWWKSSSKWWWWddesdK.....',
+  '..KKKKKKddddddK..KKddddeeddBBBddwWWWWWWWWWWWWdddeesdK.....',
+  '.......KKKKKKK....KKKKdddddBBddwwWWWWWWWWWWWdddeesdK......',
+  '.....................KOOKddBBddwwWWWWWWWWWWddddeedK.......',
+  '....................KOOoKddBddwwwWWWWWWWWWdddddddK........',
+  '...................KOOooKdddddwwwWWWWWWWddddddddK.........',
+  '....................KKKK.KOOKddwwwwwwwwdddddddKK..........',
+  '........................KOOoKKKKKKKKKKKKKKKKKK............',
+  '.......................KOOooK.............................',
+  '........................KKKK..............................',
+  '..........................................................',
 ];
 
-function buildGenesis9DarkHeroCache() {
-  const c = document.createElement('canvas');
-  c.width = GENESIS_9_GRID_W;
-  c.height = GENESIS_9_GRID_H;
-  const g = c.getContext('2d');
-  GENESIS_9_BASE_MATRIX.forEach((row, ry) => {
-    for (let rx = 0; rx < row.length; rx++) {
-      const col = GENESIS_9_PALETTE[row[rx]];
-      if (!col) continue;
-      g.fillStyle = col;
-      g.fillRect(rx, ry, 1, 1);
-    }
-  });
-  return c;
+function buildGenesis9DarkHeroFrames() {
+  const frames = [];
+  for (let frameIdx = 0; frameIdx < 4; frameIdx++) {
+    const c = document.createElement('canvas');
+    c.width = GENESIS_9_GRID_W;
+    c.height = GENESIS_9_GRID_H;
+    const g = c.getContext('2d');
+    GENESIS_9_BASE_MATRIX.forEach((row, ry) => {
+      for (let rx = 0; rx < row.length; rx++) {
+        const col = GENESIS_9_PALETTE[row[rx]];
+        if (!col) continue;
+        let dy = 0;
+        // Billowing 4-frame sinusoidal S-wave across the 24-column Superman cape
+        if (rx < 24 && ry >= 14 && ry < 28) {
+          const dist = 24 - rx;
+          const wave = Math.sin(dist * 0.34 - (frameIdx * Math.PI) / 2);
+          dy = Math.round(wave * (dist > 14 ? 2.1 : dist > 6 ? 1.3 : 0.6));
+        } else if (rx >= 18 && rx <= 29 && ry >= 28) {
+          // Subtle aerodynamic foot flutter on alternating frames
+          dy = frameIdx % 2 === 0 ? 0 : -1;
+        }
+        const py = Math.max(0, Math.min(GENESIS_9_GRID_H - 1, ry + dy));
+        g.fillStyle = col;
+        g.fillRect(rx, py, 1, 1);
+      }
+    });
+    frames.push(c);
+  }
+  return frames;
 }
 
 function getGenesis9DarkHeroLines() {
@@ -2933,7 +2954,7 @@ function getGenesis9DarkHeroLines() {
   ];
 }
 
-function drawGenesis9DarkHeroBubble(ctx, headX, headTopY, now, elapsed, phoneMode) {
+function drawGenesis9DarkHeroBubble(ctx, headX, headTopY, patrolCenterX, now, elapsed, phoneMode) {
   const P = 2;
   const lines = getGenesis9DarkHeroLines();
   const autoTurn = Math.floor(Math.max(0, elapsed) / (TOWN_TALK.turnMs * 1.1));
@@ -2945,12 +2966,12 @@ function drawGenesis9DarkHeroBubble(ctx, headX, headTopY, now, elapsed, phoneMod
       : i18n('★ GENESIS #9 · DARK HERO');
 
   // Strict non-overlapping sky corridor:
-  // Desktop: menu right is x=646, moon bottom is y=136 -> corridor x=656..952, y=140..196
-  // Phone:   menu right is x=729, zoomed moon bottom is y=153 -> corridor x=734..954, y=162..246
+  // Desktop: menu right is x=646, moon bottom is y=136 -> bubble at y=138..188, hero flies at y=198..284, tree starts at y=288
+  // Phone:   menu right is x=729, zoomed moon bottom is y=153 -> bubble at y=160..212, hero flies at y=236..332, tree starts at y=346
   const areaL = phoneMode ? 734 : 656;
   const areaR = 952;
   const maxW = areaR - areaL;
-  const bob = Math.floor(now / 260) % 2 === 0 ? 0 : -2;
+  const bob = Math.floor(now / 280) % 2 === 0 ? 0 : -2;
 
   ctx.save();
   let mainFontPx = phoneMode ? 11.5 : 12.5;
@@ -2969,18 +2990,19 @@ function drawGenesis9DarkHeroBubble(ctx, headX, headTopY, now, elapsed, phoneMod
 
   const contentW = Math.max(w1, w2, wBadge);
   const bw = Math.min(maxW, Math.max(168, Math.round((contentW + 24) / 4) * 4));
-  const bh = phoneMode ? 54 : 52;
-  const bx = Math.max(areaL, Math.min(areaR - bw, Math.round(headX - bw * 0.56)));
-  const minY = phoneMode ? 164 : 140;
-  const by = Math.max(minY, Math.round(headTopY - bh - 9 + bob));
-  const tailX = Math.max(bx + 18, Math.min(bx + bw - 18, Math.round(headX)));
+  const bh = phoneMode ? 52 : 50;
+  // Anchor bubble smoothly around the patrol center with gentle horizontal follow so text stays rock-steady to read
+  const followX = Math.round(patrolCenterX * 0.7 + headX * 0.3);
+  const bx = Math.max(areaL, Math.min(areaR - bw, Math.round(followX - bw * 0.52)));
+  const by = (phoneMode ? 160 : 138) + bob;
+  const tailX = Math.max(bx + 20, Math.min(bx + bw - 20, Math.round(headX)));
 
-  // Store hit rect for click-to-cycle interaction in Scene 5
+  // Store generous hit rect covering the entire flight corridor + bubble for click-to-cycle interaction
   MOTION_STATE.darkHeroHitBox = {
-    x: Math.min(bx, headX - 46),
-    y: by - 8,
-    w: Math.max(bw, 96),
-    h: headTopY + 72 - (by - 8),
+    x: areaL,
+    y: by - 10,
+    w: areaR - areaL,
+    h: (phoneMode ? 344 : 286) - (by - 10),
   };
 
   // 1. Deep Shadow Drop
@@ -3022,7 +3044,7 @@ function drawGenesis9DarkHeroBubble(ctx, headX, headTopY, now, elapsed, phoneMod
   ctx.textBaseline = 'middle';
   ctx.fillText(badgeText, pillX + 6, pillY + pillH / 2 + 0.5);
 
-  // 7. Stepped Pixel Pointer Tail pointing down to Genesis #9's cowl
+  // 7. Stepped Pixel Pointer Tail dynamically tracking Flying Genesis #9 below
   ctx.fillStyle = '#080512';
   ctx.fillRect(tailX - P * 2, by + bh, P * 4, P);
   ctx.fillRect(tailX - P, by + bh + P, P * 2, P * 2);
@@ -3036,123 +3058,164 @@ function drawGenesis9DarkHeroBubble(ctx, headX, headTopY, now, elapsed, phoneMod
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#f5d0fe';
-  ctx.fillText(pair.top, bx + bw / 2, by + 19);
+  ctx.fillText(pair.top, bx + bw / 2, by + 18);
   ctx.fillStyle = '#ffffff';
-  ctx.fillText(pair.bot, bx + bw / 2, by + 37);
+  ctx.fillText(pair.bot, bx + bw / 2, by + 35);
 
   ctx.restore();
 }
 
 function drawGenesis9DarkHeroCameo(ctx, treeCx, treeBaseY, now, elapsed) {
-  if (!GENESIS_9_CACHE) GENESIS_9_CACHE = buildGenesis9DarkHeroCache();
+  if (!GENESIS_9_FRAMES) GENESIS_9_FRAMES = buildGenesis9DarkHeroFrames();
   const phoneMode = townPhone();
   const P = GENESIS_9_P;
-  const treeTopY = Math.round(treeBaseY - XMAS_TREE_H * XMAS_TREE_P); // 288 desktop, 346 phone
 
-  // Position Genesis #9 in the open sky above the Halloween tree and below the full moon
-  const bob = Math.round(Math.sin(now * 0.0038) * 4);
-  const bodyCenterCol = 28;
-  const heroCx = phoneMode ? 848 : Math.round((treeCx + 838) / 2);
-  const spriteH = GENESIS_9_GRID_H * P; // 70 px
-  const spriteTopY = (phoneMode ? treeTopY - spriteH - 16 : treeTopY - spriteH - 14) + bob;
-  const spriteLeftX = Math.round(heroCx - bodyCenterCol * P);
-  const at = (gx, gy) => [spriteLeftX + gx * P, spriteTopY + gy * P];
+  // Superman Figure-8 Sky Patrol Corridor between RPG menu, Full Moon, and Halloween Tree:
+  // Desktop corridor: x=712..944, y=198..284 (treeTopY=288, bubble bottom=188)
+  // Mobile corridor:  x=760..944, y=234..332 (treeTopY=346, bubble bottom=212)
+  const patrolCenterX = phoneMode ? 848 : Math.max(812, Math.round((treeCx + 834) / 2));
+  const patrolTopBaseY = phoneMode ? 248 : 206;
+  const sweepRx = phoneMode ? 34 : 52;
+  const swoopRy = phoneMode ? 11 : 7;
 
-  ctx.save();
+  const flightPhase = now * 0.00115;
+  const sinX = Math.sin(flightPhase);
+  const vx = Math.cos(flightPhase); // >= 0: flying RIGHT; < 0: banking & flying LEFT
+  const vy = Math.cos(flightPhase * 2);
+  const facingRight = vx >= 0;
+  const dir = facingRight ? 1 : -1;
 
-  // 1. Pulsing Dark-Violet Shadow-Flame Halo behind Genesis #9
-  const pulse = 0.5 + 0.5 * Math.sin(now * 0.0055);
+  const heroCx = Math.round(patrolCenterX + sinX * sweepRx);
+  const spriteTopY = Math.round(patrolTopBaseY + Math.sin(flightPhase * 2) * swoopRy);
+  const spriteW = GENESIS_9_GRID_W * P; // 116 px
+  const spriteH = GENESIS_9_GRID_H * P; // 72 px
+  const pivotCol = 37; // chest / head center column in the 58-wide grid
+  const pivotX = heroCx;
+  const pivotY = spriteTopY + 19 * P;
+  const frameIdx = Math.floor(now / 90) % GENESIS_9_FRAMES.length;
+  const frameCanvas = GENESIS_9_FRAMES[frameIdx];
+
   const clickBoost =
     MOTION_STATE.darkHeroPulseAt && now - MOTION_STATE.darkHeroPulseAt < 900
       ? 1 - (now - MOTION_STATE.darkHeroPulseAt) / 900
       : 0;
-  const auraCx = heroCx - 4;
+
+  ctx.save();
+
+  // 1. Pulsing Dark-Violet Shadow-Flame Halo tracking Flying Genesis #9
+  const pulse = 0.5 + 0.5 * Math.sin(now * 0.006);
+  const auraCx = heroCx - dir * 10;
   const auraCy = spriteTopY + 38;
-  const auraR = 46 + pulse * 8 + clickBoost * 18;
+  const auraR = 52 + pulse * 8 + clickBoost * 18;
   const aura = ctx.createRadialGradient(auraCx, auraCy, 4, auraCx, auraCy, auraR);
-  aura.addColorStop(0, `rgba(192, 132, 252, ${(0.42 + pulse * 0.14 + clickBoost * 0.25).toFixed(2)})`);
-  aura.addColorStop(0.52, `rgba(126, 34, 206, ${(0.24 + pulse * 0.1).toFixed(2)})`);
+  aura.addColorStop(0, `rgba(216, 180, 254, ${(0.44 + pulse * 0.14 + clickBoost * 0.25).toFixed(2)})`);
+  aura.addColorStop(0.52, `rgba(126, 34, 206, ${(0.26 + pulse * 0.1).toFixed(2)})`);
   aura.addColorStop(1, 'rgba(46, 16, 101, 0)');
   ctx.fillStyle = aura;
   ctx.fillRect(auraCx - auraR, auraCy - auraR, auraR * 2, auraR * 2);
 
-  // 2. Pixel Levitation Shadow-Ring hovering just above the Halloween tree witch-hat topper
-  const ringY = treeTopY - 6;
-  ctx.fillStyle = 'rgba(88, 28, 135, 0.55)';
-  ctx.fillRect(heroCx - 18, ringY, 36, P);
-  ctx.fillStyle = '#c084fc';
-  const ringGlint = Math.floor(now / 180) % 3;
-  ctx.fillRect(heroCx - 14 + ringGlint * 10, ringY, P * 2, P);
+  // 2. Superman Sonic Boom Shockwave Ring & Supersonic Slipstream Streaks behind his Cape/Feet
+  const wakeX = heroCx - dir * 42;
+  const wakeY = spriteTopY + 46;
+  const ringPulse = (now * 0.0028) % 1;
+  const ringH = Math.round((14 + ringPulse * 10) / P) * P;
+  ctx.fillStyle = `rgba(232, 121, 249, ${(0.72 * (1 - ringPulse)).toFixed(2)})`;
+  ctx.fillRect(wakeX - P, wakeY - ringH, P * 2, ringH * 2);
+  ctx.fillStyle = `rgba(168, 85, 247, ${(0.55 * (1 - ringPulse)).toFixed(2)})`;
+  ctx.fillRect(wakeX - dir * 4, wakeY - ringH + P * 2, P * 2, (ringH - P * 2) * 2);
 
-  // 3. Animated Billowing Violet Shadow-Flame Tongues behind/left of the Cape
-  const flamePhase = Math.floor(now / 120) % 4;
-  const capeFlames = [
-    [2, 24], [1, 25], [0, 26], [1, 27], [3, 28], [5, 29], [8, 28], [11, 23],
+  // Crisp 16-bit supersonic wind lines & blazing shadow-flame contrails streaming behind
+  const streakOffsets = [
+    [-34, 28, 18, '#e879f9'],
+    [-46, 36, 24, '#a855f7'],
+    [-38, 46, 20, '#f5d0fe'],
+    [-28, 56, 16, '#c084fc'],
   ];
-  capeFlames.forEach(([gx, gy], i) => {
-    const wave = ((i + flamePhase) % 3) - 1;
-    const [fx, fy] = at(gx + wave, gy - ((i + flamePhase) % 2));
-    ctx.fillStyle = i % 3 === 0 ? '#e879f9' : i % 2 === 0 ? '#a855f7' : '#7e22ce';
-    ctx.fillRect(fx, fy, P, P * 2);
-    if ((i + flamePhase) % 2 === 0) {
-      ctx.fillStyle = '#080b16';
-      ctx.fillRect(fx - P, fy + P, P, P);
+  streakOffsets.forEach(([dx, dy, len, col], i) => {
+    const phaseShift = ((now * 0.08 + i * 11) % 16);
+    const sx = Math.round((heroCx + dir * (dx - phaseShift)) / P) * P;
+    const sy = spriteTopY + dy + ((i + frameIdx) % 2) * P;
+    ctx.fillStyle = col;
+    ctx.fillRect(facingRight ? sx - len : sx, sy, len, P);
+    if (i % 2 === 0) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(facingRight ? sx - P * 2 : sx + len - P * 2, sy, P * 2, P);
     }
   });
 
-  // 4. Cached 44x35 Pixel Art Sprite of Genesis #9 Dark Hero
+  // 3. Translucent Violet Shadow-Clone Afterimage Ghost trailing in the flight wake
+  const pitchRad = dir * (vy * 0.045 - 0.04);
+  ctx.save();
+  ctx.globalAlpha = 0.24 + clickBoost * 0.16;
+  ctx.translate(pivotX - dir * 12, pivotY + 2);
+  ctx.rotate(pitchRad);
+  if (!facingRight) ctx.scale(-1, 1);
   ctx.imageSmoothingEnabled = false;
-  ctx.drawImage(GENESIS_9_CACHE, spriteLeftX, spriteTopY, GENESIS_9_GRID_W * P, GENESIS_9_GRID_H * P);
+  ctx.drawImage(frameCanvas, -pivotCol * P, -19 * P, spriteW, spriteH);
+  ctx.restore();
 
-  // 5. Occasional Natural Eye Blink ( keeps the amethyst flame aura even while blinking )
+  // 4. Main Flying Genesis #9 Dark Hero Sprite (4-Frame Rippling Superman Cape + Forward Fist)
+  ctx.save();
+  ctx.translate(pivotX, pivotY);
+  ctx.rotate(pitchRad);
+  if (!facingRight) ctx.scale(-1, 1);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(frameCanvas, -pivotCol * P, -19 * P, spriteW, spriteH);
+
+  // Local grid helper inside the oriented hero coordinate space
+  const localAt = (gx, gy) => [(gx - pivotCol) * P, (gy - 19) * P];
+
+  // 5. Natural Eye Blink while flying
   const blinkCycle = (now + 1370) % 4200;
   if (blinkCycle > 4040) {
-    // Close both eyes briefly with cream-white face + dark curved lash line
-    const [lx, ly] = at(20, 10);
-    const [rx, ry] = at(29, 10);
+    const [lx, ly] = localAt(33, 11);
+    const [rx, ry] = localAt(41, 11);
     ctx.fillStyle = '#fffbeb';
-    ctx.fillRect(lx, ly, 4 * P, 5 * P);
-    ctx.fillRect(rx, ry, 4 * P, 5 * P);
+    ctx.fillRect(lx, ly, 4 * P, 4 * P);
+    ctx.fillRect(rx, ry, 4 * P, 4 * P);
     ctx.fillStyle = '#080b16';
     ctx.fillRect(lx, ly + 2 * P, 4 * P, P);
     ctx.fillRect(rx, ry + 2 * P, 4 * P, P);
   }
 
-  // 6. Signature Animated Blazing Amethyst Left-Eye Psychic Flame Trail (streaming up-left!)
-  // Matches the glowing violet eye-flame wisp in the official #9 Dark Hero artwork
-  const eyeTrail = [
-    [20, 13, '#ffffff'],
-    [19, 13, '#f5d0fe'],
-    [18, 12 - (flamePhase % 2), '#e879f9'],
-    [17, 12 - (flamePhase % 2), '#c084fc'],
-    [16, 11 - ((flamePhase + 1) % 2), '#a855f7'],
-    [14, 10 - (flamePhase % 2), '#9333ea'],
-    [12 - (flamePhase % 2), 9 - ((flamePhase + 1) % 2), '#e879f9'],
+  // 6. Animated Blazing Amethyst Left-Eye Psychic Flame Ribbon streaming back in flight
+  const flameWave = frameIdx % 2;
+  const eyeRibbon = [
+    [25, 11 - flameWave, '#ffffff'],
+    [23, 10 - flameWave, '#f5d0fe'],
+    [21, 9 + flameWave, '#e879f9'],
+    [19, 8 + flameWave, '#c084fc'],
+    [17, 8 - flameWave, '#a855f7'],
   ];
-  eyeTrail.forEach(([gx, gy, col]) => {
-    const [ex, ey] = at(gx, gy);
+  eyeRibbon.forEach(([gx, gy, col]) => {
+    const [ex, ey] = localAt(gx, gy);
     ctx.fillStyle = col;
-    ctx.fillRect(ex, ey, P, P);
+    ctx.fillRect(ex, ey, P * 2, P);
   });
 
-  // 7. Diamond Amethyst Chest Clasp Specular Twinkle on the Beat
-  if (Math.floor(now / 280) % 2 === 0) {
-    const [gx, gy] = at(26, 23);
+  // 7. Outstretched Superman Fist Supersonic Violet Energy Cone & Diamond Chest Gem Glint
+  const [fistX, fistY] = localAt(56, 12);
+  ctx.fillStyle = frameIdx % 2 === 0 ? '#e879f9' : '#c084fc';
+  ctx.fillRect(fistX, fistY - P, P, P * 4);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(fistX + P, fistY, P, P * 2);
+
+  if (Math.floor(now / 240) % 2 === 0) {
+    const [gx, gy] = localAt(38, 22);
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(gx, gy, P, P);
     ctx.fillStyle = '#f5d0fe';
     ctx.fillRect(gx - P, gy, P, P);
     ctx.fillRect(gx + P, gy, P, P);
   }
+  ctx.restore();
 
-  // 8. Rising Amethyst Shadow-Flame Embers around Genesis #9 ( matches artwork's floating purple wisps )
+  // 8. Floating Amethyst Shadow-Flame Embers around Flying Genesis #9
   const emberCount = clickBoost > 0 ? 9 : 5;
   for (let e = 0; e < emberCount; e++) {
-    const prog = ((now * 0.0016 + e * 0.21) % 1);
-    const side = e % 2 === 0 ? -1 : 1;
-    const baseDx = side < 0 ? -28 - (e % 3) * 8 : 22 + (e % 2) * 8;
-    const ex = Math.round((heroCx + baseDx + Math.sin(now * 0.004 + e) * 4) / P) * P;
-    const ey = Math.round((spriteTopY + 54 - prog * 48) / P) * P;
+    const prog = (now * 0.0018 + e * 0.21) % 1;
+    const ex = Math.round((heroCx - dir * (16 + prog * 42) + Math.sin(now * 0.005 + e) * 5) / P) * P;
+    const ey = Math.round((spriteTopY + 52 - prog * 38 + (e % 3) * 6) / P) * P;
     ctx.fillStyle = e % 2 === 0 ? '#a855f7' : '#e879f9';
     ctx.fillRect(ex, ey, P, P * 2);
     ctx.fillStyle = '#ffffff';
@@ -3161,10 +3224,9 @@ function drawGenesis9DarkHeroCameo(ctx, treeCx, treeBaseY, now, elapsed) {
 
   ctx.restore();
 
-  // 9. B-Grade Halloween Special Cameo Speech Bubble right above Genesis #9 (below the moon)
-  drawGenesis9DarkHeroBubble(ctx, heroCx, spriteTopY, now, elapsed, phoneMode);
+  // 9. B-Grade Halloween Special Cameo Speech Bubble docked above the flight corridor
+  drawGenesis9DarkHeroBubble(ctx, heroCx + dir * 6, spriteTopY, patrolCenterX, now, elapsed, phoneMode);
 }
-
 
 function drawPixelGroundShadow(ctx, centerX, groundY, width = 62, hopOffset = 0) {
   const shrink = Math.max(0.72, 1 - Math.abs(hopOffset) * 0.018);
@@ -4014,7 +4076,7 @@ function drawHalloweenTownOverlay(ctx, now) {
 // 2 = Full-Face Carved Jack-o'-Lantern PUMPKIN MASK (호박 마스크) & Vine Collar (Friend 1 '22')
 // 3 = Full-Face Grim Skull Mask & Skeleton Ribcage Suit (Friend 2 '04')
 // 4 = Frankenstein's Monster — Flat-Top Bolted Hair, Forehead Stitches, Side Bolts & Patch Vest (Friend 3 '09')
-// 5 = Hellfire Demon — Curved Crimson Horns, Crown Gem & Spread Leathery Bat Wings (Friend 4 '10')
+// 5 = Ancient Egyptian Mummy — Layered Linen Bandage Wraps, Loose Bandage Tail & Cute Eye/Beak Window (Friend 4 '10')
 // 6 = Cute Sheet-Ghost Hood & Ancient Mummy Bandage Wraps (Friend 5 '06')
 const HALLOWEEN_HAT_VARIANTS = [
   [
@@ -4164,29 +4226,34 @@ const HALLOWEEN_HAT_VARIANTS = [
   ],
   [
     '................................',
-    '.....oooo..............oooo.....',
-    '....oVVVVo....oooo....oVVVVo....',
-    '...oVVvvVVo..oGYYGo..oVvvVVVo...',
-    '...oVVvvvVVooGGYYGGooVVvvvVVo...',
-    '....oovvvvVVVVGGGGVVVVvvvvoo....',
-    '......oovvvVVVooooVVVvvvoo......',
-    '........oooooooooooooooo........',
-    '..............oooo..............',
-    '................................',
-    '................................',
-    '................................',
-    '................................',
-    '................................',
-    '.oooo......................oooo.',
-    'oVVVVoo..................ooVVVVo',
-    'oVVvvVVoo..............ooVVvvVVo',
-    'oVVvvvVVVoo..ooGGo...ooVVVvvvVVo',
-    'oVvvvvvvVVVooVVYYVVooVVVvvvvvvVo',
-    'oVvoovvvvVVVo.oooo.oVVVvvvvoovVo',
-    '.oo..oovvVVo........oVVvvoo..oo.',
-    '.......oooo..........oooo.......',
-    '................................',
-    '................................',
+    '...........oooooooooo...........',
+    '.........ooYYYYMMMMMMoo.........',
+    '........oYYMMMMmnndddMMo........',
+    '.......oYMMnddddYYYYmMMMo.......',
+    '......oYYYYYMMMMmmnnddMMMo......',
+    '.....oYMMMMmnnddddYYYYmMMMo.....',
+    '...oooYndddddYYYYYYMMMMmmMMMo...',
+    '..oYYMoYYYYYYMMMMmmnnddddmMMo...',
+    '.oYMMmoYMMMMmnnddddYYYYYYmMMo...',
+    '.oMmmooYddddYYYYYYMMMMmmmMMMo...',
+    '..ooo.oYYYYYooooMMnnooooYMMMo...',
+    '.....oYMMMMmo...oooo...oMMmMo...',
+    '.....oMnndddo..........odddMo...',
+    '.....oYYYYYMo..........oYYYMo...',
+    '.....oMMMMmMo...........oMmMo...',
+    '......onddddoooo....oooodddno...',
+    '......ooYYYYYYYYooooYYYYYYoo....',
+    '.......oMMMMmmnnddddMMMMMMo.....',
+    '.......oYnndddddYYYYdddddno.....',
+    '......oYYYYYMMMMmmnnYYYYYYYo....',
+    '.....oYMMMmoMMMMddddomMMMMmMo...',
+    '.....oMdddoYndddYYYYModdddnMo...',
+    '....oYYYYYoYYYYMMMMmmoYYYYYYMo..',
+    '....oMMMMmoMMMMnnddddoddddmmMo..',
+    '.....ondddoYdddYYYYYYoYYYYMMo...',
+    '......ooooooYYYYMMMMMomMMMoo....',
+    '........ooooooooMMmooooooo......',
+    '...............oooo.............',
     '................................',
     '................................',
     '................................',
@@ -4240,6 +4307,10 @@ const HALLOWEEN_HAT_COLORS = {
   C: '#38bdf8',
   L: '#a3e635',
   B: '#f472b6',
+  M: '#f2e8d0',
+  m: '#d1c09e',
+  n: '#8c7658',
+  d: '#4a3a2a',
 };
 const HALLOWEEN_HAT_CACHE = new Map();
 function drawHalloweenHatOnSheet(ctx, size, seed = 0) {
