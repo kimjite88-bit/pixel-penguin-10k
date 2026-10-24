@@ -384,6 +384,20 @@ button {
   box-shadow: 0 4px 12px rgba(225, 48, 108, 0.25);
 }
 
+.social-logo-btn.social-facebook {
+  color: #1877f2;
+  border-color: rgba(24, 119, 242, 0.42);
+  background: rgba(24, 119, 242, 0.11);
+}
+
+.social-logo-btn.social-facebook:hover {
+  transform: translateY(-1.5px);
+  color: #3b8ef5;
+  border-color: rgba(24, 119, 242, 0.82);
+  background: rgba(24, 119, 242, 0.22);
+  box-shadow: 0 4px 12px rgba(24, 119, 242, 0.28);
+}
+
 .social-logo-btn.social-x {
   color: #f1f5f9;
   border-color: rgba(226, 232, 240, 0.34);
@@ -398,14 +412,22 @@ button {
   box-shadow: 0 4px 12px rgba(255, 255, 255, 0.18);
 }
 
-@media (max-width: 400px) {
+@media (max-width: 440px) {
   .hero-social-links {
-    gap: 5px;
+    gap: 3.5px;
   }
   .hero-social-links .social-logo-btn {
-    width: 28px;
-    height: 28px;
-    border-radius: 8px;
+    width: 24px;
+    height: 24px;
+    border-radius: 7px;
+  }
+  .hero-social-links .social-logo-btn svg {
+    width: 13.5px;
+    height: 13.5px;
+  }
+  .hero-top-block .hero-eyebrow {
+    font-size: 11.5px;
+    letter-spacing: 0;
   }
 }
 
@@ -2482,6 +2504,11 @@ body.ufo-fullscreen-lock {
   background: rgba(225, 48, 108, 0.08);
 }
 
+.notice-official-link.notice-link-facebook {
+  border-color: rgba(24, 119, 242, 0.42);
+  background: rgba(24, 119, 242, 0.08);
+}
+
 .notice-official-link.notice-link-x {
   border-color: rgba(226, 232, 240, 0.34);
   background: rgba(226, 232, 240, 0.06);
@@ -2504,6 +2531,10 @@ body.ufo-fullscreen-lock {
 
 .notice-link-badge.social-telegram {
   color: #2aabee;
+}
+
+.notice-link-badge.social-facebook {
+  color: #1877f2;
 }
 
 .notice-link-badge.social-x {
