@@ -905,6 +905,12 @@ body.ufo-fullscreen-lock {
   -webkit-user-select: none;
 }
 
+/* Without the Fullscreen API (iPhone Safari, in-app webviews) the fixed theater lives inside main's z-index 2
+   stacking context, so the sticky site header (z 100) covered the stage top + HUD. Lift main above it. */
+body.ufo-fullscreen-lock .main-container {
+  z-index: 100000;
+}
+
 .mobile-fullscreen-touchpad {
   display: none;
   touch-action: none;

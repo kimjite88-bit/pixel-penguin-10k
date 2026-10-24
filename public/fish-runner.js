@@ -2204,7 +2204,7 @@ function drawFishStardewBar(ctx, run, now) {
       : ko
       ? '밀당 게이지'
       : i18n('CATCH BAR');
-  ctx.fillText(barTitle, trackX + (trackW + progW + 8) / 2, trackY - 15);
+  ctx.fillText(barTitle, trackX + (trackW + progW + 8) / 2, trackY - 15, trackW + progW + 22);
 
   // Water column track background
   const wg = ctx.createLinearGradient(0, trackY, 0, trackY + trackH);
@@ -2274,7 +2274,10 @@ function drawFishStardewBar(ctx, run, now) {
     const isMiss = run.phase === 'miss' || run.phase === 'slip';
     ctx.fillStyle = isBite ? (Math.floor(now / 110) % 2 === 0 ? '#fde047' : '#ffffff') : isMiss ? '#fb7185' : '#bae6fd';
     ctx.font = isBite ? '900 14px "Pretendard", "Malgun Gothic", sans-serif' : '800 11px "Pretendard", "Malgun Gothic", sans-serif';
+    ctx.save();
+    ctx.direction = 'ltr'; // Latin label: Urdu's per-frame rtl turned it into "!!HIT"
     ctx.fillText(isBite ? 'HIT!!' : isMiss ? 'MISS' : 'WAIT', trackX + trackW / 2, trackY + trackH / 2);
+    ctx.restore();
   }
 
   // Right-side Catch Progress Bar (0..100%)
@@ -2297,7 +2300,8 @@ function drawFishStardewBar(ctx, run, now) {
   ctx.fillText(
     run.hold ? (ko ? '▲ 당기는 중' : i18n('▲ REELING')) : ko ? '▼ 놓는 중' : i18n('▼ DROPPING'),
     trackX + (trackW + progW + 8) / 2,
-    trackY + trackH + 16
+    trackY + trackH + 16,
+    trackW + progW + 22 // stay inside the panel (Urdu / Bengali labels are wider)
   );
 
   ctx.restore();
@@ -2763,7 +2767,7 @@ function drawFishRunnerFrame(ctx, now, spId) {
 // 1. FISH_DEFAULT_FEET_PIXEL_ROWS: Shirtless NFTs (~1,500 tokens with Clothes: 'None') & Default Character (!UFO_GAME.hasNft) —
 //    Species-matched feather lower body & belly (종별 깃털색 하체) + 3-toed orange webbed penguin feet + shoulder-slung rod handle!
 // 2. FISH_WADER_PIXEL_ROWS: Clothed NFTs (~8,500 tokens with Clothes !== 'None' & Genesis #0~#10) —
-//    100% Upper Clothes ON TOP overhanging Compact One-Piece Wader Pants + Boots (상의 위 + 일체형 하의장화)!
+//    Upper clothes stay on top; below them one of FISH_PANTS_STYLES (trousers + boots, 하의) picked per token.
 const FISH_SPECIES_LOWER_PALETTES = {
   '01': { p: '#0c143a', L: '#16449a', M: '#2860cc', b: '#2860cc', c: '#e8d0ac', w: '#fcf2dc', s: '#16449a' }, // Classic (SPC-05)
   '02': { p: '#2a160e', L: '#62391f', M: '#8c5733', b: '#8c5733', c: '#ddbf98', w: '#f7e8cf', s: '#62391f' }, // Cocoa Penguin (Brown) (SPC-01)
@@ -2813,27 +2817,93 @@ const FISH_DEFAULT_FEET_PIXEL_ROWS = [
 ];
 
 const FISH_WADER_PIXEL_ROWS = [
-  // col 7..42 (36 cols; penguin torso col 11..39 is index 4..32)
+  // col 7..42 (36 cols; penguin torso col 11..39 is index 4..32, centre index 18 = grid col 25)
   '......KCK...........................', // r38: rod shaft crossing left shoulder
   '.......KCYK.........................', // r39: cork grip + gold ring
   '........KCCK........................', // r40: cork fore-grip
   '.......KRRKCK.......................', // r41: compact spinning reel + cork handle
   '.......KKKKCYK......................', // r42: reel base + gold butt cap
   '...........KKK......................', // r43: rod butt cap outline
-  '....................................', // r44: 100% unoccluded NFT upper clothes ON TOP!
-  '....................................', // r45: 100% unoccluded NFT upper clothes ON TOP!
-  '....................................', // r46: 100% unoccluded NFT upper clothes ON TOP!
-  '....................................', // r47: 100% unoccluded NFT upper clothes bottom hem ON TOP!
-  '....KKKKKKKKKKKKKKKKKKKKKKKKKKKKK...', // r48: upper clothes bottom hem outline (col 11..39)
-  '........KDDDBBBBBBBDBDDBBBBBDDK.....', // r49: overhang shadow under upper clothes on unified wader pants (col 15..35)
-  '........KLLHBBBBBBBDBLHBBBBBDDK.....', // r50: unified one-piece wader trouser thighs (col 15..35, NO middle gap!)
-  '........KLLHBBBBBBKKKLLBBBBBDDK.....', // r51: lower trouser thighs meeting crotch inseam K (col 15..35)
-  '.......KLLHHBBBBBK...KLLBBBBHLLK....', // r52: seamless one-piece flow into boot ankles (col 14..22 & 26..34)
-  '......KLLHWBBBBBBK...KBBBBBBWHLLK...', // r53: cute compact rounded black boot toes (col 13..22 & 26..35)
-  '......KLLBBBBBBBBK...KBBBBBBBBLLK...', // r54: lower black rubber boot vamp
-  '......KSSSSSSSSSSK...KSSSSSSSSSSK...', // r55: dark vulcanized lugged sole
-  '.......KKKKKKKKKK.....KKKKKKKKKK....', // r56: crisp bottom outline touching ground line (y = +46)
+  '....................................', // r44..47: NFT upper clothes stay 100% on top
+  '....................................',
+  '....................................',
+  '....................................',
+  '....KKKKKKKKKKKKKKKKKKKKKKKKKKKKK...', // r48: upper clothes hem outline
+  '........KQQQQQQQQQQQQQQQQQQQK.......', // r49: waist in the hem's shadow
+  '........KEEPPPPPPPQPPPPPPPPQK.......', // r50: hips, lit left edge + centre fly seam
+  '........KEPPPPPPPQKQPPPPPPPQK.......', // r51: thighs meet at the crotch
+  '.......KEPPPPPPPQK.KPPPPPPPQQK......', // r52: two legs with a 1-cell gap (reads as trousers)
+  '......KUVVVVVVVVUK.KUVVVVVVVVUK.....', // r53: boot shaft, light top band
+  '......KUUUUUUUUUUK.KUUUUUUUUUUK.....', // r54: boot body
+  '......KGGGGGGGGGGK.KGGGGGGGGGGK.....', // r55: dark rubber sole
+  '.......KKKKKKKKKK...KKKKKKKKKK......', // r56: bottom outline on the ground line (y = +46)
 ];
+
+// NFT trousers + boots (하의): NFTs only ship upper clothes, so the angler gets one of these fishing outfits.
+// The pick keeps contrast with the top's hem colour (no dark-on-dark blob under a black jacket) and is stable per token.
+const FISH_PANTS_STYLES = [
+  { id: 'denim', P: '#3e64a3', Q: '#29467a', E: '#6a8fcc', U: '#f2b632', V: '#ffdb6e', G: '#5a3a10' }, // jeans + yellow rain boots
+  { id: 'olive', P: '#5f6e34', Q: '#424d22', E: '#86964c', U: '#2f3a22', V: '#4c5a36', G: '#141a0e' }, // olive chest-waders
+  { id: 'khaki', P: '#b49a62', Q: '#8a7346', E: '#d6c08a', U: '#6b4226', V: '#93603a', G: '#26170c' }, // khaki cargo + brown boots
+  { id: 'navy', P: '#2c3a5c', Q: '#1c2640', E: '#4a5f8e', U: '#d23a3a', V: '#f2735f', G: '#3a0e0e' }, // navy + red rain boots
+  { id: 'charcoal', P: '#3a4150', Q: '#252a35', E: '#5b6476', U: '#1b1f27', V: '#3d4452', G: '#0b0d12' }, // charcoal + black boots
+];
+
+function fishHexRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+
+// Average colour of the clothes hem (rows 44..47 of the 48px pilot frame), ignoring outline pixels
+function fishSheetHemRgb(sheet) {
+  try {
+    const cv = document.createElement('canvas');
+    cv.width = 48;
+    cv.height = 4;
+    const c = cv.getContext('2d');
+    c.drawImage(sheet, 0, 44, 48, 4, 0, 0, 48, 4);
+    const d = c.getImageData(0, 0, 48, 4).data;
+    let r = 0;
+    let g = 0;
+    let b = 0;
+    let n = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i + 3] < 200) continue;
+      if (d[i] + d[i + 1] + d[i + 2] < 90) continue;
+      r += d[i];
+      g += d[i + 1];
+      b += d[i + 2];
+      n += 1;
+    }
+    return n ? [r / n, g / n, b / n] : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function fishPantsStyleFor(sheet, tokenId) {
+  const seed = Number.isFinite(tokenId) ? tokenId : 0;
+  if (sheet && sheet._fishPants && sheet._fishPantsSeed === seed) return sheet._fishPants;
+  const hem = sheet ? fishSheetHemRgb(sheet) : null;
+  let style;
+  if (!hem) {
+    style = FISH_PANTS_STYLES[seed % FISH_PANTS_STYLES.length];
+  } else {
+    const dist = (st) => {
+      const [r, g, b] = fishHexRgb(st.P);
+      return Math.hypot(r - hem[0], g - hem[1], b - hem[2]);
+    };
+    const ok = FISH_PANTS_STYLES.filter((st) => dist(st) >= 95);
+    style = ok.length
+      ? ok[(seed * 2654435761) % 4294967296 % ok.length]
+      : FISH_PANTS_STYLES.slice().sort((a, b) => dist(b) - dist(a))[0];
+  }
+  if (sheet) {
+    sheet._fishPants = style;
+    sheet._fishPantsSeed = seed;
+  }
+  return style;
+}
 
 const FISH_DANGLING_PIXEL_ROWS = [
   'KK......KKKKKK.....',
@@ -2849,8 +2919,8 @@ const FISH_DANGLING_PIXEL_ROWS = [
 ];
 
 // Used in Scene 4 (vortex capture, pixel scan & pillar rise) and Scene 5 (Halloween Town sky-drop & arrival):
-// Draws the player's actual NFT Penguin (UFO_GAME.pilotPixelSheet / pilot2DSheet) wearing Blue Boot-Integrated
-// Fisherman Waders (파란 어부용 장화일체형 하의) with a Fishing Rod slung over its shoulder (어깨에 들쳐멘 낚싯대)!
+// Draws the player's actual NFT Penguin (UFO_GAME.pilotPixelSheet / pilot2DSheet) in fishing trousers + boots
+// (FISH_PANTS_STYLES, 하의) with a Fishing Rod slung over its shoulder (어깨에 들쳐멘 낚싯대)!
 function drawFishingPenguinWithRod(ctx, cx, cy, tiltRad = 0, now = 0, options = {}) {
   const {
     scale = 1,
@@ -3048,7 +3118,7 @@ function drawFishingPenguinWithRod(ctx, cx, cy, tiltRad = 0, now = 0, options = 
   //    - Shirtless NFTs (~1,500 tokens with Clothes: 'None') & Default Character (!hasNft):
   //      Species-matched rounded feather lower body & belly (종별 깃털색 하체) + 3-toed orange penguin feet + Rod Handle
   //    - Clothed NFTs (~8,500 tokens with Clothes !== 'None' & Genesis #0~#10):
-  //      Upper Clothes ON TOP overhanging Compact One-Piece Wader Pants + Boots (일체형 하의장화) + Rod Handle
+  //      Upper Clothes ON TOP over the outfit's trousers + boots (FISH_PANTS_STYLES, 하의) + Rod Handle
   // ==========================================================================
   const hasNft = Boolean(typeof UFO_GAME !== 'undefined' && UFO_GAME.hasNft);
   const hasClothes =
@@ -3058,6 +3128,8 @@ function drawFishingPenguinWithRod(ctx, cx, cy, tiltRad = 0, now = 0, options = 
       : UFO_GAME.pilotHasClothes !== false);
   const spKey = String(spId || '01').padStart(2, '0');
   const spLowerPal = FISH_SPECIES_LOWER_PALETTES[spKey] || FISH_SPECIES_LOWER_PALETTES['01'];
+  // Feather-only penguins still get a style object: the shared pixel palette below reads its keys
+  const pants = hasClothes ? fishPantsStyleFor(UFO_GAME.pilotPixelSheet, UFO_GAME.pilotTokenId) : FISH_PANTS_STYLES[0];
 
   if (pixelMode) {
     const bootPalette = {
@@ -3065,13 +3137,15 @@ function drawFishingPenguinWithRod(ctx, cx, cy, tiltRad = 0, now = 0, options = 
       C: '#d97706', // cork rod handle
       Y: '#facc15', // gold rod ring
       R: '#94a3b8', // metallic spinning reel
-      W: '#94a3b8', // silver-grey rubber gloss glint
-      H: '#475569', // dark gunmetal wader waist band / seam highlight
-      L: hasClothes ? '#334155' : spLowerPal.L, // wader lit charcoal OR species left-wing feather shadow
+      L: spLowerPal.L, // species left-wing feather shadow
       M: spLowerPal.M, // species mid-wing feather transition
-      B: '#1e293b', // main black-charcoal wader pants & boot body
-      D: '#0f172a', // deep onyx shadow & trouser crease
-      S: '#111827', // heavy vulcanized black rubber sole
+      // Trousers + boots of the NFT's fishing outfit (FISH_PANTS_STYLES)
+      P: pants.P, // trouser main
+      Q: pants.Q, // trouser shadow / seams
+      E: pants.E, // trouser lit edge
+      U: pants.U, // boot body
+      V: pants.V, // boot light top band
+      G: pants.G, // rubber sole
       // Species-matched penguin lower body & 3-toed orange webbed feet palette:
       p: spLowerPal.p, // species outline
       s: spLowerPal.s, // species inner body/belly border shadow
@@ -3146,7 +3220,7 @@ function drawFishingPenguinWithRod(ctx, cx, cy, tiltRad = 0, now = 0, options = 
         ctx.fillRect(ft.x - 5, fy - 1, 10, 2);
       });
     } else {
-      // Smooth 2D NFT Character: Upper Clothes (상의) ON TOP overhanging Compact One-Piece Wader Pants + Boots (일체형 하의장화)
+      // Smooth 2D NFT Character: upper clothes (상의) on top, the outfit's trousers + boots (하의) below
       ctx.strokeStyle = FISH_K;
       ctx.lineWidth = 2.6;
       ctx.beginPath();
@@ -3154,60 +3228,64 @@ function drawFishingPenguinWithRod(ctx, cx, cy, tiltRad = 0, now = 0, options = 
       ctx.lineTo(23, 29.5);
       ctx.stroke();
 
-      // Unified One-Piece Wader Trousers emerging from under the overhanging upper clothes (y = 29.5..36.5, narrower than sleeves!)
-      const waderGrad = ctx.createLinearGradient(-16, 29.5, 16, 44);
-      waderGrad.addColorStop(0, '#0f172a');
-      waderGrad.addColorStop(0.28, '#334155');
-      waderGrad.addColorStop(0.7, '#1e293b');
-      waderGrad.addColorStop(1, '#0f172a');
-      ctx.fillStyle = waderGrad;
+      // Hips under the hem, then two trouser legs with a gap so it reads as pants, not one block
+      ctx.fillStyle = pants.P;
       ctx.strokeStyle = FISH_K;
       ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.roundRect(-15, 29.5, 31, 7.5, [1, 1, 2, 2]);
+      ctx.roundRect(-15, 29.5, 31, 5.5, [1, 1, 0, 0]);
       ctx.fill();
       ctx.stroke();
-
-      // Seamless transition into compact left & right wader boots (y = 35..44)
       [
-        { x: -8.5, toeDx: -2, dy: bootL },
-        { x: 9.5, toeDx: 2, dy: bootR },
+        { x: -8.5, dy: bootL },
+        { x: 9.5, dy: bootR },
       ].forEach((leg) => {
-        const by = 35 + leg.dy;
-        ctx.fillStyle = waderGrad;
+        ctx.fillStyle = pants.P;
         ctx.strokeStyle = FISH_K;
         ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.roundRect(leg.x - 7.5 + Math.min(0, leg.toeDx), by, 15 + Math.abs(leg.toeDx), 9.5, [1, 1, 4.5, 4.5]);
+        ctx.roundRect(leg.x - 6.5, 32 + leg.dy * 0.5, 13, 7, 1);
         ctx.fill();
         ctx.stroke();
-        // Seamless join between trouser thighs and boots (no horizontal boot cuff line!)
-        ctx.fillStyle = '#1e293b';
-        ctx.fillRect(leg.x - 6, by - 2, 12.5, 3.5);
+        ctx.fillStyle = pants.E;
+        ctx.fillRect(leg.x - 5.1, 33 + leg.dy * 0.5, 2.2, 5);
+      });
+      ctx.fillStyle = pants.P;
+      ctx.fillRect(-13.6, 30.8, 28.2, 3.4);
+      ctx.fillStyle = pants.Q;
+      ctx.fillRect(-13.6, 30.8, 28.2, 1.6); // shadow cast by the upper clothes hem
+      ctx.strokeStyle = pants.Q;
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(0.5, 31.5);
+      ctx.lineTo(0.5, 35.5);
+      ctx.stroke();
 
-        // Glossy rubber highlight on rounded boot toe
-        ctx.fillStyle = '#94a3b8';
+      // Boots: light top band, body, dark sole
+      [
+        { x: -8, toeDx: -1.5, dy: bootL },
+        { x: 9, toeDx: 1.5, dy: bootR },
+      ].forEach((leg) => {
+        const by = 37.5 + leg.dy;
+        const bx = leg.x - 7.5 + Math.min(0, leg.toeDx);
+        const bw = 15 + Math.abs(leg.toeDx);
+        ctx.fillStyle = pants.U;
+        ctx.strokeStyle = FISH_K;
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.roundRect(leg.x - 4.5 + leg.toeDx * 0.4, by + 2.8, 4.5, 2.5, 1.2);
+        ctx.roundRect(bx, by, bw, 7, [1, 1, 3.5, 3.5]);
         ctx.fill();
-
-        // Heavy vulcanized rubber sole
-        ctx.fillStyle = '#111827';
+        ctx.stroke();
+        ctx.fillStyle = pants.V;
+        ctx.fillRect(bx + 1.4, by + 1.2, bw - 2.8, 2);
+        ctx.fillStyle = pants.G;
         ctx.strokeStyle = FISH_K;
         ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.roundRect(leg.x - 8 + Math.min(0, leg.toeDx), by + 7.8, 16 + Math.abs(leg.toeDx), 3.2, 1.5);
+        ctx.roundRect(bx - 0.5, by + 5.3, bw + 1, 2.8, 1.2);
         ctx.fill();
         ctx.stroke();
       });
-
-      // Subtle center trouser fly/crotch seam line under the upper clothes hem
-      ctx.strokeStyle = '#0f172a';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(0.5, 30.5);
-      ctx.lineTo(0.5, 36);
-      ctx.stroke();
     }
 
     // Compact Cork Grip & Metallic Spinning Reel of Shoulder-Slung Rod on left shoulder

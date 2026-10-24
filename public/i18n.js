@@ -493,7 +493,7 @@ const I18N_ROWS = [
   ['Nothing beats ice fishing lol', 'Ice fishing sweet pass anything lol', 'برف میں مچھلی پکڑنے کا مزہ ہی الگ ہے ہاہا', 'বরফে মাছ ধরার মজাই আলাদা হাহা'],
   ['Forget escaping… Care for some ice fishing?', 'Forget escape… Make we catch fish for ice?', 'فرار چھوڑو… برف میں مچھلی پکڑیں؟', 'পালানো বাদ দাও… বরফে মাছ ধরবে নাকি?'],
   ['Go Fish', 'Catch Fish', 'مچھلی پکڑو', 'মাছ ধরো'],
-  ['Hold to raise the green bar · release to drop', 'Hold am make green bar climb · leave am make e drop', 'دبائے رکھو تو سبز بار اوپر · چھوڑو تو نیچے', 'চেপে ধরলে সবুজ বার উঠবে · ছাড়লে নামবে'],
+  ['Tap when !! pops · in the fight, hold to raise the green bar', 'Tap when !! show · for the fight, hold am make green bar climb', 'جب !! نظر آئے تو ٹیپ کرو · مقابلے میں دبائے رکھو تو سبز بار اوپر', '!! দেখলেই ট্যাপ করো · লড়াইয়ে চেপে ধরলে সবুজ বার উঠবে'],
   ['Hold to raise the green bar · release to drop · keep it on the fish!', 'Hold am make green bar climb · leave am make e drop · keep am on top the fish!', 'سبز بار اٹھانے کے لیے دبائے رکھو · چھوڑو تو نیچے · مچھلی پر رکھو!', 'সবুজ বার তুলতে চেপে ধরো · ছাড়লে নামবে · মাছের ওপর রাখো!'],
   ['ESCAPE? NAH, LET US JUST GO ICE FISHING~!!', 'ESCAPE? NAH, MAKE WE JUST CATCH FISH~!!', 'فرار؟ رہنے دو، چلو برف میں مچھلی پکڑتے ہیں~!!', 'পালানো? ধুর, চলো বরফে বসে মাছ ধরি~!!'],
   ['Hold Space / Click / Touch to raise the green bar · Keep the fish inside!', 'Hold Space / Click / Touch make green bar rise · Keep the fish inside!', 'سبز بار اٹھانے کے لیے دبائے رکھو · مچھلی کو اندر رکھو!', 'সবুজ বার তুলতে চেপে ধরো · মাছটাকে ভেতরে রাখো!'],

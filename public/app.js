@@ -1415,7 +1415,7 @@ function updateVehicleUI() {
         : vehicle === 'boat'
         ? '누르고 있으면 힘이 모이고 · 떼면 들이받기'
         : vehicle === 'fish'
-        ? '누르고 있으면 초록 바 상승 · 떼면 하강'
+        ? '!! 뜨면 탭해서 챔질 · 싸울 땐 누르면 초록 바 상승'
         : '누르고 있으면 상승 · 떼면 하강';
     const en =
       vehicle === 'car'
@@ -1423,7 +1423,7 @@ function updateVehicleUI() {
         : vehicle === 'boat'
         ? 'Hold to charge · let go to ram'
         : vehicle === 'fish'
-        ? 'Hold to raise the green bar · release to drop'
+        ? 'Tap when !! pops · in the fight, hold to raise the green bar'
         : 'Hold to climb · release to dive';
     padText.dataset.ko = ko;
     padText.dataset.en = en;
