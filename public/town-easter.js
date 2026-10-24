@@ -32,25 +32,25 @@ const TOWN_EASTER_SNOWMAN = { x: 104, feet: 534 };
 //    hands, faceDev = the guest turns to the snowman, snowDate = the snowman's date slides in, otl = the guest
 //    slumps.
 const TOWN_EASTER_TALK = [
-  { who: 0, col: '#38bdf8', ko: '이스터에그 찾았다!! 보상 뭐임? 뭐 줌? 뭐 줌??', en: 'Found the Easter egg!! So what do I get? Huh? Huh??' },
-  { who: 'snow', col: '#e2e8f0', ko: '...나 눈사람 아니고 제작자임. 보상? 그런 거 없음', en: "...I'm not a snowman, I'm the dev. Reward? There isn't one", stamp: true },
-  { who: 1, col: '#ff4d6d', ko: '에이~ 숨겨둔 마을인데 뭐 하나쯤은 있겠지?', en: 'Come on~ a secret village has to have SOMETHING?' },
-  { who: 'snow', col: '#e2e8f0', ko: 'NFT도 혜택 없음, 이스터에그도 없음. 일관성 오짐', en: 'No perks on the NFT, none in the egg. Consistent, right?' },
+  { who: 0, col: '#38bdf8', ko: '이스터에그 찾았다!! 할로윈 사탕 줌? 호박 바구니 내놔!!', en: 'Found the Easter egg!! Do I get Halloween candy? Hand over the pumpkin bucket!!' },
+  { who: 'snow', col: '#fdba74', ko: '...나 호박 허수아비 아니고 제작자임. 사탕? 그런 거 없음', en: "...I'm not a pumpkin scarecrow, I'm the dev. Candy? There isn't any", stamp: true },
+  { who: 1, col: '#ff4d6d', ko: '에이~ 할로윈 비밀마을인데 사탕 하나쯤은 주겠지?', en: 'Come on~ a Halloween secret village has to have ONE candy?' },
+  { who: 'snow', col: '#fdba74', ko: 'NFT도 혜택 없음, 할로윈도 사탕 없음. 트릭 오어 트릿에서 트릭만 있음', en: 'No perks on the NFT, no candy on Halloween. All trick, zero treat' },
   { who: 4, col: '#4ade80', ko: '거봐, 아까 내가 진짜 아무것도 없다 했잖아 ㅋㅋ', en: 'Told you back in town. Absolutely nothing lol' },
   { who: 0, col: '#38bdf8', ko: '허무하네... 집 가서 잠이나 자야지. 다들 가자~', en: "What a letdown... home to sleep then. Let's go, guys~" },
-  { who: 5, col: '#fb7185', ko: '응? 난 약속 있는데? 오늘 크리스마스잖아 ㅋ', en: "Huh? I've got plans. It's Christmas lol", pair: 0 },
-  { who: 1, col: '#ff4d6d', ko: '나도~ 자기야, 우리 트리 보러 가자 ♥', en: "Me too~ babe, let's go see the tree ♥", pair: 1 },
-  { who: 3, col: '#fbbf24', ko: '이 선물... 사실 너 주려고 산 거야', en: 'This gift... I actually got it for you', pair: 2, give: true },
-  { who: 4, col: '#4ade80', ko: '열어보니 또 펭귄 NFT네... 근데 좋아 ♥', en: 'Another penguin NFT... but I love it ♥' },
-  { who: 0, col: '#38bdf8', ko: '...어? 다들?? 제작자님은 솔로죠? 우리 치킨 ㄱ?', en: "...Wait, all of you?? Dev, you're single, right? Pizza night?", faceDev: true },
-  { who: 'snow', col: '#e2e8f0', ko: '미안. 나 오늘 눈사람이랑 약속 있음', en: 'Sorry. I have a date with a snowwoman tonight', snowDate: true },
-  { who: 0, col: '#38bdf8', ko: '...크리스마스 취소해 주세요', en: '...Please cancel Christmas', otl: true },
+  { who: 5, col: '#fb7185', ko: '응? 난 코스튬 파티 가는데? 오늘 할로윈이잖아 ㅋ', en: "Huh? I'm going to a costume party. It's Halloween lol", pair: 0 },
+  { who: 1, col: '#ff4d6d', ko: '나도~ 자기야, 우리 호박등 보러 가자 ♥', en: "Me too~ babe, let's go see the jack-o'-lanterns ♥", pair: 1 },
+  { who: 3, col: '#fbbf24', ko: '이 호박 바구니... 사실 너 주려고 챙긴 거야', en: 'This pumpkin bucket... I actually saved it for you', pair: 2, give: true },
+  { who: 4, col: '#4ade80', ko: '열어보니 사탕 말고 또 펭귄 NFT네... 근데 좋아 ♥', en: 'No candy inside, just another penguin NFT... but I love it ♥' },
+  { who: 0, col: '#38bdf8', ko: '...어? 다들?? 제작자님은 솔로죠? 우리 공포영화 ㄱ?', en: "...Wait, all of you?? Dev, you're single, right? Horror movie night?", faceDev: true },
+  { who: 'snow', col: '#fdba74', ko: '미안. 나 오늘 마녀 호박이랑 할로윈 파티 약속 있음', en: 'Sorry. I have a Halloween party date with a pumpkin witch tonight', snowDate: true },
+  { who: 0, col: '#38bdf8', ko: '...할로윈 취소해 주세요', en: '...Please cancel Halloween', otl: true },
 ];
 // After the story: the guest mumbles now and then (null = a quiet turn)
 const TOWN_EASTER_END = [
-  { who: 0, col: '#38bdf8', ko: '나도... 데려가......', en: 'Take me too......' },
+  { who: 0, col: '#38bdf8', ko: '사탕... 하나만......', en: 'Just one... candy......' },
   null,
-  { who: 0, col: '#38bdf8', ko: '내년엔... 꼭......', en: 'Next year... for sure......' },
+  { who: 0, col: '#38bdf8', ko: '내년 할로윈엔... 꼭......', en: 'Next Halloween... for sure......' },
   null,
 ];
 // The couples, as cast indices (left one, right one), in the order they form
@@ -118,8 +118,8 @@ function drawTownEasterLeaveTalk(ctx, now, elapsed, heroX, friendX, spriteY, spr
   }
 }
 
-// One-colour-per-part pixel snowman (2px grid): three balls, coal eyes and buttons, carrot, red scarf, top hat,
-// a stick arm that waves. opts.girl = his date (smaller, pink scarf and bow, lashes, blush); opts.flip = facing left
+// Pixel Pumpkin-Head Scarecrow / Jack-o'-Lantern Snow-Golem Dev (2px grid): purple cloak & snow body, carved glowing
+// Jack-o'-lantern head, waving stick arm, witch/wizard hat. opts.girl = his pumpkin-witch date!
 function drawTownEasterSnowman(ctx, x, feet, now, talking, opts = {}) {
   const disc = (cx, cy, r, c) => {
     if (typeof fillPixelDisc === 'function') fillPixelDisc(ctx, cx, cy, r, c);
@@ -136,20 +136,32 @@ function drawTownEasterSnowman(ctx, x, feet, now, talking, opts = {}) {
   ctx.translate(Math.round(x), Math.round(feet + bob));
   if (opts.flip) ctx.scale(-1, 1);
   if (opts.girl) ctx.scale(0.84, 0.84);
-  ctx.fillStyle = 'rgba(30, 41, 59, 0.3)';
+  ctx.fillStyle = 'rgba(30, 16, 59, 0.36)';
   ctx.fillRect(-26, -4, 52, 6);
-  disc(0, -24, 25, K);
-  disc(0, -24, 23, '#f8fafc');
+  // Spooky purple cape fluttering behind body
+  ctx.fillStyle = K;
+  ctx.fillRect(-26, -78, 52, 60);
+  ctx.fillStyle = opts.girl ? '#6b21a8' : '#3b0764';
+  ctx.fillRect(-24, -76, 48, 56);
+  // Lower & middle Halloween Scarecrow / Pumpkin-Golem coat body
+  disc(0, -24, 24, K);
+  disc(0, -24, 22, opts.girl ? '#6b21a8' : '#78350f');
   disc(0, -62, 19, K);
-  disc(0, -62, 17, '#f8fafc');
-  disc(0, -92, 14, K);
-  disc(0, -92, 12, '#ffffff');
-  // Shade on the right of each ball
-  ctx.fillStyle = '#cbd5e1';
-  ctx.fillRect(12, -36, 8, 22);
-  ctx.fillRect(9, -70, 6, 16);
-  ctx.fillRect(6, -98, 4, 10);
-  // Stick arms: the left one waves
+  disc(0, -62, 17, opts.girl ? '#9333ea' : '#b45309');
+  // Shade on the right of each ball + stitched scarecrow patch on left
+  ctx.fillStyle = opts.girl ? '#581c87' : '#451a03';
+  ctx.fillRect(11, -36, 7, 22);
+  ctx.fillRect(8, -70, 6, 16);
+  ctx.fillStyle = opts.girl ? '#f472b6' : '#f59e0b';
+  ctx.fillRect(-14, -34, 8, 8);
+  ctx.fillStyle = K;
+  ctx.fillRect(-15, -30, 10, 2);
+  ctx.fillRect(-10, -35, 2, 10);
+  // Golden straw tufts poking out at the base
+  ctx.fillStyle = '#facc15';
+  ctx.fillRect(-18, -6, 6, 4);
+  ctx.fillRect(12, -6, 6, 4);
+  // Stick arms: the left one waves, the right one holds a mini broom/lantern staff
   const wave = Math.sin(now * 0.008) * 0.5;
   ctx.fillStyle = '#7c4a1d';
   ctx.save();
@@ -162,65 +174,131 @@ function drawTownEasterSnowman(ctx, x, feet, now, talking, opts = {}) {
   ctx.translate(16, -66);
   ctx.rotate(0.35);
   ctx.fillRect(0, -2, 28, 4);
+  // Mini glowing lantern hanging off the right stick arm
+  ctx.fillStyle = '#1e1b4b';
+  ctx.fillRect(24, 2, 4, 2);
+  ctx.fillStyle = '#ff7b00';
+  ctx.fillRect(22, 4, 8, 8);
+  ctx.fillStyle = '#fef08a';
+  ctx.fillRect(24, 6, 4, 4);
   ctx.restore();
-  // Face, carrot, scarf, buttons, hat
+  // Carved Glowing Jack-o'-Lantern Pumpkin Head!
+  disc(0, -92, 16, K);
+  disc(0, -92, 14, '#ea580c');
+  ctx.fillStyle = '#ff7b00';
+  ctx.fillRect(-10, -104, 20, 24);
+  ctx.fillStyle = '#c2410c';
+  ctx.fillRect(-4, -104, 2, 24);
+  ctx.fillRect(4, -104, 2, 24);
+  // Glowing Jack-o'-Lantern eyes & toothed grin
   ctx.fillStyle = K;
-  ctx.fillRect(-6, -98, 4, 4);
-  ctx.fillRect(3, -98, 4, 4);
-  ctx.fillStyle = '#f97316';
-  ctx.fillRect(0, -91, 12, 4);
-  ctx.fillStyle = opts.girl ? '#f472b6' : '#dc2626';
+  ctx.fillRect(-9, -99, 6, 6);
+  ctx.fillRect(3, -99, 6, 6);
+  ctx.fillStyle = '#fef08a';
+  ctx.fillRect(-8, -98, 4, 4);
+  ctx.fillRect(4, -98, 4, 4);
+  // Glowing grin
+  ctx.fillStyle = K;
+  ctx.fillRect(-9, -90, 18, 5);
+  ctx.fillStyle = '#fde047';
+  ctx.fillRect(-7, -89, 3, 3);
+  ctx.fillRect(-2, -89, 4, 3);
+  ctx.fillRect(4, -89, 3, 3);
+  // Scarf (Halloween purple/orange or witch-pink)
+  ctx.fillStyle = opts.girl ? '#f472b6' : '#7e22ce';
   ctx.fillRect(-14, -80, 28, 6);
+  ctx.fillStyle = opts.girl ? '#fb7185' : '#ff7b00';
+  ctx.fillRect(-8, -80, 4, 6);
+  ctx.fillRect(4, -80, 4, 6);
   ctx.fillRect(6, -76, 6, 14);
   if (opts.girl) {
-    ctx.fillStyle = K;
-    ctx.fillRect(-8, -102, 2, 2);
-    ctx.fillRect(7, -102, 2, 2);
     ctx.fillStyle = '#fda4af';
-    ctx.fillRect(-10, -92, 4, 2);
-    ctx.fillRect(7, -92, 4, 2);
+    ctx.fillRect(-12, -93, 4, 3);
+    ctx.fillRect(8, -93, 4, 3);
   }
+  // Glowing gold/orange buttons on torso
   ctx.fillStyle = K;
+  ctx.fillRect(-3, -67, 6, 6);
+  ctx.fillRect(-3, -57, 6, 6);
+  ctx.fillRect(-3, -37, 6, 6);
+  ctx.fillRect(-3, -27, 6, 6);
+  ctx.fillStyle = '#fde047';
   ctx.fillRect(-2, -66, 4, 4);
   ctx.fillRect(-2, -56, 4, 4);
+  ctx.fillStyle = '#ff7b00';
   ctx.fillRect(-2, -36, 4, 4);
   ctx.fillRect(-2, -26, 4, 4);
   const tilt = talking ? Math.sin(now * 0.01) * 0.12 : 0;
   ctx.save();
-  ctx.translate(0, -104);
+  ctx.translate(0, -106);
   ctx.rotate(tilt);
   if (opts.girl) {
-    // A pink bow instead of the hat
+    // Cute Witch Hat with Pink Bow for the date
     ctx.fillStyle = K;
-    ctx.fillRect(-14, -8, 28, 10);
+    ctx.fillRect(-20, -2, 40, 6);
+    ctx.fillRect(-12, -14, 24, 12);
+    ctx.fillRect(-8, -24, 16, 10);
+    ctx.fillRect(-2, -30, 10, 6);
+    ctx.fillStyle = '#581c87';
+    ctx.fillRect(-18, -1, 36, 4);
+    ctx.fillRect(-10, -13, 20, 12);
+    ctx.fillRect(-6, -22, 12, 9);
+    ctx.fillRect(0, -28, 6, 6);
     ctx.fillStyle = '#f472b6';
-    ctx.fillRect(-12, -6, 10, 6);
-    ctx.fillRect(2, -6, 10, 6);
-    ctx.fillStyle = '#be185d';
-    ctx.fillRect(-2, -6, 4, 6);
-    ctx.fillStyle = '#fbcfe8';
-    ctx.fillRect(-10, -6, 4, 2);
-    ctx.fillRect(4, -6, 4, 2);
+    ctx.fillRect(-10, -5, 20, 4);
+    ctx.fillRect(-12, -8, 6, 6);
+    ctx.fillRect(6, -8, 6, 6);
+    ctx.fillStyle = '#fde047';
+    ctx.fillRect(-2, -6, 4, 5);
   } else {
-    ctx.fillRect(-16, -2, 32, 4);
-    ctx.fillRect(-10, -20, 20, 18);
-    ctx.fillStyle = '#dc2626';
-    ctx.fillRect(-10, -6, 20, 3);
+    // Pointed Purple/Black Wizard-Witch Hat with Orange Band & Gold Buckle
+    ctx.fillStyle = K;
+    ctx.fillRect(-22, -2, 44, 6);
+    ctx.fillRect(-13, -15, 26, 13);
+    ctx.fillRect(-9, -26, 18, 11);
+    ctx.fillRect(-3, -34, 12, 8);
+    ctx.fillStyle = '#2e1065';
+    ctx.fillRect(-20, -1, 40, 4);
+    ctx.fillStyle = '#4c1d95';
+    ctx.fillRect(-11, -14, 22, 13);
+    ctx.fillRect(-7, -24, 14, 10);
+    ctx.fillRect(-1, -32, 8, 8);
+    ctx.fillStyle = '#ff7b00';
+    ctx.fillRect(-11, -5, 22, 4);
+    ctx.fillStyle = '#fde047';
+    ctx.fillRect(-3, -6, 6, 5);
+    ctx.fillStyle = '#1e1b4b';
+    ctx.fillRect(-1, -5, 2, 3);
   }
   ctx.restore();
   ctx.restore();
 }
 
 function drawTownEasterGift(ctx, x, y) {
+  // Glowing Jack-o'-Lantern Trick-or-Treat Candy Bucket
   ctx.fillStyle = '#0b1020';
-  ctx.fillRect(x - 11, y - 11, 22, 20);
-  ctx.fillStyle = '#dc2626';
-  ctx.fillRect(x - 9, y - 9, 18, 16);
+  ctx.fillRect(x - 7, y - 16, 14, 3);
+  ctx.fillRect(x - 9, y - 13, 2, 4);
+  ctx.fillRect(x + 7, y - 13, 2, 4);
+  ctx.fillRect(x - 11, y - 10, 22, 18);
+  // Candies peeking out of the bucket top
+  ctx.fillStyle = '#a855f7';
+  ctx.fillRect(x - 7, y - 12, 5, 3);
+  ctx.fillStyle = '#84cc16';
+  ctx.fillRect(x - 1, y - 13, 5, 4);
+  ctx.fillStyle = '#fb7185';
+  ctx.fillRect(x + 4, y - 12, 4, 3);
+  // Orange pumpkin bucket body
+  ctx.fillStyle = '#ea580c';
+  ctx.fillRect(x - 9, y - 8, 18, 14);
+  ctx.fillStyle = '#ff7b00';
+  ctx.fillRect(x - 6, y - 8, 12, 14);
+  // Glowing Jack-o'-lantern eyes & smile
+  ctx.fillStyle = '#fef08a';
+  ctx.fillRect(x - 6, y - 5, 3, 3);
+  ctx.fillRect(x + 3, y - 5, 3, 3);
   ctx.fillStyle = '#fde047';
-  ctx.fillRect(x - 2, y - 9, 4, 16);
-  ctx.fillRect(x - 9, y - 3, 18, 4);
-  ctx.fillRect(x - 6, y - 14, 4, 5);
-  ctx.fillRect(x + 2, y - 14, 4, 5);
+  ctx.fillRect(x - 5, y + 1, 10, 2);
 }
 
 // The village itself; called at the end of the town frame (the menu is drawn again on top so it keeps working)
@@ -309,7 +387,7 @@ function drawTownEaster(ctx, now, elapsed) {
         seed: 20 + i,
         isWalking: (walking || !!c.dance) && sl === 0,
         flipX: flip,
-        santaHat: true,
+        halloweenHat: true,
       });
       ctx.restore();
       spots.push({ x, top, size: c.size, feet: c.feet, walking });
@@ -406,10 +484,10 @@ function drawTownEaster(ctx, now, elapsed) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillText(label, 480, 27);
-    // "Reward: none" stamped under it once the dev says so
+    // "Candy: none" stamped under it once the dev says so
     if (t >= ev.stamp) {
       const st = Math.min(1, (t - ev.stamp) / 160);
-      const tag = ko ? '보상: 없음' : i18n('REWARD: NONE');
+      const tag = ko ? '사탕: 없음' : i18n('CANDY: NONE');
       ctx.save();
       ctx.translate(bx + bw - 34, 60);
       ctx.rotate(-0.1);

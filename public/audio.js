@@ -180,7 +180,7 @@ function updateSoundButton() {
   };
   const m = PP_SOUND.musicOn;
   const s = PP_SOUND.sfxOn;
-  set('btn-music-toggle', m, ppGlyph(['note'], !m), m ? '캐럴 켜짐 (누르면 끄기)' : '캐럴 꺼짐 (누르면 켜기)', m ? 'Music on (tap to mute)' : 'Music off (tap to play)');
+  set('btn-music-toggle', m, ppGlyph(['note'], !m), m ? '배경음악 켜짐 (누르면 끄기)' : '배경음악 꺼짐 (누르면 켜기)', m ? 'Music on (tap to mute)' : 'Music off (tap to play)');
   set('btn-sfx-toggle', s, ppGlyph(s ? ['speaker', 'waves'] : ['speaker', 'cross']), s ? '효과음 켜짐 (누르면 끄기)' : '효과음 꺼짐 (누르면 켜기)', s ? 'Sound effects on (tap to mute)' : 'Sound effects off (tap to play)');
 }
 
@@ -348,7 +348,116 @@ const KING_A = [
   [[0, 69, 1], [1, 67, 1], [2, 69, 1], [3, 71, 1]],
   [[0, 72, 2], [2, 72, 2]],
 ];
-const TOWN_SONGS = [
+// Upbeat, cute, 100% public-domain melodies arranged in bouncy 8-bit chiptune:
+// 1) Gossec — Gavotte in D (1786, public domain; the classic cute cartoon/toy-village melody, here in C)
+// 2) Mozart — Eine kleine Nachtmusik K. 525 (1787, public domain; bright, cheerful arcade bounce)
+// 3) Grieg — In the Hall of the Mountain King Op. 46 (1876, public domain; playful-spooky Halloween tiptoe bounce)
+// 4) Offenbach — Galop Infernal / Can-Can (1858, public domain; B-grade arcade party energy)
+const GAVOTTE_A = [
+  [[0, 79, 1], [1, 76, 1], [2, 77, 1], [3, 74, 1]],
+  [[0, 76, 1], [1, 72, 1], [2, 67, 1], [3, 72, 1]],
+  [[0, 74, 0.5], [0.5, 76, 0.5], [1, 77, 0.5], [1.5, 74, 0.5], [2, 76, 1], [3, 79, 1]],
+  [[0, 74, 2], [2, 67, 2]],
+];
+const NACHT_A = [
+  [[0, 72, 1.5], [1.5, 67, 0.5], [2, 72, 1.5], [3.5, 67, 0.5]],
+  [[0, 72, 0.5], [0.5, 67, 0.5], [1, 72, 0.5], [1.5, 76, 0.5], [2, 79, 2]],
+  [[0, 77, 1.5], [1.5, 74, 0.5], [2, 77, 1.5], [3.5, 74, 0.5]],
+  [[0, 77, 0.5], [0.5, 74, 0.5], [1, 71, 0.5], [1.5, 74, 0.5], [2, 67, 2]],
+];
+const MKING_A = [
+  [[0, 69, 0.5], [0.5, 71, 0.5], [1, 72, 0.5], [1.5, 74, 0.5], [2, 76, 0.5], [2.5, 72, 0.5], [3, 76, 1]],
+  [[0, 75, 0.5], [0.5, 71, 0.5], [1, 75, 1], [2, 74, 0.5], [2.5, 70, 0.5], [3, 74, 1]],
+  [[0, 69, 0.5], [0.5, 71, 0.5], [1, 72, 0.5], [1.5, 74, 0.5], [2, 76, 0.5], [2.5, 72, 0.5], [3, 76, 0.5], [3.5, 81, 0.5]],
+  [[0, 79, 0.5], [0.5, 76, 0.5], [1, 72, 0.5], [1.5, 76, 0.5], [2, 79, 2]],
+];
+const CANCAN_A = [
+  [[0, 72, 2], [2, 74, 1], [3, 77, 1]],
+  [[0, 76, 1], [1, 74, 1], [2, 79, 1], [3, 79, 1]],
+  [[0, 79, 0.5], [0.5, 81, 0.5], [1, 74, 0.5], [1.5, 76, 0.5], [2, 77, 1], [3, 74, 1]],
+  [[0, 74, 1], [1, 76, 0.5], [1.5, 74, 0.5], [2, 72, 1], [3, 71, 1]],
+];
+
+const CUTE_UPBEAT_SONGS = [
+  {
+    id: 'gavotte',
+    bpb: 4,
+    plays: 1,
+    bars: [
+      ...GAVOTTE_A,
+      GAVOTTE_A[0],
+      GAVOTTE_A[1],
+      [[0, 74, 0.5], [0.5, 76, 0.5], [1, 77, 1], [2, 76, 1], [3, 74, 1]],
+      [[0, 72, 3], [3, 79, 1]],
+      [[0, 81, 1], [1, 77, 1], [2, 79, 1], [3, 76, 1]],
+      [[0, 77, 1], [1, 74, 1], [2, 76, 1], [3, 72, 1]],
+      [[0, 74, 0.5], [0.5, 76, 0.5], [1, 77, 1], [2, 76, 1], [3, 74, 1]],
+      [[0, 79, 2], [2, 79, 2]],
+      ...GAVOTTE_A.slice(0, 2),
+      [[0, 74, 0.5], [0.5, 76, 0.5], [1, 77, 1], [2, 76, 1], [3, 74, 1]],
+      [[0, 72, 4]],
+    ],
+    roots: [48, 48, 55, 55, 48, 48, 53, 48, 53, 50, 55, 55, 48, 48, 55, 48],
+  },
+  {
+    id: 'mountain',
+    bpb: 4,
+    plays: 1,
+    bars: [
+      ...MKING_A,
+      ...MKING_A.slice(0, 2),
+      [[0, 69, 0.5], [0.5, 71, 0.5], [1, 72, 0.5], [1.5, 74, 0.5], [2, 76, 0.5], [2.5, 72, 0.5], [3, 76, 0.5], [3.5, 81, 0.5]],
+      [[0, 79, 2], [2, 76, 2]],
+      [[0, 83, 0.5], [0.5, 81, 0.5], [1, 79, 0.5], [1.5, 78, 0.5], [2, 76, 0.5], [2.5, 79, 0.5], [3, 83, 1]],
+      [[0, 84, 0.5], [0.5, 81, 0.5], [1, 76, 1], [2, 81, 0.5], [2.5, 79, 0.5], [3, 76, 1]],
+      [[0, 74, 0.5], [0.5, 76, 0.5], [1, 77, 0.5], [1.5, 74, 0.5], [2, 76, 0.5], [2.5, 72, 0.5], [3, 69, 1]],
+      [[0, 71, 1], [1, 76, 1], [2, 69, 2]],
+      ...MKING_A.slice(0, 2),
+      [[0, 69, 0.5], [0.5, 71, 0.5], [1, 72, 0.5], [1.5, 74, 0.5], [2, 76, 0.5], [2.5, 79, 0.5], [3, 76, 0.5], [3.5, 74, 0.5]],
+      [[0, 72, 2], [2, 69, 2]],
+    ],
+    roots: [45, 52, 45, 48, 45, 52, 45, 48, 52, 45, 50, 52, 45, 52, 55, 45],
+  },
+  {
+    id: 'nacht',
+    bpb: 4,
+    plays: 1,
+    bars: [
+      ...NACHT_A,
+      [[0, 72, 1], [1, 76, 1], [2, 79, 1], [3, 84, 1]],
+      [[0, 81, 1], [1, 84, 1], [2, 79, 1], [3, 76, 1]],
+      [[0, 77, 1], [1, 74, 1], [2, 79, 1], [3, 71, 1]],
+      [[0, 72, 2], [2, 72, 2]],
+      ...NACHT_A,
+      [[0, 76, 0.5], [0.5, 77, 0.5], [1, 79, 1], [2, 81, 0.5], [2.5, 79, 0.5], [3, 77, 1]],
+      [[0, 76, 1], [1, 74, 1], [2, 79, 2]],
+      [[0, 84, 1], [1, 79, 1], [2, 76, 1], [3, 74, 1]],
+      [[0, 72, 4]],
+    ],
+    roots: [48, 48, 55, 55, 48, 53, 55, 48, 48, 48, 55, 55, 48, 55, 55, 48],
+  },
+  {
+    id: 'cancan',
+    bpb: 4,
+    plays: 1,
+    bars: [
+      ...CANCAN_A,
+      [[0, 69, 1], [1, 79, 1], [2, 77, 0.5], [2.5, 76, 0.5], [3, 74, 0.5], [3.5, 72, 0.5]],
+      [[0, 74, 0.5], [0.5, 72, 0.5], [1, 71, 0.5], [1.5, 69, 0.5], [2, 67, 2]],
+      ...CANCAN_A.slice(0, 3),
+      [[0, 74, 1], [1, 79, 1], [2, 72, 2]],
+      ...CANCAN_A.slice(0, 2),
+      [[0, 81, 1], [1, 79, 1], [2, 77, 1], [3, 76, 1]],
+      [[0, 74, 1], [1, 79, 1], [2, 72, 2]],
+      [[0, 79, 1], [1, 76, 1], [2, 74, 1], [3, 79, 1]],
+      [[0, 72, 4]],
+    ],
+    roots: [48, 55, 50, 48, 53, 55, 48, 55, 50, 48, 48, 55, 53, 48, 55, 48],
+  },
+];
+
+// Preserved Christmas Carols (automatically used when INTRO_TOWN.id === 'xmas')
+const XMAS_TOWN_SONGS = [
   {
     id: 'jingle',
     bpb: 4,
@@ -401,13 +510,18 @@ const TOWN_SONGS = [
     roots: [48, 48, 55, 48, 48, 48, 55, 48, 55, 48, 55, 48, 55, 48, 55, 48, 48],
   },
 ];
+function activeTownSongs() {
+  return typeof INTRO_TOWN !== 'undefined' && INTRO_TOWN.id === 'xmas' ? XMAS_TOWN_SONGS : CUTE_UPBEAT_SONGS;
+}
+const TOWN_SONGS = CUTE_UPBEAT_SONGS;
 const PP_CAROL_STORE = 'ppeng-last-carol';
 
-// The town's playlist: when one carol ends, a bar's rest, then another one (never the same twice running), for as
-// long as the town is open. Rebuilt for every visit; the last carol heard is remembered across visits.
+// The town's playlist: when one song ends, a bar's rest, then another one (never the same twice running), for as
+// long as the town is open. Rebuilt for every visit; the last song heard is remembered across visits.
 const CAROL_GAP_BEATS = 4;
 function pickCarol(notId) {
-  const pool = TOWN_SONGS.filter((song) => song.id !== notId);
+  const songs = activeTownSongs();
+  const pool = songs.filter((song) => song.id !== notId);
   return pool[Math.floor(Math.random() * pool.length)];
 }
 // The playlist entry playing at beat b (from the town's first note): { song, start, len } in beats
@@ -821,11 +935,95 @@ const GOD_SONG = {
     ['Em', 'Em', 'Em', null],
   ],
 };
-const VILLAGE_GAP = 4; // beats of rest between two carols
+// Cute-spooky & upbeat public-domain party lead for Halloween / non-Christmas Easter Egg Village:
+// Tchaikovsky — Dance of the Sugar Plum Fairy & Trepak Party Medley (The Nutcracker Op. 71, 1892 — Public Domain),
+// 20 bars of 2/4 at 150 BPM, matching JOY_BARS / JOY_HARMONY beat-for-beat!
+const HAL_PARTY_BARS = [
+  [[0.5, 79, 0.25], [0.75, 76, 0.25], [1, 79, 0.5], [1.5, 78, 0.5]],
+  [[0, 75, 0.5], [0.5, 76, 0.5], [1, 74, 0.5], [1.5, 74, 0.5]],
+  [[0, 73, 0.5], [0.5, 73, 0.5], [1, 72, 1]],
+  [[0.5, 76, 0.25], [0.75, 72, 0.25], [1, 76, 0.5], [1.5, 79, 0.5]],
+  [[0, 84, 0.5], [0.5, 83, 0.5], [1, 81, 0.5], [1.5, 79, 0.5]],
+  [[0, 78, 0.5], [0.5, 79, 0.5], [1, 81, 0.5], [1.5, 78, 0.5]],
+  [[0, 79, 1.5], [1.5, 79, 0.5]],
+  [[0, 84, 0.5], [0.5, 79, 0.5], [1, 76, 0.5], [1.5, 72, 0.5]],
+  // Burst into upbeat Trepak / Toy Party bounce!
+  [[0, 84, 0.5], [0.5, 83, 0.25], [0.75, 84, 0.25], [1, 79, 0.5], [1.5, 76, 0.5]],
+  [[0, 81, 0.5], [0.5, 79, 0.25], [0.75, 81, 0.25], [1, 77, 0.5], [1.5, 74, 0.5]],
+  [[0, 79, 0.5], [0.5, 77, 0.5], [1, 76, 0.5], [1.5, 74, 0.5]],
+  [[0, 72, 0.5], [0.5, 76, 0.5], [1, 79, 1]],
+  [[0, 84, 0.5], [0.5, 83, 0.25], [0.75, 84, 0.25], [1, 79, 0.5], [1.5, 76, 0.5]],
+  [[0, 81, 0.5], [0.5, 83, 0.25], [0.75, 84, 0.25], [1, 86, 0.5], [1.5, 83, 0.5]],
+  [[0, 84, 0.5], [0.5, 79, 0.5], [1, 77, 0.5], [1.5, 74, 0.5]],
+  [[0, 72, 1.5], [1.5, 79, 0.5]],
+  [[0, 81, 0.5], [0.5, 77, 0.5], [1, 84, 0.5], [1.5, 81, 0.5]],
+  [[0, 79, 0.5], [0.5, 76, 0.5], [1, 83, 0.5], [1.5, 79, 0.5]],
+  [[0, 77, 0.5], [0.5, 76, 0.5], [1, 74, 0.5], [1.5, 79, 0.5]],
+  [[0, 72, 2]],
+];
+const HAL_PARTY_HARMONY = [
+  ['Em', 'B'], ['Em', 'G'], ['Am', 'Em'], ['C', 'G'], ['C', 'D'], ['D', 'B'], ['Em', 'G'], ['C', 'G'],
+  ['C', 'C'], ['F', 'Dm'], ['G', 'G7'], ['C', 'C'], ['C', 'C'], ['F', 'G'], ['C', 'G'], ['C', 'C'],
+  ['F', 'F'], ['C', 'Em'], ['Dm', 'G'], ['C', 'C'],
+];
 
-// The village playlist: { song (null = Joy), start, len } in beats from Joy's first note. Joy plays once, then a
-// shuffled bag of the rest, refilled when empty, never the same carol twice running. Rebuilt for every visit.
+// Mozart — Rondo Alla Turca K. 331 (1783, Public Domain; cute & energetic arcade classic)
+const TURCA_SONG = {
+  id: 'turca',
+  bpb: 4,
+  bars: [
+    [[0, 71, 0.5], [0.5, 69, 0.5], [1, 68, 0.5], [1.5, 69, 0.5], [2, 72, 2]],
+    [[0, 74, 0.5], [0.5, 72, 0.5], [1, 71, 0.5], [1.5, 72, 0.5], [2, 76, 2]],
+    [[0, 77, 0.5], [0.5, 76, 0.5], [1, 75, 0.5], [1.5, 76, 0.5], [2, 83, 0.5], [2.5, 81, 0.5], [3, 80, 0.5], [3.5, 81, 0.5]],
+    [[0, 83, 0.5], [0.5, 81, 0.5], [1, 80, 0.5], [1.5, 81, 0.5], [2, 84, 2]],
+    [[0, 81, 1], [1, 84, 1], [2, 79, 0.5], [2.5, 81, 0.5], [3, 77, 0.5], [3.5, 79, 0.5]],
+    [[0, 76, 1], [1, 79, 1], [2, 74, 1], [3, 72, 1]],
+    [[0, 71, 0.5], [0.5, 72, 0.5], [1, 74, 1], [2, 72, 1], [3, 71, 1]],
+    [[0, 69, 4]],
+  ],
+  harm: [
+    ['Am', 'Am', 'Am', 'Am'],
+    ['Dm', 'Dm', 'Am', 'Am'],
+    ['Dm', 'Dm', 'Am', 'Am'],
+    ['E', 'E', 'Am', 'Am'].map((c) => (c === 'E' ? 'B' : c)),
+    ['F', 'F', 'C', 'G'],
+    ['C', 'C', 'G', 'Am'],
+    ['Dm', 'Dm', 'Am', 'B'],
+    ['Am', 'Am', 'Am', 'Am'],
+  ],
+};
+
+// Boccherini — Minuet in E (G. 275, 1771, Public Domain; ultra-cute classic cartoon/music-box melody, here in C)
+const BOCCHERINI_SONG = {
+  id: 'boccherini',
+  bpb: 3,
+  bars: [
+    [[0, 76, 0.5], [0.5, 74, 0.5], [1, 76, 0.5], [1.5, 79, 0.5], [2, 72, 0.5], [2.5, 76, 0.5]],
+    [[0, 74, 1.5], [1.5, 79, 0.5], [2, 74, 1]],
+    [[0, 77, 0.5], [0.5, 76, 0.5], [1, 77, 0.5], [1.5, 79, 0.5], [2, 71, 0.5], [2.5, 74, 0.5]],
+    [[0, 72, 1.5], [1.5, 79, 0.5], [2, 72, 1]],
+    [[0, 81, 1], [1, 84, 0.5], [1.5, 81, 0.5], [2, 79, 0.5], [2.5, 76, 0.5]],
+    [[0, 77, 1], [1, 81, 0.5], [1.5, 77, 0.5], [2, 74, 0.5], [2.5, 71, 0.5]],
+    [[0, 72, 1], [1, 76, 1], [2, 74, 1]],
+    [[0, 72, 3]],
+  ],
+  harm: [
+    ['C', 'C', 'C'],
+    ['G', 'G', 'G'],
+    ['G7', 'G7', 'G'],
+    ['C', 'C', 'C'],
+    ['F', 'F', 'C'],
+    ['Dm', 'Dm', 'G'],
+    ['C', 'Am', 'G'],
+    ['C', 'C', 'C'],
+  ],
+};
+
+const VILLAGE_GAP = 4; // beats of rest between two songs
+
+// The village playlist: { song (null = lead song), start, len } in beats from first note.
 function villagePlaylistAt(b) {
+  const isXmas = typeof INTRO_TOWN !== 'undefined' && INTRO_TOWN.id === 'xmas';
   if (PP_SOUND.villageKey !== MOTION_STATE.sceneStartTime) {
     PP_SOUND.villageKey = MOTION_STATE.sceneStartTime;
     PP_SOUND.villageList = [{ song: null, start: 0, len: JOY_CYCLE }];
@@ -835,7 +1033,7 @@ function villagePlaylistAt(b) {
   while (list[list.length - 1].start + list[list.length - 1].len + VILLAGE_GAP <= b && list.length < 80) {
     const prev = list[list.length - 1];
     if (!PP_SOUND.villageBag.length) {
-      const bag = [...TOWN_SONGS, DING_SONG, GOD_SONG];
+      const bag = isXmas ? [...XMAS_TOWN_SONGS, DING_SONG, GOD_SONG] : [...CUTE_UPBEAT_SONGS, TURCA_SONG, BOCCHERINI_SONG];
       for (let i = bag.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [bag[i], bag[j]] = [bag[j], bag[i]];
@@ -890,12 +1088,15 @@ function easterCues(fromMs, toMs, emit) {
         if (k >= 4) emit(at, (t) => sndNoise(t, 0.08, { filter: 'bandpass', freq: 1700 + k * 60, q: 0.9, vol: 0.06 + k * 0.012, bus }));
         continue;
       }
+      const isXmas = typeof INTRO_TOWN !== 'undefined' && INTRO_TOWN.id === 'xmas';
+      const leadBars = isXmas ? JOY_BARS : HAL_PARTY_BARS;
+      const leadHarm = isXmas ? JOY_HARMONY : HAL_PARTY_HARMONY;
       const pass = lb < JOY_PASS ? 0 : 1;
       const pb = lb - pass * JOY_PASS;
       const bar = Math.floor(pb / 2);
       const inBar = pb - bar * 2;
-      const chord = JOY_CHORD[JOY_HARMONY[bar][Math.floor(inBar)]];
-      partyBeat(emit, at, sec, JOY_BARS[bar], inBar, s16 % 8, 2, chord, pass * 2, s16 % 8 === 0 && (bar === 0 || bar === 8), pass === 1, q);
+      const chord = JOY_CHORD[leadHarm[bar][Math.floor(inBar)]];
+      partyBeat(emit, at, sec, leadBars[bar], inBar, s16 % 8, 2, chord, pass * 2, s16 % 8 === 0 && (bar === 0 || bar === 8), pass === 1, q);
       continue;
     }
     // The others, shuffled, in the same dress; bells come in for the second half

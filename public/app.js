@@ -518,7 +518,7 @@ function initAmbientPixelCanvas() {
 // ============================================================================
 const SCENE_DURATIONS = [99999999, 2600, 99999999, 7000, 99999999]; // scene 4: approach + scan + rise (scene-pull.js)
 
-// Scene 5 town follows the season. ?town=xmas or ?town=cherry forces one (preview the other season).
+// Scene 5 town follows the season. ?town=halloween, ?town=xmas or ?town=cherry forces one.
 const INTRO_TOWN = (() => {
   let forced = '';
   try {
@@ -528,7 +528,23 @@ const INTRO_TOWN = (() => {
   }
   const month = new Date().getMonth() + 1;
   const id =
-    forced === 'xmas' || forced === 'cherry' ? forced : month >= 3 && month <= 9 ? 'cherry' : 'xmas';
+    forced === 'halloween' || forced === 'xmas' || forced === 'cherry'
+      ? forced
+      : month === 10
+        ? 'halloween'
+        : month >= 3 && month <= 9
+          ? 'cherry'
+          : 'xmas';
+  if (id === 'halloween') {
+    return {
+      id,
+      ko: '할로윈 마을',
+      koPixel: '할로윈 픽셀마을',
+      koGround: '호박밭',
+      en: 'Halloween Town',
+      bg: '/assets/motion_sprites/bg_scene5_halloween.jpg?v=5.8.0',
+    };
+  }
   if (id === 'xmas') {
     return {
       id,
@@ -2292,6 +2308,7 @@ function drawAnimatedPixelPenguin(ctx, spEntry, x, y, size, now, options = {}) {
     flipX = false,
     forceBlink = false,
     santaHat = false,
+    halloweenHat = false,
   } = options;
   const anim = getPenguinAnimState(now, seed, isWalking, forceBlink);
   const cx = x + size / 2;
@@ -2321,7 +2338,9 @@ function drawAnimatedPixelPenguin(ctx, spEntry, x, y, size, now, options = {}) {
   } else if (spEntry && spEntry.loaded && spEntry.img) {
     ctx.drawImage(spEntry.img, -size / 2, -size / 2, size, size);
   }
-  if (santaHat && spEntry && (spEntry.sheetLoaded || spEntry.loaded)) {
+  if (halloweenHat && spEntry && (spEntry.sheetLoaded || spEntry.loaded)) {
+    drawHalloweenHatOnSheet(ctx, size, seed);
+  } else if (santaHat && spEntry && (spEntry.sheetLoaded || spEntry.loaded)) {
     drawSantaHatOnSheet(ctx, size);
   }
   ctx.restore();
@@ -2487,6 +2506,203 @@ function drawPixelXmasTree(ctx, centerX, baseY, now) {
       ctx.fillRect(kx + P, ky, P, P);
       ctx.fillRect(kx, ky - P, P, P);
       ctx.fillRect(kx, ky + P, P, P);
+    }
+  }
+  ctx.restore();
+}
+
+// Halloween Town Centerpiece: Haunted Pumpkin & Witch-Hat Tree on the exact same 39x58 (P=3) pixel grid.
+let HALLOWEEN_TREE_CACHE = null;
+const HALLOWEEN_TREE_TOPPER = [
+  '.....K.....',
+  '....KPK....',
+  '...KPPPK...',
+  '..KPBPPPK..',
+  'KKKKKKKKKKK',
+  '.KOOOOOOOK.',
+  'KOYOOOOOYOK',
+  'KOOOOOOOOOK',
+  '.KOWOWOWOK.',
+  '..KKKKKKK..',
+];
+const HALLOWEEN_TREE_LIGHT_COLS = ['#ff7b00', '#a855f7', '#84cc16', '#fde047', '#fb7185'];
+
+function buildHalloweenTreeCache() {
+  const c = document.createElement('canvas');
+  c.width = XMAS_TREE_W;
+  c.height = XMAS_TREE_H;
+  const g = c.getContext('2d');
+  const px = (x, y, col) => {
+    g.fillStyle = col;
+    g.fillRect(x, y, 1, 1);
+  };
+  const cx = 19;
+  // Twisted dark trunk
+  for (let y = 47; y < 52; y++) {
+    for (let x = cx - 3; x <= cx + 3; x++) {
+      px(x, y, x === cx - 3 || x === cx + 3 ? '#120720' : x < cx ? '#4c1d95' : '#2e1065');
+    }
+  }
+  // Bubbling Green Witch's Cauldron at the center base (y = 51..57)
+  for (let y = 51; y < 58; y++) {
+    const hw = y === 51 ? 6 : y === 57 ? 5 : 6;
+    for (let x = cx - hw; x <= cx + hw; x++) {
+      const edge = x === cx - hw || x === cx + hw || y === 57 || y === 51;
+      px(x, y, edge ? '#0b0616' : y === 52 ? '#84cc16' : x < cx - 2 ? '#3b2554' : '#1e1436');
+    }
+  }
+  // Glowing green potion bubbles on top of cauldron
+  for (let x = cx - 4; x <= cx + 4; x++) {
+    px(x, 51, x % 2 === 0 ? '#bef264' : '#84cc16');
+  }
+  px(cx - 2, 50, '#bef264');
+  px(cx + 2, 50, '#84cc16');
+  // Two Carved Glowing Jack-o'-Lanterns flanking the cauldron at the foot of the tree
+  [cx - 10, cx + 10].forEach((pxc) => {
+    for (let y = 52; y <= 57; y++) {
+      for (let x = pxc - 3; x <= pxc + 3; x++) {
+        const edge = x === pxc - 3 || x === pxc + 3 || y === 52 || y === 57;
+        px(x, y, edge ? '#160a24' : x === pxc ? '#c2410c' : '#ff7b00');
+      }
+    }
+    px(pxc, 51, '#22c55e');
+    px(pxc - 1, 54, '#fef08a');
+    px(pxc + 1, 54, '#fef08a');
+    px(pxc - 1, 56, '#fde047');
+    px(pxc, 56, '#fde047');
+    px(pxc + 1, 56, '#fde047');
+  });
+
+  // Haunted Purple & Fiery Autumn Tiers
+  for (let t = XMAS_TREE_TIERS.length - 1; t >= 0; t--) {
+    const [top, rows, w0, w1] = XMAS_TREE_TIERS[t];
+    for (let r = 0; r < rows; r++) {
+      const y = top + r;
+      const hw = Math.round(w0 + ((w1 - w0) * r) / (rows - 1));
+      const last = r === rows - 1;
+      for (let x = cx - hw; x <= cx + hw; x++) {
+        if (last && (x + t) % 2 === 1) continue;
+        const outline = x === cx - hw || x === cx + hw || r === 0 || last;
+        let col;
+        if (outline) col = '#140824';
+        else if (r >= rows - 3) col = '#2e1065';
+        else if (x < cx - hw * 0.25) col = '#9333ea';
+        else if (x < cx + hw * 0.45) col = '#6b21a8';
+        else col = '#4c1d95';
+        px(x, y, col);
+      }
+      if (last) for (let x = cx - hw + ((t + 1) % 2); x <= cx + hw; x += 2) px(x, y + 1, '#140824');
+      // Fiery Halloween autumn orange/gold foliage clusters on tier ridges
+      if (r === 1 || (r === 2 && t > 0)) {
+        for (let x = cx - hw + 1; x <= cx + Math.floor(hw * 0.45); x++) {
+          if ((x * 7 + r * 3 + t) % 5 !== 0) px(x, y, r === 1 ? '#ff9f1c' : '#ea580c');
+        }
+      }
+    }
+    // Slime-green & pumpkin-orange garland sweeping across each tier
+    for (let k = 0; k < rows - 4; k++) {
+      const gy = top + 3 + k;
+      const hw = Math.round(w0 + ((w1 - w0) * (k + 3)) / (rows - 1));
+      const gx = cx - hw + 2 + Math.round(((2 * hw - 4) * k) / Math.max(1, rows - 5));
+      px(gx, gy, k % 2 === 0 ? '#84cc16' : '#ff7b00');
+      px(gx + 1, gy, k % 2 === 0 ? '#4d7c0f' : '#c2410c');
+    }
+  }
+  // Delicate pixel cobweb in upper-right and lower-left boughs
+  [[23, 21], [24, 22], [25, 21], [24, 20], [11, 39], [12, 40], [13, 39], [12, 38]].forEach(([wx, wy]) => {
+    px(wx, wy, '#cbd5e1');
+  });
+  // Carved mini Jack-o'-lantern ornaments & white pixel ghosts on the boughs
+  [
+    [14, 24, 'pumpkin'], [23, 29, 'ghost'], [12, 35, 'pumpkin'], [20, 36, 'orb'], [27, 40, 'pumpkin'],
+    [10, 44, 'ghost'], [16, 42, 'pumpkin'], [24, 45, 'pumpkin'], [18, 20, 'orb'],
+  ].forEach(([bx, by, kind]) => {
+    if (kind === 'pumpkin') {
+      px(bx, by - 1, '#22c55e');
+      px(bx, by, '#ff7b00');
+      px(bx + 1, by, '#fef08a');
+      px(bx, by + 1, '#ea580c');
+      px(bx + 1, by + 1, '#c2410c');
+    } else if (kind === 'ghost') {
+      px(bx, by, '#f8fafc');
+      px(bx + 1, by, '#e2e8f0');
+      px(bx, by + 1, '#1e1b4b');
+      px(bx + 1, by + 1, '#f8fafc');
+    } else {
+      px(bx, by, '#ffffff');
+      px(bx + 1, by, '#a855f7');
+      px(bx, by + 1, '#84cc16');
+      px(bx + 1, by + 1, '#140824');
+    }
+  });
+  // King Jack-o'-Lantern + Witch Hat Topper (11x10)
+  HALLOWEEN_TREE_TOPPER.forEach((row, ry) => {
+    [...row].forEach((ch, rx) => {
+      const col = { K: '#160a24', P: '#6b21a8', B: '#fde047', O: '#ff6d00', Y: '#fef08a', W: '#fde047' }[ch];
+      if (col) px(cx - 5 + rx, ry, col);
+    });
+  });
+  return c;
+}
+
+function drawPixelHalloweenTree(ctx, centerX, baseY, now) {
+  if (!HALLOWEEN_TREE_CACHE) HALLOWEEN_TREE_CACHE = buildHalloweenTreeCache();
+  const P = XMAS_TREE_P;
+  const left = Math.round(centerX - (XMAS_TREE_W * P) / 2);
+  const top = Math.round(baseY - XMAS_TREE_H * P);
+  const at = (gx, gy) => [left + gx * P, top + gy * P];
+  ctx.save();
+  // Ground shadow
+  ctx.fillStyle = 'rgba(12, 6, 28, 0.34)';
+  ctx.fillRect(left + 5 * P, baseY - P, 29 * P, P * 2);
+  const beat = MOTION_STATE.sceneIdx === 4 ? townBeat(now) : now / 420;
+  const beatN = Math.floor(beat);
+  const pulse = beat >= 0 ? Math.pow(1 - (beat - beatN), 2) : 0.5 + 0.5 * Math.sin(now * 0.004);
+  const [sx, sy] = at(19.5, 5.5);
+  const glow = ctx.createRadialGradient(sx, sy, 2, sx, sy, 52 + pulse * 12);
+  glow.addColorStop(0, `rgba(255, 138, 28, ${(0.52 + pulse * 0.25).toFixed(2)})`);
+  glow.addColorStop(0.55, `rgba(168, 85, 247, ${(0.24 + pulse * 0.12).toFixed(2)})`);
+  glow.addColorStop(1, 'rgba(168, 85, 247, 0)');
+  ctx.fillStyle = glow;
+  ctx.fillRect(sx - 66, sy - 66, 132, 132);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(HALLOWEEN_TREE_CACHE, left, top, XMAS_TREE_W * P, XMAS_TREE_H * P);
+  // Twinkling Halloween fairy lights on the beat
+  XMAS_TREE_LIGHTS.forEach(([gx, gy], i) => {
+    const on = (((beatN + i) % 3) + 3) % 3 !== 0;
+    const col = HALLOWEEN_TREE_LIGHT_COLS[(((i + Math.floor(beatN / 4)) % HALLOWEEN_TREE_LIGHT_COLS.length) + HALLOWEEN_TREE_LIGHT_COLS.length) % HALLOWEEN_TREE_LIGHT_COLS.length];
+    const [lx, ly] = at(gx, gy);
+    if (on) {
+      ctx.globalAlpha = 0.55;
+      ctx.fillStyle = col;
+      ctx.fillRect(lx - P, ly, P * 3, P);
+      ctx.fillRect(lx, ly - P, P, P * 3);
+      ctx.globalAlpha = 1;
+    }
+    ctx.fillStyle = on ? col : '#1e1033';
+    ctx.fillRect(lx, ly, P, P);
+  });
+  // Orbiting pixel bats & glowing embers around the King Jack-o'-Lantern topper
+  for (let k = 0; k < 4; k++) {
+    const a = now * 0.0022 + (k * Math.PI) / 2;
+    const r = 32 + 6 * Math.sin(now * 0.006 + k);
+    const kx = Math.round((sx + Math.cos(a) * r) / P) * P;
+    const ky = Math.round((sy + Math.sin(a) * r * 0.8) / P) * P;
+    const flap = Math.floor(now / 180 + k) % 2 === 0;
+    if (k % 2 === 0) {
+      // Tiny pixel bat
+      ctx.fillStyle = '#140824';
+      ctx.fillRect(kx, ky, P, P);
+      ctx.fillRect(kx - P, ky + (flap ? -P : P), P, P);
+      ctx.fillRect(kx + P, ky + (flap ? -P : P), P, P);
+    } else {
+      // Glowing pumpkin/violet wisp
+      ctx.fillStyle = k === 1 ? '#ff9f1c' : '#c084fc';
+      ctx.fillRect(kx, ky, P, P);
+      if (flap) {
+        ctx.fillStyle = '#fef08a';
+        ctx.fillRect(kx, ky - P, P, P);
+      }
     }
   }
   ctx.restore();
@@ -3276,7 +3492,144 @@ function drawSantaHatRows(ctx, cell, ox, oy) {
   });
 }
 
-// Helper: Scene 5 town background (seasonal: Christmas pixel town, or Cherry-Blossom park with petals & water glints)
+// Halloween Town Overlay: twinkling pumpkin-orange/witch-purple/slime-green tree lights, purple river glints,
+// floating Halloween embers/wisps, and fluttering pixel bats!
+const HALLOWEEN_BULB_COLORS = ['#ff7b00', '#a855f7', '#84cc16', '#fde047'];
+function drawHalloweenTownOverlay(ctx, now) {
+  const P = 4;
+  const A = XMAS_TOWN_ANCHORS;
+  const snap = (v) => Math.floor(v / P) * P;
+  ctx.save();
+
+  const beat = Math.floor(now / 480);
+  (A.bulbs || []).forEach(([x, y, k], i) => {
+    if ((i + beat) % 3 === 0) return;
+    ctx.fillStyle = HALLOWEEN_BULB_COLORS[k % HALLOWEEN_BULB_COLORS.length];
+    ctx.globalAlpha = 0.34;
+    ctx.fillRect(x - P, y - P, P * 3, P * 3);
+    ctx.globalAlpha = 1;
+    ctx.fillRect(x, y, P, P);
+  });
+
+  if (A.ice) {
+    const [iceTop, iceBot, iceL, iceR] = A.ice;
+    const glint = Math.floor(now / 320) % 2;
+    for (let g = 0; g < 9; g++) {
+      ctx.fillStyle = g % 2 === 0 ? 'rgba(255, 159, 28, 0.78)' : 'rgba(192, 132, 252, 0.78)';
+      const gx = snap(iceL + 40 + g * ((iceR - iceL - 80) / 8) + glint * 8);
+      const gy = snap(iceTop + 12 + ((g * 23) % Math.max(1, iceBot - iceTop - 24)));
+      ctx.fillRect(gx, gy, P * 2, P);
+    }
+  }
+
+  // Floating spooky wisps, autumn embers, and fluttering bats across the sky
+  for (let i = 0; i < 36; i++) {
+    if (i < 5) {
+      // Fluttering pixel bat in the upper sky
+      const bx = snap((((now * (0.045 + i * 0.007) + i * 193) % 980) + 980) % 980 - 10);
+      const by = snap(34 + (i * 31) % 130 + Math.sin(now * 0.004 + i) * 10);
+      const flap = Math.floor(now / 160 + i) % 2 === 0;
+      ctx.fillStyle = '#18082c';
+      ctx.fillRect(bx, by, P, P);
+      ctx.fillRect(bx - P, by + (flap ? -P : P), P, P);
+      ctx.fillRect(bx + P, by + (flap ? -P : P), P, P);
+      continue;
+    }
+    const near = i % 4 === 0;
+    const speed = near ? 0.036 + (i % 3) * 0.006 : 0.018 + (i % 5) * 0.004;
+    const fy = snap(((now * speed + i * 83) % 580) - 20);
+    const sway = Math.sin(now * 0.0014 + i * 1.7) * (near ? 18 : 9);
+    const fx = snap((((i * 151 + sway) % 960) + 960) % 960);
+    ctx.fillStyle = i % 3 === 0 ? '#ff9f1c' : i % 3 === 1 ? '#c084fc' : '#fde047';
+    ctx.fillRect(fx, fy, near ? P * 2 : P, near ? P * 2 : P);
+  }
+  ctx.restore();
+}
+
+// Halloween Penguin Costumes on the 256x256 species sheet grid (8 px per cell):
+// 0 = Pointed Purple Witch/Wizard Hat with Orange Ribbon & Gold Buckle
+// 1 = Carved Glowing Jack-o'-Lantern Pumpkin Hat
+// 2 = Crimson Demon Horns & Bat-Wing Crown
+const HALLOWEEN_HAT_VARIANTS = [
+  [
+    '.........oooo...',
+    '........oPPPoG..',
+    '.......oPPPPoG..',
+    '......opPPPPPo..',
+    '.....opPPPPPPPo.',
+    '....oOOOGGGOOOOo',
+    '.ooooooppppppooo',
+    '.opppppppppppppo',
+    '..ooooooooooooo.',
+  ],
+  [
+    '.......ooSSoo...',
+    '......oSSooSo...',
+    '....oooOOOOOOoo.',
+    '...oOROOOROOOROo',
+    '..oOROYOOROYOORo',
+    '..oOROOOOOOOOORo',
+    '..oOROYOYOYOYORo',
+    '...oOROOOROOORo.',
+    '....oooooooooo..',
+  ],
+  [
+    '..oo........oo..',
+    '.oDDo......oDDo.',
+    '.oDDDo....oDDDo.',
+    '..odDDo..oDDdo..',
+    '..oodDDooDDdoo..',
+    '...oVVVGGGGVVVo.',
+    '...oVVVVGGVVVVo.',
+    '....oooooooooo..',
+    '................',
+  ],
+];
+const HALLOWEEN_HAT_COLORS = {
+  o: '#160a24',
+  P: '#6d28d9',
+  p: '#3b0764',
+  O: '#ff7b00',
+  R: '#c2410c',
+  G: '#fde047',
+  Y: '#fef08a',
+  S: '#22c55e',
+  D: '#e11d48',
+  d: '#9f1239',
+  V: '#3b0764',
+};
+const HALLOWEEN_HAT_CACHE = new Map();
+function drawHalloweenHatOnSheet(ctx, size, seed = 0) {
+  const vIdx = Math.abs(Math.round(seed)) % HALLOWEEN_HAT_VARIANTS.length;
+  const rows = HALLOWEEN_HAT_VARIANTS[vIdx];
+  const cell = (size / 256) * 8;
+  const ox = -size / 2 + 8 * cell;
+  const oy = -size / 2;
+  const w = Math.ceil(rows[0].length * cell + 1);
+  const h = Math.ceil(rows.length * cell + 1);
+  const key = `${size}|${vIdx}`;
+  let c = HALLOWEEN_HAT_CACHE.get(key);
+  if (!c) {
+    c = document.createElement('canvas');
+    c.width = w * 2;
+    c.height = h * 2;
+    const cc = c.getContext('2d');
+    cc.scale(2, 2);
+    cc.translate(-ox, -oy);
+    rows.forEach((row, r) => {
+      for (let colIdx = 0; colIdx < row.length; colIdx++) {
+        const col = HALLOWEEN_HAT_COLORS[row[colIdx]];
+        if (!col) continue;
+        cc.fillStyle = col;
+        cc.fillRect(ox + colIdx * cell, oy + r * cell, cell + 0.5, cell + 0.5);
+      }
+    });
+    HALLOWEEN_HAT_CACHE.set(key, c);
+  }
+  ctx.drawImage(c, ox, oy, w, h);
+}
+
+// Helper: Scene 5 town background (seasonal: Halloween town, Christmas town, or Cherry-Blossom park)
 function drawScene2PixelWorldBackground(ctx, now) {
   ensureIntroBackgrounds();
   const P = 4;
@@ -3286,12 +3639,16 @@ function drawScene2PixelWorldBackground(ctx, now) {
     ctx.imageSmoothingEnabled = false;
     ctx.drawImage(MOTION_STATE.bgScene2Img, 0, 0, 960, 540);
   } else {
-    ctx.fillStyle = INTRO_TOWN.id === 'xmas' ? '#131c40' : '#5899e2';
+    ctx.fillStyle = INTRO_TOWN.id === 'halloween' ? '#1a0b36' : INTRO_TOWN.id === 'xmas' ? '#131c40' : '#5899e2';
     ctx.fillRect(0, 0, 960, 410);
-    ctx.fillStyle = INTRO_TOWN.id === 'xmas' ? '#e6eefc' : '#52b768';
+    ctx.fillStyle = INTRO_TOWN.id === 'halloween' ? '#242b42' : INTRO_TOWN.id === 'xmas' ? '#e6eefc' : '#52b768';
     ctx.fillRect(0, 410, 960, 130);
   }
 
+  if (INTRO_TOWN.id === 'halloween') {
+    drawHalloweenTownOverlay(ctx, now);
+    return;
+  }
   if (INTRO_TOWN.id === 'xmas') {
     drawXmasTownOverlay(ctx, now);
     return;
@@ -4169,6 +4526,7 @@ function initPixelMotionStudio() {
           isWalking: true,
           flipX: leaveDx > 0,
           santaHat: INTRO_TOWN.id === 'xmas',
+          halloweenHat: INTRO_TOWN.id === 'halloween',
         });
       } else {
         const crashP = Math.min(1, s5P / 0.14);
@@ -4255,7 +4613,8 @@ function initPixelMotionStudio() {
         amp: Math.min(4, row.gap / 3), // sway stays inside the gap, so neighbours never touch
         speed: 0.0023 + (i % 3) * 0.0002,
       }));
-      if (INTRO_TOWN.id === 'xmas') drawPixelXmasTree(ctx, row.treeCx, 462 + townDrop(), now);
+      if (INTRO_TOWN.id === 'halloween') drawPixelHalloweenTree(ctx, row.treeCx, 462 + townDrop(), now);
+      else if (INTRO_TOWN.id === 'xmas') drawPixelXmasTree(ctx, row.treeCx, 462 + townDrop(), now);
 
       const walkInP = Math.min(1, s5P / 0.20);
       const renderedFriends = [];
@@ -4275,6 +4634,7 @@ function initPixelMotionStudio() {
           isWalking: true,
           flipX: true,
           santaHat: INTRO_TOWN.id === 'xmas',
+          halloweenHat: INTRO_TOWN.id === 'halloween',
         });
 
         renderedFriends.push({ fx, fy: fr.y });
@@ -4293,11 +4653,22 @@ function initPixelMotionStudio() {
         const fr = (i) => renderedFriends[i] || { fx: row.friendsX[i], fy: spriteY };
         const L = (who, col, k, e) => ({ who, col, text: ko ? k : i18n(e) });
         const townEn = i18n(INTRO_TOWN.en);
+        const isHal = INTRO_TOWN.id === 'halloween';
         const chatter = [
           L(fr(1), '#fbbf24', '근데 너 진짜 게임 1초도 안 했어? 제작자 지금 울고 있음 ㅋㅋ', 'Wait, you skipped the whole game? The dev is crying right now lol'),
-          L(hero, '#38bdf8', '게임은 다음에... 일단 트리 구경부터 ㅎㅎ', 'Game later... tree first hehe'),
+          L(
+            hero,
+            '#38bdf8',
+            isHal ? '게임은 다음에... 일단 호박나무 구경부터 ㅎㅎ' : '게임은 다음에... 일단 트리 구경부터 ㅎㅎ',
+            isHal ? 'Game later... pumpkin tree first hehe' : 'Game later... tree first hehe'
+          ),
           L(fr(2), '#2dd4bf', '도감에 펭귄 1만 마리 있는 거 앎? 너 닮은 애 무조건 있음', 'There are 10,000 of us in the Codex. One of them looks like you, guaranteed'),
-          L(fr(3), '#fb923c', '산타 모자 공짜 아님 ㅋ 프사로 박으면 그때부터 공짜임', "Santa hats aren't free lol. Free once you make one your PFP"),
+          L(
+            fr(3),
+            '#fb923c',
+            isHal ? '할로윈 코스튬 공짜 아님 ㅋ 프사로 박으면 그때부터 공짜임' : '산타 모자 공짜 아님 ㅋ 프사로 박으면 그때부터 공짜임',
+            isHal ? "Halloween costumes aren't free lol. Free once you make one your PFP" : "Santa hats aren't free lol. Free once you make one your PFP"
+          ),
           L(hero, '#38bdf8', '근데 아까부터 니네 왜 자꾸 왼쪽 쳐다봄?', 'Why do you all keep looking to the left?'),
           L(fr(4), '#4ade80', '...아무것도 아님. 진짜 아무것도 없음. 쳐다보지 마', '...Nothing. Absolutely nothing over there. Do not look'),
           L(fr(5), '#a78bfa', '(속닥속닥) 30초 버티면 제작자가 숨겨둔 게 열린대...', "(whisper) If you hang around 30 s, the dev's secret opens..."),
