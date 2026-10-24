@@ -385,6 +385,7 @@ function drawTownEaster(ctx, now, elapsed) {
       }
       drawAnimatedPixelPenguin(ctx, ensureSpeciesSprite(c.sp), x - c.size / 2, c.feet - c.size * (243 / 256) - hop, c.size, now, {
         seed: 20 + i,
+        costumeIdx: i,
         isWalking: (walking || !!c.dance) && sl === 0,
         flipX: flip,
         halloweenHat: true,
