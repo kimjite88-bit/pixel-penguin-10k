@@ -225,8 +225,59 @@ const FISH_SPECIES = [
     belly: '#fef3c7',
     accent: '#38bdf8',
     size: 1.48,
-    quoteKo: '미쳤다 얼음구덩이에서 물보라 뿜는 황금고래가 왜 나와?!!',
-    quoteEn: 'Wait, how did a whole GOLDEN WHALE fit through this ice hole?!!',
+    quoteKo: '갈 땐 가더라도 고래 한 번 정도는 괜찮잖아!! 진짜 황금고래 잡았다 ㅋㅋㅋ',
+    quoteEn: 'One whale before I go, right?! I actually caught a GOLDEN WHALE lol',
+  },
+];
+
+// B-Grade Noir / Meme Parody Dialogue Pool during Ice Fishing
+const FISH_BGRADE_LURE_LINES = [
+  {
+    ko: '갈 땐 가더라도 고래 한 번 정도는 괜찮잖아?',
+    en: 'Even if I gotta go, one whale first is fine, right?',
+  },
+  {
+    ko: '남극이 무너지든 말든~ 세월을 낚는 중이다 ㅋㅋ',
+    en: 'Antarctica can crumble all it wants~ just watch the bobber lol',
+  },
+  {
+    ko: '어차피 망할 남극, 대왕오징어 숙회나 썰고 가자~',
+    en: "World's ending anyway~ let's slice some giant squid sashimi first!",
+  },
+  {
+    ko: '살려는 드릴게... 근데 황금고래 너는 오늘 내 아이스박스 행이다',
+    en: "I'll let you live... except you, Golden Whale, into the cooler you go!",
+  },
+  {
+    ko: '비행기? 쇄빙선? 진정한 고인물은 얼음구덩이를 지킨다 ㅋㅋ',
+    en: 'Plane? Icebreaker? Real OGs guard the ice hole lol',
+  },
+  {
+    ko: '찌가 까딱거리는데... 이거 최소 자연산 대왕광어 관상이다',
+    en: "The bobber's twitching... that's definitely a wild giant halibut vibe",
+  },
+  {
+    ko: '남극 얼음 다 녹기 전에 매운탕 거리 하나만 더 건지자 ㅋㅋ',
+    en: 'Just one more fish for spicy stew before the glacier melts lol',
+  },
+  {
+    ko: '고래야 나와라~ 너 잡기 전엔 절대 마을 안 간다!!',
+    en: 'Come out, Golden Whale~ Not leaving till I hook you!!',
+  },
+];
+
+const FISH_BGRADE_FIGHT_LINES = [
+  {
+    ko: '손맛 죽인다~ 이 맛에 탈출 안 하고 얼음낚시 하지 ㅋㅋ',
+    en: 'What a fight~ THIS is why I skipped evacuating lol',
+  },
+  {
+    ko: '끌려올래, 매운탕 될래? 순순히 아이스박스로 들어와라 ㅋㅋ',
+    en: 'Come quietly into the cooler or become spicy fish stew lol',
+  },
+  {
+    ko: '밀당의 귀재 픽셀 펭귄!! 어디서 감히 힘자랑이냐~',
+    en: "Master of the tug-of-war!! You can't out-pull a penguin~",
   },
 ];
 
@@ -2234,10 +2285,101 @@ function drawFishScene1Departure(ctx, now, p, spId) {
   drawFishIceHoleWater(ctx, dummyRun, now);
   drawFishPenguinHandAndRod(ctx, dummyRun, now, spId);
 
-  const msg = ko
-    ? '비행기? 쇄빙선? 오픈카? 탈출은 무슨~ 얼음구덩이 손맛이나 보자 ㅋㅋ'
-    : i18n("Plane? Ship? Car? Forget escaping~ Let's just go ice fishing lol");
-  drawRetroSpeechBubble(ctx, 480, 126, msg, '#34d399', now);
+  const msg =
+    p < 0.48
+      ? ko
+        ? '비행기? 쇄빙선? 오픈카? 탈출은 무슨~ 얼음구덩이 손맛이나 보자 ㅋㅋ'
+        : i18n("Plane? Ship? Car? Forget escaping~ Let's just go ice fishing lol")
+      : ko
+      ? '갈 땐 가더라도 고래 한 번 정도는 괜찮잖아?'
+      : i18n('Even if I gotta go, one whale first is fine, right?');
+  drawRetroSpeechBubble(ctx, 536, 118, msg, '#34d399', now, { minX: 140, maxX: 668 });
+}
+
+// Select the active B-grade dialogue line & accent color based on fishing phase and hooked creature
+function getFishBGradeBubble(run, now, ko) {
+  if (run.phase === 'landed' && run.lastCatch) {
+    return {
+      text: ko ? run.lastCatch.sp.quoteKo : i18n(run.lastCatch.sp.quoteEn),
+      col: '#34d399',
+    };
+  }
+  if (run.phase === 'slip') {
+    return {
+      text: ko
+        ? '아악 내 횟감 도망갔다!! 방금 그거 고래만 했는데 ㅠㅠ'
+        : i18n('Nooo my sashimi got away!! Swear it was the size of a whale!!'),
+      col: '#fb7185',
+    };
+  }
+  if (run.phase === 'bite') {
+    return {
+      text: ko
+        ? '왔구나 왔어!! 갈 땐 가더라도 챔질은 칼같이 해야지!!'
+        : i18n('Bite on!! Even at the end of the world, never miss a strike!!'),
+      col: '#fde047',
+    };
+  }
+  if (run.phase === 'fight') {
+    if (run.energy < 34 || (!run.onTarget && (run.frayGrace || 0) <= 0)) {
+      return {
+        text: ko
+          ? '어어 낚싯줄 터진다!! 살살 당겨 살살!!'
+          : i18n("Whoa the line's gonna snap!! Easy on the reel, easy!!"),
+        col: '#fb7185',
+      };
+    }
+    if (run.chest && !run.chest.caught && run.chest.progress > 0.04) {
+      return {
+        text: ko
+          ? '물고기도 물고기인데 보물상자부터 챙겨야지 ㅋㅋ'
+          : i18n('Fish is nice and all, but dibs on that treasure chest first lol'),
+        col: '#fde047',
+      };
+    }
+    const spId = run.targetSp ? run.targetSp.id : '';
+    if (spId === 'whale') {
+      return {
+        text: ko
+          ? '와 진짜 고래가 물었다?!! 갈 땐 가더라도 이건 무조건 건진다!!'
+          : i18n("Wait a WHALE actually bit?!! I'm landing this before I go!!"),
+        col: '#fde047',
+      };
+    }
+    if (spId === 'squid' && (run.fightFrames || 0) < 130) {
+      return {
+        text: ko
+          ? '다리 열 개짜리 대왕오징어다!! 초장 준비해라아악!!'
+          : i18n('Ten-legged Colossal Squid!! Somebody get the hot sauce!!'),
+        col: '#fb7185',
+      };
+    }
+    if (spId === 'flounder' && (run.fightFrames || 0) < 130) {
+      return {
+        text: ko
+          ? '묵직한 거 보소!! 이건 자연산 남극 대왕광어다 ㅋㅋ'
+          : i18n('Feel that heavy pull!! 100% wild Antarctic Halibut lol'),
+        col: '#34d399',
+      };
+    }
+    const fIdx = ((run.castCount || 1) + Math.floor((now - run.startAt) / 3600)) % FISH_BGRADE_FIGHT_LINES.length;
+    const fLine = FISH_BGRADE_FIGHT_LINES[fIdx];
+    return {
+      text: ko ? fLine.ko : i18n(fLine.en),
+      col: '#34d399',
+    };
+  }
+  // Default: 'lure' phase — Cast 1 always starts with the signature "갈 땐 가더라도 고래 한 번 정도는 괜찮잖아?" line!
+  const castIdx = Math.max(0, (run.castCount || 1) - 1);
+  const rotIdx =
+    castIdx === 0 && now - run.startAt < 4200
+      ? 0
+      : (castIdx + Math.floor((now - run.startAt) / 4200)) % FISH_BGRADE_LURE_LINES.length;
+  const lLine = FISH_BGRADE_LURE_LINES[rotIdx];
+  return {
+    text: ko ? lLine.ko : i18n(lLine.en),
+    col: rotIdx === 0 ? '#fde047' : '#38bdf8',
+  };
 }
 
 // Scene 3: Main Stardew Valley Ice-Hole Fishing Loop
@@ -2370,15 +2512,6 @@ function drawFishRunnerFrame(ctx, now, spId) {
     const fx = FISH_CFG.HOLE_CX + (152 - FISH_CFG.HOLE_CX) * lp;
     const fy = FISH_CFG.HOLE_CY + (270 - FISH_CFG.HOLE_CY) * lp - Math.sin(lp * Math.PI) * 175;
     drawFishCreatureSprite(ctx, run.lastCatch.sp, fx, fy, 1.35 * run.lastCatch.sp.size, now);
-
-    // B-grade speech bubble with the caught species' funny line
-    const quote = ko ? run.lastCatch.sp.quoteKo : i18n(run.lastCatch.sp.quoteEn);
-    drawRetroSpeechBubble(ctx, 432, 134, quote, '#34d399', now);
-  } else if (run.phase === 'lure' && run.caughtCount === 0 && now - run.startAt < 5000) {
-    const chillLine = ko
-      ? '남극이 무너지든 말든~ 얼음구덩이 입질이나 보자 ㅋㅋ'
-      : i18n('Antarctica can crumble all it wants~ just watch the bobber lol');
-    drawRetroSpeechBubble(ctx, 432, 134, chillLine, '#38bdf8', now);
   }
 
   // 5. Foreground Penguin Basic Hand/Flipper + Flexing Fishing Rod + Bobber
@@ -2386,6 +2519,13 @@ function drawFishRunnerFrame(ctx, now, spId) {
 
   // 6. Stardew Valley Vertical Catch Bar & Tension UI
   drawFishStardewBar(ctx, run, now);
+
+  // 7. B-Grade Dialogue Speech Bubble in the open upper-center sky band (x=140..668, y=118),
+  //    with pointer tail at x=536 directed toward the penguin's fishing rod & flipper!
+  const bBubble = getFishBGradeBubble(run, now, ko);
+  if (bBubble && bBubble.text) {
+    drawRetroSpeechBubble(ctx, 536, 118, bBubble.text, bBubble.col, now, { minX: 140, maxX: 668 });
+  }
 
   // 7. Particles & Floating Score Popups
   for (let i = FISH_GAME.particles.length - 1; i >= 0; i--) {

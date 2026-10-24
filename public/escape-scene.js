@@ -956,16 +956,24 @@ function drawScene0Escape(ctx, now) {
       ? '경비행기'
       : i18n('PLANE');
 
-  // The penguin's line gets more desperate stage by stage (unless you picked the chill fishing option!)
+  // The penguin's line gets more desperate stage by stage (or cycles through chill B-grade angler lines when 'fish' is picked!)
   const lines =
     vehicle === 'fish'
       ? ko
-        ? [['탈출은 무슨~ 낚시나 하자!!', '얼음구덩이 손맛이 최고야 ㅋㅋ']]
-        : [['Forget escaping~ let us fish!!', 'Nothing beats ice fishing lol']]
+        ? [
+            ['갈 땐 가더라도~', '고래 한 번 정도는 괜찮잖아?'],
+            ['탈출은 무슨~ 낚시나 하자!!', '얼음구덩이 손맛이 최고야 ㅋㅋ'],
+            ['어차피 무너지는 남극~', '대왕오징어 회나 썰고 가자 ㅋㅋ'],
+          ]
+        : [
+            ['Even if I gotta go~', 'One whale first is fine, right?'],
+            ['Forget escaping~ let us fish!!', 'Nothing beats ice fishing lol'],
+            ['Antarctica is falling anyway~', 'Some squid sashimi first lol'],
+          ]
       : ko
       ? [['으악 남극이 무너진다!!', '뭐 타고 도망가지?!'], ['발밑까지 갈라진다!!', '빨리 하나 골라!!'], ['진짜 끝장이야!!', '아무거나 타!! 지금!!']]
       : [['Antarctica is falling apart!!', 'What do I ride out?!'], ['It is cracking under me!!', 'Pick one, quick!!'], ['This is the end!!', 'Anything!! NOW!!']];
-  const stage = vehicle === 'fish' ? 0 : Math.min(2, Math.floor(esc * 3));
+  const stage = Math.min(2, Math.floor(esc * 3));
   drawScene0Shout(ctx, now, lines[stage], vehicle === 'fish' ? '#34d399' : stage === 2 ? '#fb7185' : stage === 1 ? '#fde047' : '#38bdf8', quake);
   drawScene0Marker(ctx, now, target, label, accent);
 }
