@@ -909,6 +909,7 @@ function drawOpeningFound(ctx, now, t) {
   const looking = [...OPENING_FOUND].reverse().find((f) => t >= f.at - 300);
   withOpeningCamera(ctx, cam, 0, () => {
     drawRefScene1ChoiceBackground(ctx, now);
+    if (typeof drawScene0CornerFisher === 'function') drawScene0CornerFisher(ctx, now, false);
     OPENING_FOUND.forEach((f) => {
       const p = (t - f.at) / 450;
       if (p < 0) return;

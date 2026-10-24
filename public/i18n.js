@@ -486,7 +486,11 @@ const I18N_ROWS = [
 
   // ---- Ice Fishing (fish-runner.js, escape-scene.js, scene-pull.js) ----
   ['Ice Fishing', 'Ice Fishing', 'برفانی مچھلی شکار', 'বরফে মাছ ধরা'],
+  ['ICE FISHING', 'ICE FISHING', 'برفانی مچھلی شکار', 'বরফে মাছ ধরা'],
+  ['Reel & catch', 'Pull & catch', 'کھینچیں اور پکڑیں', 'টানুন আর ধরুন'],
   ['Fish?', 'Fish?', 'مچھلی؟', 'মাছ?'],
+  ['Forget escaping~ let us fish!!', 'Forget escape~ make we catch fish!!', 'فرار چھوڑو~ چلو مچھلی پکڑتے ہیں!!', 'পালানো বাদ~ চলো মাছ ধরি!!'],
+  ['Nothing beats ice fishing lol', 'Ice fishing sweet pass anything lol', 'برف میں مچھلی پکڑنے کا مزہ ہی الگ ہے ہاہا', 'বরফে মাছ ধরার মজাই আলাদা হাহা'],
   ['Forget escaping… Care for some ice fishing?', 'Forget escape… Make we catch fish for ice?', 'فرار چھوڑو… برف میں مچھلی پکڑیں؟', 'পালানো বাদ দাও… বরফে মাছ ধরবে নাকি?'],
   ['Go Fish', 'Catch Fish', 'مچھلی پکڑو', 'মাছ ধরো'],
   ['Hold to raise the green bar · release to drop', 'Hold am make green bar climb · leave am make e drop', 'دبائے رکھو تو سبز بار اوپر · چھوڑو تو نیچے', 'চেপে ধরলে সবুজ বার উঠবে · ছাড়লে নামবে'],

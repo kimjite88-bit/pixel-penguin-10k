@@ -12,7 +12,7 @@
 const SCENE0_UFO_SPOT = { x: 300, y: 296 - 66 * 0.74, tilt: 0, scale: 0.74 }; // plane ('ufo' key kept for saved picks + the board)
 const SCENE0_BOAT_SPOT = { x: 565, y: 352 - 34 * 0.44, tilt: 0, scale: 0.44 }; // waterline in the lead at y = 352
 const SCENE0_CAR_SPOT = { x: 880, y: 366 - 57 * 0.64, tilt: 0, scale: 0.64 };
-const SCENE0_FISH_SPOT = { x: 836, y: 474, holeX: 764, holeY: 498, scale: 0.46 }; // hidden corner fishing penguin
+const SCENE0_FISH_SPOT = { x: 856, y: 476, holeX: 770, holeY: 500, scale: 0.46 }; // planted ice-fishing rod & hole in the bottom-right snow
 // The penguin stands front and centre on a floe in the glowing crevasse; the start card sits bottom-left over the cliff
 const SCENE0_HERO = { x: 590, feet: 496, size: 140 };
 const SCENE0_K = '#0b1020';
@@ -396,118 +396,465 @@ function drawScene0Marker(ctx, now, target, label, accent) {
   ctx.restore();
 }
 
-// Hidden 4th game in the bottom-right snow corner: a tiny, completely unbothered penguin sitting on a cooler
-// and fishing in a little ice hole while Antarctica collapses around it
+// 4th game in the bottom-right snow corner: a high-detail ice-fishing rod planted firmly in a snow mound
+// beside a chiseled glacier fishing hole (no extra penguin—the hero penguin in the middle picks it!)
 function drawScene0CornerFisher(ctx, now, isSelected) {
   const f = SCENE0_FISH_SPOT;
-  const ko = CURRENT_LANG === 'ko';
+  const hx = 762;
+  const hy = 500;
+  const baseX = 838;
+  const baseY = 498;
+
+  // Periodic double-tug bite animation so the bobber dips and the planted rod tip bends down in sync
+  const cycle = (now % 2400) / 2400;
+  const biteTug =
+    cycle > 0.72 && cycle < 0.80
+      ? Math.sin(((cycle - 0.72) / 0.08) * Math.PI) * 3.8
+      : cycle > 0.84 && cycle < 0.92
+      ? Math.sin(((cycle - 0.84) / 0.08) * Math.PI) * 4.5
+      : 0;
+  const bobDip = Math.sin(now * 0.006) * 1.4 + biteTug + (isSelected ? Math.sin(now * 0.028) * 2.2 : 0);
+  const rodFlex = Math.max(0, bobDip) * 1.5 + Math.sin(now * 0.005) * 1.2;
+
   ctx.save();
 
-  // 1. Small ice-fishing hole in the snow at (f.holeX, f.holeY)
-  ctx.fillStyle = SCENE0_K;
+  // 1. Chiseled Glacier Ice-Fishing Hole at (hx, hy)
+  ctx.fillStyle = 'rgba(148, 163, 184, 0.45)';
   ctx.beginPath();
-  ctx.ellipse(f.holeX, f.holeY, 27, 10, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#e0f2fe';
-  ctx.beginPath();
-  ctx.ellipse(f.holeX, f.holeY, 24, 8, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = '#075985';
-  ctx.beginPath();
-  ctx.ellipse(f.holeX, f.holeY + 1, 21, 6.2, 0, 0, Math.PI * 2);
+  ctx.ellipse(hx, hy + 2, 37, 14, 0, 0, Math.PI * 2);
   ctx.fill();
 
-  // Ripple & bobbing red-and-white float in the hole
-  const rp = (now * 0.0016) % 1;
-  ctx.strokeStyle = `rgba(186, 230, 253, ${(1 - rp) * 0.8})`;
-  ctx.lineWidth = 1.5;
+  ctx.fillStyle = '#f8fafc';
   ctx.beginPath();
-  ctx.ellipse(f.holeX, f.holeY + 1, 5 + rp * 14, 1.5 + rp * 4, 0, 0, Math.PI * 2);
-  ctx.stroke();
+  ctx.ellipse(hx, hy, 35, 12.5, 0, 0, Math.PI * 2);
+  ctx.fill();
 
-  const bobDip = Math.sin(now * 0.007) * 2 + (isSelected ? Math.sin(now * 0.03) * 3 : 0);
-  const bx = f.holeX;
-  const by = f.holeY - 1 + bobDip;
   ctx.fillStyle = SCENE0_K;
   ctx.beginPath();
-  ctx.arc(bx, by, 5, 0, Math.PI * 2);
+  ctx.ellipse(hx, hy, 31, 11, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillStyle = '#ffffff';
+
+  // 3D glacier ice shelf wall thickness
+  ctx.fillStyle = '#bae6fd';
   ctx.beginPath();
-  ctx.arc(bx, by, 3.6, 0, Math.PI);
+  ctx.ellipse(hx, hy - 0.5, 28.5, 9.4, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#38bdf8';
+  ctx.beginPath();
+  ctx.ellipse(hx, hy + 0.8, 27.5, 8.4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Deep polar water inside the hole
+  ctx.fillStyle = '#082f49';
+  ctx.beginPath();
+  ctx.ellipse(hx, hy + 1.8, 25.5, 7.2, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#0c4a6e';
+  ctx.beginPath();
+  ctx.ellipse(hx, hy + 2.1, 21, 5.6, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#0369a1';
+  ctx.beginPath();
+  ctx.ellipse(hx - 3, hy + 2.3, 13, 3.5, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Chiseled 3D ice chunks around the hole rim
+  const iceChunks = [
+    [-30, -2, 8, 5],
+    [-20, 8, 9, 5],
+    [21, 8, 9, 5],
+    [29, -1, 7, 5],
+  ];
+  for (const [cx, cy, cw, ch] of iceChunks) {
+    const ix = hx + cx - cw / 2;
+    const iy = hy + cy - ch / 2;
+    ctx.fillStyle = SCENE0_K;
+    ctx.fillRect(ix - 1.5, iy - 1.5, cw + 3, ch + 3);
+    ctx.fillStyle = '#7dd3fc';
+    ctx.fillRect(ix, iy, cw, ch);
+    ctx.fillStyle = '#f0f9ff';
+    ctx.fillRect(ix, iy, cw, Math.ceil(ch * 0.55));
+  }
+
+  // Concentric expanding water ripples around the bobber
+  for (let rIdx = 0; rIdx < 2; rIdx++) {
+    const rp = ((now * 0.0014) + rIdx * 0.5) % 1;
+    ctx.strokeStyle = `rgba(186, 230, 253, ${(1 - rp) * 0.82})`;
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.ellipse(hx, hy + 1.5, 5 + rp * 17, 1.3 + rp * 4.2, 0, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+
+  // 2. High-Detail Red-White-Gold Barrel Bobber in the Ice Hole
+  const bx = hx;
+  const by = hy - 0.5 + bobDip;
+  ctx.fillStyle = 'rgba(8, 47, 73, 0.75)';
+  ctx.beginPath();
+  ctx.ellipse(bx, by + 5.2, 4.2, 1.8, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = SCENE0_K;
+  ctx.beginPath();
+  ctx.arc(bx, by, 6.2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#f8fafc';
+  ctx.beginPath();
+  ctx.arc(bx, by, 4.6, 0, Math.PI);
   ctx.fill();
   ctx.fillStyle = '#ef4444';
   ctx.beginPath();
-  ctx.arc(bx, by, 3.6, Math.PI, Math.PI * 2);
+  ctx.arc(bx, by, 4.6, Math.PI, Math.PI * 2);
   ctx.fill();
+  ctx.fillStyle = '#facc15';
+  ctx.fillRect(bx - 4.6, by - 0.8, 9.2, 1.6);
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(bx - 2.6, by - 3.4, 2.0, 1.6);
+  // Tall fluorescent strike antenna sticking up from the bobber
+  ctx.fillStyle = SCENE0_K;
+  ctx.fillRect(bx - 1.5, by - 11, 3.0, 5.8);
+  ctx.fillStyle = isSelected || biteTug > 1 ? '#4ade80' : '#fde047';
+  ctx.fillRect(bx - 0.75, by - 10.2, 1.5, 4.5);
 
-  // 2. Shadow & Red Tackle-Box Stool under the corner penguin
+  if (biteTug > 1.2 || isSelected) {
+    ctx.fillStyle = '#bae6fd';
+    const spLift = ((now * 0.015) % 1) * 6;
+    ctx.fillRect(bx - 9 - spLift * 0.6, by - 2 - spLift, 2.4, 2.4);
+    ctx.fillRect(bx + 7 + spLift * 0.6, by - 3 - spLift * 0.8, 2.4, 2.4);
+  }
+
+  // 3. Cozy Red Fisherman Tackle Box sitting in the snow beside the planted rod
+  const tx = baseX + 34;
+  const ty = baseY - 2;
+  ctx.fillStyle = 'rgba(9, 13, 26, 0.26)';
+  ctx.beginPath();
+  ctx.ellipse(tx, ty + 11, 17, 4, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = SCENE0_K;
+  ctx.fillRect(tx - 14, ty - 5, 28, 16);
+  ctx.fillStyle = '#b91c1c';
+  ctx.fillRect(tx - 12, ty + 1, 24, 8);
+  ctx.fillStyle = '#ef4444';
+  ctx.fillRect(tx - 12, ty - 3.5, 24, 5.5);
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(tx - 12, ty + 1, 24, 1.6);
+  ctx.fillStyle = '#facc15';
+  ctx.fillRect(tx - 6.5, ty, 2.8, 3.2);
+  ctx.fillRect(tx + 3.8, ty, 2.8, 3.2);
+  ctx.fillStyle = SCENE0_K;
+  ctx.fillRect(tx - 4.5, ty - 8, 9, 3);
+  ctx.fillStyle = '#475569';
+  ctx.fillRect(tx - 3, ty - 6.8, 6, 1.5);
+
+  // 4. Packed Snow Mound & Spiked Steel Rod-Holder Tube Planted in the Snow at (baseX, baseY)
   ctx.fillStyle = 'rgba(9, 13, 26, 0.28)';
   ctx.beginPath();
-  ctx.ellipse(f.x, f.y + 26, 28, 5, 0, 0, Math.PI * 2);
+  ctx.ellipse(baseX, baseY + 7, 25, 5.5, 0, 0, Math.PI * 2);
   ctx.fill();
 
+  // Back half of packed snow mound
   ctx.fillStyle = SCENE0_K;
-  ctx.fillRect(f.x - 16, f.y + 8, 32, 18);
-  ctx.fillStyle = '#dc2626';
-  ctx.fillRect(f.x - 14, f.y + 10, 28, 14);
-  ctx.fillStyle = '#f8fafc';
-  ctx.fillRect(f.x - 14, f.y + 10, 28, 3);
+  ctx.beginPath();
+  ctx.ellipse(baseX, baseY + 2, 21, 9, 0, Math.PI, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#cbd5e1';
+  ctx.beginPath();
+  ctx.ellipse(baseX, baseY + 2.5, 18.5, 7, 0, Math.PI, Math.PI * 2);
+  ctx.fill();
 
-  // 3. Small Penguin facing left toward the ice hole
-  ensureHero2DSprite();
-  const sheet = MOTION_STATE.hero2DSheetLoaded ? MOTION_STATE.hero2DSheet : null;
-  const sz = 62;
-  const nod = Math.sin(now * 0.004) * 1.5;
+  // Angled Steel Ice-Spike Rod Holder driven into the snow mound (-28 deg from vertical, leaning left)
   ctx.save();
-  ctx.translate(f.x, f.y - 6 + nod);
-  ctx.scale(-1, 1); // face left toward its ice hole
-  const blink = Math.floor(now / 1400) % 3 === 0 ? 1 : 0;
-  if (sheet) {
-    ctx.imageSmoothingEnabled = true;
-    ctx.drawImage(sheet, blink * 256, 0, 256, 256, -sz / 2, -sz / 2, sz, sz);
-  }
+  ctx.translate(baseX, baseY + 1);
+  ctx.rotate(-0.46);
+  ctx.fillStyle = SCENE0_K;
+  ctx.fillRect(-6, -22, 12, 24);
+  ctx.fillStyle = '#334155';
+  ctx.fillRect(-4.4, -20, 8.8, 20);
+  ctx.fillStyle = '#94a3b8';
+  ctx.fillRect(-2.0, -20, 2.6, 19);
+  ctx.fillStyle = '#ef4444';
+  ctx.fillRect(-4.8, -20.5, 9.6, 3.8);
+  ctx.fillStyle = SCENE0_K;
+  ctx.fillRect(4.0, -14, 4.5, 4.5);
+  ctx.fillStyle = '#facc15';
+  ctx.fillRect(4.6, -13.2, 3.0, 2.8);
   ctx.restore();
 
-  // 4. Bamboo Fishing Rod & Line from the corner penguin to the bobber
-  const rodTipX = f.holeX + 4;
-  const rodTipY = f.y - 26 + Math.sin(now * 0.005) * 2;
-  ctx.strokeStyle = SCENE0_K;
-  ctx.lineWidth = 4.5;
+  // Front snow lip overlapping the planted spike base so it looks firmly buried in the snow
+  ctx.fillStyle = SCENE0_K;
   ctx.beginPath();
-  ctx.moveTo(f.x - 10, f.y + 2);
-  ctx.quadraticCurveTo(f.x - 36, f.y - 22, rodTipX, rodTipY);
-  ctx.stroke();
-  ctx.strokeStyle = '#fbbf24';
-  ctx.lineWidth = 2.2;
+  ctx.ellipse(baseX, baseY + 3.5, 21, 7, 0, 0, Math.PI);
+  ctx.fill();
+  ctx.fillStyle = '#e2e8f0';
+  ctx.beginPath();
+  ctx.ellipse(baseX, baseY + 3, 18.5, 5.8, 0, 0, Math.PI);
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath();
+  ctx.ellipse(baseX - 2, baseY + 1.8, 13, 3.4, 0, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 5. Detailed Split-Grip Cork Handle & Gold Reel Seat emerging from the planted tube
+  const h0x = baseX - 8;
+  const h0y = baseY - 16;
+  const h1x = baseX - 21;
+  const h1y = baseY - 44;
+
+  // Thick dark outline for the cork grip & reel seat
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = SCENE0_K;
+  ctx.lineWidth = 9.5;
+  ctx.beginPath();
+  ctx.moveTo(h0x, h0y);
+  ctx.lineTo(h1x, h1y);
   ctx.stroke();
 
-  ctx.strokeStyle = 'rgba(241, 245, 249, 0.9)';
+  // Warm natural cork base & fore-grip
+  ctx.strokeStyle = '#d97706';
+  ctx.lineWidth = 6.4;
+  ctx.beginPath();
+  ctx.moveTo(h0x, h0y);
+  ctx.lineTo(h1x, h1y);
+  ctx.stroke();
+
+  ctx.strokeStyle = '#fbbf24';
+  ctx.lineWidth = 3.8;
+  ctx.beginPath();
+  ctx.moveTo(h0x - 0.8, h0y - 0.8);
+  ctx.lineTo(h1x - 0.8, h1y - 0.8);
+  ctx.stroke();
+
+  // Matte graphite reel seat in the middle of the handle
+  const rs0x = h0x + (h1x - h0x) * 0.30;
+  const rs0y = h0y + (h1y - h0y) * 0.30;
+  const rs1x = h0x + (h1x - h0x) * 0.72;
+  const rs1y = h0y + (h1y - h0y) * 0.72;
+  ctx.strokeStyle = '#1e293b';
+  ctx.lineWidth = 6.2;
+  ctx.beginPath();
+  ctx.moveTo(rs0x, rs0y);
+  ctx.lineTo(rs1x, rs1y);
+  ctx.stroke();
+
+  // Gold hood rings on both ends of the reel seat + winding check at top of fore-grip
+  for (const tRing of [0.28, 0.74, 0.98]) {
+    const rx = h0x + (h1x - h0x) * tRing;
+    const ry = h0y + (h1y - h0y) * tRing;
+    ctx.fillStyle = SCENE0_K;
+    ctx.beginPath();
+    ctx.arc(rx, ry, 4.0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#facc15';
+    ctx.beginPath();
+    ctx.arc(rx, ry, 2.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // 6. Precision Spinning Reel with Anodized Gold Spool & Crank Handle (hanging under the reel seat)
+  const reelStemX = (rs0x + rs1x) * 0.5;
+  const reelStemY = (rs0y + rs1y) * 0.5;
+  const reelX = reelStemX - 10;
+  const reelY = reelStemY + 9;
+
+  ctx.strokeStyle = SCENE0_K;
+  ctx.lineWidth = 5.0;
+  ctx.beginPath();
+  ctx.moveTo(reelStemX, reelStemY);
+  ctx.lineTo(reelX + 2, reelY - 1);
+  ctx.stroke();
+  ctx.strokeStyle = '#64748b';
+  ctx.lineWidth = 2.4;
+  ctx.stroke();
+
+  ctx.save();
+  ctx.translate(reelX, reelY);
+  ctx.rotate(-0.46);
+  ctx.fillStyle = SCENE0_K;
+  ctx.fillRect(-9, -6, 17, 12);
+  ctx.fillStyle = '#0369a1';
+  ctx.fillRect(0, -4.5, 6.5, 9);
+  ctx.fillStyle = '#38bdf8';
+  ctx.fillRect(0.8, -3.5, 4.5, 3.5);
+  ctx.fillStyle = '#facc15';
+  ctx.fillRect(-7.5, -4.5, 7.5, 9);
+  ctx.fillStyle = '#10b981';
+  ctx.fillRect(-5.8, -3.8, 4.2, 7.6);
+  ctx.fillStyle = '#6ee7b7';
+  ctx.fillRect(-5.3, -2.8, 3.2, 2.8);
+  ctx.fillStyle = '#fef08a';
+  ctx.fillRect(-7.5, -4.5, 1.6, 9);
+  ctx.strokeStyle = '#e2e8f0';
   ctx.lineWidth = 1.4;
   ctx.beginPath();
-  ctx.moveTo(rodTipX, rodTipY);
-  ctx.lineTo(bx, by - 2);
+  ctx.arc(-3.5, 0, 5.5, -Math.PI * 0.75, Math.PI * 0.45);
+  ctx.stroke();
+  ctx.restore();
+
+  const crankAng = (isSelected ? now * 0.012 : 0.4) + (biteTug > 0 ? Math.sin(now * 0.05) * 0.6 : 0);
+  const knobX = reelX + Math.cos(crankAng) * 6.8;
+  const knobY = reelY + 2 + Math.sin(crankAng) * 5.0;
+  ctx.strokeStyle = SCENE0_K;
+  ctx.lineWidth = 3.8;
+  ctx.beginPath();
+  ctx.moveTo(reelX + 1.5, reelY + 1);
+  ctx.lineTo(knobX, knobY);
+  ctx.stroke();
+  ctx.strokeStyle = '#facc15';
+  ctx.lineWidth = 1.8;
+  ctx.stroke();
+  ctx.fillStyle = SCENE0_K;
+  ctx.beginPath();
+  ctx.arc(knobX, knobY, 3.4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = '#ef4444';
+  ctx.beginPath();
+  ctx.arc(knobX, knobY, 2.1, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 7. Gracefully Bowed Parabolic Carbon-Bamboo Rod Blank (rises high, then curves down toward the hole!)
+  const r0x = h1x;
+  const r0y = h1y;
+  const rcx = hx + 32;
+  const rcy = baseY - 102 + rodFlex * 0.35; // high parabolic apex so the rod visibly bows like a real fishing rod!
+  const rodTipX = hx;
+  const rodTipY = baseY - 64 + rodFlex;
+
+  const qPt = (t) => {
+    const u = 1 - t;
+    return {
+      x: u * u * r0x + 2 * u * t * rcx + t * t * rodTipX,
+      y: u * u * r0y + 2 * u * t * rcy + t * t * rodTipY,
+    };
+  };
+
+  // Ceramic line-guide rings hanging underneath the arched rod at t = 0.26, 0.54, 0.78, 0.97
+  const guideTs = [0.26, 0.54, 0.78, 0.97];
+  const guidePoints = guideTs.map((gt) => {
+    const p = qPt(gt);
+    const drop = gt < 0.4 ? 5.0 : gt < 0.8 ? 4.0 : 2.8;
+    return { rx: p.x, ry: p.y, gx: p.x - 1.2, gy: p.y + drop, r: gt < 0.4 ? 2.6 : 2.0 };
+  });
+
+  // 8. Taut Braided Fishing Line from Reel Spool -> through all 4 Line Guides -> Rod Tip -> Bobber
+  ctx.save();
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  ctx.strokeStyle = 'rgba(11, 16, 32, 0.65)';
+  ctx.lineWidth = 2.8;
+  ctx.beginPath();
+  ctx.moveTo(reelX - 4, reelY - 2);
+  for (const gp of guidePoints) ctx.lineTo(gp.gx, gp.gy);
+  ctx.lineTo(rodTipX, rodTipY + 1);
+  ctx.lineTo(bx, by - 10);
   ctx.stroke();
 
-  // Subtle floating whisper tag when not selected so players can discover the hidden game
-  if (!isSelected) {
-    const tagX = f.holeX;
-    const tagY = f.holeY - 24 + (Math.floor(now / 360) % 2 === 0 ? 0 : -2);
-    const tagTxt = ko ? '낚시?' : i18n('Fish?');
-    ctx.font = '800 12px "Pretendard", "Malgun Gothic", sans-serif';
-    const tw = Math.ceil(ctx.measureText(tagTxt).width) + 12;
-    const tx = Math.round(tagX - tw / 2);
+  ctx.strokeStyle = isSelected ? '#6ee7b7' : '#f8fafc';
+  ctx.lineWidth = 1.4;
+  ctx.beginPath();
+  ctx.moveTo(reelX - 4, reelY - 2);
+  for (const gp of guidePoints) ctx.lineTo(gp.gx, gp.gy);
+  ctx.lineTo(rodTipX, rodTipY + 1);
+  ctx.lineTo(bx, by - 10);
+  ctx.stroke();
+  ctx.restore();
+
+  // Draw the 4 ceramic line-guide rings
+  for (const gp of guidePoints) {
+    ctx.strokeStyle = SCENE0_K;
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    ctx.moveTo(gp.rx, gp.ry);
+    ctx.lineTo(gp.gx, gp.gy);
+    ctx.stroke();
     ctx.fillStyle = SCENE0_K;
-    ctx.fillRect(tx - 1, tagY - 11, tw + 2, 20);
-    ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
-    ctx.fillRect(tx, tagY - 10, tw, 18);
-    ctx.fillStyle = '#34d399';
-    ctx.fillRect(tx, tagY - 10, tw, 2);
-    ctx.fillStyle = '#a7f3d0';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(tagTxt, tagX, tagY);
+    ctx.beginPath();
+    ctx.arc(gp.gx, gp.gy, gp.r + 1.0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#cbd5e1';
+    ctx.beginPath();
+    ctx.arc(gp.gx, gp.gy, gp.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#0f172a';
+    ctx.beginPath();
+    ctx.arc(gp.gx, gp.gy, Math.max(0.8, gp.r - 0.9), 0, Math.PI * 2);
+    ctx.fill();
   }
+
+  // Draw the slender, whippy tapered carbon-bamboo rod blank in 8 segments for a smooth parabolic curve
+  const segs = 8;
+  for (let s = 0; s < segs; s++) {
+    const t0 = s / segs;
+    const t1 = (s + 1) / segs;
+    const p0 = qPt(t0);
+    const p1 = qPt(t1);
+    const wOut = 6.8 - s * 0.48;
+    const wIn = 3.8 - s * 0.28;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = SCENE0_K;
+    ctx.lineWidth = wOut;
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.stroke();
+
+    // High-visibility fluorescent red-orange strike tip on the last 2 segments; golden bamboo/carbon on the rest
+    ctx.strokeStyle = s >= segs - 2 ? '#ef4444' : s % 2 === 0 ? '#f59e0b' : '#fbbf24';
+    ctx.lineWidth = wIn;
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y);
+    ctx.lineTo(p1.x, p1.y);
+    ctx.stroke();
+
+    ctx.strokeStyle = s >= segs - 2 ? '#fecaca' : '#fef08a';
+    ctx.lineWidth = Math.max(1.0, wIn * 0.36);
+    ctx.beginPath();
+    ctx.moveTo(p0.x, p0.y - 0.6);
+    ctx.lineTo(p1.x, p1.y - 0.6);
+    ctx.stroke();
+  }
+
+  // Decorative crimson & gold thread-wrap node bands along the rod blank
+  for (const nt of [0.26, 0.54, 0.78]) {
+    const np = qPt(nt);
+    ctx.fillStyle = SCENE0_K;
+    ctx.fillRect(np.x - 2.4, np.y - 2.4, 4.8, 4.8);
+    ctx.fillStyle = '#dc2626';
+    ctx.fillRect(np.x - 1.6, np.y - 1.6, 3.2, 3.2);
+    ctx.fillStyle = '#facc15';
+    ctx.fillRect(np.x - 0.8, np.y - 1.6, 1.2, 3.2);
+  }
+
+  // 9. Twin Brass Bite-Bell (초릿대 쌍방울 딸랑이) clipped near the rod tip
+  const bellPt = qPt(0.90);
+  const bellJingle = biteTug > 0.5 || isSelected ? Math.sin(now * 0.06) * 1.4 : 0;
+  ctx.fillStyle = SCENE0_K;
+  ctx.fillRect(bellPt.x - 2.2, bellPt.y - 4.5, 4.4, 4.5);
+  ctx.fillStyle = '#10b981';
+  ctx.fillRect(bellPt.x - 1.3, bellPt.y - 3.6, 2.6, 3.0);
+  for (const dx of [-2.8, 2.8]) {
+    const bxBell = bellPt.x + dx + bellJingle * 0.5;
+    const byBell = bellPt.y - 6.0 - Math.abs(bellJingle) * 0.4;
+    ctx.fillStyle = SCENE0_K;
+    ctx.beginPath();
+    ctx.arc(bxBell, byBell, 3.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#facc15';
+    ctx.beginPath();
+    ctx.arc(bxBell, byBell, 2.1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fef9c3';
+    ctx.fillRect(bxBell - 1.0, byBell - 1.2, 1.2, 1.2);
+  }
+  if (biteTug > 0.8 || isSelected) {
+    ctx.strokeStyle = '#fde047';
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.arc(bellPt.x - 5.5, bellPt.y - 7.5, 3.6, Math.PI * 0.8, Math.PI * 1.4);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(bellPt.x + 5.5, bellPt.y - 7.5, 3.6, -Math.PI * 0.4, Math.PI * 0.2);
+    ctx.stroke();
+  }
+
   ctx.restore();
 }
 
@@ -586,7 +933,7 @@ function drawScene0Escape(ctx, now) {
 
   const target =
     vehicle === 'fish'
-      ? { x: fish.holeX + 12, y: fish.holeY - 12 }
+      ? { x: 874, y: 468 }
       : vehicle === 'car'
       ? { x: car.x - 10, y: car.y - 60 * car.scale - 6 }
       : vehicle === 'boat'
@@ -650,7 +997,7 @@ function drawScene0Shout(ctx, now, lines, accent, quake) {
   const headR = SCENE0_HERO.x + 84;
   const onRight = !phone || headR + bw <= 960 - 12;
   const bx = (onRight ? headR : Math.max(12, headL - bw)) + jx;
-  const by = SCENE0_HERO.feet - SCENE0_HERO.size + 6 + bob;
+  const by = SCENE0_HERO.feet - SCENE0_HERO.size - 8 + bob;
   ctx.fillStyle = 'rgba(9, 13, 26, 0.42)';
   ctx.fillRect(bx + 5, by + 5, bw, bh);
   ctx.fillStyle = SCENE0_K;
@@ -829,7 +1176,7 @@ function finishScene0Idle() {
 // Which vehicle a click on the scene 1 picture picks (null = none)
 function scene0VehicleAt(mx, my) {
   const f = SCENE0_FISH_SPOT;
-  if (mx >= f.holeX - 30 && mx <= f.x + 48 && my >= f.y - 56 && my <= f.y + 38) return 'fish';
+  if (mx >= f.holeX - 42 && mx <= f.x + 60 && my >= f.y - 72 && my <= f.holeY + 26) return 'fish';
   const c = SCENE0_CAR_SPOT;
   if (mx >= c.x - 110 * c.scale && mx <= c.x + 110 * c.scale && my >= c.y - 80 * c.scale && my <= c.y + 60 * c.scale) return 'car';
   const b = SCENE0_BOAT_SPOT;
